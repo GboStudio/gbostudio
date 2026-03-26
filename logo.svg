@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1024" height="1024">
+  <defs>
+    <clipPath id="rounded">
+      <rect x="0" y="0" width="1000" height="1000" rx="220" ry="220"/>
+    </clipPath>
+
+    <!-- Soft gradients close to original -->
+    <linearGradient id="leftGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C9D8CF"/>
+      <stop offset="100%" stop-color="#8FAFA6"/>
+    </linearGradient>
+
+    <linearGradient id="rightGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#D9DEDE"/>
+    </linearGradient>
+  </defs>
+
+  <g clip-path="url(#rounded)">
+    <!-- LEFT AREA (single S boundary) -->
+    <path d="
+      M0 0
+      L520 0
+      C450 220 450 380 520 500
+      C590 620 590 780 520 1000
+      L0 1000
+      Z"
+      fill="url(#leftGrad)"/>
+
+    <!-- RIGHT AREA (same S, no second curve) -->
+    <path d="
+      M520 0
+      L1000 0
+      L1000 1000
+      L520 1000
+      C590 780 590 620 520 500
+      C450 380 450 220 520 0
+      Z"
+      fill="url(#rightGrad)"/>
+
+    <!-- SINGLE CENTRAL S LINE -->
+    <path d="
+      M520 0
+      C450 220 450 380 520 500
+      C590 620 590 780 520 1000"
+      fill="none"
+      stroke="#6F8F87"
+      stroke-width="34"
+      stroke-linecap="round"
+      stroke-linejoin="round"/>
+  </g>
+</svg>
