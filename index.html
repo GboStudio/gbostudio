@@ -4,102 +4,406 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>GBO Studio</title>
-
+  <meta name="description" content="GBO Studio is an independent mobile app studio based in France." />
   <style>
+    :root {
+      --bg: #f6f7f5;
+      --surface: rgba(255,255,255,0.72);
+      --text: #1f2428;
+      --muted: #5f6b6d;
+      --accent: #4a6a73;
+      --accent-soft: #dfe8e4;
+      --border: rgba(46,46,46,0.08);
+      --shadow: 0 10px 30px rgba(0,0,0,0.06);
+      --radius: 20px;
+      --max: 1080px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
-      background-color: #f5f6f4;
-      color: #2e2e2e;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(143,175,163,0.18), transparent 30%),
+        radial-gradient(circle at top right, rgba(74,106,115,0.12), transparent 28%),
+        var(--bg);
+      color: var(--text);
     }
 
     .container {
-      max-width: 900px;
-      margin: auto;
-      padding: 60px 20px;
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
     }
 
-    h1 {
-      font-size: 42px;
-      margin-bottom: 10px;
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 10px 0 24px;
     }
 
-    h2 {
-      margin-top: 50px;
-      font-size: 24px;
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: inherit;
     }
 
-    p {
-      line-height: 1.6;
-      color: #555;
+    .brand img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      padding: 6px;
+    }
+
+    .brand-name {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .nav {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .nav a {
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
     }
 
     .hero {
-      text-align: center;
-      margin-bottom: 60px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 28px;
+      align-items: stretch;
+      margin-top: 14px;
     }
 
-    .subtitle {
-      font-size: 18px;
-      color: #4a6a73;
+    .hero-card,
+    .side-card,
+    .section-card {
+      background: var(--surface);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
     }
 
-    .card {
+    .hero-card {
+      padding: 48px;
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-radius: 999px;
+      width: fit-content;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 60px;
+      line-height: 0.96;
+      margin: 0 0 18px;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-subtitle {
+      font-size: 22px;
+      line-height: 1.45;
+      color: var(--muted);
+      max-width: 620px;
+      margin: 0 0 28px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 15px;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background: var(--text);
+      color: white;
+    }
+
+    .btn-secondary {
       background: white;
-      padding: 25px;
-      border-radius: 12px;
-      margin-top: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .side-card {
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .badge {
+      display: inline-block;
+      width: fit-content;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 8px 12px;
+      border-radius: 999px;
+    }
+
+    .project-name {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin: 12px 0 8px;
+    }
+
+    .project-text {
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 16px;
+      margin: 0;
+    }
+
+    .project-meta {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .meta-item {
+      background: rgba(255,255,255,0.75);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .meta-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    .meta-value {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .sections {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 28px;
+    }
+
+    .section-card {
+      padding: 28px;
+    }
+
+    .section-card h2 {
+      margin: 0 0 14px;
+      font-size: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    .section-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: 16px;
+    }
+
+    .contact-link {
+      display: inline-flex;
+      margin-top: 14px;
+      text-decoration: none;
+      color: var(--accent);
+      font-weight: 700;
+      word-break: break-word;
     }
 
     .footer {
-      text-align: center;
-      margin-top: 60px;
+      margin-top: 36px;
+      padding: 24px 8px 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      color: #7c8587;
       font-size: 14px;
-      color: #888;
     }
 
+    @media (max-width: 900px) {
+      .hero,
+      .sections {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 46px;
+      }
+
+      .hero-card {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        padding: 20px 16px 56px;
+      }
+
+      .topbar {
+        padding-bottom: 18px;
+      }
+
+      .hero-card,
+      .side-card,
+      .section-card {
+        padding: 22px;
+      }
+
+      h1 {
+        font-size: 38px;
+      }
+
+      .hero-subtitle {
+        font-size: 18px;
+      }
+
+      .nav {
+        display: none;
+      }
+    }
   </style>
 </head>
-
 <body>
-
   <div class="container">
 
-    <div class="hero">
-      <h1>GBO Studio</h1>
-      <p class="subtitle">Mobile app development studio</p>
-      <p>We design simple, powerful digital experiences focused on self-awareness and behavior.</p>
-    </div>
+    <header class="topbar">
+      <a href="#" class="brand">
+        <img src="logo.svg" alt="GBO Studio logo">
+        <div class="brand-name">GBO Studio</div>
+      </a>
 
-    <h2>About</h2>
-    <div class="card">
-      <p>
-        GBO Studio is an independent mobile application studio based in France.
-        We build digital tools designed to help people better understand themselves,
-        track behaviors, and create lasting change.
-      </p>
-    </div>
+      <nav class="nav">
+        <a href="#about">About</a>
+        <a href="#project">Project</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
 
-    <h2>Current Project</h2>
-    <div class="card">
-      <p><strong>CONSCIENCE</strong></p>
-      <p>
-        A mobile application designed to help users observe their habits,
-        understand patterns, and improve their daily decisions through awareness.
-      </p>
-    </div>
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">Independent studio • France</div>
+        <h1>Thoughtful mobile products, built with clarity.</h1>
+        <p class="hero-subtitle">
+          GBO Studio is an independent mobile app studio based in France,
+          focused on self-awareness, habits and meaningful digital experiences.
+        </p>
 
-    <h2>Contact</h2>
-    <div class="card">
-      <p>contact.gbostudio@gmail.com</p>
-    </div>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#project">Discover current project</a>
+          <a class="btn btn-secondary" href="mailto:contact.gbostudio@gmail.com">Contact us</a>
+        </div>
+      </div>
 
-    <div class="footer">
-      © GBO Studio – France
-    </div>
+      <aside class="side-card" id="project">
+        <div>
+          <div class="badge">Current project</div>
+          <div class="project-name">CONSCIENCE</div>
+          <p class="project-text">
+            A mobile application designed to help users better understand themselves,
+            observe habits and build self-awareness through a simple and intentional experience.
+          </p>
+        </div>
+
+        <div class="project-meta">
+          <div class="meta-item">
+            <div class="meta-label">Category</div>
+            <div class="meta-value">Self-awareness &amp; habit tracking</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Focus</div>
+            <div class="meta-value">Simple, useful and well-crafted mobile experiences</div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="sections">
+      <div class="section-card" id="about">
+        <h2>About</h2>
+        <p>
+          GBO Studio develops mobile applications designed to help people better understand
+          themselves and improve their daily lives through thoughtful digital tools.
+        </p>
+      </div>
+
+      <div class="section-card" id="contact">
+        <h2>Contact</h2>
+        <p>
+          For business or product inquiries, please contact us directly.
+        </p>
+        <a class="contact-link" href="mailto:contact.gbostudio@gmail.com">
+          contact.gbostudio@gmail.com
+        </a>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>© GBO Studio – France</div>
+      <div>Independent mobile app studio</div>
+    </footer>
 
   </div>
-
 </body>
 </html>
