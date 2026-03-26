@@ -12,7 +12,7 @@
   <style>
     :root {
       --bg: #f6f7f5;
-      --surface: rgba(255, 255, 255, 0.8);
+      --surface: rgba(255, 255, 255, 0.82);
       --surface-strong: #ffffff;
       --text: #1f2428;
       --muted: #5f6b6d;
@@ -27,13 +27,8 @@
       --max: 1120px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
 
     body {
       margin: 0;
@@ -45,9 +40,7 @@
         linear-gradient(to bottom, #fbfbfa 0%, var(--bg) 100%);
     }
 
-    a {
-      color: inherit;
-    }
+    a { color: inherit; }
 
     .container {
       max-width: var(--max);
@@ -114,9 +107,7 @@
       transition: color 0.2s ease;
     }
 
-    .nav a:hover {
-      color: var(--text);
-    }
+    .nav a:hover { color: var(--text); }
 
     .hero {
       display: grid;
@@ -214,9 +205,7 @@
       color: #ffffff;
     }
 
-    .btn-primary:hover {
-      background: #12161a;
-    }
+    .btn-primary:hover { background: #12161a; }
 
     .btn-secondary {
       background: var(--surface-strong);
@@ -224,9 +213,7 @@
       border-color: var(--border);
     }
 
-    .btn-secondary:hover {
-      border-color: var(--border-strong);
-    }
+    .btn-secondary:hover { border-color: var(--border-strong); }
 
     .side-card {
       padding: 28px;
@@ -325,9 +312,7 @@
       word-break: break-word;
     }
 
-    .contact-link:hover {
-      text-decoration: underline;
-    }
+    .contact-link:hover { text-decoration: underline; }
 
     .footer {
       margin-top: 38px;
@@ -341,19 +326,20 @@
       font-size: 14px;
     }
 
+    .footer a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .footer a:hover { text-decoration: underline; }
+
     @media (max-width: 980px) {
-      .hero,
-      .sections {
+      .hero, .sections {
         grid-template-columns: 1fr;
       }
 
-      h1 {
-        font-size: 48px;
-      }
-
-      .hero-card {
-        min-height: auto;
-      }
+      h1 { font-size: 48px; }
+      .hero-card { min-height: auto; }
     }
 
     @media (max-width: 640px) {
@@ -361,9 +347,7 @@
         padding: 20px 16px 56px;
       }
 
-      .topbar {
-        padding-bottom: 20px;
-      }
+      .topbar { padding-bottom: 20px; }
 
       .hero-card,
       .side-card,
@@ -371,21 +355,10 @@
         padding: 22px;
       }
 
-      h1 {
-        font-size: 38px;
-      }
-
-      .hero-subtitle {
-        font-size: 18px;
-      }
-
-      .nav {
-        display: none;
-      }
-
-      .brand-tagline {
-        display: none;
-      }
+      h1 { font-size: 38px; }
+      .hero-subtitle { font-size: 18px; }
+      .nav { display: none; }
+      .brand-tagline { display: none; }
     }
   </style>
 </head>
@@ -393,7 +366,7 @@
   <div class="container">
 
     <header class="topbar">
-      <a href="#" class="brand" aria-label="GBO Studio home">
+      <a href="index.html" class="brand" aria-label="GBO Studio home">
         <img src="logo.svg" alt="GBO Studio logo">
         <div class="brand-block">
           <div class="brand-name">GBO Studio</div>
@@ -405,6 +378,8 @@
         <a href="#about">About</a>
         <a href="#project">Project</a>
         <a href="#contact">Contact</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="support.html">Support</a>
       </nav>
     </header>
 
@@ -468,8 +443,11 @@
     </section>
 
     <footer class="footer">
-      <div>© GBO Studio — Micro—entreprise — France</div>
-      <div>Building products focused on self-awareness and behavior</div>
+      <div>© GBO Studio — Micro-entreprise — France</div>
+      <div>
+        <a href="privacy.html">Privacy Policy</a> ·
+        <a href="support.html">Support</a>
+      </div>
     </footer>
 
   </div>
