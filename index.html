@@ -4,560 +4,320 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>GBO Studio</title>
-  <meta
-    name="description"
-    content="GBO Studio creates mobile tools focused on self-awareness, behavior tracking and personal improvement."
-  />
-  <meta name="theme-color" content="#f5f6f4" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="GBO Studio" />
+  <title>GBO Studio — Thoughtful Mobile Products</title>
+  <meta name="description" content="GBO Studio builds intentional mobile products focused on self-awareness, behavior tracking, and personal transformation." />
+  <meta name="theme-color" content="#f6f5f2" />
   <link rel="icon" href="logo.svg" type="image/svg+xml" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 
   <style>
     :root {
-      --bg: #f5f6f4;
-      --bg-soft: #edf1ed;
-      --surface: rgba(255, 255, 255, 0.78);
-      --surface-strong: #ffffff;
-      --text: #171b1f;
-      --muted: #6c7679;
-      --accent: #5f7d78;
-      --accent-soft: #dbe5e0;
-      --line: rgba(23, 27, 31, 0.08);
-      --line-strong: rgba(23, 27, 31, 0.14);
-      --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.06);
-      --shadow-md: 0 10px 24px rgba(0, 0, 0, 0.04);
-      --radius-xl: 34px;
-      --radius-lg: 24px;
-      --radius-md: 18px;
-      --max: 1160px;
+      /* Theme Light */
+      --bg: #f6f5f2;
+      --bg-soft: #fbfaf8;
+      --surface: rgba(255, 255, 255, 0.75);
+      --text: #11161a;
+      --muted: #5f686b;
+      --line: rgba(17, 22, 26, 0.08);
+      --accent: #67867f;
+      --accent-soft: #dde8e2;
+      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.07);
+      --radius-xl: 2rem;
+      --radius-lg: 1.5rem;
     }
 
-    * {
-      box-sizing: border-box;
+    [data-theme="dark"] {
+      --bg: #0d1114;
+      --bg-soft: #161b1f;
+      --surface: rgba(22, 27, 31, 0.8);
+      --text: #f6f5f2;
+      --muted: #9ba3a7;
+      --line: rgba(255, 255, 255, 0.1);
+      --accent: #8fb3ab;
+      --accent-soft: #243530;
+      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.4);
     }
 
-    html {
-      scroll-behavior: smooth;
-    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
 
     body {
       margin: 0;
+      font-family: "Inter", system-ui, sans-serif;
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Arial, sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(143, 175, 163, 0.12), transparent 28%),
-        linear-gradient(to bottom, #fafbf9 0%, var(--bg) 100%);
+      background-color: var(--bg);
+      background-image: radial-gradient(circle at top left, var(--accent-soft), transparent 30%);
+      transition: background-color 0.4s ease, color 0.4s ease;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
     }
 
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
+    .container { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1.25rem 5rem; }
 
-    .container {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 28px 20px 88px;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      padding: 8px 0 30px;
-    }
-
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 14px;
-      min-width: 0;
-    }
-
-    .brand-mark {
-      width: 56px;
-      height: 56px;
-      border-radius: 18px;
-      background: var(--surface-strong);
+    /* Glassmorphism */
+    .glass {
+      background: var(--surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--line);
-      box-shadow: var(--shadow-md);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 7px;
-      flex-shrink: 0;
     }
 
-    .brand-mark img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
+    /* Header & Navigation */
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 2rem; position: relative; }
+    
+    .brand { display: flex; align-items: center; gap: 1rem; text-decoration: none; color: inherit; z-index: 10; }
+    .brand-mark { 
+      width: 3.5rem; height: 3.5rem; border-radius: 1rem; background: #fff;
+      display: grid; place-items: center; border: 1px solid var(--line); box-shadow: 0 8px 20px rgba(0,0,0,0.05);
     }
+    .brand-name { font-weight: 800; font-size: 1.15rem; letter-spacing: -0.03em; }
 
-    .brand-copy {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 0;
-    }
+    .nav-actions { display: flex; align-items: center; gap: 1.5rem; }
+    .desktop-nav { display: flex; gap: 1.5rem; }
+    .desktop-nav a { text-decoration: none; color: var(--muted); font-weight: 600; font-size: 0.9rem; transition: color 0.2s; }
+    .desktop-nav a:hover { color: var(--text); }
 
-    .brand-name {
-      font-size: 20px;
-      font-weight: 760;
-      letter-spacing: -0.02em;
-    }
-
-    .brand-subtitle {
-      font-size: 13px;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-
-    .nav {
-      display: flex;
-      align-items: center;
-      gap: 22px;
-      flex-wrap: wrap;
-    }
-
-    .nav a {
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 650;
-      transition: color 0.18s ease;
-    }
-
-    .nav a:hover {
-      color: var(--text);
-    }
-
-    .hero {
-      margin-bottom: 28px;
-      padding: 64px;
-      border-radius: var(--radius-xl);
+    /* Theme Toggle Button */
+    .theme-btn {
       background: var(--surface);
       border: 1px solid var(--line);
-      box-shadow: var(--shadow-lg);
-      backdrop-filter: blur(14px);
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      width: fit-content;
-      margin-bottom: 22px;
-      padding: 10px 14px;
-      border-radius: 999px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-size: 13px;
-      font-weight: 760;
-      letter-spacing: 0.01em;
-    }
-
-    h1 {
-      margin: 0;
-      max-width: 760px;
-      font-size: 82px;
-      line-height: 0.9;
-      letter-spacing: -0.07em;
-    }
-
-    .hero-subtitle {
-      margin: 22px 0 0;
-      max-width: 680px;
-      font-size: 24px;
-      line-height: 1.5;
-      color: var(--muted);
-    }
-
-    .hero-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      margin-top: 34px;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 56px;
-      padding: 0 22px;
-      border-radius: 18px;
-      border: 1px solid transparent;
-      font-size: 15px;
-      font-weight: 760;
-      transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+      width: 40px; height: 40px;
+      border-radius: 50%;
       cursor: pointer;
-    }
-
-    .btn:hover {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .btn-primary {
-      background: var(--text);
-      color: #fff;
-    }
-
-    .btn-primary:hover {
-      background: #0f1316;
-    }
-
-    .btn-secondary {
-      background: var(--surface-strong);
-      border-color: var(--line);
       color: var(--text);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s ease;
+    }
+    .theme-btn:hover { transform: scale(1.1); }
+    .theme-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
+    .sun { display: none; }
+    [data-theme="dark"] .sun { display: block; }
+    [data-theme="dark"] .moon { display: none; }
+
+    /* Mobile Nav */
+    .mobile-nav { display: none; position: relative; }
+    .mobile-nav summary { list-style: none; cursor: pointer; font-weight: 800; padding: 0.5rem; }
+    .mobile-menu-content { 
+        position: absolute; right: 0; top: 120%; width: 200px; padding: 1rem; 
+        border-radius: 1rem; display: flex; flex-direction: column; gap: 1rem; z-index: 100;
     }
 
-    .btn-secondary:hover {
-      border-color: var(--line-strong);
+    /* Hero */
+    .hero { padding: clamp(2rem, 5vw, 4.5rem); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); overflow: hidden; }
+    .hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 3rem; align-items: center; }
+    h1 { font-size: clamp(2.5rem, 6vw, 4.2rem); line-height: 0.95; letter-spacing: -0.06em; margin: 1rem 0; font-weight: 800; }
+    .hero-subtitle { font-size: clamp(1.1rem, 2vw, 1.3rem); color: var(--muted); margin-bottom: 2rem; max-width: 500px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; height: 3.5rem;
+      padding: 0 2rem; border-radius: 1.1rem; font-weight: 700; text-decoration: none;
+      transition: all 0.2s ease; border: 1px solid transparent;
     }
+    .btn-primary { background: var(--text); color: var(--bg); }
+    .btn-secondary { background: transparent; border-color: var(--line); color: var(--text); }
+    .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+    .btn:active { transform: scale(0.97); }
 
-    .grid {
-      display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
-      gap: 24px;
-      margin-top: 24px;
-    }
+    /* Sections */
+    .sections { display: grid; gap: 1.5rem; margin-top: 1.5rem; }
+    .section-card { padding: 3rem; border-radius: var(--radius-lg); }
+    .pill { display: inline-block; padding: 0.4rem 0.9rem; background: var(--accent-soft); color: var(--accent); 
+            border-radius: 2rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1rem; letter-spacing: 0.05em; }
 
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-md);
-      padding: 30px;
-      backdrop-filter: blur(12px);
-      transition: transform 0.18s ease, border-color 0.18s ease;
-    }
+    .value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2.5rem; }
+    .value-item h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .value-item p { font-size: 0.9rem; color: var(--muted); margin: 0; }
 
-    .card:hover {
-      transform: translateY(-2px);
-      border-color: var(--line-strong);
-    }
+    /* Footer */
+    footer { margin-top: 5rem; padding: 2rem 0; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; color: var(--muted); font-size: 0.85rem; }
+    footer a { color: inherit; text-decoration: none; font-weight: 600; }
 
-    .pill {
-      display: inline-block;
-      width: fit-content;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      margin-bottom: 14px;
-    }
-
-    h2 {
-      margin: 0 0 14px;
-      font-size: 34px;
-      letter-spacing: -0.04em;
-    }
-
-    h3 {
-      margin: 0 0 12px;
-      font-size: 24px;
-      letter-spacing: -0.03em;
-    }
-
-    p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 17px;
-      line-height: 1.78;
-    }
-
-    .spacer {
-      height: 18px;
-    }
-
-    .feature-list {
-      display: grid;
-      gap: 10px;
-      margin: 22px 0 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .feature-list li {
-      position: relative;
-      padding-left: 18px;
-      font-size: 15px;
-      font-weight: 650;
-      line-height: 1.55;
-      color: var(--text);
-    }
-
-    .feature-list li::before {
-      content: "•";
-      position: absolute;
-      left: 0;
-      top: 0;
-      color: var(--accent);
-      font-weight: 800;
-    }
-
-    .meta-grid {
-      display: grid;
-      gap: 12px;
-      margin-top: 22px;
-    }
-
-    .meta-item {
-      background: rgba(255, 255, 255, 0.82);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-md);
-      padding: 15px 16px;
-    }
-
-    .meta-label {
-      margin-bottom: 6px;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .meta-value {
-      font-size: 15px;
-      font-weight: 660;
-      line-height: 1.45;
-      color: var(--text);
-    }
-
-    .wide {
-      grid-column: 1 / -1;
-    }
-
-    .section-title {
-      margin-bottom: 12px;
-      font-size: 30px;
-      letter-spacing: -0.035em;
-    }
-
-    .contact-link {
-      display: inline-flex;
-      margin-top: 16px;
-      color: var(--accent);
-      font-weight: 760;
-      word-break: break-word;
-    }
-
-    .contact-link:hover {
-      text-decoration: underline;
-    }
-
-    .footer {
-      margin-top: 42px;
-      padding: 24px 6px 0;
-      border-top: 1px solid var(--line);
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-      color: #7b8587;
-      font-size: 14px;
-    }
-
-    .footer-block {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
-
-    .footer a:hover {
-      text-decoration: underline;
-    }
-
-    @media (max-width: 1024px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      h1 {
-        font-size: 58px;
-      }
-
-      .hero {
-        padding: 42px;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .container {
-        padding: 20px 16px 56px;
-      }
-
-      .topbar {
-        padding-bottom: 20px;
-      }
-
-      .hero,
-      .card {
-        padding: 24px;
-      }
-
-      h1 {
-        font-size: 44px;
-        line-height: 0.95;
-      }
-
-      .hero-subtitle {
-        font-size: 18px;
-        margin-top: 18px;
-      }
-
-      h2 {
-        font-size: 28px;
-      }
-
-      .nav {
-        display: none;
-      }
-
-      .brand-subtitle {
-        display: none;
-      }
-
-      .hero-actions {
-        flex-direction: column;
-      }
-
-      .btn {
-        width: 100%;
-      }
+    @media (max-width: 900px) {
+      .hero-grid, .value-grid { grid-template-columns: 1fr; }
+      .desktop-nav { display: none; }
+      .mobile-nav { display: block; }
+      .hero { padding: 2.5rem 1.5rem; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
 
+  <div class="container">
     <header class="topbar">
-      <a href="index.html" class="brand" aria-label="GBO Studio home">
+      <a href="index.html" class="brand">
         <div class="brand-mark">
-          <img src="logo.svg" alt="GBO Studio logo">
+          <img src="logo.svg" alt="GBO logo" width="32" height="32" />
         </div>
         <div class="brand-copy">
           <div class="brand-name">GBO Studio</div>
-          <div class="brand-subtitle">Independent mobile app publisher</div>
         </div>
       </a>
 
-      <nav class="nav" aria-label="Primary navigation">
-        <a href="#product">Product</a>
-        <a href="#why">Why it matters</a>
-        <a href="#about">About</a>
-        <a href="#contact">Contact</a>
-        <a href="privacy.html">Privacy</a>
-        <a href="support.html">Support</a>
-      </nav>
+      <div class="nav-actions">
+        <nav class="desktop-nav">
+          <a href="#vision">Vision</a>
+          <a href="#product">Product</a>
+          <a href="#contact">Contact</a>
+        </nav>
+
+        <button id="theme-toggle" class="theme-btn" aria-label="Switch Theme">
+          <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
+          <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+
+        <details class="mobile-nav">
+          <summary>Menu</summary>
+          <nav class="mobile-menu-content glass">
+            <a href="#vision">Vision</a>
+            <a href="#product">Product</a>
+            <a href="#contact">Contact</a>
+          </nav>
+        </details>
+      </div>
     </header>
 
-    <section class="hero">
-      <div class="eyebrow">Independent studio • France</div>
-
-      <h1>Understand behavior. Change it.</h1>
-
-      <p class="hero-subtitle">
-        CONSCIENCE helps users observe daily actions, identify patterns over time,
-        and build real self-awareness through simple tracking.
-      </p>
-
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="#product">Discover CONSCIENCE</a>
-        <a class="btn btn-secondary" href="mailto:contact.gbostudio@gmail.com">Contact us</a>
-      </div>
-    </section>
-
-    <section class="grid">
-      <div class="card" id="product">
-        <div class="pill">Current product</div>
-        <h2>CONSCIENCE</h2>
-        <p>
-          A mobile application designed to help users observe their behaviors,
-          understand patterns, and develop awareness through a calm and intentional experience.
-        </p>
-
-        <ul class="feature-list">
-          <li>Observe daily actions</li>
-          <li>See patterns over time</li>
-          <li>Turn repetition into awareness</li>
-        </ul>
-
-        <div class="meta-grid">
-          <div class="meta-item">
-            <div class="meta-label">Category</div>
-            <div class="meta-value">Self-awareness &amp; habit tracking</div>
+    <main>
+      <section class="hero glass scroll-reveal">
+        <div class="hero-grid">
+          <div>
+            <span class="pill">Independent Studio • France</span>
+            <h1>Calm tools for deeper awareness.</h1>
+            <p class="hero-subtitle">
+              We build intentional mobile experiences that help you observe your patterns and act with more clarity.
+            </p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+              <a href="#product" class="btn btn-primary">Discover CONSCIENCE</a>
+              <a href="mailto:contact.gbostudio@gmail.com" class="btn btn-secondary">Email us</a>
+            </div>
           </div>
-
-          <div class="meta-item">
-            <div class="meta-label">Focus</div>
-            <div class="meta-value">Simple, useful and well-crafted mobile experiences</div>
+          <div style="background: var(--bg-soft); border-radius: 2rem; padding: 2.5rem; border: 1px solid var(--line); text-align: center;">
+             <img src="logo.svg" alt="App Icon" width="80" style="margin-bottom: 1.5rem; opacity: 0.9;">
+             <h2 style="margin:0; font-size: 1.8rem; letter-spacing: -0.04em;">CONSCIENCE</h2>
+             <p style="color: var(--muted); font-size: 1rem;">Observe. Understand. Adjust.</p>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="card" id="why">
-        <h3>Why it matters</h3>
-        <p>
-          Small daily actions often feel insignificant in the moment. Over time, they create patterns.
-        </p>
-        <div class="spacer"></div>
-        <p>
-          CONSCIENCE helps users make those patterns visible, measurable and easier to improve,
-          so they can better understand themselves and regain control.
-        </p>
-      </div>
+      <div class="sections">
+        <section id="vision" class="section-card glass scroll-reveal">
+          <div class="pill">Our Vision</div>
+          <h2>Technology that respects your space.</h2>
+          <p style="max-width: 700px; font-size: 1.2rem; color: var(--muted);">
+            In a world of constant noise, we believe products should increase clarity, not reactions.
+          </p>
+          <div class="value-grid">
+            <div class="value-item">
+              <h3>Clarity First</h3>
+              <p>Simple tools designed to reduce mental clutter and reveal hidden behaviors.</p>
+            </div>
+            <div class="value-item">
+              <h3>Intentionality</h3>
+              <p>Focusing on slow, meaningful change rather than instant gratification.</p>
+            </div>
+            <div class="value-item">
+              <h3>Privacy</h3>
+              <p>Your data is yours. Your patterns are for you to see, and no one else.</p>
+            </div>
+          </div>
+        </section>
 
-      <div class="card wide" id="about">
-        <div class="section-title">About GBO Studio</div>
-        <p>
-          GBO Studio is an independent mobile product studio based in France. We create thoughtful
-          digital tools focused on self-awareness, behavior tracking and long-term personal improvement.
-        </p>
-      </div>
+        <section id="product" class="section-card glass scroll-reveal">
+          <div class="pill">Current Product</div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 2rem;">
+            <div style="flex: 1; min-width: 300px;">
+              <h2>CONSCIENCE</h2>
+              <p>A mobile application designed to help users track behaviors without guilt or friction.</p>
+              <ul style="margin: 2rem 0; padding-left: 1.2rem; font-weight: 600;">
+                <li style="margin-bottom: 0.8rem;">Low-friction daily tracking</li>
+                <li style="margin-bottom: 0.8rem;">Visual pattern recognition</li>
+                <li style="margin-bottom: 0.8rem;">Calm, premium user interface</li>
+              </ul>
+            </div>
+            <div style="padding: 2rem; background: var(--accent-soft); border-radius: 1.5rem; color: var(--accent); font-weight: 800; max-width: 300px;">
+              "Conscience helps you see yourself more honestly, one observation at a time."
+            </div>
+          </div>
+        </section>
 
-      <div class="card wide" id="contact">
-        <div class="section-title">Contact</div>
-        <p>
-          For product support, business inquiries or partnerships, feel free to contact us directly.
-        </p>
-        <a class="contact-link" href="mailto:contact.gbostudio@gmail.com">
-          contact.gbostudio@gmail.com
-        </a>
+        <section id="contact" class="section-card glass scroll-reveal" style="text-align: center;">
+          <div class="pill">Contact</div>
+          <h2>Let's build something intentional.</h2>
+          <p>For support, inquiries, or partnerships, reach out anytime.</p>
+          <a href="mailto:contact.gbostudio@gmail.com" class="btn btn-primary" style="margin-top: 1.5rem;">
+            contact.gbostudio@gmail.com
+          </a>
+        </section>
       </div>
-    </section>
+    </main>
 
-    <footer class="footer">
-      <div class="footer-block">
-        <div>© GBO Studio — Micro-entreprise — France</div>
-        <div>Independent mobile app publisher</div>
-      </div>
-
-      <div class="footer-block">
-        <div class="footer-links">
-          <a href="privacy.html">Privacy Policy</a>
-          <a href="support.html">Support</a>
-          <a href="terms.html">Terms of Use</a>
-        </div>
+    <footer>
+      <div>© 2026 GBO Studio — France • Micro-entreprise</div>
+      <div style="display: flex; gap: 2rem;">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="support.html">Support</a>
       </div>
     </footer>
-
   </div>
+
+  <script>
+    // 1. Theme Logic
+    const toggleBtn = document.getElementById('theme-toggle');
+    const getTheme = () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    
+    const setTheme = (theme) => {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+    };
+
+    setTheme(getTheme());
+
+    toggleBtn.addEventListener('click', () => {
+      const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+    });
+
+    // 2. Mobile Menu Logic
+    const menu = document.querySelector('.mobile-nav');
+    const menuContent = document.querySelector('.mobile-menu-content');
+
+    menu.querySelector('summary').addEventListener('click', (e) => {
+      if (menu.open) {
+        e.preventDefault();
+        menuContent.style.opacity = '0';
+        menuContent.style.transform = 'translateY(-10px)';
+        setTimeout(() => { menu.open = false; }, 250);
+      } else {
+        menuContent.style.opacity = '0';
+        menuContent.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+          menuContent.style.opacity = '1';
+          menuContent.style.transform = 'translateY(0)';
+        }, 10);
+      }
+    });
+
+    // 3. Scroll Reveal Logic
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = "1";
+          entry.target.style.transform = "translateY(0)";
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.scroll-reveal').forEach(el => {
+      el.style.opacity = "0";
+      el.style.transform = "translateY(40px)";
+      el.style.transition = "all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)";
+      observer.observe(el);
+    });
+  </script>
+
 </body>
 </html>
