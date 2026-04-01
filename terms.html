@@ -3,311 +3,227 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>Terms of Use — GBO Studio</title>
-  <meta
-    name="description"
-    content="Terms of Use for GBO Studio and its mobile applications."
-  />
-  <meta name="theme-color" content="#f5f6f4" />
+  <meta name="description" content="Terms of Use for GBO Studio and its mobile applications." />
   <link rel="icon" href="logo.svg" type="image/svg+xml" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 
   <style>
     :root {
-      --bg: #f5f6f4;
-      --surface: #ffffff;
-      --text: #171b1f;
-      --muted: #657174;
-      --accent: #4a6a73;
-      --line: rgba(23, 27, 31, 0.08);
-      --shadow: 0 16px 40px rgba(0, 0, 0, 0.06);
-      --radius: 24px;
-      --max: 920px;
+      /* Theme Light */
+      --bg: #f6f5f2;
+      --bg-soft: #fbfaf8;
+      --surface: rgba(255, 255, 255, 0.75);
+      --text: #11161a;
+      --muted: #5f686b;
+      --line: rgba(17, 22, 26, 0.08);
+      --accent: #67867f;
+      --accent-soft: #dde8e2;
+      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.07);
+      --radius-xl: 2rem;
     }
 
-    * {
-      box-sizing: border-box;
+    [data-theme="dark"] {
+      --bg: #0d1114;
+      --bg-soft: #161b1f;
+      --surface: rgba(22, 27, 31, 0.8);
+      --text: #f6f5f2;
+      --muted: #9ba3a7;
+      --line: rgba(255, 255, 255, 0.1);
+      --accent: #8fb3ab;
+      --accent-soft: #243530;
+      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.4);
     }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
 
     body {
       margin: 0;
+      font-family: "Inter", system-ui, sans-serif;
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Arial, sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(143, 175, 163, 0.14), transparent 28%),
-        linear-gradient(to bottom, #fafbf9 0%, var(--bg) 100%);
+      background-color: var(--bg);
+      transition: background-color 0.4s ease, color 0.4s ease;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.7;
     }
 
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
+    .container { max-width: 850px; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
 
-    .container {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 28px 20px 80px;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      padding: 8px 0 28px;
-    }
-
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .brand-mark {
-      width: 50px;
-      height: 50px;
-      border-radius: 14px;
-      background: #ffffff;
+    /* Glassmorphism */
+    .glass {
+      background: var(--surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--line);
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
+      box-shadow: var(--shadow-xl);
+    }
+
+    /* Header Navigation */
+    .topbar { 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      margin-bottom: 2rem; 
+    }
+    
+    .back-link { 
+      text-decoration: none; 
+      color: var(--muted); 
+      font-weight: 600; 
+      font-size: 0.9rem;
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 6px;
+      gap: 0.5rem;
+      transition: color 0.2s;
     }
+    .back-link:hover { color: var(--text); }
 
-    .brand-mark img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-
-    .brand-copy {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .brand-name {
-      font-size: 19px;
-      font-weight: 760;
-      letter-spacing: -0.02em;
-    }
-
-    .brand-subtitle {
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .nav {
-      display: flex;
-      gap: 18px;
-      flex-wrap: wrap;
-    }
-
-    .nav a {
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 650;
-    }
-
-    .nav a:hover {
+    /* Theme Toggle */
+    .theme-btn {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
       color: var(--text);
-      text-decoration: underline;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s ease;
+    }
+    .theme-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+    .sun { display: none; }
+    [data-theme="dark"] .sun { display: block; }
+    [data-theme="dark"] .moon { display: none; }
+
+    /* Content Card */
+    .content-card { padding: clamp(2rem, 5vw, 4rem); border-radius: var(--radius-xl); }
+
+    .eyebrow { 
+      display: inline-block; 
+      padding: 0.4rem 0.8rem; 
+      background: var(--accent-soft); 
+      color: var(--accent); 
+      border-radius: 2rem; 
+      font-size: 0.7rem; 
+      font-weight: 800; 
+      text-transform: uppercase; 
+      margin-bottom: 1rem; 
+      letter-spacing: 0.05em; 
     }
 
-    .card {
-      background: rgba(255, 255, 255, 0.88);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 38px;
-    }
+    h1 { font-size: clamp(2.5rem, 6vw, 3.5rem); line-height: 1; letter-spacing: -0.05em; margin-bottom: 1.5rem; }
+    h2 { font-size: 1.4rem; letter-spacing: -0.02em; margin-top: 2.5rem; margin-bottom: 0.8rem; color: var(--text); font-weight: 700; }
+    p, li { color: var(--muted); margin-bottom: 1rem; font-size: 1rem; }
+    ul { padding-left: 1.2rem; margin-bottom: 1.5rem; }
 
-    .eyebrow {
-      display: inline-block;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: #dbe5e0;
-      color: var(--accent);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      margin-bottom: 18px;
-    }
-
-    h1 {
-      margin: 0 0 14px;
-      font-size: 42px;
-      letter-spacing: -0.04em;
-    }
-
-    .intro {
-      margin: 0 0 28px;
+    .footer-note { 
+      margin-top: 4rem; 
+      padding-top: 2rem; 
+      border-top: 1px solid var(--line); 
+      font-size: 0.85rem; 
       color: var(--muted);
-      font-size: 17px;
-      line-height: 1.8;
-    }
-
-    h2 {
-      margin: 30px 0 10px;
-      font-size: 22px;
-      letter-spacing: -0.02em;
-    }
-
-    p {
-      margin: 0 0 14px;
-      color: var(--muted);
-      font-size: 16px;
-      line-height: 1.82;
-    }
-
-    ul {
-      margin: 0 0 18px;
-      padding-left: 20px;
-      color: var(--muted);
-    }
-
-    li {
-      margin-bottom: 8px;
-      line-height: 1.75;
-    }
-
-    .footer {
-      margin-top: 28px;
-      padding-top: 18px;
-      border-top: 1px solid var(--line);
       display: flex;
       justify-content: space-between;
-      gap: 12px;
       flex-wrap: wrap;
-      color: #7b8587;
-      font-size: 14px;
+      gap: 1rem;
     }
 
-    @media (max-width: 640px) {
-      .container {
-        padding: 20px 16px 56px;
-      }
-
-      .card {
-        padding: 24px;
-      }
-
-      h1 {
-        font-size: 32px;
-      }
-
-      .nav {
-        display: none;
-      }
-
-      .brand-subtitle {
-        display: none;
-      }
+    @media (max-width: 600px) {
+      .content-card { padding: 2.5rem 1.5rem; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
 
+  <div class="container">
     <header class="topbar">
-      <a href="index.html" class="brand" aria-label="GBO Studio home">
-        <div class="brand-mark">
-          <img src="logo.svg" alt="GBO Studio logo">
-        </div>
-        <div class="brand-copy">
-          <div class="brand-name">GBO Studio</div>
-          <div class="brand-subtitle">Independent mobile app publisher</div>
-        </div>
+      <a href="index.html" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Back to GBO Studio
       </a>
 
-      <nav class="nav" aria-label="Primary navigation">
-        <a href="index.html">Home</a>
-        <a href="privacy.html">Privacy</a>
-        <a href="support.html">Support</a>
-      </nav>
+      <button id="theme-toggle" class="theme-btn" aria-label="Switch Theme">
+        <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
+        <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
     </header>
 
-    <main class="card">
+    <main class="content-card glass">
       <div class="eyebrow">Legal</div>
       <h1>Terms of Use</h1>
-      <p class="intro">
-        These Terms of Use govern access to and use of the GBO Studio website and its mobile applications.
-        By using our services, you agree to these terms.
+      <p style="font-size: 1.15rem; color: var(--text); margin-bottom: 2.5rem; opacity: 0.9;">
+        By using GBO Studio's website or mobile applications, you agree to follow these terms. 
+        They ensure our services remain reliable and respectful for everyone.
       </p>
 
       <h2>1. Scope</h2>
       <p>
-        These Terms apply to the GBO Studio website and to any mobile application, product or service
-        provided by GBO Studio, including applications currently in development or available on app stores.
+        These Terms apply to any mobile application, product or service provided by GBO Studio, including those available on the App Store or Google Play.
       </p>
 
-      <h2>2. Use of the Services</h2>
+      <h2>2. Proper Use</h2>
       <p>
-        You agree to use our services only for lawful purposes and in a way that does not harm,
-        interfere with or disrupt the operation of the website or applications.
+        You agree to use our tools for personal improvement and intentional awareness. Any attempt to disrupt the service, interfere with its security, or use it for unlawful purposes is strictly prohibited.
       </p>
 
-      <h2>3. Accounts and Access</h2>
+      <h2>3. Intellectual Property</h2>
       <p>
-        Some features may require an account, subscription or access to premium services.
-        You are responsible for maintaining the confidentiality of your login credentials and for
-        all activity under your account.
+        Everything you see—from the interface design to the text and code—is the property of <strong>GBO Studio</strong>. You may not copy, reproduce, or distribute our work without written permission.
       </p>
 
-      <h2>4. Intellectual Property</h2>
+      <h2>4. Subscriptions & Billing</h2>
       <p>
-        All content, branding, text, visuals, interface elements and application features made available
-        by GBO Studio are protected by applicable intellectual property laws. You may not copy, reproduce,
-        distribute or exploit them without prior written permission.
+        Certain premium features may require a subscription. Billing is handled directly by the platform provider (Apple or Google). Please refer to their respective terms for refund and cancellation policies.
       </p>
 
-      <h2>5. Subscriptions and Purchases</h2>
+      <h2>5. Disclaimer</h2>
       <p>
-        Some applications may offer paid subscriptions or premium features. Prices, billing terms and
-        available plans may vary depending on the application and the platform used (such as the App Store
-        or Google Play). Subscription management and billing are handled through the relevant platform.
+        Our applications are designed as tools for personal observation and behavioral awareness. They are not a substitute for professional medical, psychological, or financial advice.
       </p>
 
-      <h2>6. Availability</h2>
+      <h2>6. Limitation of Liability</h2>
       <p>
-        We aim to provide reliable access to our services, but we do not guarantee uninterrupted availability.
-        Features, content and availability may change over time, including during product development or updates.
+        GBO Studio provides these services "as is." We are not liable for any indirect damages resulting from your use of the applications or any technical interruptions.
       </p>
 
-      <h2>7. Disclaimer</h2>
+      <h2>7. Modifications</h2>
       <p>
-        Our applications are designed as tools for observation, awareness and personal improvement.
-        They are not intended to replace medical, psychological, legal or financial advice.
+        We may update these terms to reflect changes in our products or the law. Continued use of the app after an update means you accept the new terms.
       </p>
 
-      <h2>8. Limitation of Liability</h2>
+      <h2>8. Contact</h2>
       <p>
-        To the maximum extent permitted by law, GBO Studio shall not be liable for any indirect,
-        incidental or consequential damages arising from the use of its services.
-      </p>
-
-      <h2>9. Modifications</h2>
-      <p>
-        We may update these Terms of Use from time to time. Continued use of our services after changes
-        are published constitutes acceptance of the updated terms.
-      </p>
-
-      <h2>10. Contact</h2>
-      <p>
-        For questions regarding these Terms of Use, you can contact us at:
-        <br>
+        Questions about these terms? Reach out at:<br><br>
         <strong>contact.gbostudio@gmail.com</strong>
       </p>
 
-      <div class="footer">
-        <div>© GBO Studio — Micro-entreprise — France</div>
-        <div>Last updated: 2026</div>
+      <div class="footer-note">
+        <span>© 2026 GBO Studio — France</span>
+        <span>Last updated: April 2026</span>
       </div>
     </main>
-
   </div>
+
+  <script>
+    // Theme Logic
+    const toggleBtn = document.getElementById('theme-toggle');
+    const getTheme = () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    
+    const setTheme = (theme) => {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+    };
+
+    setTheme(getTheme());
+
+    toggleBtn.addEventListener('click', () => {
+      const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+    });
+  </script>
+
 </body>
 </html>
