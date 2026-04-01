@@ -2,144 +2,212 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Privacy Policy — GBO Studio</title>
-  <meta name="description" content="Privacy Policy for GBO Studio applications." />
+  <meta name="description" content="Privacy Policy for GBO Studio applications and services." />
+  <link rel="icon" href="logo.svg" type="image/svg+xml" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+
   <style>
     :root {
-      --bg: #f6f7f5;
-      --surface: #ffffff;
-      --text: #1f2428;
-      --muted: #5f6b6d;
-      --border: rgba(46,46,46,0.08);
-      --shadow: 0 12px 30px rgba(0,0,0,0.05);
-      --radius: 18px;
-      --max: 900px;
+      /* Theme Light */
+      --bg: #f6f5f2;
+      --bg-soft: #fbfaf8;
+      --surface: rgba(255, 255, 255, 0.75);
+      --text: #11161a;
+      --muted: #5f686b;
+      --line: rgba(17, 22, 26, 0.08);
+      --accent: #67867f;
+      --accent-soft: #dde8e2;
+      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.07);
+      --radius-xl: 2rem;
+      --radius-lg: 1.5rem;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0d1114;
+      --bg-soft: #161b1f;
+      --surface: rgba(22, 27, 31, 0.8);
+      --text: #f6f5f2;
+      --muted: #9ba3a7;
+      --line: rgba(255, 255, 255, 0.1);
+      --accent: #8fb3ab;
+      --accent-soft: #243530;
+      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.4);
     }
 
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
 
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      background: var(--bg);
+      font-family: "Inter", system-ui, sans-serif;
       color: var(--text);
-      line-height: 1.8;
+      background-color: var(--bg);
+      transition: background-color 0.4s ease, color 0.4s ease;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.7;
     }
 
-    .container {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 32px 20px 72px;
-    }
+    .container { max-width: 850px; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
 
-    .topbar {
-      margin-bottom: 24px;
-    }
-
-    .topbar a {
-      text-decoration: none;
-      color: var(--muted);
-      font-weight: 600;
-    }
-
-    .card {
+    /* Glassmorphism */
+    .glass {
       background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 32px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-xl);
     }
 
-    h1 {
-      margin-top: 0;
-      font-size: 38px;
-      letter-spacing: -0.03em;
+    /* Header Navigation */
+    .topbar { 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      margin-bottom: 2rem; 
     }
-
-    h2 {
-      margin-top: 28px;
-      font-size: 22px;
-      letter-spacing: -0.02em;
+    
+    .back-link { 
+      text-decoration: none; 
+      color: var(--muted); 
+      font-weight: 600; 
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: color 0.2s;
     }
+    .back-link:hover { color: var(--text); }
 
-    p, li {
+    /* Theme Toggle */
+    .theme-btn {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      color: var(--text);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s ease;
+    }
+    .theme-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+    .sun { display: none; }
+    [data-theme="dark"] .sun { display: block; }
+    [data-theme="dark"] .moon { display: none; }
+
+    /* Content Card */
+    .content-card { padding: clamp(2rem, 5vw, 4rem); border-radius: var(--radius-xl); }
+
+    h1 { font-size: clamp(2.5rem, 6vw, 3.5rem); line-height: 1; letter-spacing: -0.05em; margin-bottom: 2rem; }
+    h2 { font-size: 1.5rem; letter-spacing: -0.03em; margin-top: 2.5rem; margin-bottom: 1rem; color: var(--text); }
+    p, li { color: var(--muted); margin-bottom: 1rem; }
+    ul { padding-left: 1.2rem; margin-bottom: 1.5rem; }
+
+    strong { color: var(--text); }
+
+    .footer-note { 
+      margin-top: 4rem; 
+      padding-top: 2rem; 
+      border-top: 1px solid var(--line); 
+      font-size: 0.85rem; 
       color: var(--muted);
-      font-size: 16px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
 
-    ul {
-      padding-left: 20px;
-    }
-
-    .footer {
-      margin-top: 22px;
-      color: var(--muted);
-      font-size: 14px;
+    @media (max-width: 600px) {
+      .content-card { padding: 2rem 1.5rem; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="topbar">
-      <a href="index.html">← Back to GBO Studio</a>
-    </div>
 
-    <div class="card">
+  <div class="container">
+    <header class="topbar">
+      <a href="index.html" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Back to GBO Studio
+      </a>
+
+      <button id="theme-toggle" class="theme-btn" aria-label="Switch Theme">
+        <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
+        <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </header>
+
+    <main class="content-card glass">
       <h1>Privacy Policy</h1>
 
       <p>
-        This Privacy Policy describes how GBO Studio may collect, use and protect information
-        in connection with its mobile applications and website.
+        At <strong>GBO Studio</strong>, we build products focused on self-awareness and personal growth. 
+        We believe that your data should be as private as your thoughts. This policy explains how we handle information.
       </p>
 
       <h2>Information We Collect</h2>
       <p>
-        Depending on the application, we may collect limited information necessary to operate the product,
-        improve the user experience and provide support.
+        Our goal is to collect as little data as possible. Depending on the application, we may collect:
       </p>
       <ul>
-        <li>Account or login information, if applicable</li>
-        <li>Usage data necessary for app functionality and improvement</li>
-        <li>Support requests sent by email</li>
+        <li><strong>Usage Data:</strong> Anonymous information to help us understand how our apps are used and how to improve them.</li>
+        <li><strong>Support Communications:</strong> Information you provide when contacting us via email (e.g., your email address and the content of your request).</li>
+        <li><strong>Product Specifics:</strong> Some apps may allow local data storage on your device; this data typically stays on your device unless specified.</li>
       </ul>
 
       <h2>How We Use Information</h2>
-      <p>Information may be used to:</p>
+      <p>The limited information we collect is used solely to:</p>
       <ul>
-        <li>Operate and improve our applications</li>
-        <li>Provide customer support</li>
-        <li>Ensure security and prevent misuse</li>
+        <li>Operate and maintain our mobile applications.</li>
+        <li>Improve user experience and troubleshoot technical issues.</li>
+        <li>Respond to your direct inquiries or support requests.</li>
       </ul>
 
-      <h2>Data Sharing</h2>
+      <h2>Data Sharing & Security</h2>
       <p>
-        We do not sell personal information. Information may only be shared when required to operate the service,
-        comply with legal obligations or protect our rights.
+        <strong>We do not sell your personal information.</strong> We do not share your data with third parties for marketing or advertising purposes. We only share information when required by law or to protect our legal rights.
       </p>
 
       <h2>Data Retention</h2>
       <p>
-        Information is retained only for as long as necessary for the purposes described above,
-        unless a longer retention period is required by law.
+        We retain information only as long as necessary to provide our services or as required by French law and regulations.
       </p>
 
-      <h2>Your Rights</h2>
+      <h2>Contact Us</h2>
       <p>
-        You may contact us regarding access, correction or deletion requests related to your personal information.
-      </p>
-
-      <h2>Contact</h2>
-      <p>
-        For privacy-related questions, please contact:
-        <br />
+        If you have questions about this policy or your data, please contact:
+        <br /><br />
         <strong>contact.gbostudio@gmail.com</strong>
       </p>
 
-      <div class="footer">
-        © GBO Studio — Micro-entreprise — France
+      <div class="footer-note">
+        <span>© 2026 GBO Studio — France</span>
+        <span>Independent Mobile App Publisher</span>
       </div>
-    </div>
+    </main>
   </div>
+
+  <script>
+    // Theme Logic
+    const toggleBtn = document.getElementById('theme-toggle');
+    const getTheme = () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    
+    const setTheme = (theme) => {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+    };
+
+    setTheme(getTheme());
+
+    toggleBtn.addEventListener('click', () => {
+      const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+    });
+  </script>
+
 </body>
 </html>
