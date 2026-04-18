@@ -1,139 +1,230 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr" data-lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Support — GBO Studio</title>
-  <meta name="description" content="Support and assistance for GBO Studio mobile applications." />
-  <link rel="icon" href="logo.svg" type="image/svg+xml" />
-
+  <meta name="description" content="Support et assistance pour les applications GBO Studio." />
+  <meta name="theme-color" content="#f6f5f2" />
+  
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      /* Theme Light */
       --bg: #f6f5f2;
       --bg-soft: #fbfaf8;
-      --surface: rgba(255, 255, 255, 0.75);
+      --surface: rgba(255, 255, 255, 0.65);
+      --surface-strong: rgba(255, 255, 255, 0.9);
       --text: #11161a;
       --muted: #5f686b;
-      --line: rgba(17, 22, 26, 0.08);
+      --line: rgba(17, 22, 26, 0.06);
       --accent: #67867f;
       --accent-soft: #dde8e2;
-      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.07);
-      --radius-xl: 2rem;
+      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.05);
+      --radius-xl: 2.5rem;
       --radius-lg: 1.5rem;
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     [data-theme="dark"] {
       --bg: #0d1114;
-      --bg-soft: #161b1f;
-      --surface: rgba(22, 27, 31, 0.8);
+      --bg-soft: #14191d;
+      --surface: rgba(22, 27, 31, 0.7);
+      --surface-strong: rgba(28, 34, 39, 0.95);
       --text: #f6f5f2;
       --muted: #9ba3a7;
-      --line: rgba(255, 255, 255, 0.1);
+      --line: rgba(255, 255, 255, 0.08);
       --accent: #8fb3ab;
-      --accent-soft: #243530;
-      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.4);
+      --accent-soft: #1c2b27;
     }
 
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-
     body {
       margin: 0;
       font-family: "Inter", system-ui, sans-serif;
       color: var(--text);
       background-color: var(--bg);
-      transition: background-color 0.4s ease, color 0.4s ease;
+      background-image: radial-gradient(circle at 100% 0%, var(--accent-soft), transparent 40%);
+      line-height: 1.6;
       -webkit-font-smoothing: antialiased;
-      line-height: 1.7;
     }
 
-    .container { max-width: 850px; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
 
-    /* Glassmorphism */
-    .glass {
+    /* --- Navigation --- */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+    }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: var(--transition);
+    }
+    .back-link:hover { color: var(--text); transform: translateX(-4px); }
+
+    .controls { display: flex; align-items: center; gap: 0.75rem; }
+    
+    .lang-toggle {
+      background: var(--line);
+      padding: 3px;
+      border-radius: 100px;
+      display: flex;
+    }
+
+    .lang-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.7rem;
+      padding: 0.5rem 0.8rem;
+      border-radius: 100px;
+      cursor: pointer;
+    }
+
+    .lang-btn.active {
+      background: var(--surface-strong);
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .theme-btn {
+      background: var(--surface-strong);
+      border: 1px solid var(--line);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* --- Content Card --- */
+    .doc-card {
+      padding: 4rem;
+      border-radius: var(--radius-xl);
       background: var(--surface);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--line);
       box-shadow: var(--shadow-xl);
     }
 
-    /* Header Navigation */
-    .topbar { 
-      display: flex; 
-      align-items: center; 
-      justify-content: space-between; 
-      margin-bottom: 2rem; 
-    }
-    
-    .back-link { 
-      text-decoration: none; 
-      color: var(--muted); 
-      font-weight: 600; 
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: color 0.2s;
-    }
-    .back-link:hover { color: var(--text); }
-
-    /* Theme Toggle */
-    .theme-btn {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      cursor: pointer;
-      color: var(--text);
-      display: flex; align-items: center; justify-content: center;
-      transition: transform 0.2s ease;
-    }
-    .theme-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
-    .sun { display: none; }
-    [data-theme="dark"] .sun { display: block; }
-    [data-theme="dark"] .moon { display: none; }
-
-    /* Content Card */
-    .content-card { padding: clamp(2rem, 5vw, 4rem); border-radius: var(--radius-xl); }
-
-    h1 { font-size: clamp(2.5rem, 6vw, 3.5rem); line-height: 1; letter-spacing: -0.05em; margin-bottom: 2rem; }
-    h2 { font-size: 1.5rem; letter-spacing: -0.03em; margin-top: 2.5rem; margin-bottom: 1rem; color: var(--text); }
-    p, li { color: var(--muted); margin-bottom: 1rem; }
-    ul { padding-left: 1.2rem; margin-bottom: 1.5rem; }
-
-    strong { color: var(--text); }
-
-    .support-box {
+    .pill {
+      display: inline-block;
+      padding: 0.5rem 1rem;
       background: var(--accent-soft);
-      padding: 1.5rem;
-      border-radius: 1.2rem;
       color: var(--accent);
+      border-radius: 100px;
+      font-size: 0.75rem;
       font-weight: 700;
-      text-align: center;
-      margin: 2rem 0;
-      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1.5rem;
     }
 
-    .footer-note { 
-      margin-top: 4rem; 
-      padding-top: 2rem; 
-      border-top: 1px solid var(--line); 
-      font-size: 0.85rem; 
+    h1 {
+      font-size: clamp(2.2rem, 5vw, 3.2rem);
+      line-height: 1.1;
+      letter-spacing: -0.05em;
+      margin: 0 0 1.5rem;
+      font-weight: 850;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      margin: 3rem 0 1rem;
+      letter-spacing: -0.02em;
+      font-weight: 700;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 0.5rem;
+    }
+
+    p, li {
       color: var(--muted);
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
+      font-size: 1.05rem;
+      margin-bottom: 1rem;
     }
 
-    @media (max-width: 600px) {
-      .content-card { padding: 2rem 1.5rem; }
+    strong { color: var(--text); font-weight: 600; }
+
+    .support-hero {
+      background: var(--bg-soft);
+      border-radius: 1.5rem;
+      padding: 2.5rem;
+      text-align: center;
+      border: 1px solid var(--line);
+      margin: 2rem 0;
+    }
+
+    .support-email {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+      transition: var(--transition);
+    }
+    .support-email:hover { opacity: 0.7; }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .info-item {
+      padding: 1.5rem;
+      background: var(--surface-strong);
+      border-radius: 1rem;
+      border: 1px solid var(--line);
+    }
+
+    .info-item h3 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 0.5rem;
+      color: var(--muted);
+    }
+
+    .info-item p { margin: 0; color: var(--text); font-weight: 500; }
+
+    footer {
+      margin-top: 4rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    /* --- Lang Logic --- */
+    [data-lang] { display: none; }
+    html[data-lang="en"] [data-lang="en"] { display: inline; }
+    html[data-lang="fr"] [data-lang="fr"] { display: inline; }
+
+    @media (max-width: 650px) {
+      .doc-card { padding: 2.5rem 1.5rem; }
+      .info-grid { grid-template-columns: 1fr; }
+      .support-email { font-size: 1.1rem; }
+      h1 { font-size: 2.2rem; }
     }
   </style>
 </head>
@@ -142,68 +233,100 @@
   <div class="container">
     <header class="topbar">
       <a href="index.html" class="back-link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-        Back to Home
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        <span data-lang="en">Back to Home</span>
+        <span data-lang="fr">Retour à l'accueil</span>
       </a>
 
-      <button id="theme-toggle" class="theme-btn" aria-label="Switch Theme">
-        <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
-        <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      </button>
+      <div class="controls">
+        <div class="lang-toggle">
+          <button class="lang-btn active" data-set-lang="fr">FR</button>
+          <button class="lang-btn" data-set-lang="en">EN</button>
+        </div>
+        <button id="theme-toggle" class="theme-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
+        </button>
+      </div>
     </header>
 
-    <main class="content-card glass">
-      <h1>Support</h1>
+    <main class="doc-card">
+      <div class="pill">Help Center</div>
+      
+      <h1>
+        <span data-lang="en">How can we help?</span>
+        <span data-lang="fr">Comment pouvons-nous vous aider ?</span>
+      </h1>
 
-      <p>
-        If you need assistance with one of our products or have any questions, we're here to help. 
-        As an independent studio, we read every message and aim to provide thoughtful answers.
+      <p class="intro">
+        <span data-lang="en">Whether you're facing a technical issue or have a question about your account, we're here for you.</span>
+        <span data-lang="fr">Que vous rencontriez un problème technique ou que vous ayez une question sur votre compte, nous sommes à votre écoute.</span>
       </p>
 
-      <div class="support-box">
-        contact.gbostudio@gmail.com
+      <div class="support-hero">
+        <a href="mailto:contact@gbostudio.fr" class="support-email">contact@gbostudio.fr</a>
       </div>
 
-      <h2>How to reach us</h2>
-      <p>
-        When contacting support, please include as much detail as possible so we can assist you efficiently:
-      </p>
-      <ul>
-        <li><strong>Application Name:</strong> Which product are you using? (e.g., CONSCIENCE)</li>
-        <li><strong>Device Details:</strong> Your device model and OS version (e.g., iPhone 15, iOS 17.4).</li>
-        <li><strong>Issue Description:</strong> A brief explanation of the problem or your question.</li>
+      <div class="info-grid">
+        <div class="info-item">
+          <h3><span data-lang="en">Response Time</span><span data-lang="fr">Délai de réponse</span></h3>
+          <p><span data-lang="en">Within 48 hours</span><span data-lang="fr">Sous 48 heures</span></p>
+        </div>
+        <div class="info-item">
+          <h3><span data-lang="en">Channel</span><span data-lang="fr">Canal</span></h3>
+          <p><span data-lang="en">Email only</span><span data-lang="fr">Email uniquement</span></p>
+        </div>
+      </div>
+
+      <h2>
+        <span data-lang="en">Before you write to us</span>
+        <span data-lang="fr">Avant de nous écrire</span>
+      </h2>
+      <p><span data-lang="en">To help us solve your issue faster, please include:</span><span data-lang="fr">Pour nous aider à résoudre votre problème plus rapidement, merci d'inclure :</span></p>
+      <ul style="padding-left: 1.2rem;">
+        <li><span data-lang="en">The <strong>app name</strong> and your <strong>device model</strong>.</span><span data-lang="fr">Le <strong>nom de l'app</strong> et votre <strong>modèle d'appareil</strong>.</span></li>
+        <li><span data-lang="en">A clear description of the problem.</span><span data-lang="fr">Une description claire du problème.</span></li>
+        <li><span data-lang="en">Screenshots if relevant.</span><span data-lang="fr">Des captures d'écran si nécessaire.</span></li>
       </ul>
 
-      <h2>What to expect</h2>
-      <p>
-        We aim to review and respond to all support requests within 48 hours. 
-        Your feedback is invaluable to us—it helps us build better, more intentional products.
-      </p>
+      <h2>
+        <span data-lang="en">Covered Services</span>
+        <span data-lang="fr">Services couverts</span>
+      </h2>
+      <p><span data-lang="en">We provide support for bugs, account access, and privacy requests. We do not provide personalized coaching through this channel.</span><span data-lang="fr">Nous assurons le support pour les bugs, l'accès aux comptes et les demandes de confidentialité. Nous ne fournissons pas de coaching personnalisé via ce canal.</span></p>
 
-      <div class="footer-note">
-        <span>© 2026 GBO Studio — France</span>
-        <span>Independent Mobile App Publisher</span>
-      </div>
     </main>
+
+    <footer>
+      <p>© 2026 GBO Studio — France</p>
+    </footer>
   </div>
 
   <script>
-    // Theme Logic
-    const toggleBtn = document.getElementById('theme-toggle');
-    const getTheme = () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    
-    const setTheme = (theme) => {
+    const themeBtn = document.getElementById('theme-toggle');
+    const langBtns = document.querySelectorAll('.lang-btn');
+
+    function updateTheme(theme) {
       document.documentElement.setAttribute('data-theme', theme);
       localStorage.setItem('theme', theme);
-    };
+    }
 
-    setTheme(getTheme());
-
-    toggleBtn.addEventListener('click', () => {
-      const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      setTheme(newTheme);
+    themeBtn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      updateTheme(current === 'dark' ? 'light' : 'dark');
     });
-  </script>
 
+    function setLanguage(lang) {
+      document.documentElement.setAttribute('data-lang', lang);
+      localStorage.setItem('lang', lang);
+      langBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.setLang === lang));
+    }
+
+    langBtns.forEach(btn => {
+      btn.addEventListener('click', () => setLanguage(btn.dataset.setLang));
+    });
+
+    updateTheme(localStorage.getItem('theme') || 'light');
+    setLanguage(localStorage.getItem('lang') || 'fr');
+  </script>
 </body>
 </html>
