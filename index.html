@@ -54,7 +54,6 @@
       overflow-x: hidden;
     }
 
-    /* Subtle Grain Effect */
     body::before {
       content: "";
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -64,13 +63,11 @@
 
     .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 6rem; }
 
-    /* Layout Components */
     .glass {
       background: var(--surface);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--line);
-      transition: transform 0.3s ease, border-color 0.3s ease;
     }
 
     .topbar { 
@@ -86,7 +83,7 @@
     }
     .brand-name { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em; }
 
-    .nav-actions { display: flex; align-items: center; gap: 2rem; }
+    .nav-actions { display: flex; align-items: center; gap: 1.5rem; }
     .desktop-nav { display: flex; gap: 2rem; }
     .desktop-nav a { 
       text-decoration: none; color: var(--muted); font-weight: 500; 
@@ -96,23 +93,17 @@
 
     .theme-btn {
       background: none; border: none; cursor: pointer; color: var(--text);
-      display: flex; align-items: center; justify-content: center; padding: 0;
+      display: flex; align-items: center; justify-content: center; padding: 5px;
+      font-family: inherit; transition: opacity 0.2s;
     }
+    .theme-btn:hover { opacity: 0.7; }
     .theme-btn svg { width: 20px; height: 20px; stroke-width: 1.5; }
 
-    /* Hero Section */
-    .hero { 
-        padding: 4rem; border-radius: var(--radius-xl); 
-        box-shadow: var(--shadow-xl); position: relative;
-    }
+    .hero { padding: 4rem; border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); position: relative; }
     .hero-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 4rem; align-items: center; }
-    h1 { 
-        font-size: clamp(2.8rem, 8vw, 4.5rem); line-height: 0.9; 
-        letter-spacing: -0.05em; margin: 1.5rem 0; font-weight: 850; 
-    }
+    h1 { font-size: clamp(2.8rem, 8vw, 4.5rem); line-height: 0.9; letter-spacing: -0.05em; margin: 1.5rem 0; font-weight: 850; }
     .hero-subtitle { font-size: 1.25rem; color: var(--muted); margin-bottom: 2.5rem; max-width: 480px; font-weight: 450; }
 
-    /* Buttons */
     .btn {
       display: inline-flex; align-items: center; justify-content: center; 
       height: 3.2rem; padding: 0 1.8rem; border-radius: 100px; 
@@ -122,7 +113,6 @@
     .btn-secondary { background: transparent; border: 1px solid var(--line); color: var(--text); }
     .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
 
-    /* Cards & Sections */
     .sections { display: grid; gap: 1.2rem; margin-top: 1.2rem; }
     .section-card { padding: 3.5rem; border-radius: var(--radius-xl); }
     
@@ -136,7 +126,6 @@
     .value-item h3 { font-size: 1.2rem; margin-bottom: 0.6rem; letter-spacing: -0.02em; }
     .value-item p { font-size: 0.95rem; color: var(--muted); }
 
-    /* Footer */
     footer { 
         margin-top: 6rem; padding: 3rem 0; border-top: 1px solid var(--line); 
         display: flex; justify-content: space-between; align-items: center;
@@ -144,10 +133,10 @@
     }
     footer a { color: var(--text); text-decoration: none; font-weight: 500; }
 
-    /* App Preview Box */
     .app-preview {
         background: var(--bg-soft); border-radius: 2rem; padding: 3rem;
         border: 1px solid var(--line); position: relative; overflow: hidden;
+        text-align: center;
     }
 
     @media (max-width: 900px) {
@@ -165,25 +154,26 @@
     <header class="topbar">
       <a href="#" class="brand">
         <div class="brand-mark">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="4" y="4" width="16" height="16" rx="5" stroke="black" stroke-width="2.5"/>
-                <circle cx="12" cy="12" r="2" fill="black"/>
-            </svg>
+            <img src="logo.svg" alt="Logo" width="24" height="24" onerror="this.style.display='none'">
         </div>
         <div class="brand-name">GBO Studio</div>
       </a>
 
       <div class="nav-actions">
         <nav class="desktop-nav">
-          <a href="#vision">Vision</a>
-          <a href="#product">Produit</a>
-          <a href="#contact">Contact</a>
+          <a href="#vision" data-i18n="nav-vision">Vision</a>
+          <a href="#product" data-i18n="nav-product">Produit</a>
+          <a href="#contact" data-i18n="nav-contact">Contact</a>
         </nav>
 
-        <button id="theme-toggle" class="theme-btn" aria-label="Changer de thème">
-          <svg class="sun" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
-          <svg class="moon" style="display:none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </button>
+        <div style="display: flex; align-items: center; gap: 1rem; border-left: 1px solid var(--line); padding-left: 1.2rem;">
+          <button id="lang-toggle" class="theme-btn" style="font-size: 0.7rem; font-weight: 800; width: 32px;">EN</button>
+          
+          <button id="theme-toggle" class="theme-btn" aria-label="Toggle Theme">
+            <svg class="sun" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
+            <svg class="moon" style="display:none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -191,23 +181,23 @@
       <section class="hero glass scroll-reveal">
         <div class="hero-grid">
           <div>
-            <span class="pill">Studio Indépendant • France</span>
-            <h1>Des outils calmes pour une conscience accrue.</h1>
-            <p class="hero-subtitle">
+            <span class="pill" data-i18n="hero-pill">Studio Indépendant • France</span>
+            <h1 data-i18n="hero-title">Des outils calmes pour une conscience accrue.</h1>
+            <p class="hero-subtitle" data-i18n="hero-sub">
               Nous créons des expériences mobiles intentionnelles qui vous aident à observer vos habitudes et agir avec clarté.
             </p>
             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-              <a href="#product" class="btn btn-primary">Découvrir CONSCIENCE</a>
-              <a href="mailto:contact.gbostudio@gmail.com" class="btn btn-secondary">Nous écrire</a>
+              <a href="#product" class="btn btn-primary" data-i18n="btn-discover">Découvrir CONSCIENCE</a>
+              <a href="mailto:contact.gbostudio@gmail.com" class="btn btn-secondary" data-i18n="btn-email">Nous écrire</a>
             </div>
           </div>
           
           <div class="app-preview">
-             <div style="font-size: 0.8rem; font-weight: 800; color: var(--accent); margin-bottom: 1rem;">DISPONIBLE SUR IOS</div>
+             <div style="font-size: 0.75rem; font-weight: 800; color: var(--accent); margin-bottom: 1rem;" data-i18n="app-status">DISPONIBLE SUR IOS</div>
              <h2 style="margin:0; font-size: 2rem; letter-spacing: -0.04em;">CONSCIENCE</h2>
-             <p style="color: var(--muted); margin-bottom: 2rem;">Observer. Comprendre. Ajuster.</p>
-             <div style="width: 100%; height: 120px; background: var(--accent-soft); border-radius: 1rem; display: flex; align-items: center; justify-content: center;">
-                <span style="font-weight: 800; opacity: 0.2; font-size: 3rem;">✦</span>
+             <p style="color: var(--muted); margin-bottom: 2rem;" data-i18n="app-tagline">Observer. Comprendre. Ajuster.</p>
+             <div style="width: 100%; height: 120px; background: var(--accent-soft); border-radius: 1.2rem; display: flex; align-items: center; justify-content: center;">
+                <span style="font-weight: 800; opacity: 0.15; font-size: 3rem;">✦</span>
              </div>
           </div>
         </div>
@@ -215,55 +205,55 @@
 
       <div class="sections">
         <section id="vision" class="section-card glass scroll-reveal">
-          <div class="pill">Notre Vision</div>
-          <h2 style="font-size: 2.5rem; letter-spacing: -0.03em; margin-bottom: 1.5rem;">Une technologie qui respecte votre esprit.</h2>
-          <p style="max-width: 600px; font-size: 1.2rem; color: var(--muted); font-weight: 450;">
+          <div class="pill" data-i18n="nav-vision">Vision</div>
+          <h2 style="font-size: 2.5rem; letter-spacing: -0.03em; margin-bottom: 1.5rem;" data-i18n="vision-title">Une technologie qui respecte votre esprit.</h2>
+          <p style="max-width: 600px; font-size: 1.2rem; color: var(--muted); font-weight: 450;" data-i18n="vision-sub">
             Dans un monde de bruit constant, nous pensons que les produits doivent favoriser la clarté plutôt que la réaction.
           </p>
           <div class="value-grid">
             <div class="value-item">
-              <h3>Clarté</h3>
-              <p>Des outils simples conçus pour réduire la charge mentale et révéler vos schémas.</p>
+              <h3 data-i18n="val-1-t">Clarté</h3>
+              <p data-i18n="val-1-p">Des outils simples conçus pour réduire la charge mentale et révéler vos schémas.</p>
             </div>
             <div class="value-item">
-              <h3>Intention</h3>
-              <p>Privilégier le changement durable et réfléchi plutôt que la gratification immédiate.</p>
+              <h3 data-i18n="val-2-t">Intention</h3>
+              <p data-i18n="val-2-p">Privilégier le changement durable et réfléchi plutôt que la gratification immédiate.</p>
             </div>
             <div class="value-item">
-              <h3>Vie Privée</h3>
-              <p>Vos données vous appartiennent. Vos habitudes sont pour vos yeux uniquement.</p>
+              <h3 data-i18n="val-3-t">Vie Privée</h3>
+              <p data-i18n="val-3-p">Vos données vous appartiennent. Vos habitudes sont pour vos yeux uniquement.</p>
             </div>
           </div>
         </section>
 
         <section id="product" class="section-card glass scroll-reveal" style="background: var(--bg-soft);">
-          <div class="pill">Produit Actuel</div>
+          <div class="pill" data-i18n="nav-product">Produit</div>
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 3rem;">
             <div style="flex: 1; min-width: 300px;">
               <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">CONSCIENCE</h2>
-              <p style="font-size: 1.1rem; color: var(--muted);">L'application mobile pour suivre vos comportements sans culpabilité ni friction.</p>
+              <p style="font-size: 1.1rem; color: var(--muted);" data-i18n="product-desc">L'application mobile pour suivre vos comportements sans culpabilité ni friction.</p>
               <div style="margin-top: 2rem; display: grid; gap: 1rem;">
                 <div style="display: flex; align-items: center; gap: 0.8rem; font-weight: 500;">
-                    <span style="color: var(--accent)">✓</span> Tracking quotidien ultra-rapide
+                    <span style="color: var(--accent)">✓</span> <span data-i18n="feat-1">Tracking quotidien ultra-rapide</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.8rem; font-weight: 500;">
-                    <span style="color: var(--accent)">✓</span> Reconnaissance visuelle de patterns
+                    <span style="color: var(--accent)">✓</span> <span data-i18n="feat-2">Reconnaissance visuelle de patterns</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.8rem; font-weight: 500;">
-                    <span style="color: var(--accent)">✓</span> Interface premium et apaisante
+                    <span style="color: var(--accent)">✓</span> <span data-i18n="feat-3">Interface premium et apaisante</span>
                 </div>
               </div>
             </div>
-            <div style="padding: 2.5rem; background: var(--accent-soft); border-radius: 2rem; color: var(--accent); font-weight: 600; max-width: 340px; line-height: 1.4; font-style: italic;">
+            <div style="padding: 2.5rem; background: var(--accent-soft); border-radius: 2rem; color: var(--accent); font-weight: 600; max-width: 340px; line-height: 1.4; font-style: italic;" data-i18n="quote">
               "Conscience vous aide à vous voir plus honnêtement, une observation à la fois."
             </div>
           </div>
         </section>
 
         <section id="contact" class="section-card glass scroll-reveal" style="text-align: center; border: 1px solid var(--accent);">
-          <div class="pill">Contact</div>
-          <h2 style="font-size: 2.5rem;">Bâtissons l'intentionnel.</h2>
-          <p style="color: var(--muted); margin-bottom: 2.5rem;">Pour toute question, support ou partenariat.</p>
+          <div class="pill" data-i18n="nav-contact">Contact</div>
+          <h2 style="font-size: 2.5rem;" data-i18n="contact-title">Bâtissons l'intentionnel.</h2>
+          <p style="color: var(--muted); margin-bottom: 2.5rem;" data-i18n="contact-sub">Pour toute question, support ou partenariat.</p>
           <a href="mailto:contact.gbostudio@gmail.com" class="btn btn-primary">
             contact.gbostudio@gmail.com
           </a>
@@ -274,14 +264,72 @@
     <footer>
       <div>© 2026 GBO Studio — France • Micro-entreprise</div>
       <div style="display: flex; gap: 2rem;">
-        <a href="#">Confidentialité</a>
-        <a href="#">Support</a>
+        <a href="#" data-i18n="footer-priv">Confidentialité</a>
+        <a href="#" data-i18n="footer-sup">Support</a>
       </div>
     </footer>
   </div>
 
   <script>
-    // Theme Toggle
+    // 1. Dictionnaire de Traduction
+    const translations = {
+      fr: {
+        "nav-vision": "Vision", "nav-product": "Produit", "nav-contact": "Contact",
+        "hero-pill": "Studio Indépendant • France",
+        "hero-title": "Des outils calmes pour une conscience accrue.",
+        "hero-sub": "Nous créons des expériences mobiles intentionnelles qui vous aident à observer vos habitudes et agir avec clarté.",
+        "btn-discover": "Découvrir CONSCIENCE", "btn-email": "Nous écrire",
+        "app-status": "DISPONIBLE SUR IOS", "app-tagline": "Observer. Comprendre. Ajuster.",
+        "vision-title": "Une technologie qui respecte votre esprit.",
+        "vision-sub": "Dans un monde de bruit constant, nous pensons que les produits doivent favoriser la clarté plutôt que la réaction.",
+        "val-1-t": "Clarté", "val-1-p": "Des outils simples conçus pour réduire la charge mentale et révéler vos schémas.",
+        "val-2-t": "Intention", "val-2-p": "Privilégier le changement durable et réfléchi plutôt que la gratification immédiate.",
+        "val-3-t": "Vie Privée", "val-3-p": "Vos données vous appartiennent. Vos habitudes sont pour vos yeux uniquement.",
+        "product-desc": "L'application mobile pour suivre vos comportements sans culpabilité ni friction.",
+        "feat-1": "Tracking quotidien ultra-rapide", "feat-2": "Reconnaissance visuelle de patterns", "feat-3": "Interface premium et apaisante",
+        "quote": "\"Conscience vous aide à vous voir plus honnêtement, une observation à la fois.\"",
+        "contact-title": "Bâtissons l'intentionnel.", "contact-sub": "Pour toute question, support ou partenariat.",
+        "footer-priv": "Confidentialité", "footer-sup": "Support"
+      },
+      en: {
+        "nav-vision": "Vision", "nav-product": "Product", "nav-contact": "Contact",
+        "hero-pill": "Independent Studio • France",
+        "hero-title": "Calm tools for deeper awareness.",
+        "hero-sub": "We build intentional mobile experiences that help you observe your patterns and act with clarity.",
+        "btn-discover": "Discover CONSCIENCE", "btn-email": "Email us",
+        "app-status": "AVAILABLE ON IOS", "app-tagline": "Observe. Understand. Adjust.",
+        "vision-title": "Technology that respects your mind.",
+        "vision-sub": "In a world of constant noise, we believe products should increase clarity, not reactions.",
+        "val-1-t": "Clarity First", "val-1-p": "Simple tools designed to reduce mental clutter and reveal hidden behaviors.",
+        "val-2-t": "Intentionality", "val-2-p": "Focusing on slow, meaningful change rather than instant gratification.",
+        "val-3-t": "Privacy", "val-3-p": "Your data is yours. Your patterns are for you to see, and no one else.",
+        "product-desc": "A mobile application designed to help users track behaviors without guilt or friction.",
+        "feat-1": "Low-friction daily tracking", "feat-2": "Visual pattern recognition", "feat-3": "Calm, premium user interface",
+        "quote": "\"Conscience helps you see yourself more honestly, one observation at a time.\"",
+        "contact-title": "Let's build something intentional.", "contact-sub": "For support, inquiries, or partnerships, reach out anytime.",
+        "footer-priv": "Privacy", "footer-sup": "Support"
+      }
+    };
+
+    // 2. Logique Langue
+    let currentLang = localStorage.getItem('lang') || 'fr';
+    const langToggle = document.getElementById('lang-toggle');
+
+    function updateLang() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[currentLang][key]) el.innerText = translations[currentLang][key];
+      });
+      langToggle.innerText = currentLang === 'fr' ? 'EN' : 'FR';
+      localStorage.setItem('lang', currentLang);
+    }
+
+    langToggle.addEventListener('click', () => {
+      currentLang = currentLang === 'fr' ? 'en' : 'fr';
+      updateLang();
+    });
+
+    // 3. Logique Thème
     const toggleBtn = document.getElementById('theme-toggle');
     const sunIcon = document.querySelector('.sun');
     const moonIcon = document.querySelector('.moon');
@@ -290,23 +338,18 @@
       document.documentElement.setAttribute('data-theme', theme);
       localStorage.setItem('theme', theme);
       if (theme === 'dark') {
-        sunIcon.style.display = 'block';
-        moonIcon.style.display = 'none';
+        sunIcon.style.display = 'block'; moonIcon.style.display = 'none';
       } else {
-        sunIcon.style.display = 'none';
-        moonIcon.style.display = 'block';
+        sunIcon.style.display = 'none'; moonIcon.style.display = 'block';
       }
     };
 
-    const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    setTheme(currentTheme);
-
+    setTheme(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
     toggleBtn.addEventListener('click', () => {
-      const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      setTheme(newTheme);
+      setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
     });
 
-    // Scroll Reveal with subtle scale
+    // 4. Scroll Reveal
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -322,6 +365,9 @@
       el.style.transition = "all 0.9s cubic-bezier(0.16, 1, 0.3, 1)";
       observer.observe(el);
     });
+
+    // Init au démarrage
+    updateLang();
   </script>
 
 </body>
