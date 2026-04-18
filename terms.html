@@ -1,138 +1,212 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr" data-lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Terms of Use — GBO Studio</title>
-  <meta name="description" content="Terms of Use for GBO Studio and its mobile applications." />
-  <link rel="icon" href="logo.svg" type="image/svg+xml" />
-
+  <title>Conditions d'Utilisation — GBO Studio</title>
+  <meta name="description" content="Conditions générales d'utilisation de GBO Studio et de ses applications mobiles." />
+  <meta name="theme-color" content="#f6f5f2" />
+  
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      /* Theme Light */
       --bg: #f6f5f2;
       --bg-soft: #fbfaf8;
-      --surface: rgba(255, 255, 255, 0.75);
+      --surface: rgba(255, 255, 255, 0.65);
+      --surface-strong: rgba(255, 255, 255, 0.9);
       --text: #11161a;
       --muted: #5f686b;
-      --line: rgba(17, 22, 26, 0.08);
+      --line: rgba(17, 22, 26, 0.06);
       --accent: #67867f;
       --accent-soft: #dde8e2;
-      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.07);
-      --radius-xl: 2rem;
+      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.05);
+      --radius-xl: 2.5rem;
+      --radius-lg: 1.5rem;
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     [data-theme="dark"] {
       --bg: #0d1114;
-      --bg-soft: #161b1f;
-      --surface: rgba(22, 27, 31, 0.8);
+      --bg-soft: #14191d;
+      --surface: rgba(22, 27, 31, 0.7);
+      --surface-strong: rgba(28, 34, 39, 0.95);
       --text: #f6f5f2;
       --muted: #9ba3a7;
-      --line: rgba(255, 255, 255, 0.1);
+      --line: rgba(255, 255, 255, 0.08);
       --accent: #8fb3ab;
-      --accent-soft: #243530;
-      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.4);
+      --accent-soft: #1c2b27;
     }
 
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-
     body {
       margin: 0;
       font-family: "Inter", system-ui, sans-serif;
       color: var(--text);
       background-color: var(--bg);
-      transition: background-color 0.4s ease, color 0.4s ease;
+      background-image: radial-gradient(circle at 0% 100%, var(--accent-soft), transparent 40%);
+      line-height: 1.6;
       -webkit-font-smoothing: antialiased;
-      line-height: 1.7;
     }
 
-    .container { max-width: 850px; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
 
-    /* Glassmorphism */
-    .glass {
+    /* --- Header / Nav --- */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+    }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: var(--transition);
+    }
+    .back-link:hover { color: var(--text); transform: translateX(-4px); }
+
+    .controls { display: flex; align-items: center; gap: 0.75rem; }
+    
+    .lang-toggle {
+      background: var(--line);
+      padding: 3px;
+      border-radius: 100px;
+      display: flex;
+    }
+
+    .lang-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.7rem;
+      padding: 0.5rem 0.8rem;
+      border-radius: 100px;
+      cursor: pointer;
+    }
+
+    .lang-btn.active {
+      background: var(--surface-strong);
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .theme-btn {
+      background: var(--surface-strong);
+      border: 1px solid var(--line);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* --- Content Card --- */
+    .doc-card {
+      padding: 4rem;
+      border-radius: var(--radius-xl);
       background: var(--surface);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--line);
       box-shadow: var(--shadow-xl);
     }
 
-    /* Header Navigation */
-    .topbar { 
-      display: flex; 
-      align-items: center; 
-      justify-content: space-between; 
-      margin-bottom: 2rem; 
+    .pill {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1.5rem;
     }
-    
-    .back-link { 
-      text-decoration: none; 
-      color: var(--muted); 
-      font-weight: 600; 
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: color 0.2s;
-    }
-    .back-link:hover { color: var(--text); }
 
-    /* Theme Toggle */
-    .theme-btn {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      cursor: pointer;
+    h1 {
+      font-size: clamp(2.2rem, 5vw, 3.2rem);
+      line-height: 1.1;
+      letter-spacing: -0.05em;
+      margin: 0 0 1.5rem;
+      font-weight: 850;
+    }
+
+    .intro {
+      font-size: 1.15rem;
       color: var(--text);
-      display: flex; align-items: center; justify-content: center;
-      transition: transform 0.2s ease;
-    }
-    .theme-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
-    .sun { display: none; }
-    [data-theme="dark"] .sun { display: block; }
-    [data-theme="dark"] .moon { display: none; }
-
-    /* Content Card */
-    .content-card { padding: clamp(2rem, 5vw, 4rem); border-radius: var(--radius-xl); }
-
-    .eyebrow { 
-      display: inline-block; 
-      padding: 0.4rem 0.8rem; 
-      background: var(--accent-soft); 
-      color: var(--accent); 
-      border-radius: 2rem; 
-      font-size: 0.7rem; 
-      font-weight: 800; 
-      text-transform: uppercase; 
-      margin-bottom: 1rem; 
-      letter-spacing: 0.05em; 
+      opacity: 0.9;
+      margin-bottom: 2rem;
     }
 
-    h1 { font-size: clamp(2.5rem, 6vw, 3.5rem); line-height: 1; letter-spacing: -0.05em; margin-bottom: 1.5rem; }
-    h2 { font-size: 1.4rem; letter-spacing: -0.02em; margin-top: 2.5rem; margin-bottom: 0.8rem; color: var(--text); font-weight: 700; }
-    p, li { color: var(--muted); margin-bottom: 1rem; font-size: 1rem; }
-    ul { padding-left: 1.2rem; margin-bottom: 1.5rem; }
-
-    .footer-note { 
-      margin-top: 4rem; 
-      padding-top: 2rem; 
-      border-top: 1px solid var(--line); 
-      font-size: 0.85rem; 
-      color: var(--muted);
+    .alert-box {
+      background: var(--bg-soft);
+      border-radius: 1.2rem;
+      padding: 1.5rem 2rem;
+      border: 1px solid var(--line);
+      margin: 2rem 0;
+      font-weight: 500;
+      color: var(--text);
       display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
       gap: 1rem;
+      align-items: center;
     }
 
-    @media (max-width: 600px) {
-      .content-card { padding: 2.5rem 1.5rem; }
+    h2 {
+      font-size: 1.3rem;
+      margin: 3rem 0 1rem;
+      letter-spacing: -0.02em;
+      font-weight: 700;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 0.5rem;
+    }
+
+    p, li {
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .contact-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 700;
+      transition: var(--transition);
+    }
+    .contact-link:hover { opacity: 0.7; }
+
+    footer {
+      margin-top: 4rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    /* --- Logic --- */
+    [data-lang] { display: none; }
+    html[data-lang="en"] [data-lang="en"] { display: inline; }
+    html[data-lang="fr"] [data-lang="fr"] { display: inline; }
+
+    @media (max-width: 650px) {
+      .doc-card { padding: 2.5rem 1.5rem; }
+      h1 { font-size: 2.2rem; }
+      .alert-box { padding: 1.5rem; font-size: 0.9rem; }
     }
   </style>
 </head>
@@ -141,89 +215,128 @@
   <div class="container">
     <header class="topbar">
       <a href="index.html" class="back-link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-        Back to GBO Studio
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        <span data-lang="en">Back to Home</span>
+        <span data-lang="fr">Retour à l'accueil</span>
       </a>
 
-      <button id="theme-toggle" class="theme-btn" aria-label="Switch Theme">
-        <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
-        <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      </button>
+      <div class="controls">
+        <div class="lang-toggle">
+          <button class="lang-btn active" data-set-lang="fr">FR</button>
+          <button class="lang-btn" data-set-lang="en">EN</button>
+        </div>
+        <button id="theme-toggle" class="theme-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
+        </button>
+      </div>
     </header>
 
-    <main class="content-card glass">
-      <div class="eyebrow">Legal</div>
-      <h1>Terms of Use</h1>
-      <p style="font-size: 1.15rem; color: var(--text); margin-bottom: 2.5rem; opacity: 0.9;">
-        By using GBO Studio's website or mobile applications, you agree to follow these terms. 
-        They ensure our services remain reliable and respectful for everyone.
+    <main class="doc-card">
+      <div class="pill">Terms</div>
+      
+      <h1>
+        <span data-lang="en">Terms of Use</span>
+        <span data-lang="fr">Conditions d'Utilisation</span>
+      </h1>
+
+      <p class="intro">
+        <span data-lang="en">By using GBO Studio’s website or mobile applications, you agree to these terms. They ensure our services remain reliable and respectful for everyone.</span>
+        <span data-lang="fr">En utilisant le site ou les applications de GBO Studio, vous acceptez ces conditions. Elles garantissent un service fiable et respectueux pour tous.</span>
       </p>
 
-      <h2>1. Scope</h2>
-      <p>
-        These Terms apply to any mobile application, product or service provided by GBO Studio, including those available on the App Store or Google Play.
-      </p>
-
-      <h2>2. Proper Use</h2>
-      <p>
-        You agree to use our tools for personal improvement and intentional awareness. Any attempt to disrupt the service, interfere with its security, or use it for unlawful purposes is strictly prohibited.
-      </p>
-
-      <h2>3. Intellectual Property</h2>
-      <p>
-        Everything you see—from the interface design to the text and code—is the property of <strong>GBO Studio</strong>. You may not copy, reproduce, or distribute our work without written permission.
-      </p>
-
-      <h2>4. Subscriptions & Billing</h2>
-      <p>
-        Certain premium features may require a subscription. Billing is handled directly by the platform provider (Apple or Google). Please refer to their respective terms for refund and cancellation policies.
-      </p>
-
-      <h2>5. Disclaimer</h2>
-      <p>
-        Our applications are designed as tools for personal observation and behavioral awareness. They are not a substitute for professional medical, psychological, or financial advice.
-      </p>
-
-      <h2>6. Limitation of Liability</h2>
-      <p>
-        GBO Studio provides these services "as is." We are not liable for any indirect damages resulting from your use of the applications or any technical interruptions.
-      </p>
-
-      <h2>7. Modifications</h2>
-      <p>
-        We may update these terms to reflect changes in our products or the law. Continued use of the app after an update means you accept the new terms.
-      </p>
-
-      <h2>8. Contact</h2>
-      <p>
-        Questions about these terms? Reach out at:<br><br>
-        <strong>contact.gbostudio@gmail.com</strong>
-      </p>
-
-      <div class="footer-note">
-        <span>© 2026 GBO Studio — France</span>
-        <span>Last updated: April 2026</span>
+      <div class="alert-box">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span data-lang="en">Please read these terms carefully before using our products.</span>
+        <span data-lang="fr">Merci de lire attentivement ces conditions avant toute utilisation.</span>
       </div>
+
+      <h2>
+        <span data-lang="en">1. Scope</span>
+        <span data-lang="fr">1. Champ d’application</span>
+      </h2>
+      <p>
+        <span data-lang="en">These Terms apply to any product or service provided by GBO Studio, including those distributed through the App Store or Google Play.</span>
+        <span data-lang="fr">Ces conditions s'appliquent à tout produit ou service fourni par GBO Studio, y compris via l'App Store ou Google Play.</span>
+      </p>
+
+      <h2>
+        <span data-lang="en">2. Intellectual Property</span>
+        <span data-lang="fr">2. Propriété intellectuelle</span>
+      </h2>
+      <p>
+        <span data-lang="en">All content (branding, code, interface) remains the exclusive property of GBO Studio. Reproduction or redistribution is prohibited without written permission.</span>
+        <span data-lang="fr">Tous les contenus (marque, code, interface) restent la propriété exclusive de GBO Studio. Toute reproduction est interdite sans autorisation écrite.</span>
+      </p>
+
+      <h2>
+        <span data-lang="en">3. Billing & Subscriptions</span>
+        <span data-lang="fr">3. Facturation & Abonnements</span>
+      </h2>
+      <p>
+        <span data-lang="en">Premium features are managed and billed directly by Apple or Google. Cancellations and refunds follow the terms of the respective platform provider.</span>
+        <span data-lang="fr">Les options premium sont gérées et facturées par Apple ou Google. Les annulations et remboursements suivent les règles de la plateforme concernée.</span>
+      </p>
+
+      <h2>
+        <span data-lang="en">4. Disclaimer</span>
+        <span data-lang="fr">4. Avertissement</span>
+      </h2>
+      <p>
+        <span data-lang="en">Our apps are tools for personal awareness. They do not replace professional medical, psychological, or legal advice.</span>
+        <span data-lang="fr">Nos applications sont des outils de réflexion personnelle. Elles ne remplacent en aucun cas un avis médical ou psychologique professionnel.</span>
+      </p>
+
+      <h2>
+        <span data-lang="en">5. Limitation of Liability</span>
+        <span data-lang="fr">5. Responsabilité</span>
+      </h2>
+      <p>
+        <span data-lang="en">GBO Studio provides services “as is”. We are not liable for any indirect damages or interruptions of service.</span>
+        <span data-lang="fr">GBO Studio fournit ses services « en l’état ». Nous ne saurions être tenus responsables des dommages indirects ou interruptions de service.</span>
+      </p>
+
+      <p style="margin-top: 3rem;">
+        <span data-lang="en">Questions? Contact us at </span>
+        <span data-lang="fr">Des questions ? Contactez-nous sur </span>
+        <a href="mailto:contact@gbostudio.fr" class="contact-link">contact@gbostudio.fr</a>.
+      </p>
     </main>
+
+    <footer>
+      <p>© 2026 GBO Studio — France</p>
+      <p style="font-size: 0.75rem; opacity: 0.6; margin-top: 0.5rem;">
+        <span data-lang="en">Last updated: April 2026</span>
+        <span data-lang="fr">Mise à jour : Avril 2026</span>
+      </p>
+    </footer>
   </div>
 
   <script>
-    // Theme Logic
-    const toggleBtn = document.getElementById('theme-toggle');
-    const getTheme = () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    
-    const setTheme = (theme) => {
+    const themeBtn = document.getElementById('theme-toggle');
+    const langBtns = document.querySelectorAll('.lang-btn');
+
+    function updateTheme(theme) {
       document.documentElement.setAttribute('data-theme', theme);
       localStorage.setItem('theme', theme);
-    };
+    }
 
-    setTheme(getTheme());
-
-    toggleBtn.addEventListener('click', () => {
-      const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      setTheme(newTheme);
+    themeBtn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      updateTheme(current === 'dark' ? 'light' : 'dark');
     });
-  </script>
 
+    function setLanguage(lang) {
+      document.documentElement.setAttribute('data-lang', lang);
+      localStorage.setItem('lang', lang);
+      langBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.setLang === lang));
+    }
+
+    langBtns.forEach(btn => {
+      btn.addEventListener('click', () => setLanguage(btn.dataset.setLang));
+    });
+
+    updateTheme(localStorage.getItem('theme') || 'light');
+    setLanguage(localStorage.getItem('lang') || 'fr');
+  </script>
 </body>
 </html>
