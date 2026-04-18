@@ -6,119 +6,159 @@
   <title>Confidentialité — GBO Studio</title>
   <meta name="description" content="Politique de confidentialité de GBO Studio." />
   <meta name="theme-color" content="#f6f5f2" />
-  
+  <link rel="icon" href="logo.svg" type="image/svg+xml" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
 
   <style>
     :root {
       --bg: #f6f5f2;
       --bg-soft: #fbfaf8;
-      --surface: rgba(255, 255, 255, 0.65);
-      --surface-strong: rgba(255, 255, 255, 0.9);
+      --surface: rgba(255, 255, 255, 0.68);
+      --surface-strong: rgba(255, 255, 255, 0.92);
       --text: #11161a;
       --muted: #5f686b;
-      --line: rgba(17, 22, 26, 0.06);
+      --line: rgba(17, 22, 26, 0.07);
       --accent: #67867f;
       --accent-soft: #dde8e2;
-      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 14px 36px rgba(0, 0, 0, 0.08);
       --radius-xl: 2.5rem;
       --radius-lg: 1.5rem;
-      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     [data-theme="dark"] {
       --bg: #0d1114;
       --bg-soft: #14191d;
-      --surface: rgba(22, 27, 31, 0.7);
-      --surface-strong: rgba(28, 34, 39, 0.95);
+      --surface: rgba(22, 27, 31, 0.74);
+      --surface-strong: rgba(28, 34, 39, 0.96);
       --text: #f6f5f2;
       --muted: #9ba3a7;
       --line: rgba(255, 255, 255, 0.08);
       --accent: #8fb3ab;
       --accent-soft: #1c2b27;
+      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.34);
+      --shadow-md: 0 14px 36px rgba(0, 0, 0, 0.22);
     }
 
     * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
+
     body {
       margin: 0;
       font-family: "Inter", system-ui, sans-serif;
       color: var(--text);
       background-color: var(--bg);
-      background-image: radial-gradient(circle at 0% 0%, var(--accent-soft), transparent 40%);
-      line-height: 1.6;
+      background-image:
+        radial-gradient(circle at 0% 0%, var(--accent-soft), transparent 42%),
+        radial-gradient(circle at 100% 100%, rgba(103, 134, 127, 0.06), transparent 38%);
+      line-height: 1.65;
       -webkit-font-smoothing: antialiased;
+      transition: background-color 0.4s ease, color 0.4s ease;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
     }
 
     .container {
-      max-width: 800px;
+      max-width: 860px;
       margin: 0 auto;
-      padding: 2rem 1.5rem 6rem;
+      padding: 2rem 1.5rem 5rem;
     }
 
-    /* --- Navigation --- */
     .topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 3rem;
+      gap: 1rem;
+      margin-bottom: 2rem;
     }
 
     .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.95rem;
+      transition: all var(--transition);
+    }
+
+    .back-link:hover {
+      color: var(--text);
+      transform: translateX(-3px);
+    }
+
+    .controls {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      text-decoration: none;
-      color: var(--muted);
-      font-weight: 600;
-      font-size: 0.9rem;
-      transition: var(--transition);
+      gap: 0.8rem;
     }
-    .back-link:hover { color: var(--text); transform: translateX(-4px); }
 
-    .controls { display: flex; align-items: center; gap: 0.75rem; }
-    
     .lang-toggle {
-      background: var(--line);
-      padding: 3px;
-      border-radius: 100px;
-      display: flex;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      background: var(--surface-strong);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.22rem;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.04);
     }
 
     .lang-btn {
       border: none;
       background: transparent;
       color: var(--muted);
-      font-weight: 700;
-      font-size: 0.7rem;
-      padding: 0.5rem 0.8rem;
-      border-radius: 100px;
+      font-weight: 800;
+      font-size: 0.72rem;
+      letter-spacing: 0.03em;
+      padding: 0.58rem 0.85rem;
+      border-radius: 999px;
       cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .lang-btn:hover {
+      color: var(--text);
     }
 
     .lang-btn.active {
-      background: var(--surface-strong);
-      color: var(--text);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      background: var(--text);
+      color: var(--bg);
+      box-shadow: var(--shadow-md);
     }
 
     .theme-btn {
       background: var(--surface-strong);
       border: 1px solid var(--line);
-      width: 38px;
-      height: 38px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       cursor: pointer;
       color: var(--text);
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: transform var(--transition), background var(--transition), border-color var(--transition);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.04);
     }
 
-    /* --- Content Card --- */
+    .theme-btn:hover {
+      transform: translateY(-1px) scale(1.04);
+    }
+
     .doc-card {
-      padding: 4rem;
+      padding: clamp(2rem, 4vw, 3.5rem);
       border-radius: var(--radius-xl);
       background: var(--surface);
       backdrop-filter: blur(20px);
@@ -132,155 +172,222 @@
       padding: 0.5rem 1rem;
       background: var(--accent-soft);
       color: var(--accent);
-      border-radius: 100px;
-      font-size: 0.75rem;
-      font-weight: 700;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.2rem;
     }
 
     h1 {
-      font-size: clamp(2.2rem, 5vw, 3.2rem);
-      line-height: 1.1;
-      letter-spacing: -0.05em;
-      margin: 0 0 2rem;
+      font-size: clamp(2.3rem, 5vw, 3.4rem);
+      line-height: 1.02;
+      letter-spacing: -0.055em;
+      margin: 0 0 1.5rem;
       font-weight: 850;
     }
 
     h2 {
-      font-size: 1.4rem;
-      margin: 3rem 0 1rem;
-      letter-spacing: -0.02em;
-      font-weight: 700;
+      font-size: 1.35rem;
+      margin: 2.5rem 0 0.9rem;
+      letter-spacing: -0.03em;
+      font-weight: 800;
+      padding-bottom: 0.6rem;
       border-bottom: 1px solid var(--line);
-      padding-bottom: 0.5rem;
     }
 
     p, li {
       color: var(--muted);
-      font-size: 1.05rem;
-      margin-bottom: 1.2rem;
+      font-size: 1rem;
+      margin-bottom: 1rem;
     }
 
-    strong { color: var(--text); font-weight: 600; }
+    strong {
+      color: var(--text);
+    }
 
-    ul { padding-left: 1.2rem; }
-    li { margin-bottom: 0.8rem; }
+    ul {
+      padding-left: 1.2rem;
+      margin-bottom: 1.4rem;
+    }
+
+    li {
+      margin-bottom: 0.75rem;
+    }
 
     .intro {
-      font-size: 1.2rem;
-      line-height: 1.5;
+      font-size: 1.12rem;
+      line-height: 1.65;
       color: var(--text);
-      opacity: 0.9;
+      opacity: 0.92;
+      margin-bottom: 2rem;
     }
 
     .notice-box {
-      margin-top: 3rem;
-      padding: 2rem;
+      margin-top: 2.5rem;
+      padding: 1.35rem 1.4rem;
       background: var(--bg-soft);
       border-radius: 1.2rem;
+      border: 1px solid var(--line);
       border-left: 4px solid var(--accent);
-      font-style: italic;
+    }
+
+    .link {
+      color: var(--accent);
+      font-weight: 700;
+      border-bottom: 1px solid transparent;
+      transition: border-color var(--transition), color var(--transition);
+    }
+
+    .link:hover {
+      border-bottom-color: var(--accent);
     }
 
     footer {
-      margin-top: 4rem;
+      margin-top: 2rem;
       text-align: center;
       color: var(--muted);
       font-size: 0.85rem;
     }
 
-    a.link {
-      color: var(--accent);
-      text-decoration: none;
-      font-weight: 600;
-      border-bottom: 1px solid transparent;
-      transition: var(--transition);
+    .i18n {
+      display: none;
     }
-    a.link:hover { border-bottom-color: var(--accent); }
 
-    /* --- Lang Logic --- */
-    [data-lang] { display: none; }
-    html[data-lang="en"] [data-lang="en"] { display: inline; }
-    html[data-lang="fr"] [data-lang="fr"] { display: inline; }
+    html[data-lang="fr"] .i18n-fr,
+    html[data-lang="en"] .i18n-en {
+      display: inline;
+    }
 
-    @media (max-width: 650px) {
-      .doc-card { padding: 2.5rem 1.5rem; }
-      h1 { font-size: 2rem; }
-      .topbar { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
+    @media (max-width: 700px) {
+      .container {
+        padding: 1.2rem 1rem 4rem;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .controls {
+        width: 100%;
+        justify-content: space-between;
+      }
     }
   </style>
 </head>
 <body>
-
   <div class="container">
     <header class="topbar">
       <a href="index.html" class="back-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-        <span data-lang="en">Back to Studio</span>
-        <span data-lang="fr">Retour au Studio</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        <span class="i18n i18n-fr">Retour au Studio</span>
+        <span class="i18n i18n-en">Back to Studio</span>
       </a>
 
       <div class="controls">
-        <div class="lang-toggle">
-          <button class="lang-btn active" data-set-lang="fr">FR</button>
-          <button class="lang-btn" data-set-lang="en">EN</button>
+        <div class="lang-toggle" aria-label="Language switcher">
+          <button type="button" class="lang-btn active" data-set-lang="fr">FR</button>
+          <button type="button" class="lang-btn" data-set-lang="en">EN</button>
         </div>
-        <button id="theme-toggle" class="theme-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
+
+        <button id="theme-toggle" class="theme-btn" aria-label="Changer le thème">
+          <svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"></path>
+          </svg>
+          <svg class="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
         </button>
       </div>
     </header>
 
     <main class="doc-card">
       <div class="pill">Legal</div>
-      
+
       <h1>
-        <span data-lang="en">Privacy Policy</span>
-        <span data-lang="fr">Politique de Confidentialité</span>
+        <span class="i18n i18n-fr">Politique de confidentialité</span>
+        <span class="i18n i18n-en">Privacy Policy</span>
       </h1>
 
       <p class="intro">
-        <span data-lang="en">At <strong>GBO Studio</strong>, we build products focused on self-awareness and personal growth. We believe your data should be handled with care, simplicity, and restraint.</span>
-        <span data-lang="fr">Chez <strong>GBO Studio</strong>, nous concevons des produits centrés sur la conscience de soi. Nous pensons que vos données doivent être traitées avec soin, simplicité et retenue.</span>
+        <span class="i18n i18n-fr">Chez <strong>GBO Studio</strong>, nous créons des produits centrés sur la conscience de soi et la clarté personnelle. Nous pensons que les données doivent être traitées avec soin, simplicité et retenue.</span>
+        <span class="i18n i18n-en">At <strong>GBO Studio</strong>, we build products focused on self-awareness and personal clarity. We believe data should be handled with care, simplicity, and restraint.</span>
       </p>
 
       <h2>
-        <span data-lang="en">1. Information We Collect</span>
-        <span data-lang="fr">1. Données collectées</span>
+        <span class="i18n i18n-fr">1. Informations collectées</span>
+        <span class="i18n i18n-en">1. Information We Collect</span>
       </h2>
+
       <p>
-        <span data-lang="en">Depending on the application, we may process:</span>
-        <span data-lang="fr">Selon l'application, nous pouvons traiter :</span>
+        <span class="i18n i18n-fr">Selon l’application ou le service utilisé, nous pouvons traiter :</span>
+        <span class="i18n i18n-en">Depending on the application or service, we may process:</span>
       </p>
+
       <ul>
-        <li><span data-lang="en"><strong>Account:</strong> Email for support or sync.</span><span data-lang="fr"><strong>Compte :</strong> Email pour le support ou la synchro.</span></li>
-        <li><span data-lang="en"><strong>Usage:</strong> Technical performance and stability logs.</span><span data-lang="fr"><strong>Usage :</strong> Logs techniques de performance et stabilité.</span></li>
-        <li><span data-lang="en"><strong>Local Data:</strong> Content stored directly on your device.</span><span data-lang="fr"><strong>Données locales :</strong> Contenu stocké sur votre appareil.</span></li>
+        <li>
+          <span class="i18n i18n-fr"><strong>Données de contact :</strong> votre adresse email lorsque vous contactez le support ou demandez une assistance.</span>
+          <span class="i18n i18n-en"><strong>Contact data:</strong> your email address when you contact support or request assistance.</span>
+        </li>
+        <li>
+          <span class="i18n i18n-fr"><strong>Données techniques :</strong> informations liées aux performances, erreurs, stabilité et bon fonctionnement du service.</span>
+          <span class="i18n i18n-en"><strong>Technical data:</strong> information related to performance, errors, stability and service reliability.</span>
+        </li>
+        <li>
+          <span class="i18n i18n-fr"><strong>Données locales :</strong> certaines données peuvent rester stockées directement sur votre appareil.</span>
+          <span class="i18n i18n-en"><strong>Local data:</strong> some data may remain stored directly on your device.</span>
+        </li>
       </ul>
 
       <h2>
-        <span data-lang="en">2. Usage & Sharing</span>
-        <span data-lang="fr">2. Usage & Partage</span>
+        <span class="i18n i18n-fr">2. Utilisation des données</span>
+        <span class="i18n i18n-en">2. How We Use Data</span>
       </h2>
+
       <p>
-        <span data-lang="en"><strong>We do not sell your personal information.</strong> Data is used strictly to operate and improve our products. We only share data with necessary technical partners (hosting, payments) and never for advertising resale.</span>
-        <span data-lang="fr"><strong>Nous ne vendons pas vos données.</strong> Les données sont utilisées strictement pour faire fonctionner nos produits. Nous ne partageons des infos qu'avec nos partenaires techniques essentiels (hébergement, paiements).</span>
+        <span class="i18n i18n-fr">Les informations collectées sont utilisées uniquement pour exploiter, sécuriser, maintenir et améliorer nos produits, ainsi que pour répondre à vos demandes de support.</span>
+        <span class="i18n i18n-en">Collected information is used only to operate, secure, maintain and improve our products, and to respond to your support requests.</span>
       </p>
 
       <h2>
-        <span data-lang="en">3. Your Rights</span>
-        <span data-lang="fr">3. Vos droits</span>
+        <span class="i18n i18n-fr">3. Partage des données</span>
+        <span class="i18n i18n-en">3. Data Sharing</span>
       </h2>
+
       <p>
-        <span data-lang="en">You have the right to access, rectify, or delete your data. Contact us at <a href="mailto:contact@gbostudio.fr" class="link">contact@gbostudio.fr</a> to exercise these rights.</span>
-        <span data-lang="fr">Vous avez un droit d'accès, de rectification et de suppression. Contactez-nous sur <a href="mailto:contact@gbostudio.fr" class="link">contact@gbostudio.fr</a> pour toute demande.</span>
+        <span class="i18n i18n-fr"><strong>Nous ne vendons pas vos données personnelles.</strong> Les informations peuvent être partagées uniquement avec des prestataires techniques nécessaires au fonctionnement du service, ou lorsque la loi l’exige.</span>
+        <span class="i18n i18n-en"><strong>We do not sell your personal information.</strong> Information may only be shared with technical providers necessary to operate the service, or when required by law.</span>
+      </p>
+
+      <h2>
+        <span class="i18n i18n-fr">4. Vos droits</span>
+        <span class="i18n i18n-en">4. Your Rights</span>
+      </h2>
+
+      <p>
+        <span class="i18n i18n-fr">Vous pouvez demander l’accès, la rectification ou la suppression de vos données en nous contactant à l’adresse suivante : <a href="mailto:contact@gbostudio.fr" class="link">contact@gbostudio.fr</a>.</span>
+        <span class="i18n i18n-en">You may request access to, correction of, or deletion of your data by contacting us at: <a href="mailto:contact@gbostudio.fr" class="link">contact@gbostudio.fr</a>.</span>
+      </p>
+
+      <h2>
+        <span class="i18n i18n-fr">5. Mise à jour de cette politique</span>
+        <span class="i18n i18n-en">5. Updates to This Policy</span>
+      </h2>
+
+      <p>
+        <span class="i18n i18n-fr">Cette politique peut être modifiée afin de refléter l’évolution de nos produits, de nos pratiques ou des obligations légales.</span>
+        <span class="i18n i18n-en">This policy may be updated to reflect changes in our products, practices, or legal obligations.</span>
       </p>
 
       <div class="notice-box">
-        <span data-lang="en">This policy may be updated to reflect product or legal changes.</span>
-        <span data-lang="fr">Cette politique peut être mise à jour pour refléter les évolutions légales ou du produit.</span>
+        <span class="i18n i18n-fr">Pour toute question liée à la confidentialité ou à vos données, vous pouvez nous écrire directement.</span>
+        <span class="i18n i18n-en">For any question regarding privacy or your data, you can contact us directly.</span>
       </div>
     </main>
 
@@ -290,33 +397,52 @@
   </div>
 
   <script>
-    // Logique identique à la page index pour la cohérence thématique et linguistique
-    const themeBtn = document.getElementById('theme-toggle');
-    const langBtns = document.querySelectorAll('.lang-btn');
+    const themeBtn = document.getElementById("theme-toggle");
+    const sunIcon = document.querySelector(".sun");
+    const moonIcon = document.querySelector(".moon");
+    const langBtns = document.querySelectorAll(".lang-btn");
 
     function updateTheme(theme) {
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem('theme', theme);
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("theme", theme);
+      sunIcon.style.display = theme === "dark" ? "block" : "none";
+      moonIcon.style.display = theme === "dark" ? "none" : "block";
     }
-
-    themeBtn.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme');
-      updateTheme(current === 'dark' ? 'light' : 'dark');
-    });
 
     function setLanguage(lang) {
-      document.documentElement.setAttribute('data-lang', lang);
-      localStorage.setItem('lang', lang);
-      langBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.setLang === lang));
+      document.documentElement.setAttribute("data-lang", lang);
+      document.documentElement.setAttribute("lang", lang);
+      localStorage.setItem("lang", lang);
+
+      langBtns.forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.setLang === lang);
+      });
+
+      themeBtn.setAttribute(
+        "aria-label",
+        lang === "fr" ? "Changer le thème" : "Change theme"
+      );
     }
 
-    langBtns.forEach(btn => {
-      btn.addEventListener('click', () => setLanguage(btn.dataset.setLang));
+    themeBtn.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme") || "light";
+      updateTheme(current === "dark" ? "light" : "dark");
     });
 
-    // Init
-    updateTheme(localStorage.getItem('theme') || 'light');
-    setLanguage(localStorage.getItem('lang') || 'fr');
+    langBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        setLanguage(btn.dataset.setLang);
+      });
+    });
+
+    const savedTheme =
+      localStorage.getItem("theme") ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+    const savedLang = localStorage.getItem("lang") || "fr";
+
+    updateTheme(savedTheme);
+    setLanguage(savedLang);
   </script>
 </body>
 </html>
