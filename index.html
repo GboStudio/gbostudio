@@ -10,22 +10,22 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
 
   <style>
     :root {
       --bg: #f6f5f2;
       --bg-soft: #fbfaf8;
-      --surface: rgba(255, 255, 255, 0.72);
+      --surface: rgba(255, 255, 255, 0.68);
       --surface-strong: rgba(255, 255, 255, 0.92);
       --text: #11161a;
       --muted: #5f686b;
-      --line: rgba(17, 22, 26, 0.08);
+      --line: rgba(17, 22, 26, 0.07);
       --accent: #67867f;
       --accent-soft: #dde8e2;
       --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.06);
-      --shadow-md: 0 12px 30px rgba(0,0,0,0.06);
-      --radius-xl: 2.25rem;
+      --shadow-md: 0 14px 36px rgba(0, 0, 0, 0.08);
+      --radius-xl: 2.5rem;
       --radius-lg: 1.5rem;
       --radius-md: 1rem;
       --transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
@@ -34,15 +34,15 @@
     [data-theme="dark"] {
       --bg: #0d1114;
       --bg-soft: #14191d;
-      --surface: rgba(22, 27, 31, 0.72);
-      --surface-strong: rgba(28, 34, 39, 0.95);
+      --surface: rgba(22, 27, 31, 0.74);
+      --surface-strong: rgba(28, 34, 39, 0.96);
       --text: #f6f5f2;
       --muted: #9ba3a7;
       --line: rgba(255, 255, 255, 0.08);
       --accent: #8fb3ab;
       --accent-soft: #1c2b27;
-      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.3);
-      --shadow-md: 0 12px 30px rgba(0,0,0,0.22);
+      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.34);
+      --shadow-md: 0 14px 36px rgba(0, 0, 0, 0.22);
     }
 
     * { box-sizing: border-box; }
@@ -54,11 +54,16 @@
       color: var(--text);
       background-color: var(--bg);
       background-image:
-        radial-gradient(circle at 0% 0%, var(--accent-soft), transparent 40%),
-        radial-gradient(circle at 100% 100%, rgba(103, 134, 127, 0.06), transparent 40%);
-      transition: background-color 0.35s ease, color 0.35s ease;
+        radial-gradient(circle at 0% 0%, var(--accent-soft), transparent 42%),
+        radial-gradient(circle at 100% 100%, rgba(103, 134, 127, 0.06), transparent 38%);
+      transition: background-color 0.4s ease, color 0.4s ease;
       -webkit-font-smoothing: antialiased;
       line-height: 1.55;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
     }
 
     .container {
@@ -69,8 +74,8 @@
 
     .glass {
       background: var(--surface);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--line);
       box-shadow: var(--shadow-xl);
     }
@@ -80,15 +85,13 @@
       align-items: center;
       justify-content: space-between;
       gap: 1.5rem;
-      margin-bottom: 3.5rem;
+      margin-bottom: 3rem;
     }
 
     .brand {
       display: flex;
       align-items: center;
       gap: 1rem;
-      text-decoration: none;
-      color: inherit;
       min-width: 0;
     }
 
@@ -100,32 +103,28 @@
       display: grid;
       place-items: center;
       border: 1px solid var(--line);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.05);
       flex-shrink: 0;
-    }
-
-    .brand-mark img {
-      width: 30px;
-      height: 30px;
-      object-fit: contain;
-      display: block;
     }
 
     .brand-name {
       font-weight: 800;
-      font-size: 1.08rem;
+      font-size: 1.1rem;
       letter-spacing: -0.02em;
     }
 
     .brand-sub {
       font-size: 0.82rem;
       color: var(--muted);
+      opacity: 0.9;
     }
 
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 1.5rem;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .desktop-nav {
@@ -134,34 +133,52 @@
       align-items: center;
     }
 
-    .desktop-nav a,
-    .footer-links a {
-      text-decoration: none;
+    .desktop-nav a {
       color: var(--muted);
       font-weight: 600;
       font-size: 0.92rem;
-      transition: color var(--transition), opacity var(--transition);
+      padding: 0.45rem 0.2rem;
+      position: relative;
+      transition: color var(--transition);
     }
 
-    .desktop-nav a:hover,
-    .footer-links a:hover {
+    .desktop-nav a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -0.1rem;
+      width: 100%;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 999px;
+      transform: scaleX(0);
+      transform-origin: center;
+      transition: transform var(--transition);
+    }
+
+    .desktop-nav a:hover {
       color: var(--text);
+    }
+
+    .desktop-nav a:hover::after {
+      transform: scaleX(1);
     }
 
     .controls {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.8rem;
     }
 
     .lang-toggle {
       display: inline-flex;
       align-items: center;
+      gap: 0.2rem;
       background: var(--surface-strong);
       border: 1px solid var(--line);
       border-radius: 999px;
-      padding: 4px;
-      box-shadow: var(--shadow-md);
+      padding: 0.22rem;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.04);
     }
 
     .lang-btn {
@@ -169,8 +186,9 @@
       background: transparent;
       color: var(--muted);
       font-weight: 800;
-      font-size: 0.75rem;
-      padding: 0.55rem 0.9rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.03em;
+      padding: 0.58rem 0.85rem;
       border-radius: 999px;
       cursor: pointer;
       transition: all var(--transition);
@@ -178,13 +196,12 @@
 
     .lang-btn:hover {
       color: var(--text);
-      transform: translateY(-1px);
     }
 
     .lang-btn.active {
       background: var(--text);
       color: var(--bg);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      box-shadow: var(--shadow-md);
     }
 
     .theme-btn {
@@ -199,19 +216,18 @@
       align-items: center;
       justify-content: center;
       transition: transform var(--transition), background var(--transition), border-color var(--transition);
-      box-shadow: var(--shadow-md);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.04);
     }
 
     .theme-btn:hover {
-      transform: translateY(-2px) scale(1.03);
+      transform: translateY(-1px) scale(1.04);
     }
 
     .hero {
-      padding: 4rem;
+      padding: clamp(2rem, 5vw, 4rem);
       border-radius: var(--radius-xl);
       margin-bottom: 1.5rem;
       overflow: hidden;
-      position: relative;
     }
 
     .hero-grid {
@@ -222,8 +238,7 @@
     }
 
     .pill {
-      display: inline-flex;
-      align-items: center;
+      display: inline-block;
       padding: 0.5rem 1rem;
       background: var(--accent-soft);
       color: var(--accent);
@@ -232,27 +247,20 @@
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.2rem;
     }
 
     h1 {
-      font-size: clamp(2.5rem, 5vw, 4.1rem);
+      font-size: clamp(2.5rem, 5vw, 4.2rem);
       line-height: 0.98;
       letter-spacing: -0.055em;
-      margin: 0 0 1.35rem;
-      font-weight: 900;
-    }
-
-    h2 {
-      font-size: clamp(2rem, 4vw, 2.8rem);
-      line-height: 1.05;
-      letter-spacing: -0.045em;
-      margin: 0 0 1rem;
-      font-weight: 800;
+      margin: 0 0 1.4rem;
+      font-weight: 850;
+      max-width: 680px;
     }
 
     .hero-subtitle {
-      font-size: 1.12rem;
+      font-size: 1.15rem;
       color: var(--muted);
       margin-bottom: 2rem;
       max-width: 560px;
@@ -260,51 +268,32 @@
 
     .cta-row {
       display: flex;
-      flex-wrap: wrap;
       gap: 1rem;
+      flex-wrap: wrap;
     }
 
     .btn {
-      position: relative;
-      overflow: hidden;
       padding: 1rem 1.4rem;
       border-radius: 1rem;
       font-weight: 700;
-      text-decoration: none;
-      transition: transform var(--transition), box-shadow var(--transition), background var(--transition), border-color var(--transition), color var(--transition);
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 54px;
+      gap: 0.55rem;
+      transition: all var(--transition);
       border: 1px solid transparent;
-      box-shadow: var(--shadow-md);
-    }
-
-    .btn::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.12) 40%, transparent 80%);
-      transform: translateX(-120%);
-      transition: transform 0.7s ease;
-      pointer-events: none;
-    }
-
-    .btn:hover::after {
-      transform: translateX(120%);
-    }
-
-    .btn:hover {
-      transform: translateY(-2px);
+      min-height: 52px;
     }
 
     .btn-primary {
       background: var(--text);
       color: var(--bg);
+      box-shadow: var(--shadow-md);
     }
 
     .btn-primary:hover {
-      box-shadow: 0 18px 35px rgba(0,0,0,0.16);
+      transform: translateY(-2px);
+      opacity: 0.96;
     }
 
     .btn-secondary {
@@ -314,79 +303,115 @@
     }
 
     .btn-secondary:hover {
+      transform: translateY(-2px);
+      border-color: rgba(103, 134, 127, 0.22);
       background: var(--bg-soft);
-      box-shadow: 0 18px 35px rgba(0,0,0,0.08);
     }
 
     .product-preview {
-      background: var(--bg-soft);
+      background: linear-gradient(180deg, var(--bg-soft), var(--surface-strong));
       border-radius: 2rem;
       padding: 2.5rem;
       text-align: center;
       border: 1px solid var(--line);
       position: relative;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
-    }
-
-    .app-icon {
-      width: 104px;
-      height: 104px;
-      background: white;
-      border-radius: 24px;
-      margin: 0 auto 1.25rem;
-      display: grid;
-      place-items: center;
-      box-shadow: var(--shadow-xl);
       overflow: hidden;
     }
 
-    .app-icon img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
+    .product-preview::before {
+      content: "";
+      position: absolute;
+      inset: auto -20% -35% auto;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, var(--accent-soft), transparent 65%);
+      pointer-events: none;
+    }
+
+    .app-icon {
+      width: 100px;
+      height: 100px;
+      background: #ffffff;
+      border-radius: 24px;
+      margin: 0 auto 1.3rem;
+      display: grid;
+      place-items: center;
+      box-shadow: var(--shadow-xl);
+    }
+
+    [data-theme="dark"] .app-icon {
+      background: #f4f2ef;
+    }
+
+    .product-kicker {
+      margin: 0;
+      letter-spacing: 0.2em;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .product-tagline {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-top: 0.7rem;
+      margin-bottom: 1.2rem;
     }
 
     .product-badge {
       display: inline-block;
-      margin-top: 1rem;
       padding: 0.45rem 0.8rem;
       border-radius: 999px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-size: 0.78rem;
-      font-weight: 800;
+      background: var(--surface-strong);
+      border: 1px solid var(--line);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
     }
 
     .section-card {
-      padding: 3.5rem;
+      padding: clamp(2rem, 4vw, 3.5rem);
       border-radius: var(--radius-lg);
       margin-top: 1.5rem;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 3.5vw, 2.8rem);
+      letter-spacing: -0.045em;
+      margin: 0 0 1rem;
+      line-height: 1.05;
+    }
+
+    .section-intro {
+      color: var(--muted);
+      max-width: 720px;
+      font-size: 1.06rem;
+      margin: 0;
     }
 
     .value-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
-      margin-top: 2rem;
+      gap: 1.25rem;
+      margin-top: 2.3rem;
     }
 
     .value-item {
-      padding: 1.5rem;
-      border-radius: 1.2rem;
       background: var(--surface-strong);
       border: 1px solid var(--line);
-      transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+      border-radius: 1.3rem;
+      padding: 1.4rem;
+      transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
     }
 
     .value-item:hover {
       transform: translateY(-4px);
+      border-color: rgba(103, 134, 127, 0.2);
       box-shadow: var(--shadow-md);
-      border-color: rgba(103, 134, 127, 0.18);
     }
 
     .value-item h3 {
-      font-size: 1.12rem;
+      font-size: 1.08rem;
       margin: 0 0 0.6rem;
       letter-spacing: -0.02em;
     }
@@ -398,9 +423,33 @@
       margin: 0;
     }
 
+    .contact-card {
+      text-align: center;
+    }
+
+    .contact-email {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1.5rem;
+      padding: 1rem 1.4rem;
+      border-radius: 1rem;
+      background: var(--text);
+      color: var(--bg);
+      font-weight: 800;
+      transition: all var(--transition);
+      box-shadow: var(--shadow-md);
+      word-break: break-word;
+    }
+
+    .contact-email:hover {
+      transform: translateY(-2px);
+      opacity: 0.96;
+    }
+
     footer {
       margin-top: 4rem;
-      padding-top: 2rem;
+      padding-top: 1.5rem;
       border-top: 1px solid var(--line);
       display: flex;
       justify-content: space-between;
@@ -408,7 +457,7 @@
       gap: 1rem;
       flex-wrap: wrap;
       color: var(--muted);
-      font-size: 0.88rem;
+      font-size: 0.85rem;
     }
 
     .footer-links {
@@ -417,23 +466,28 @@
       flex-wrap: wrap;
     }
 
-    [data-lang] {
+    .footer-links a {
+      color: inherit;
+      transition: color var(--transition);
+    }
+
+    .footer-links a:hover {
+      color: var(--text);
+    }
+
+    .i18n {
       display: none;
     }
 
-    html[data-lang="fr"] [data-lang="fr"],
-    html[data-lang="en"] [data-lang="en"] {
-      display: initial;
-    }
-
-    html:not([data-lang]) [data-lang="fr"] {
-      display: initial;
+    html[data-lang="fr"] .i18n-fr,
+    html[data-lang="en"] .i18n-en {
+      display: inline;
     }
 
     .scroll-reveal {
       opacity: 0;
-      transform: translateY(24px);
-      transition: opacity 0.8s ease, transform 0.8s ease;
+      transform: translateY(30px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
     }
 
     .scroll-reveal.active {
@@ -442,35 +496,40 @@
     }
 
     @media (max-width: 960px) {
+      .hero-grid,
+      .value-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .desktop-nav {
+        display: none;
+      }
+
       .topbar {
-        flex-direction: column;
         align-items: flex-start;
       }
 
       .nav-actions {
         width: 100%;
         justify-content: space-between;
-        flex-wrap: wrap;
-      }
-
-      .hero-grid,
-      .value-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero,
-      .section-card {
-        padding: 2rem 1.4rem;
       }
     }
 
     @media (max-width: 640px) {
       .container {
-        padding: 1.25rem 1rem 4rem;
+        padding: 1.2rem 1rem 4rem;
       }
 
-      .desktop-nav {
-        display: none;
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+      }
+
+      .nav-actions {
+        width: 100%;
+        gap: 1rem;
+        align-items: center;
       }
 
       .controls {
@@ -482,25 +541,30 @@
         flex-direction: column;
       }
 
-      .btn {
+      .btn,
+      .contact-email {
         width: 100%;
+      }
+
+      footer {
+        flex-direction: column;
+        align-items: flex-start;
       }
     }
   </style>
 </head>
 <body>
-
   <div class="container">
     <header class="topbar">
-      <a href="index.html" class="brand">
+      <a href="index.html" class="brand" aria-label="GBO Studio home">
         <div class="brand-mark">
-          <img src="logo.svg" alt="GBO Studio logo" />
+          <img src="logo.svg" alt="GBO Studio logo" width="28" height="28" />
         </div>
         <div>
           <div class="brand-name">GBO Studio</div>
           <div class="brand-sub">
-            <span data-lang="fr">Design intentionnel</span>
-            <span data-lang="en">Intentional design</span>
+            <span class="i18n i18n-fr">Design intentionnel</span>
+            <span class="i18n i18n-en">Intentional design</span>
           </div>
         </div>
       </a>
@@ -508,28 +572,33 @@
       <div class="nav-actions">
         <nav class="desktop-nav">
           <a href="#vision">
-            <span data-lang="fr">Vision</span>
-            <span data-lang="en">Vision</span>
+            <span class="i18n i18n-fr">Vision</span>
+            <span class="i18n i18n-en">Vision</span>
           </a>
           <a href="#product">
-            <span data-lang="fr">Produit</span>
-            <span data-lang="en">Product</span>
+            <span class="i18n i18n-fr">Produit</span>
+            <span class="i18n i18n-en">Product</span>
           </a>
-          <a href="mailto:contact@gbostudio.fr">
-            <span data-lang="fr">Contact</span>
-            <span data-lang="en">Contact</span>
+          <a href="#contact">
+            <span class="i18n i18n-fr">Contact</span>
+            <span class="i18n i18n-en">Contact</span>
           </a>
         </nav>
 
         <div class="controls">
-          <div class="lang-toggle">
-            <button class="lang-btn active" data-set-lang="fr" type="button">FR</button>
-            <button class="lang-btn" data-set-lang="en" type="button">EN</button>
+          <div class="lang-toggle" aria-label="Language switcher">
+            <button type="button" class="lang-btn active" data-set-lang="fr">FR</button>
+            <button type="button" class="lang-btn" data-set-lang="en">EN</button>
           </div>
 
-          <button id="theme-toggle" class="theme-btn" type="button" aria-label="Changer le thème">
-            <svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
-            <svg class="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <button id="theme-toggle" class="theme-btn" aria-label="Changer le thème">
+            <svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"></circle>
+              <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"></path>
+            </svg>
+            <svg class="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
           </button>
         </div>
       </div>
@@ -540,148 +609,167 @@
         <div class="hero-grid">
           <div>
             <span class="pill">
-              <span data-lang="fr">Studio — France</span>
-              <span data-lang="en">Studio — France</span>
+              <span class="i18n i18n-fr">Studio indépendant • France</span>
+              <span class="i18n i18n-en">Independent studio • France</span>
             </span>
 
             <h1>
-              <span data-lang="fr">Des outils calmes pour mieux se connaître.</span>
-              <span data-lang="en">Calm tools for deeper self-awareness.</span>
+              <span class="i18n i18n-fr">Des outils calmes pour mieux se connaître.</span>
+              <span class="i18n i18n-en">Calm tools for deeper awareness.</span>
             </h1>
 
             <p class="hero-subtitle">
-              <span data-lang="fr">Nous créons des produits mobiles intentionnels qui vous aident à observer vos schémas, clarifier vos habitudes et agir avec plus de lucidité.</span>
-              <span data-lang="en">We create intentional mobile products that help you observe your patterns, understand your habits, and act with more clarity.</span>
+              <span class="i18n i18n-fr">Nous créons des produits intentionnels qui aident à observer ses schémas, comprendre ses habitudes et agir avec plus de clarté.</span>
+              <span class="i18n i18n-en">We build intentional products that help people observe patterns, understand habits and act with more clarity.</span>
             </p>
 
             <div class="cta-row">
               <a href="#product" class="btn btn-primary">
-                <span data-lang="fr">Découvrir Conscience</span>
-                <span data-lang="en">Discover Conscience</span>
+                <span class="i18n i18n-fr">Découvrir Conscience</span>
+                <span class="i18n i18n-en">Discover Conscience</span>
               </a>
               <a href="mailto:contact@gbostudio.fr" class="btn btn-secondary">
-                <span data-lang="fr">Nous contacter</span>
-                <span data-lang="en">Contact us</span>
+                <span class="i18n i18n-fr">Nous contacter</span>
+                <span class="i18n i18n-en">Get in touch</span>
               </a>
             </div>
           </div>
 
           <div class="product-preview">
             <div class="app-icon">
-              <img src="logo.svg" alt="Conscience app icon" />
+              <img src="logo.svg" alt="Conscience app icon" width="52" height="52" />
             </div>
-            <h2 style="margin:0; letter-spacing: 0.18em; font-size: 1rem; font-weight: 800; color: var(--accent);">CONSCIENCE</h2>
-            <p style="font-size: 0.95rem; color: var(--muted); margin-top: 0.65rem;">
-              <span data-lang="fr">Observer. Comprendre. Ajuster.</span>
-              <span data-lang="en">Observe. Understand. Adjust.</span>
+            <p class="product-kicker">CONSCIENCE</p>
+            <p class="product-tagline">
+              <span class="i18n i18n-fr">Observer. Comprendre. Ajuster.</span>
+              <span class="i18n i18n-en">Observe. Understand. Adjust.</span>
             </p>
-            <div class="product-badge">
-              <span data-lang="fr">Projet en cours</span>
-              <span data-lang="en">Current project</span>
-            </div>
+            <span class="product-badge">
+              <span class="i18n i18n-fr">Application en développement</span>
+              <span class="i18n i18n-en">App in development</span>
+            </span>
           </div>
         </div>
       </section>
 
       <section id="vision" class="section-card glass scroll-reveal">
-        <div class="pill">
-          <span data-lang="fr">Vision</span>
-          <span data-lang="en">Vision</span>
-        </div>
+        <span class="pill">
+          <span class="i18n i18n-fr">Vision</span>
+          <span class="i18n i18n-en">Vision</span>
+        </span>
 
-        <h2>
-          <span data-lang="fr">Une technologie qui respecte votre espace mental.</span>
-          <span data-lang="en">Technology that respects your mental space.</span>
+        <h2 class="section-title">
+          <span class="i18n i18n-fr">Une technologie qui respecte votre espace mental.</span>
+          <span class="i18n i18n-en">Technology that respects your mental space.</span>
         </h2>
 
-        <p class="hero-subtitle" style="max-width: 760px; margin-bottom: 0;">
-          <span data-lang="fr">Dans un monde saturé de bruit, nous pensons que les produits numériques devraient aider à voir plus clair, pas à réagir davantage.</span>
-          <span data-lang="en">In a world full of noise, we believe digital products should increase clarity, not reactivity.</span>
+        <p class="section-intro">
+          <span class="i18n i18n-fr">Nous pensons que les bons produits ne devraient pas créer plus de bruit, mais plus de recul, plus de lucidité et une expérience plus calme.</span>
+          <span class="i18n i18n-en">We believe the best products should create less noise, more perspective, and a calmer user experience.</span>
         </p>
 
         <div class="value-grid">
           <div class="value-item">
             <h3>
-              <span data-lang="fr">Clarté</span>
-              <span data-lang="en">Clarity</span>
+              <span class="i18n i18n-fr">Clarté</span>
+              <span class="i18n i18n-en">Clarity</span>
             </h3>
             <p>
-              <span data-lang="fr">Des outils simples pour réduire la charge mentale et révéler ce qui se répète vraiment.</span>
-              <span data-lang="en">Simple tools designed to reduce mental clutter and reveal what truly repeats.</span>
+              <span class="i18n i18n-fr">Des outils simples pour révéler les habitudes et réduire la charge mentale inutile.</span>
+              <span class="i18n i18n-en">Simple tools built to reveal habits and reduce unnecessary mental clutter.</span>
             </p>
           </div>
 
           <div class="value-item">
             <h3>
-              <span data-lang="fr">Confidentialité</span>
-              <span data-lang="en">Privacy</span>
+              <span class="i18n i18n-fr">Confidentialité</span>
+              <span class="i18n i18n-en">Privacy</span>
             </h3>
             <p>
-              <span data-lang="fr">Vos données vous appartiennent. Vos observations sont là pour vous aider, pas pour vous exposer.</span>
-              <span data-lang="en">Your data stays yours. Your observations are here to help you, not expose you.</span>
+              <span class="i18n i18n-fr">Vos données vous appartiennent. L’observation personnelle doit rester personnelle.</span>
+              <span class="i18n i18n-en">Your data stays yours. Personal observation should remain personal.</span>
             </p>
           </div>
 
           <div class="value-item">
             <h3>
-              <span data-lang="fr">Intention</span>
-              <span data-lang="en">Intent</span>
+              <span class="i18n i18n-fr">Intention</span>
+              <span class="i18n i18n-en">Intent</span>
             </h3>
             <p>
-              <span data-lang="fr">Nous privilégions le changement progressif, durable et cohérent plutôt que les effets immédiats.</span>
-              <span data-lang="en">We prioritize gradual, durable, meaningful change over short-term stimulation.</span>
+              <span class="i18n i18n-fr">Nous privilégions le changement durable, utile et progressif plutôt que les effets rapides.</span>
+              <span class="i18n i18n-en">We focus on meaningful and lasting change rather than quick stimulation.</span>
             </p>
           </div>
         </div>
       </section>
 
       <section id="product" class="section-card glass scroll-reveal">
-        <div class="pill">
-          <span data-lang="fr">Produit</span>
-          <span data-lang="en">Product</span>
-        </div>
+        <span class="pill">
+          <span class="i18n i18n-fr">Produit</span>
+          <span class="i18n i18n-en">Product</span>
+        </span>
 
-        <h2>CONSCIENCE</h2>
+        <h2 class="section-title">CONSCIENCE</h2>
 
-        <p class="hero-subtitle" style="max-width: 760px; margin-bottom: 2rem;">
-          <span data-lang="fr">Une application pensée pour suivre ses habitudes sans culpabilité, avec une interface calme, lisible et intentionnelle.</span>
-          <span data-lang="en">An app designed to track habits without guilt, through a calm, readable, intentional interface.</span>
+        <p class="section-intro">
+          <span class="i18n i18n-fr">Une application pensée pour suivre ses comportements sans culpabilisation, avec une approche sobre, lisible et premium.</span>
+          <span class="i18n i18n-en">A mobile app designed to track behaviors without guilt, using a calm, clear and premium approach.</span>
         </p>
 
         <div class="value-grid">
           <div class="value-item">
             <h3>
-              <span data-lang="fr">Suivi simple</span>
-              <span data-lang="en">Simple tracking</span>
+              <span class="i18n i18n-fr">Suivi rapide</span>
+              <span class="i18n i18n-en">Fast tracking</span>
             </h3>
             <p>
-              <span data-lang="fr">Ajouter une observation rapidement, sans friction ni surcharge.</span>
-              <span data-lang="en">Add an observation quickly, without friction or overload.</span>
+              <span class="i18n i18n-fr">Des entrées simples et rapides pour noter ses habitudes au quotidien.</span>
+              <span class="i18n i18n-en">Quick and frictionless entries to log habits every day.</span>
             </p>
           </div>
 
           <div class="value-item">
             <h3>
-              <span data-lang="fr">Lecture des tendances</span>
-              <span data-lang="en">Pattern visibility</span>
+              <span class="i18n i18n-fr">Lecture des schémas</span>
+              <span class="i18n i18n-en">Pattern reading</span>
             </h3>
             <p>
-              <span data-lang="fr">Faire ressortir ce qui revient, ce qui déclenche, ce qui évolue.</span>
-              <span data-lang="en">See what repeats, what triggers, and what starts to change.</span>
+              <span class="i18n i18n-fr">Des vues claires pour mieux comprendre les déclencheurs, fréquences et évolutions.</span>
+              <span class="i18n i18n-en">Clear views to understand triggers, frequency and behavior trends.</span>
             </p>
           </div>
 
           <div class="value-item">
             <h3>
-              <span data-lang="fr">Expérience premium</span>
-              <span data-lang="en">Premium experience</span>
+              <span class="i18n i18n-fr">Interface apaisée</span>
+              <span class="i18n i18n-en">Calm interface</span>
             </h3>
             <p>
-              <span data-lang="fr">Un design apaisé, moderne et volontairement épuré.</span>
-              <span data-lang="en">A calm, modern, intentionally minimalist experience.</span>
+              <span class="i18n i18n-fr">Une expérience centrée sur la sobriété, la lisibilité et la constance.</span>
+              <span class="i18n i18n-en">An experience centered on simplicity, readability and consistency.</span>
             </p>
           </div>
         </div>
+      </section>
+
+      <section id="contact" class="section-card glass scroll-reveal contact-card">
+        <span class="pill">
+          <span class="i18n i18n-fr">Contact</span>
+          <span class="i18n i18n-en">Contact</span>
+        </span>
+
+        <h2 class="section-title">
+          <span class="i18n i18n-fr">Parlons de votre projet.</span>
+          <span class="i18n i18n-en">Let’s talk about your project.</span>
+        </h2>
+
+        <p class="section-intro" style="margin: 0 auto;">
+          <span class="i18n i18n-fr">Pour une question, un partenariat ou une demande liée à nos produits, vous pouvez nous écrire directement.</span>
+          <span class="i18n i18n-en">For questions, partnerships, or product-related inquiries, you can reach us directly.</span>
+        </p>
+
+        <a class="contact-email" href="mailto:contact@gbostudio.fr">contact@gbostudio.fr</a>
       </section>
     </main>
 
@@ -689,53 +777,66 @@
       <div>© 2026 GBO Studio — France</div>
       <div class="footer-links">
         <a href="privacy.html">Privacy</a>
-        <a href="terms.html">Terms</a>
         <a href="support.html">Support</a>
+        <a href="terms.html">Terms</a>
       </div>
     </footer>
   </div>
 
   <script>
-    const themeBtn = document.getElementById('theme-toggle');
-    const sunIcon = document.querySelector('.sun');
-    const moonIcon = document.querySelector('.moon');
-    const langBtns = document.querySelectorAll('.lang-btn');
+    const themeBtn = document.getElementById("theme-toggle");
+    const sunIcon = document.querySelector(".sun");
+    const moonIcon = document.querySelector(".moon");
+    const langBtns = document.querySelectorAll(".lang-btn");
 
     function updateTheme(theme) {
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem('theme', theme);
-      sunIcon.style.display = theme === 'dark' ? 'block' : 'none';
-      moonIcon.style.display = theme === 'dark' ? 'none' : 'block';
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("theme", theme);
+      sunIcon.style.display = theme === "dark" ? "block" : "none";
+      moonIcon.style.display = theme === "dark" ? "none" : "block";
     }
 
     function setLanguage(lang) {
-      document.documentElement.setAttribute('data-lang', lang);
-      localStorage.setItem('lang', lang);
-      langBtns.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.setLang === lang);
+      document.documentElement.setAttribute("data-lang", lang);
+      document.documentElement.setAttribute("lang", lang);
+      localStorage.setItem("lang", lang);
+
+      langBtns.forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.setLang === lang);
       });
+
+      themeBtn.setAttribute(
+        "aria-label",
+        lang === "fr" ? "Changer le thème" : "Change theme"
+      );
     }
 
-    themeBtn.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme') || 'light';
-      updateTheme(current === 'dark' ? 'light' : 'dark');
+    themeBtn.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme") || "light";
+      updateTheme(current === "dark" ? "light" : "dark");
     });
 
-    langBtns.forEach(btn => {
-      btn.addEventListener('click', () => setLanguage(btn.dataset.setLang));
+    langBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        setLanguage(btn.dataset.setLang);
+      });
     });
 
     const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) entry.target.classList.add('active');
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("active");
+        }
       });
-    }, { threshold: 0.1 });
+    }, { threshold: 0.12 });
 
-    document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
+    document.querySelectorAll(".scroll-reveal").forEach((el) => observer.observe(el));
 
-    const savedTheme = localStorage.getItem('theme') ||
-      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    const savedLang = localStorage.getItem('lang') || 'fr';
+    const savedTheme =
+      localStorage.getItem("theme") ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+    const savedLang = localStorage.getItem("lang") || "fr";
 
     updateTheme(savedTheme);
     setLanguage(savedLang);
