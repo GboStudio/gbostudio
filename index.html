@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,136 +11,151 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      /* Theme Light */
       --bg: #f6f5f2;
-      --bg-soft: #fbfaf8;
-      --surface: rgba(255, 255, 255, 0.75);
+      --bg-soft: #ffffff;
+      --surface: rgba(255, 255, 255, 0.6);
       --text: #11161a;
-      --muted: #5f686b;
-      --line: rgba(17, 22, 26, 0.08);
-      --accent: #67867f;
-      --accent-soft: #dde8e2;
-      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.07);
-      --radius-xl: 2rem;
+      --muted: #626d71;
+      --line: rgba(17, 22, 26, 0.06);
+      --accent: #4a635e;
+      --accent-soft: #e3ebe7;
+      --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.04);
+      --radius-xl: 2.5rem;
       --radius-lg: 1.5rem;
     }
 
     [data-theme="dark"] {
-      --bg: #0d1114;
-      --bg-soft: #161b1f;
-      --surface: rgba(22, 27, 31, 0.8);
+      --bg: #0a0c0e;
+      --bg-soft: #12171b;
+      --surface: rgba(18, 23, 27, 0.7);
       --text: #f6f5f2;
-      --muted: #9ba3a7;
-      --line: rgba(255, 255, 255, 0.1);
-      --accent: #8fb3ab;
-      --accent-soft: #243530;
-      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.4);
+      --muted: #8e999e;
+      --line: rgba(255, 255, 255, 0.06);
+      --accent: #a3c4bd;
+      --accent-soft: #1a2622;
+      --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.3);
     }
 
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; outline: none; }
     html { scroll-behavior: smooth; }
 
     body {
       margin: 0;
-      font-family: "Inter", system-ui, sans-serif;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
       color: var(--text);
       background-color: var(--bg);
-      background-image: radial-gradient(circle at top left, var(--accent-soft), transparent 30%);
-      transition: background-color 0.4s ease, color 0.4s ease;
+      transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
       -webkit-font-smoothing: antialiased;
-      line-height: 1.6;
+      line-height: 1.5;
+      overflow-x: hidden;
     }
 
-    .container { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1.25rem 5rem; }
+    /* Subtle Grain Effect */
+    body::before {
+      content: "";
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+      opacity: 0.03; pointer-events: none; z-index: 99;
+    }
 
-    /* Glassmorphism */
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 6rem; }
+
+    /* Layout Components */
     .glass {
       background: var(--surface);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--line);
+      transition: transform 0.3s ease, border-color 0.3s ease;
     }
 
-    /* Header & Navigation */
-    .topbar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 2rem; position: relative; }
+    .topbar { 
+      display: flex; align-items: center; justify-content: space-between; 
+      margin-bottom: 4rem; padding: 0.5rem 0;
+    }
     
-    .brand { display: flex; align-items: center; gap: 1rem; text-decoration: none; color: inherit; z-index: 10; }
+    .brand { display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: inherit; }
     .brand-mark { 
-      width: 3.5rem; height: 3.5rem; border-radius: 1rem; background: #fff;
-      display: grid; place-items: center; border: 1px solid var(--line); box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+      width: 2.8rem; height: 2.8rem; border-radius: 0.8rem; 
+      background: #fff; display: grid; place-items: center; 
+      border: 1px solid var(--line); box-shadow: var(--shadow-xl);
     }
-    .brand-name { font-weight: 800; font-size: 1.15rem; letter-spacing: -0.03em; }
+    .brand-name { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em; }
 
-    .nav-actions { display: flex; align-items: center; gap: 1.5rem; }
-    .desktop-nav { display: flex; gap: 1.5rem; }
-    .desktop-nav a { text-decoration: none; color: var(--muted); font-weight: 600; font-size: 0.9rem; transition: color 0.2s; }
+    .nav-actions { display: flex; align-items: center; gap: 2rem; }
+    .desktop-nav { display: flex; gap: 2rem; }
+    .desktop-nav a { 
+      text-decoration: none; color: var(--muted); font-weight: 500; 
+      font-size: 0.95rem; transition: color 0.2s; 
+    }
     .desktop-nav a:hover { color: var(--text); }
 
-    /* Theme Toggle Button */
     .theme-btn {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      cursor: pointer;
-      color: var(--text);
-      display: flex; align-items: center; justify-content: center;
-      transition: transform 0.2s ease;
+      background: none; border: none; cursor: pointer; color: var(--text);
+      display: flex; align-items: center; justify-content: center; padding: 0;
     }
-    .theme-btn:hover { transform: scale(1.1); }
-    .theme-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
-    .sun { display: none; }
-    [data-theme="dark"] .sun { display: block; }
-    [data-theme="dark"] .moon { display: none; }
+    .theme-btn svg { width: 20px; height: 20px; stroke-width: 1.5; }
 
-    /* Mobile Nav */
-    .mobile-nav { display: none; position: relative; }
-    .mobile-nav summary { list-style: none; cursor: pointer; font-weight: 800; padding: 0.5rem; }
-    .mobile-menu-content { 
-        position: absolute; right: 0; top: 120%; width: 200px; padding: 1rem; 
-        border-radius: 1rem; display: flex; flex-direction: column; gap: 1rem; z-index: 100;
+    /* Hero Section */
+    .hero { 
+        padding: 4rem; border-radius: var(--radius-xl); 
+        box-shadow: var(--shadow-xl); position: relative;
     }
-
-    /* Hero */
-    .hero { padding: clamp(2rem, 5vw, 4.5rem); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); overflow: hidden; }
-    .hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 3rem; align-items: center; }
-    h1 { font-size: clamp(2.5rem, 6vw, 4.2rem); line-height: 0.95; letter-spacing: -0.06em; margin: 1rem 0; font-weight: 800; }
-    .hero-subtitle { font-size: clamp(1.1rem, 2vw, 1.3rem); color: var(--muted); margin-bottom: 2rem; max-width: 500px; }
+    .hero-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 4rem; align-items: center; }
+    h1 { 
+        font-size: clamp(2.8rem, 8vw, 4.5rem); line-height: 0.9; 
+        letter-spacing: -0.05em; margin: 1.5rem 0; font-weight: 850; 
+    }
+    .hero-subtitle { font-size: 1.25rem; color: var(--muted); margin-bottom: 2.5rem; max-width: 480px; font-weight: 450; }
 
     /* Buttons */
     .btn {
-      display: inline-flex; align-items: center; justify-content: center; height: 3.5rem;
-      padding: 0 2rem; border-radius: 1.1rem; font-weight: 700; text-decoration: none;
-      transition: all 0.2s ease; border: 1px solid transparent;
+      display: inline-flex; align-items: center; justify-content: center; 
+      height: 3.2rem; padding: 0 1.8rem; border-radius: 100px; 
+      font-weight: 600; text-decoration: none; transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     }
-    .btn-primary { background: var(--text); color: var(--bg); }
-    .btn-secondary { background: transparent; border-color: var(--line); color: var(--text); }
-    .btn:hover { transform: translateY(-2px); opacity: 0.9; }
-    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--text); color: var(--bg); border: 1px solid var(--text); }
+    .btn-secondary { background: transparent; border: 1px solid var(--line); color: var(--text); }
+    .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
 
-    /* Sections */
-    .sections { display: grid; gap: 1.5rem; margin-top: 1.5rem; }
-    .section-card { padding: 3rem; border-radius: var(--radius-lg); }
-    .pill { display: inline-block; padding: 0.4rem 0.9rem; background: var(--accent-soft); color: var(--accent); 
-            border-radius: 2rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1rem; letter-spacing: 0.05em; }
+    /* Cards & Sections */
+    .sections { display: grid; gap: 1.2rem; margin-top: 1.2rem; }
+    .section-card { padding: 3.5rem; border-radius: var(--radius-xl); }
+    
+    .pill { 
+        display: inline-block; padding: 0.3rem 0.8rem; background: var(--accent-soft); 
+        color: var(--accent); border-radius: 100px; font-size: 0.75rem; 
+        font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1.5rem;
+    }
 
-    .value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2.5rem; }
-    .value-item h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
-    .value-item p { font-size: 0.9rem; color: var(--muted); margin: 0; }
+    .value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; }
+    .value-item h3 { font-size: 1.2rem; margin-bottom: 0.6rem; letter-spacing: -0.02em; }
+    .value-item p { font-size: 0.95rem; color: var(--muted); }
 
     /* Footer */
-    footer { margin-top: 5rem; padding: 2rem 0; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; color: var(--muted); font-size: 0.85rem; }
-    footer a { color: inherit; text-decoration: none; font-weight: 600; }
+    footer { 
+        margin-top: 6rem; padding: 3rem 0; border-top: 1px solid var(--line); 
+        display: flex; justify-content: space-between; align-items: center;
+        color: var(--muted); font-size: 0.9rem; 
+    }
+    footer a { color: var(--text); text-decoration: none; font-weight: 500; }
+
+    /* App Preview Box */
+    .app-preview {
+        background: var(--bg-soft); border-radius: 2rem; padding: 3rem;
+        border: 1px solid var(--line); position: relative; overflow: hidden;
+    }
 
     @media (max-width: 900px) {
-      .hero-grid, .value-grid { grid-template-columns: 1fr; }
+      .hero-grid, .value-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .hero, .section-card { padding: 2.5rem 1.5rem; }
       .desktop-nav { display: none; }
-      .mobile-nav { display: block; }
-      .hero { padding: 2.5rem 1.5rem; }
+      h1 { font-size: 3rem; }
+      footer { flex-direction: column; text-align: center; gap: 2rem; }
     }
   </style>
 </head>
@@ -148,35 +163,27 @@
 
   <div class="container">
     <header class="topbar">
-      <a href="index.html" class="brand">
+      <a href="#" class="brand">
         <div class="brand-mark">
-          <img src="logo.svg" alt="GBO logo" width="32" height="32" />
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="4" width="16" height="16" rx="5" stroke="black" stroke-width="2.5"/>
+                <circle cx="12" cy="12" r="2" fill="black"/>
+            </svg>
         </div>
-        <div class="brand-copy">
-          <div class="brand-name">GBO Studio</div>
-        </div>
+        <div class="brand-name">GBO Studio</div>
       </a>
 
       <div class="nav-actions">
         <nav class="desktop-nav">
           <a href="#vision">Vision</a>
-          <a href="#product">Product</a>
+          <a href="#product">Produit</a>
           <a href="#contact">Contact</a>
         </nav>
 
-        <button id="theme-toggle" class="theme-btn" aria-label="Switch Theme">
-          <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
-          <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <button id="theme-toggle" class="theme-btn" aria-label="Changer de thème">
+          <svg class="sun" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
+          <svg class="moon" style="display:none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
-
-        <details class="mobile-nav">
-          <summary>Menu</summary>
-          <nav class="mobile-menu-content glass">
-            <a href="#vision">Vision</a>
-            <a href="#product">Product</a>
-            <a href="#contact">Contact</a>
-          </nav>
-        </details>
       </div>
     </header>
 
@@ -184,70 +191,80 @@
       <section class="hero glass scroll-reveal">
         <div class="hero-grid">
           <div>
-            <span class="pill">Independent Studio • France</span>
-            <h1>Calm tools for deeper awareness.</h1>
+            <span class="pill">Studio Indépendant • France</span>
+            <h1>Des outils calmes pour une conscience accrue.</h1>
             <p class="hero-subtitle">
-              We build intentional mobile experiences that help you observe your patterns and act with more clarity.
+              Nous créons des expériences mobiles intentionnelles qui vous aident à observer vos habitudes et agir avec clarté.
             </p>
             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-              <a href="#product" class="btn btn-primary">Discover CONSCIENCE</a>
-              <a href="mailto:contact.gbostudio@gmail.com" class="btn btn-secondary">Email us</a>
+              <a href="#product" class="btn btn-primary">Découvrir CONSCIENCE</a>
+              <a href="mailto:contact.gbostudio@gmail.com" class="btn btn-secondary">Nous écrire</a>
             </div>
           </div>
-          <div style="background: var(--bg-soft); border-radius: 2rem; padding: 2.5rem; border: 1px solid var(--line); text-align: center;">
-             <img src="logo.svg" alt="App Icon" width="80" style="margin-bottom: 1.5rem; opacity: 0.9;">
-             <h2 style="margin:0; font-size: 1.8rem; letter-spacing: -0.04em;">CONSCIENCE</h2>
-             <p style="color: var(--muted); font-size: 1rem;">Observe. Understand. Adjust.</p>
+          
+          <div class="app-preview">
+             <div style="font-size: 0.8rem; font-weight: 800; color: var(--accent); margin-bottom: 1rem;">DISPONIBLE SUR IOS</div>
+             <h2 style="margin:0; font-size: 2rem; letter-spacing: -0.04em;">CONSCIENCE</h2>
+             <p style="color: var(--muted); margin-bottom: 2rem;">Observer. Comprendre. Ajuster.</p>
+             <div style="width: 100%; height: 120px; background: var(--accent-soft); border-radius: 1rem; display: flex; align-items: center; justify-content: center;">
+                <span style="font-weight: 800; opacity: 0.2; font-size: 3rem;">✦</span>
+             </div>
           </div>
         </div>
       </section>
 
       <div class="sections">
         <section id="vision" class="section-card glass scroll-reveal">
-          <div class="pill">Our Vision</div>
-          <h2>Technology that respects your space.</h2>
-          <p style="max-width: 700px; font-size: 1.2rem; color: var(--muted);">
-            In a world of constant noise, we believe products should increase clarity, not reactions.
+          <div class="pill">Notre Vision</div>
+          <h2 style="font-size: 2.5rem; letter-spacing: -0.03em; margin-bottom: 1.5rem;">Une technologie qui respecte votre esprit.</h2>
+          <p style="max-width: 600px; font-size: 1.2rem; color: var(--muted); font-weight: 450;">
+            Dans un monde de bruit constant, nous pensons que les produits doivent favoriser la clarté plutôt que la réaction.
           </p>
           <div class="value-grid">
             <div class="value-item">
-              <h3>Clarity First</h3>
-              <p>Simple tools designed to reduce mental clutter and reveal hidden behaviors.</p>
+              <h3>Clarté</h3>
+              <p>Des outils simples conçus pour réduire la charge mentale et révéler vos schémas.</p>
             </div>
             <div class="value-item">
-              <h3>Intentionality</h3>
-              <p>Focusing on slow, meaningful change rather than instant gratification.</p>
+              <h3>Intention</h3>
+              <p>Privilégier le changement durable et réfléchi plutôt que la gratification immédiate.</p>
             </div>
             <div class="value-item">
-              <h3>Privacy</h3>
-              <p>Your data is yours. Your patterns are for you to see, and no one else.</p>
+              <h3>Vie Privée</h3>
+              <p>Vos données vous appartiennent. Vos habitudes sont pour vos yeux uniquement.</p>
             </div>
           </div>
         </section>
 
-        <section id="product" class="section-card glass scroll-reveal">
-          <div class="pill">Current Product</div>
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 2rem;">
+        <section id="product" class="section-card glass scroll-reveal" style="background: var(--bg-soft);">
+          <div class="pill">Produit Actuel</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 3rem;">
             <div style="flex: 1; min-width: 300px;">
-              <h2>CONSCIENCE</h2>
-              <p>A mobile application designed to help users track behaviors without guilt or friction.</p>
-              <ul style="margin: 2rem 0; padding-left: 1.2rem; font-weight: 600;">
-                <li style="margin-bottom: 0.8rem;">Low-friction daily tracking</li>
-                <li style="margin-bottom: 0.8rem;">Visual pattern recognition</li>
-                <li style="margin-bottom: 0.8rem;">Calm, premium user interface</li>
-              </ul>
+              <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">CONSCIENCE</h2>
+              <p style="font-size: 1.1rem; color: var(--muted);">L'application mobile pour suivre vos comportements sans culpabilité ni friction.</p>
+              <div style="margin-top: 2rem; display: grid; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.8rem; font-weight: 500;">
+                    <span style="color: var(--accent)">✓</span> Tracking quotidien ultra-rapide
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.8rem; font-weight: 500;">
+                    <span style="color: var(--accent)">✓</span> Reconnaissance visuelle de patterns
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.8rem; font-weight: 500;">
+                    <span style="color: var(--accent)">✓</span> Interface premium et apaisante
+                </div>
+              </div>
             </div>
-            <div style="padding: 2rem; background: var(--accent-soft); border-radius: 1.5rem; color: var(--accent); font-weight: 800; max-width: 300px;">
-              "Conscience helps you see yourself more honestly, one observation at a time."
+            <div style="padding: 2.5rem; background: var(--accent-soft); border-radius: 2rem; color: var(--accent); font-weight: 600; max-width: 340px; line-height: 1.4; font-style: italic;">
+              "Conscience vous aide à vous voir plus honnêtement, une observation à la fois."
             </div>
           </div>
         </section>
 
-        <section id="contact" class="section-card glass scroll-reveal" style="text-align: center;">
+        <section id="contact" class="section-card glass scroll-reveal" style="text-align: center; border: 1px solid var(--accent);">
           <div class="pill">Contact</div>
-          <h2>Let's build something intentional.</h2>
-          <p>For support, inquiries, or partnerships, reach out anytime.</p>
-          <a href="mailto:contact.gbostudio@gmail.com" class="btn btn-primary" style="margin-top: 1.5rem;">
+          <h2 style="font-size: 2.5rem;">Bâtissons l'intentionnel.</h2>
+          <p style="color: var(--muted); margin-bottom: 2.5rem;">Pour toute question, support ou partenariat.</p>
+          <a href="mailto:contact.gbostudio@gmail.com" class="btn btn-primary">
             contact.gbostudio@gmail.com
           </a>
         </section>
@@ -257,64 +274,52 @@
     <footer>
       <div>© 2026 GBO Studio — France • Micro-entreprise</div>
       <div style="display: flex; gap: 2rem;">
-        <a href="privacy.html">Privacy</a>
-        <a href="terms.html">Terms</a>
-        <a href="support.html">Support</a>
+        <a href="#">Confidentialité</a>
+        <a href="#">Support</a>
       </div>
     </footer>
   </div>
 
   <script>
-    // 1. Theme Logic
+    // Theme Toggle
     const toggleBtn = document.getElementById('theme-toggle');
-    const getTheme = () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const sunIcon = document.querySelector('.sun');
+    const moonIcon = document.querySelector('.moon');
     
     const setTheme = (theme) => {
       document.documentElement.setAttribute('data-theme', theme);
       localStorage.setItem('theme', theme);
+      if (theme === 'dark') {
+        sunIcon.style.display = 'block';
+        moonIcon.style.display = 'none';
+      } else {
+        sunIcon.style.display = 'none';
+        moonIcon.style.display = 'block';
+      }
     };
 
-    setTheme(getTheme());
+    const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    setTheme(currentTheme);
 
     toggleBtn.addEventListener('click', () => {
       const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       setTheme(newTheme);
     });
 
-    // 2. Mobile Menu Logic
-    const menu = document.querySelector('.mobile-nav');
-    const menuContent = document.querySelector('.mobile-menu-content');
-
-    menu.querySelector('summary').addEventListener('click', (e) => {
-      if (menu.open) {
-        e.preventDefault();
-        menuContent.style.opacity = '0';
-        menuContent.style.transform = 'translateY(-10px)';
-        setTimeout(() => { menu.open = false; }, 250);
-      } else {
-        menuContent.style.opacity = '0';
-        menuContent.style.transform = 'translateY(-10px)';
-        setTimeout(() => {
-          menuContent.style.opacity = '1';
-          menuContent.style.transform = 'translateY(0)';
-        }, 10);
-      }
-    });
-
-    // 3. Scroll Reveal Logic
+    // Scroll Reveal with subtle scale
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.style.opacity = "1";
-          entry.target.style.transform = "translateY(0)";
+          entry.target.style.transform = "translateY(0) scale(1)";
         }
       });
     }, { threshold: 0.1 });
 
     document.querySelectorAll('.scroll-reveal').forEach(el => {
       el.style.opacity = "0";
-      el.style.transform = "translateY(40px)";
-      el.style.transition = "all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)";
+      el.style.transform = "translateY(30px) scale(0.98)";
+      el.style.transition = "all 0.9s cubic-bezier(0.16, 1, 0.3, 1)";
       observer.observe(el);
     });
   </script>
