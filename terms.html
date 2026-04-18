@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Conditions d'Utilisation — GBO Studio</title>
-  <meta name="description" content="Conditions générales d'utilisation de GBO Studio et de ses applications mobiles." />
+  <title>Conditions d’utilisation — GBO Studio</title>
+  <meta name="description" content="Conditions d’utilisation de GBO Studio et de ses applications mobiles." />
   <meta name="theme-color" content="#f6f5f2" />
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
 
   <style>
     :root {
@@ -38,51 +38,65 @@
       --line: rgba(255, 255, 255, 0.08);
       --accent: #8fb3ab;
       --accent-soft: #1c2b27;
+      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.3);
     }
 
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: "Inter", system-ui, sans-serif;
       color: var(--text);
       background-color: var(--bg);
-      background-image: radial-gradient(circle at 0% 100%, var(--accent-soft), transparent 40%);
+      background-image:
+        radial-gradient(circle at 0% 100%, var(--accent-soft), transparent 40%),
+        radial-gradient(circle at 100% 0%, rgba(103, 134, 127, 0.05), transparent 35%);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     .container {
-      max-width: 800px;
+      max-width: 820px;
       margin: 0 auto;
       padding: 2rem 1.5rem 6rem;
     }
 
-    /* --- Header / Nav --- */
     .topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 3rem;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
 
     .back-link {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 0.5rem;
       text-decoration: none;
       color: var(--muted);
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       transition: var(--transition);
     }
-    .back-link:hover { color: var(--text); transform: translateX(-4px); }
 
-    .controls { display: flex; align-items: center; gap: 0.75rem; }
-    
+    .back-link:hover {
+      color: var(--text);
+      transform: translateX(-4px);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
     .lang-toggle {
       background: var(--line);
       padding: 3px;
-      border-radius: 100px;
+      border-radius: 999px;
       display: flex;
     }
 
@@ -91,10 +105,11 @@
       background: transparent;
       color: var(--muted);
       font-weight: 700;
-      font-size: 0.7rem;
-      padding: 0.5rem 0.8rem;
-      border-radius: 100px;
+      font-size: 0.72rem;
+      padding: 0.5rem 0.85rem;
+      border-radius: 999px;
       cursor: pointer;
+      transition: var(--transition);
     }
 
     .lang-btn.active {
@@ -114,9 +129,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: var(--transition);
     }
 
-    /* --- Content Card --- */
+    .theme-btn:hover {
+      transform: scale(1.05);
+    }
+
     .doc-card {
       padding: 4rem;
       border-radius: var(--radius-xl);
@@ -132,7 +151,7 @@
       padding: 0.5rem 1rem;
       background: var(--accent-soft);
       color: var(--accent);
-      border-radius: 100px;
+      border-radius: 999px;
       font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
@@ -141,46 +160,59 @@
     }
 
     h1 {
-      font-size: clamp(2.2rem, 5vw, 3.2rem);
-      line-height: 1.1;
+      font-size: clamp(2.2rem, 5vw, 3.3rem);
+      line-height: 1.05;
       letter-spacing: -0.05em;
-      margin: 0 0 1.5rem;
+      margin: 0 0 1.25rem;
       font-weight: 850;
     }
 
     .intro {
       font-size: 1.15rem;
+      line-height: 1.55;
       color: var(--text);
       opacity: 0.9;
-      margin-bottom: 2rem;
+      max-width: 700px;
     }
 
-    .alert-box {
+    .notice-box {
       background: var(--bg-soft);
       border-radius: 1.2rem;
-      padding: 1.5rem 2rem;
+      padding: 1.4rem 1.6rem;
       border: 1px solid var(--line);
-      margin: 2rem 0;
-      font-weight: 500;
+      margin: 2rem 0 2.5rem;
       color: var(--text);
       display: flex;
-      gap: 1rem;
-      align-items: center;
+      gap: 0.9rem;
+      align-items: flex-start;
     }
 
     h2 {
-      font-size: 1.3rem;
+      font-size: 1.35rem;
       margin: 3rem 0 1rem;
       letter-spacing: -0.02em;
       font-weight: 700;
       border-bottom: 1px solid var(--line);
-      padding-bottom: 0.5rem;
+      padding-bottom: 0.55rem;
     }
 
     p, li {
       color: var(--muted);
-      font-size: 1.05rem;
-      margin-bottom: 1.2rem;
+      font-size: 1.03rem;
+      margin-bottom: 1rem;
+    }
+
+    strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    ul {
+      padding-left: 1.2rem;
+    }
+
+    li {
+      margin-bottom: 0.8rem;
     }
 
     .contact-link {
@@ -189,7 +221,10 @@
       font-weight: 700;
       transition: var(--transition);
     }
-    .contact-link:hover { opacity: 0.7; }
+
+    .contact-link:hover {
+      opacity: 0.75;
+    }
 
     footer {
       margin-top: 4rem;
@@ -198,26 +233,40 @@
       font-size: 0.85rem;
     }
 
-    /* --- Logic --- */
-    [data-lang] { display: none; }
-    html[data-lang="en"] [data-lang="en"] { display: inline; }
-    html[data-lang="fr"] [data-lang="fr"] { display: inline; }
+    .i18n {
+      display: none;
+    }
+
+    html[data-lang="fr"] .i18n-fr,
+    html[data-lang="en"] .i18n-en {
+      display: inline;
+    }
 
     @media (max-width: 650px) {
-      .doc-card { padding: 2.5rem 1.5rem; }
-      h1 { font-size: 2.2rem; }
-      .alert-box { padding: 1.5rem; font-size: 0.9rem; }
+      .doc-card {
+        padding: 2.5rem 1.5rem;
+      }
+
+      .notice-box {
+        padding: 1.2rem 1.25rem;
+      }
+
+      h1 {
+        font-size: 2.1rem;
+      }
     }
   </style>
 </head>
 <body>
-
   <div class="container">
     <header class="topbar">
       <a href="index.html" class="back-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-        <span data-lang="en">Back to Home</span>
-        <span data-lang="fr">Retour à l'accueil</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        <span class="i18n i18n-en">Back to Home</span>
+        <span class="i18n i18n-fr">Retour à l’accueil</span>
       </a>
 
       <div class="controls">
@@ -225,88 +274,128 @@
           <button class="lang-btn active" data-set-lang="fr">FR</button>
           <button class="lang-btn" data-set-lang="en">EN</button>
         </div>
-        <button id="theme-toggle" class="theme-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
+
+        <button id="theme-toggle" class="theme-btn" aria-label="Changer le thème">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"></path>
+          </svg>
         </button>
       </div>
     </header>
 
     <main class="doc-card">
-      <div class="pill">Terms</div>
-      
+      <div class="pill">Legal</div>
+
       <h1>
-        <span data-lang="en">Terms of Use</span>
-        <span data-lang="fr">Conditions d'Utilisation</span>
+        <span class="i18n i18n-en">Terms of Use</span>
+        <span class="i18n i18n-fr">Conditions d’utilisation</span>
       </h1>
 
       <p class="intro">
-        <span data-lang="en">By using GBO Studio’s website or mobile applications, you agree to these terms. They ensure our services remain reliable and respectful for everyone.</span>
-        <span data-lang="fr">En utilisant le site ou les applications de GBO Studio, vous acceptez ces conditions. Elles garantissent un service fiable et respectueux pour tous.</span>
+        <span class="i18n i18n-en">By using GBO Studio’s website or mobile applications, you agree to these terms. They define the framework for access to our products and services.</span>
+        <span class="i18n i18n-fr">En utilisant le site ou les applications de GBO Studio, vous acceptez les présentes conditions. Elles définissent le cadre d’accès à nos produits et services.</span>
       </p>
 
-      <div class="alert-box">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <span data-lang="en">Please read these terms carefully before using our products.</span>
-        <span data-lang="fr">Merci de lire attentivement ces conditions avant toute utilisation.</span>
+      <div class="notice-box">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 2px;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <div>
+          <span class="i18n i18n-en">Please read these terms carefully before using our products or services.</span>
+          <span class="i18n i18n-fr">Merci de lire attentivement ces conditions avant d’utiliser nos produits ou services.</span>
+        </div>
       </div>
 
       <h2>
-        <span data-lang="en">1. Scope</span>
-        <span data-lang="fr">1. Champ d’application</span>
+        <span class="i18n i18n-en">1. Scope</span>
+        <span class="i18n i18n-fr">1. Champ d’application</span>
       </h2>
       <p>
-        <span data-lang="en">These Terms apply to any product or service provided by GBO Studio, including those distributed through the App Store or Google Play.</span>
-        <span data-lang="fr">Ces conditions s'appliquent à tout produit ou service fourni par GBO Studio, y compris via l'App Store ou Google Play.</span>
+        <span class="i18n i18n-en">These terms apply to all products, applications, services and content provided by GBO Studio, including those distributed through the App Store or Google Play.</span>
+        <span class="i18n i18n-fr">Ces conditions s’appliquent à l’ensemble des produits, applications, services et contenus fournis par GBO Studio, y compris ceux distribués via l’App Store ou Google Play.</span>
       </p>
 
       <h2>
-        <span data-lang="en">2. Intellectual Property</span>
-        <span data-lang="fr">2. Propriété intellectuelle</span>
+        <span class="i18n i18n-en">2. Proper use</span>
+        <span class="i18n i18n-fr">2. Utilisation conforme</span>
       </h2>
       <p>
-        <span data-lang="en">All content (branding, code, interface) remains the exclusive property of GBO Studio. Reproduction or redistribution is prohibited without written permission.</span>
-        <span data-lang="fr">Tous les contenus (marque, code, interface) restent la propriété exclusive de GBO Studio. Toute reproduction est interdite sans autorisation écrite.</span>
+        <span class="i18n i18n-en">You agree to use our services lawfully, responsibly and in a way that does not interfere with their security, stability or availability.</span>
+        <span class="i18n i18n-fr">Vous vous engagez à utiliser nos services de manière licite, responsable et sans porter atteinte à leur sécurité, leur stabilité ou leur disponibilité.</span>
       </p>
 
       <h2>
-        <span data-lang="en">3. Billing & Subscriptions</span>
-        <span data-lang="fr">3. Facturation & Abonnements</span>
+        <span class="i18n i18n-en">3. Intellectual property</span>
+        <span class="i18n i18n-fr">3. Propriété intellectuelle</span>
       </h2>
       <p>
-        <span data-lang="en">Premium features are managed and billed directly by Apple or Google. Cancellations and refunds follow the terms of the respective platform provider.</span>
-        <span data-lang="fr">Les options premium sont gérées et facturées par Apple ou Google. Les annulations et remboursements suivent les règles de la plateforme concernée.</span>
+        <span class="i18n i18n-en">All branding, designs, interfaces, texts, visuals, code and related content remain the exclusive property of GBO Studio unless otherwise stated.</span>
+        <span class="i18n i18n-fr">Sauf mention contraire, l’ensemble des marques, designs, interfaces, textes, visuels, codes et contenus associés demeure la propriété exclusive de GBO Studio.</span>
+      </p>
+      <p>
+        <span class="i18n i18n-en">Any reproduction, extraction, copying, distribution or reuse without prior written permission is prohibited.</span>
+        <span class="i18n i18n-fr">Toute reproduction, extraction, copie, diffusion ou réutilisation sans autorisation écrite préalable est interdite.</span>
       </p>
 
       <h2>
-        <span data-lang="en">4. Disclaimer</span>
-        <span data-lang="fr">4. Avertissement</span>
+        <span class="i18n i18n-en">4. Billing and subscriptions</span>
+        <span class="i18n i18n-fr">4. Facturation et abonnements</span>
       </h2>
       <p>
-        <span data-lang="en">Our apps are tools for personal awareness. They do not replace professional medical, psychological, or legal advice.</span>
-        <span data-lang="fr">Nos applications sont des outils de réflexion personnelle. Elles ne remplacent en aucun cas un avis médical ou psychologique professionnel.</span>
+        <span class="i18n i18n-en">Some features may require a paid subscription or purchase. Billing is handled by the relevant platform provider, such as Apple or Google.</span>
+        <span class="i18n i18n-fr">Certaines fonctionnalités peuvent nécessiter un abonnement payant ou un achat. La facturation est assurée par la plateforme concernée, notamment Apple ou Google.</span>
+      </p>
+      <p>
+        <span class="i18n i18n-en">Cancellations, payment methods and refund policies are governed by the terms and rules of the platform used for purchase.</span>
+        <span class="i18n i18n-fr">Les annulations, modalités de paiement et politiques de remboursement relèvent des règles de la plateforme utilisée pour l’achat.</span>
       </p>
 
       <h2>
-        <span data-lang="en">5. Limitation of Liability</span>
-        <span data-lang="fr">5. Responsabilité</span>
+        <span class="i18n i18n-en">5. Disclaimer</span>
+        <span class="i18n i18n-fr">5. Avertissement</span>
       </h2>
       <p>
-        <span data-lang="en">GBO Studio provides services “as is”. We are not liable for any indirect damages or interruptions of service.</span>
-        <span data-lang="fr">GBO Studio fournit ses services « en l’état ». Nous ne saurions être tenus responsables des dommages indirects ou interruptions de service.</span>
+        <span class="i18n i18n-en">Our applications are intended as tools for observation, reflection and personal organization. They do not constitute medical, psychological, legal or financial advice.</span>
+        <span class="i18n i18n-fr">Nos applications sont conçues comme des outils d’observation, de réflexion et d’organisation personnelle. Elles ne constituent pas un avis médical, psychologique, juridique ou financier.</span>
       </p>
 
-      <p style="margin-top: 3rem;">
-        <span data-lang="en">Questions? Contact us at </span>
-        <span data-lang="fr">Des questions ? Contactez-nous sur </span>
+      <h2>
+        <span class="i18n i18n-en">6. Limitation of liability</span>
+        <span class="i18n i18n-fr">6. Limitation de responsabilité</span>
+      </h2>
+      <p>
+        <span class="i18n i18n-en">Our services are provided on an “as is” basis. To the extent permitted by law, GBO Studio shall not be liable for indirect damages, loss of data, loss of opportunity or temporary service interruption.</span>
+        <span class="i18n i18n-fr">Nos services sont fournis « en l’état ». Dans la mesure permise par la loi, GBO Studio ne pourra être tenu responsable des dommages indirects, pertes de données, pertes d’opportunité ou interruptions temporaires de service.</span>
+      </p>
+
+      <h2>
+        <span class="i18n i18n-en">7. Changes to these terms</span>
+        <span class="i18n i18n-fr">7. Modification des conditions</span>
+      </h2>
+      <p>
+        <span class="i18n i18n-en">We may update these terms to reflect product, legal or operational changes. Continued use of our services after an update means you accept the revised version.</span>
+        <span class="i18n i18n-fr">Nous pouvons modifier ces conditions pour refléter des évolutions produit, légales ou opérationnelles. La poursuite de l’utilisation de nos services après mise à jour vaut acceptation de la version révisée.</span>
+      </p>
+
+      <h2>
+        <span class="i18n i18n-en">8. Contact</span>
+        <span class="i18n i18n-fr">8. Contact</span>
+      </h2>
+      <p>
+        <span class="i18n i18n-en">If you have any questions about these terms, you can contact us at </span>
+        <span class="i18n i18n-fr">Pour toute question relative aux présentes conditions, vous pouvez nous contacter à l’adresse </span>
         <a href="mailto:contact@gbostudio.fr" class="contact-link">contact@gbostudio.fr</a>.
       </p>
     </main>
 
     <footer>
       <p>© 2026 GBO Studio — France</p>
-      <p style="font-size: 0.75rem; opacity: 0.6; margin-top: 0.5rem;">
-        <span data-lang="en">Last updated: April 2026</span>
-        <span data-lang="fr">Mise à jour : Avril 2026</span>
+      <p style="font-size: 0.75rem; opacity: 0.65; margin-top: 0.5rem;">
+        <span class="i18n i18n-en">Last updated: April 2026</span>
+        <span class="i18n i18n-fr">Dernière mise à jour : Avril 2026</span>
       </p>
     </footer>
   </div>
@@ -320,23 +409,33 @@
       localStorage.setItem('theme', theme);
     }
 
-    themeBtn.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme');
-      updateTheme(current === 'dark' ? 'light' : 'dark');
-    });
-
     function setLanguage(lang) {
       document.documentElement.setAttribute('data-lang', lang);
       localStorage.setItem('lang', lang);
-      langBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.setLang === lang));
+      langBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.setLang === lang);
+      });
     }
 
-    langBtns.forEach(btn => {
-      btn.addEventListener('click', () => setLanguage(btn.dataset.setLang));
+    themeBtn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
+      updateTheme(current === 'dark' ? 'light' : 'dark');
     });
 
-    updateTheme(localStorage.getItem('theme') || 'light');
-    setLanguage(localStorage.getItem('lang') || 'fr');
+    langBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        setLanguage(btn.dataset.setLang);
+      });
+    });
+
+    const savedTheme =
+      localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    const savedLang = localStorage.getItem('lang') || 'fr';
+
+    updateTheme(savedTheme);
+    setLanguage(savedLang);
   </script>
 </body>
 </html>
