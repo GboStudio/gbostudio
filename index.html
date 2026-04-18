@@ -1,146 +1,292 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr" data-lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>GBO Studio — Thoughtful Mobile Products</title>
-  <meta name="description" content="GBO Studio builds intentional mobile products focused on self-awareness, behavior tracking, and personal transformation." />
+  <title>GBO Studio — Produits Mobiles Intentionnels</title>
+  <meta name="description" content="GBO Studio crée des produits mobiles axés sur la conscience de soi et la transformation personnelle." />
   <meta name="theme-color" content="#f6f5f2" />
-  <link rel="icon" href="logo.svg" type="image/svg+xml" />
-
+  
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      /* Theme Light */
       --bg: #f6f5f2;
       --bg-soft: #fbfaf8;
-      --surface: rgba(255, 255, 255, 0.75);
+      --surface: rgba(255, 255, 255, 0.65);
+      --surface-strong: rgba(255, 255, 255, 0.9);
       --text: #11161a;
       --muted: #5f686b;
-      --line: rgba(17, 22, 26, 0.08);
+      --line: rgba(17, 22, 26, 0.06);
       --accent: #67867f;
       --accent-soft: #dde8e2;
-      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.07);
-      --radius-xl: 2rem;
+      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.05);
+      --radius-xl: 2.5rem;
       --radius-lg: 1.5rem;
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     [data-theme="dark"] {
       --bg: #0d1114;
-      --bg-soft: #161b1f;
-      --surface: rgba(22, 27, 31, 0.8);
+      --bg-soft: #14191d;
+      --surface: rgba(22, 27, 31, 0.7);
+      --surface-strong: rgba(28, 34, 39, 0.95);
       --text: #f6f5f2;
       --muted: #9ba3a7;
-      --line: rgba(255, 255, 255, 0.1);
+      --line: rgba(255, 255, 255, 0.08);
       --accent: #8fb3ab;
-      --accent-soft: #243530;
-      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.4);
+      --accent-soft: #1c2b27;
+      --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.3);
     }
 
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; font-size: 16px; }
 
     body {
       margin: 0;
       font-family: "Inter", system-ui, sans-serif;
       color: var(--text);
       background-color: var(--bg);
-      background-image: radial-gradient(circle at top left, var(--accent-soft), transparent 30%);
-      transition: background-color 0.4s ease, color 0.4s ease;
+      background-image: 
+        radial-gradient(circle at 0% 0%, var(--accent-soft), transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(103, 134, 127, 0.05), transparent 40%);
+      transition: background-color 0.5s ease;
       -webkit-font-smoothing: antialiased;
-      line-height: 1.6;
+      line-height: 1.5;
     }
 
-    .container { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1.25rem 5rem; }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 8rem;
+    }
 
-    /* Glassmorphism */
     .glass {
       background: var(--surface);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--line);
     }
 
-    /* Header & Navigation */
-    .topbar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 2rem; position: relative; }
-    
-    .brand { display: flex; align-items: center; gap: 1rem; text-decoration: none; color: inherit; z-index: 10; }
-    .brand-mark { 
-      width: 3.5rem; height: 3.5rem; border-radius: 1rem; background: #fff;
-      display: grid; place-items: center; border: 1px solid var(--line); box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    /* --- Header --- */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4rem;
     }
-    .brand-name { font-weight: 800; font-size: 1.15rem; letter-spacing: -0.03em; }
 
-    .nav-actions { display: flex; align-items: center; gap: 1.5rem; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-mark {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--surface-strong);
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .brand-name { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em; }
+    .brand-sub { font-size: 0.8rem; color: var(--muted); opacity: 0.8; }
+
+    .nav-actions { display: flex; align-items: center; gap: 2rem; }
     .desktop-nav { display: flex; gap: 1.5rem; }
-    .desktop-nav a { text-decoration: none; color: var(--muted); font-weight: 600; font-size: 0.9rem; transition: color 0.2s; }
+    .desktop-nav a {
+      text-decoration: none;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: var(--transition);
+    }
     .desktop-nav a:hover { color: var(--text); }
 
-    /* Theme Toggle Button */
+    /* --- Toggles --- */
+    .controls { display: flex; align-items: center; gap: 0.75rem; }
+    
+    .lang-toggle {
+      background: var(--line);
+      padding: 3px;
+      border-radius: 100px;
+      display: flex;
+    }
+
+    .lang-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.7rem;
+      padding: 0.5rem 0.8rem;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .lang-btn.active {
+      background: var(--surface-strong);
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
     .theme-btn {
-      background: var(--surface);
+      background: var(--surface-strong);
       border: 1px solid var(--line);
-      width: 40px; height: 40px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       cursor: pointer;
       color: var(--text);
-      display: flex; align-items: center; justify-content: center;
-      transition: transform 0.2s ease;
-    }
-    .theme-btn:hover { transform: scale(1.1); }
-    .theme-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
-    .sun { display: none; }
-    [data-theme="dark"] .sun { display: block; }
-    [data-theme="dark"] .moon { display: none; }
-
-    /* Mobile Nav */
-    .mobile-nav { display: none; position: relative; }
-    .mobile-nav summary { list-style: none; cursor: pointer; font-weight: 800; padding: 0.5rem; }
-    .mobile-menu-content { 
-        position: absolute; right: 0; top: 120%; width: 200px; padding: 1rem; 
-        border-radius: 1rem; display: flex; flex-direction: column; gap: 1rem; z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
     }
 
-    /* Hero */
-    .hero { padding: clamp(2rem, 5vw, 4.5rem); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); overflow: hidden; }
-    .hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 3rem; align-items: center; }
-    h1 { font-size: clamp(2.5rem, 6vw, 4.2rem); line-height: 0.95; letter-spacing: -0.06em; margin: 1rem 0; font-weight: 800; }
-    .hero-subtitle { font-size: clamp(1.1rem, 2vw, 1.3rem); color: var(--muted); margin-bottom: 2rem; max-width: 500px; }
+    .theme-btn:hover { transform: scale(1.05); }
 
-    /* Buttons */
+    /* --- Hero --- */
+    .hero {
+      padding: 4rem;
+      border-radius: var(--radius-xl);
+      margin-bottom: 2rem;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      line-height: 1;
+      letter-spacing: -0.05em;
+      margin: 1.5rem 0;
+      font-weight: 850;
+    }
+
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: var(--muted);
+      margin-bottom: 2.5rem;
+      max-width: 480px;
+    }
+
+    /* --- Buttons --- */
+    .cta-row { display: flex; gap: 1rem; }
+    
     .btn {
-      display: inline-flex; align-items: center; justify-content: center; height: 3.5rem;
-      padding: 0 2rem; border-radius: 1.1rem; font-weight: 700; text-decoration: none;
-      transition: all 0.2s ease; border: 1px solid transparent;
+      padding: 1rem 1.8rem;
+      border-radius: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
-    .btn-primary { background: var(--text); color: var(--bg); }
-    .btn-secondary { background: transparent; border-color: var(--line); color: var(--text); }
-    .btn:hover { transform: translateY(-2px); opacity: 0.9; }
-    .btn:active { transform: scale(0.97); }
 
-    /* Sections */
-    .sections { display: grid; gap: 1.5rem; margin-top: 1.5rem; }
-    .section-card { padding: 3rem; border-radius: var(--radius-lg); }
-    .pill { display: inline-block; padding: 0.4rem 0.9rem; background: var(--accent-soft); color: var(--accent); 
-            border-radius: 2rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1rem; letter-spacing: 0.05em; }
+    .btn-primary {
+      background: var(--text);
+      color: var(--bg);
+    }
 
-    .value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2.5rem; }
-    .value-item h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
-    .value-item p { font-size: 0.9rem; color: var(--muted); margin: 0; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-2px); }
 
-    /* Footer */
-    footer { margin-top: 5rem; padding: 2rem 0; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; color: var(--muted); font-size: 0.85rem; }
-    footer a { color: inherit; text-decoration: none; font-weight: 600; }
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--text);
+    }
 
-    @media (max-width: 900px) {
-      .hero-grid, .value-grid { grid-template-columns: 1fr; }
+    .btn-secondary:hover { background: var(--line); }
+
+    /* --- Product Card --- */
+    .product-preview {
+      background: var(--bg-soft);
+      border-radius: 2rem;
+      padding: 3rem;
+      text-align: center;
+      border: 1px solid var(--line);
+      position: relative;
+    }
+
+    .app-icon {
+      width: 100px;
+      height: 100px;
+      background: white;
+      border-radius: 22px;
+      margin: 0 auto 1.5rem;
+      display: grid;
+      place-items: center;
+      box-shadow: var(--shadow-xl);
+    }
+
+    /* --- Sections --- */
+    .section-card {
+      padding: 4rem;
+      border-radius: var(--radius-lg);
+      margin-top: 1.5rem;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1.5rem;
+    }
+
+    .value-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .value-item h3 { font-size: 1.2rem; margin-bottom: 0.75rem; letter-spacing: -0.02em; }
+    .value-item p { color: var(--muted); font-size: 0.95rem; line-height: 1.6; }
+
+    /* --- Utils & State --- */
+    [data-lang] { display: none; }
+    html[data-lang="en"] [data-lang="en"] { display: inline; }
+    html[data-lang="fr"] [data-lang="fr"] { display: inline; }
+
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 1s ease, transform 1s ease;
+    }
+
+    .scroll-reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 960px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 3rem; }
+      .value-grid { grid-template-columns: 1fr; }
+      .hero, .section-card { padding: 2.5rem 1.5rem; }
       .desktop-nav { display: none; }
-      .mobile-nav { display: block; }
-      .hero { padding: 2.5rem 1.5rem; }
     }
   </style>
 </head>
@@ -148,12 +294,16 @@
 
   <div class="container">
     <header class="topbar">
-      <a href="index.html" class="brand">
+      <a href="#" class="brand">
         <div class="brand-mark">
-          <img src="logo.svg" alt="GBO logo" width="32" height="32" />
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
-        <div class="brand-copy">
+        <div>
           <div class="brand-name">GBO Studio</div>
+          <div class="brand-sub">
+            <span data-lang="en">Intentional Design</span>
+            <span data-lang="fr">Design Intentionnel</span>
+          </div>
         </div>
       </a>
 
@@ -161,22 +311,19 @@
         <nav class="desktop-nav">
           <a href="#vision">Vision</a>
           <a href="#product">Product</a>
-          <a href="#contact">Contact</a>
+          <a href="mailto:contact@gbostudio.fr">Contact</a>
         </nav>
 
-        <button id="theme-toggle" class="theme-btn" aria-label="Switch Theme">
-          <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
-          <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </button>
-
-        <details class="mobile-nav">
-          <summary>Menu</summary>
-          <nav class="mobile-menu-content glass">
-            <a href="#vision">Vision</a>
-            <a href="#product">Product</a>
-            <a href="#contact">Contact</a>
-          </nav>
-        </details>
+        <div class="controls">
+          <div class="lang-toggle">
+            <button class="lang-btn active" data-set-lang="fr">FR</button>
+            <button class="lang-btn" data-set-lang="en">EN</button>
+          </div>
+          <button id="theme-toggle" class="theme-btn">
+            <svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/></svg>
+            <svg style="display:none" class="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -184,140 +331,130 @@
       <section class="hero glass scroll-reveal">
         <div class="hero-grid">
           <div>
-            <span class="pill">Independent Studio • France</span>
-            <h1>Calm tools for deeper awareness.</h1>
+            <span class="pill">Studio — France</span>
+            <h1>
+              <span data-lang="en">Calm tools for deeper awareness.</span>
+              <span data-lang="fr">Des outils calmes pour mieux se connaître.</span>
+            </h1>
             <p class="hero-subtitle">
-              We build intentional mobile experiences that help you observe your patterns and act with more clarity.
+              <span data-lang="en">We build intentional products that help you observe your patterns and act with clarity.</span>
+              <span data-lang="fr">Nous créons des produits intentionnels qui vous aident à observer vos schémas et agir avec clarté.</span>
             </p>
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-              <a href="#product" class="btn btn-primary">Discover CONSCIENCE</a>
-              <a href="mailto:contact.gbostudio@gmail.com" class="btn btn-secondary">Email us</a>
+            <div class="cta-row">
+              <a href="#product" class="btn btn-primary">
+                <span data-lang="en">Discover Conscience</span>
+                <span data-lang="fr">Découvrir Conscience</span>
+              </a>
+              <a href="mailto:contact@gbostudio.fr" class="btn btn-secondary">
+                <span data-lang="en">Get in touch</span>
+                <span data-lang="fr">Nous contacter</span>
+              </a>
             </div>
           </div>
-          <div style="background: var(--bg-soft); border-radius: 2rem; padding: 2.5rem; border: 1px solid var(--line); text-align: center;">
-             <img src="logo.svg" alt="App Icon" width="80" style="margin-bottom: 1.5rem; opacity: 0.9;">
-             <h2 style="margin:0; font-size: 1.8rem; letter-spacing: -0.04em;">CONSCIENCE</h2>
-             <p style="color: var(--muted); font-size: 1rem;">Observe. Understand. Adjust.</p>
+          <div class="product-preview">
+            <div class="app-icon">
+               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#67867f" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <h2 style="margin:0; letter-spacing: 0.2em; font-size: 1rem; font-weight: 800; color: var(--accent);">CONSCIENCE</h2>
+            <p style="font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem;">Coming 2026</p>
           </div>
         </div>
       </section>
 
-      <div class="sections">
-        <section id="vision" class="section-card glass scroll-reveal">
-          <div class="pill">Our Vision</div>
-          <h2>Technology that respects your space.</h2>
-          <p style="max-width: 700px; font-size: 1.2rem; color: var(--muted);">
-            In a world of constant noise, we believe products should increase clarity, not reactions.
-          </p>
-          <div class="value-grid">
-            <div class="value-item">
-              <h3>Clarity First</h3>
-              <p>Simple tools designed to reduce mental clutter and reveal hidden behaviors.</p>
-            </div>
-            <div class="value-item">
-              <h3>Intentionality</h3>
-              <p>Focusing on slow, meaningful change rather than instant gratification.</p>
-            </div>
-            <div class="value-item">
-              <h3>Privacy</h3>
-              <p>Your data is yours. Your patterns are for you to see, and no one else.</p>
-            </div>
+      <section id="vision" class="section-card glass scroll-reveal">
+        <div class="pill">Vision</div>
+        <h2 style="font-size: 2.5rem; letter-spacing: -0.04em; margin-bottom: 2rem;">
+          <span data-lang="en">Technology that respects your space.</span>
+          <span data-lang="fr">Une technologie qui respecte votre esprit.</span>
+        </h2>
+        
+        <div class="value-grid">
+          <div class="value-item">
+            <h3>
+              <span data-lang="en">Clarity</span>
+              <span data-lang="fr">Clarté</span>
+            </h3>
+            <p>
+              <span data-lang="en">Simple tools designed to reduce mental clutter and reveal hidden behaviors.</span>
+              <span data-lang="fr">Des outils simples pour réduire la charge mentale et révéler vos habitudes.</span>
+            </p>
           </div>
-        </section>
-
-        <section id="product" class="section-card glass scroll-reveal">
-          <div class="pill">Current Product</div>
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 2rem;">
-            <div style="flex: 1; min-width: 300px;">
-              <h2>CONSCIENCE</h2>
-              <p>A mobile application designed to help users track behaviors without guilt or friction.</p>
-              <ul style="margin: 2rem 0; padding-left: 1.2rem; font-weight: 600;">
-                <li style="margin-bottom: 0.8rem;">Low-friction daily tracking</li>
-                <li style="margin-bottom: 0.8rem;">Visual pattern recognition</li>
-                <li style="margin-bottom: 0.8rem;">Calm, premium user interface</li>
-              </ul>
-            </div>
-            <div style="padding: 2rem; background: var(--accent-soft); border-radius: 1.5rem; color: var(--accent); font-weight: 800; max-width: 300px;">
-              "Conscience helps you see yourself more honestly, one observation at a time."
-            </div>
+          <div class="value-item">
+            <h3>
+              <span data-lang="en">Privacy</span>
+              <span data-lang="fr">Confidentialité</span>
+            </h3>
+            <p>
+              <span data-lang="en">Your data stays yours. Your patterns are for you to understand.</span>
+              <span data-lang="fr">Vos données vous appartiennent. Vos schémas sont là pour vous éclairer.</span>
+            </p>
           </div>
-        </section>
-
-        <section id="contact" class="section-card glass scroll-reveal" style="text-align: center;">
-          <div class="pill">Contact</div>
-          <h2>Let's build something intentional.</h2>
-          <p>For support, inquiries, or partnerships, reach out anytime.</p>
-          <a href="mailto:contact.gbostudio@gmail.com" class="btn btn-primary" style="margin-top: 1.5rem;">
-            contact.gbostudio@gmail.com
-          </a>
-        </section>
-      </div>
+          <div class="value-item">
+            <h3>
+              <span data-lang="en">Intent</span>
+              <span data-lang="fr">Intention</span>
+            </h3>
+            <p>
+              <span data-lang="en">Focused on slow, meaningful change rather than instant gratification.</span>
+              <span data-lang="fr">Un changement durable plutôt qu'une satisfaction immédiate.</span>
+            </p>
+          </div>
+        </div>
+      </section>
     </main>
 
-    <footer>
-      <div>© 2026 GBO Studio — France • Micro-entreprise</div>
-      <div style="display: flex; gap: 2rem;">
-        <a href="privacy.html">Privacy</a>
-        <a href="terms.html">Terms</a>
-        <a href="support.html">Support</a>
+    <footer style="margin-top: 6rem; padding-top: 2rem; border-top: 1px solid var(--line); display: flex; justify-content: space-between; color: var(--muted); font-size: 0.8rem;">
+      <p>© 2026 GBO Studio — France</p>
+      <div style="display:flex; gap: 1.5rem">
+        <a href="#" style="color: inherit; text-decoration: none;">Privacy</a>
+        <a href="#" style="color: inherit; text-decoration: none;">Support</a>
       </div>
     </footer>
   </div>
 
   <script>
-    // 1. Theme Logic
-    const toggleBtn = document.getElementById('theme-toggle');
-    const getTheme = () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    
-    const setTheme = (theme) => {
+    // Theme Toggle
+    const themeBtn = document.getElementById('theme-toggle');
+    const sunIcon = document.querySelector('.sun');
+    const moonIcon = document.querySelector('.moon');
+
+    function updateTheme(theme) {
       document.documentElement.setAttribute('data-theme', theme);
       localStorage.setItem('theme', theme);
-    };
+      sunIcon.style.display = theme === 'dark' ? 'block' : 'none';
+      moonIcon.style.display = theme === 'dark' ? 'none' : 'block';
+    }
 
-    setTheme(getTheme());
-
-    toggleBtn.addEventListener('click', () => {
-      const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      setTheme(newTheme);
+    themeBtn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      updateTheme(current === 'dark' ? 'light' : 'dark');
     });
 
-    // 2. Mobile Menu Logic
-    const menu = document.querySelector('.mobile-nav');
-    const menuContent = document.querySelector('.mobile-menu-content');
+    // Language Toggle
+    const langBtns = document.querySelectorAll('.lang-btn');
+    function setLanguage(lang) {
+      document.documentElement.setAttribute('data-lang', lang);
+      localStorage.setItem('lang', lang);
+      langBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.setLang === lang));
+    }
 
-    menu.querySelector('summary').addEventListener('click', (e) => {
-      if (menu.open) {
-        e.preventDefault();
-        menuContent.style.opacity = '0';
-        menuContent.style.transform = 'translateY(-10px)';
-        setTimeout(() => { menu.open = false; }, 250);
-      } else {
-        menuContent.style.opacity = '0';
-        menuContent.style.transform = 'translateY(-10px)';
-        setTimeout(() => {
-          menuContent.style.opacity = '1';
-          menuContent.style.transform = 'translateY(0)';
-        }, 10);
-      }
+    langBtns.forEach(btn => {
+      btn.addEventListener('click', () => setLanguage(btn.dataset.setLang));
     });
 
-    // 3. Scroll Reveal Logic
+    // Intersection Observer for animations
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.style.opacity = "1";
-          entry.target.style.transform = "translateY(0)";
-        }
+        if (entry.isIntersecting) entry.target.classList.add('active');
       });
     }, { threshold: 0.1 });
 
-    document.querySelectorAll('.scroll-reveal').forEach(el => {
-      el.style.opacity = "0";
-      el.style.transform = "translateY(40px)";
-      el.style.transition = "all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)";
-      observer.observe(el);
-    });
-  </script>
+    document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
 
+    // Init
+    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    updateTheme(savedTheme);
+    setLanguage(localStorage.getItem('lang') || 'fr');
+  </script>
 </body>
 </html>
