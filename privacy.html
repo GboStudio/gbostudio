@@ -111,7 +111,8 @@
       gap: 0.8rem;
     }
 
-    .lang-toggle {
+    .lang-toggle,
+    .theme-toggle-group {
       display: inline-flex;
       align-items: center;
       gap: 0.2rem;
@@ -122,46 +123,30 @@
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.04);
     }
 
-    .lang-btn {
+    .lang-btn,
+    .theme-option {
       border: none;
       background: transparent;
       color: var(--muted);
       font-weight: 800;
       font-size: 0.72rem;
       letter-spacing: 0.03em;
-      padding: 0.58rem 0.85rem;
+      padding: 0.58rem 0.8rem;
       border-radius: 999px;
       cursor: pointer;
       transition: all var(--transition);
     }
 
-    .lang-btn:hover {
+    .lang-btn:hover,
+    .theme-option:hover {
       color: var(--text);
     }
 
-    .lang-btn.active {
+    .lang-btn.active,
+    .theme-option.active {
       background: var(--text);
       color: var(--bg);
       box-shadow: var(--shadow-md);
-    }
-
-    .theme-btn {
-      background: var(--surface-strong);
-      border: 1px solid var(--line);
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      cursor: pointer;
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform var(--transition), background var(--transition), border-color var(--transition);
-      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.04);
-    }
-
-    .theme-btn:hover {
-      transform: translateY(-1px) scale(1.04);
     }
 
     .doc-card {
@@ -300,6 +285,7 @@
       .controls {
         width: 100%;
         justify-content: space-between;
+        flex-wrap: wrap;
       }
     }
   </style>
@@ -324,16 +310,11 @@
           <button type="button" class="lang-btn" data-set-lang="en">EN</button>
         </div>
 
-        <button id="theme-toggle" class="theme-btn" aria-label="Changer le thème">
-          <svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="12" cy="12" r="5"></circle>
-            <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"></path>
-          </svg>
-
-          <svg class="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;" aria-hidden="true">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-          </svg>
-        </button>
+        <div class="theme-toggle-group" aria-label="Theme switcher">
+          <button type="button" class="theme-option" data-theme-mode="light" aria-label="Mode clair">☀️</button>
+          <button type="button" class="theme-option" data-theme-mode="dark" aria-label="Mode sombre">🌙</button>
+          <button type="button" class="theme-option" data-theme-mode="auto" aria-label="Mode automatique">Auto</button>
+        </div>
       </div>
     </header>
 
@@ -428,6 +409,7 @@
 
       <div class="footer-links">
         <a href="/">Home</a>
+        <a href="/conscience">Conscience</a>
         <a href="/support">Support</a>
         <a href="/terms">Terms</a>
       </div>
@@ -435,17 +417,38 @@
   </div>
 
   <script>
-    const themeBtn = document.getElementById("theme-toggle");
-    const sunIcon = document.querySelector(".sun");
-    const moonIcon = document.querySelector(".moon");
     const langBtns = document.querySelectorAll(".lang-btn");
+    const themeOptions = document.querySelectorAll(".theme-option");
+    const systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-    function updateTheme(theme) {
-      document.documentElement.setAttribute("data-theme", theme);
-      localStorage.setItem("theme", theme);
-      sunIcon.style.display = theme === "dark" ? "block" : "none";
-      moonIcon.style.display = theme === "dark" ? "none" : "block";
+    function getSystemTheme() {
+      return systemThemeQuery.matches ? "dark" : "light";
     }
+
+    function applyThemeMode(mode) {
+      const effectiveTheme = mode === "auto" ? getSystemTheme() : mode;
+
+      document.documentElement.setAttribute("data-theme", effectiveTheme);
+      localStorage.setItem("themeMode", mode);
+
+      themeOptions.forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.themeMode === mode);
+      });
+    }
+
+    themeOptions.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        applyThemeMode(btn.dataset.themeMode);
+      });
+    });
+
+    systemThemeQuery.addEventListener("change", () => {
+      const savedMode = localStorage.getItem("themeMode") || "auto";
+
+      if (savedMode === "auto") {
+        applyThemeMode("auto");
+      }
+    });
 
     function setLanguage(lang) {
       document.documentElement.setAttribute("data-lang", lang);
@@ -455,17 +458,7 @@
       langBtns.forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.setLang === lang);
       });
-
-      themeBtn.setAttribute(
-        "aria-label",
-        lang === "fr" ? "Changer le thème" : "Change theme"
-      );
     }
-
-    themeBtn.addEventListener("click", () => {
-      const current = document.documentElement.getAttribute("data-theme") || "light";
-      updateTheme(current === "dark" ? "light" : "dark");
-    });
 
     langBtns.forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -473,13 +466,10 @@
       });
     });
 
-    const savedTheme =
-      localStorage.getItem("theme") ||
-      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-
+    const savedMode = localStorage.getItem("themeMode") || "auto";
     const savedLang = localStorage.getItem("lang") || "fr";
 
-    updateTheme(savedTheme);
+    applyThemeMode(savedMode);
     setLanguage(savedLang);
   </script>
 </body>
