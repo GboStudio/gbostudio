@@ -3,10 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Support — GBO Studio</title>
+
   <meta name="description" content="Support et assistance pour les applications GBO Studio." />
+  <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#f6f5f2" />
+
   <link rel="canonical" href="https://gbostudio.fr/support" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
@@ -41,7 +46,9 @@
       --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.3);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -54,6 +61,10 @@
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
       transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    a {
+      color: inherit;
     }
 
     .container {
@@ -115,7 +126,7 @@
     .lang-btn.active {
       background: var(--surface-strong);
       color: var(--text);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
 
     .theme-btn {
@@ -176,7 +187,8 @@
       padding-bottom: 0.55rem;
     }
 
-    p, li {
+    p,
+    li {
       color: var(--muted);
       font-size: 1.03rem;
       margin-bottom: 1rem;
@@ -264,6 +276,24 @@
       font-size: 0.85rem;
     }
 
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      margin-top: 0.8rem;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    .footer-links a:hover {
+      color: var(--text);
+    }
+
     .i18n {
       display: none;
     }
@@ -288,26 +318,28 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <header class="topbar">
-      <a href="index" class="back-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <a href="/" class="back-link" aria-label="Retour à l’accueil GBO Studio">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="19" y1="12" x2="5" y2="12"></line>
           <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
+
         <span class="i18n i18n-en">Back to Home</span>
         <span class="i18n i18n-fr">Retour à l’accueil</span>
       </a>
 
       <div class="controls">
-        <div class="lang-toggle">
-          <button class="lang-btn active" data-set-lang="fr">FR</button>
-          <button class="lang-btn" data-set-lang="en">EN</button>
+        <div class="lang-toggle" aria-label="Language switcher">
+          <button type="button" class="lang-btn active" data-set-lang="fr">FR</button>
+          <button type="button" class="lang-btn" data-set-lang="en">EN</button>
         </div>
 
         <button id="theme-toggle" class="theme-btn" aria-label="Changer le thème">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <circle cx="12" cy="12" r="5"></circle>
             <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"></path>
           </svg>
@@ -338,6 +370,7 @@
             <span class="i18n i18n-en">Response Time</span>
             <span class="i18n i18n-fr">Délai de réponse</span>
           </h3>
+
           <p>
             <span class="i18n i18n-en">Within 48 hours</span>
             <span class="i18n i18n-fr">Sous 48 heures</span>
@@ -349,6 +382,7 @@
             <span class="i18n i18n-en">Support Channel</span>
             <span class="i18n i18n-fr">Canal de contact</span>
           </h3>
+
           <p>
             <span class="i18n i18n-en">Email only</span>
             <span class="i18n i18n-fr">Email uniquement</span>
@@ -371,14 +405,17 @@
           <span class="i18n i18n-en">The <strong>app name</strong> you are using.</span>
           <span class="i18n i18n-fr">Le <strong>nom de l’application</strong> utilisée.</span>
         </li>
+
         <li>
           <span class="i18n i18n-en">Your <strong>device model</strong> and operating system version.</span>
           <span class="i18n i18n-fr">Le <strong>modèle de votre appareil</strong> et la version de votre système.</span>
         </li>
+
         <li>
           <span class="i18n i18n-en">A clear description of the issue.</span>
           <span class="i18n i18n-fr">Une description claire du problème rencontré.</span>
         </li>
+
         <li>
           <span class="i18n i18n-en">Screenshots if relevant.</span>
           <span class="i18n i18n-fr">Des captures d’écran si nécessaire.</span>
@@ -403,36 +440,55 @@
 
     <footer>
       <p>© 2026 GBO Studio — France</p>
+
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+      </div>
     </footer>
   </div>
 
   <script>
-    const themeBtn = document.getElementById('theme-toggle');
-    const langBtns = document.querySelectorAll('.lang-btn');
+    const themeBtn = document.getElementById("theme-toggle");
+    const langBtns = document.querySelectorAll(".lang-btn");
 
     function updateTheme(theme) {
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem('theme', theme);
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("theme", theme);
     }
-
-    themeBtn.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme') || 'light';
-      updateTheme(current === 'dark' ? 'light' : 'dark');
-    });
 
     function setLanguage(lang) {
-      document.documentElement.setAttribute('data-lang', lang);
-      localStorage.setItem('lang', lang);
-      langBtns.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.setLang === lang);
+      document.documentElement.setAttribute("data-lang", lang);
+      document.documentElement.setAttribute("lang", lang);
+      localStorage.setItem("lang", lang);
+
+      langBtns.forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.setLang === lang);
       });
+
+      themeBtn.setAttribute(
+        "aria-label",
+        lang === "fr" ? "Changer le thème" : "Change theme"
+      );
     }
 
-    const savedTheme =
-      localStorage.getItem('theme') ||
-      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    themeBtn.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme") || "light";
+      updateTheme(current === "dark" ? "light" : "dark");
+    });
 
-    const savedLang = localStorage.getItem('lang') || 'fr';
+    langBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        setLanguage(btn.dataset.setLang);
+      });
+    });
+
+    const savedTheme =
+      localStorage.getItem("theme") ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+    const savedLang = localStorage.getItem("lang") || "fr";
 
     updateTheme(savedTheme);
     setLanguage(savedLang);
