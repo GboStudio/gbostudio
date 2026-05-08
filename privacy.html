@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Confidentialité — GBO Studio</title>
+
   <meta name="description" content="Politique de confidentialité de GBO Studio." />
+  <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#f6f5f2" />
+
   <link rel="canonical" href="https://gbostudio.fr/privacy" />
   <link rel="icon" href="logo.svg" type="image/svg+xml" />
 
@@ -45,7 +49,9 @@
       --shadow-md: 0 14px 36px rgba(0, 0, 0, 0.22);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     html {
       scroll-behavior: smooth;
@@ -113,7 +119,7 @@
       border: 1px solid var(--line);
       border-radius: 999px;
       padding: 0.22rem;
-      box-shadow: 0 8px 22px rgba(0,0,0,0.04);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.04);
     }
 
     .lang-btn {
@@ -151,7 +157,7 @@
       align-items: center;
       justify-content: center;
       transition: transform var(--transition), background var(--transition), border-color var(--transition);
-      box-shadow: 0 8px 22px rgba(0,0,0,0.04);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.04);
     }
 
     .theme-btn:hover {
@@ -198,7 +204,8 @@
       border-bottom: 1px solid var(--line);
     }
 
-    p, li {
+    p,
+    li {
       color: var(--muted);
       font-size: 1rem;
       margin-bottom: 1rem;
@@ -232,6 +239,7 @@
       border-radius: 1.2rem;
       border: 1px solid var(--line);
       border-left: 4px solid var(--accent);
+      color: var(--muted);
     }
 
     .link {
@@ -250,6 +258,24 @@
       text-align: center;
       color: var(--muted);
       font-size: 0.85rem;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      margin-top: 0.8rem;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    .footer-links a:hover {
+      color: var(--text);
     }
 
     .i18n {
@@ -278,14 +304,16 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <header class="topbar">
-      <a href="index" class="back-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <a href="/" class="back-link" aria-label="Retour à l’accueil GBO Studio">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="19" y1="12" x2="5" y2="12"></line>
           <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
+
         <span class="i18n i18n-fr">Retour au Studio</span>
         <span class="i18n i18n-en">Back to Studio</span>
       </a>
@@ -297,11 +325,12 @@
         </div>
 
         <button id="theme-toggle" class="theme-btn" aria-label="Changer le thème">
-          <svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <circle cx="12" cy="12" r="5"></circle>
             <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"></path>
           </svg>
-          <svg class="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+
+          <svg class="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;" aria-hidden="true">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
           </svg>
         </button>
@@ -336,10 +365,12 @@
           <span class="i18n i18n-fr"><strong>Données de contact :</strong> votre adresse email lorsque vous contactez le support ou demandez une assistance.</span>
           <span class="i18n i18n-en"><strong>Contact data:</strong> your email address when you contact support or request assistance.</span>
         </li>
+
         <li>
           <span class="i18n i18n-fr"><strong>Données techniques :</strong> informations liées aux performances, erreurs, stabilité et bon fonctionnement du service.</span>
           <span class="i18n i18n-en"><strong>Technical data:</strong> information related to performance, errors, stability and service reliability.</span>
         </li>
+
         <li>
           <span class="i18n i18n-fr"><strong>Données locales :</strong> certaines données peuvent rester stockées directement sur votre appareil.</span>
           <span class="i18n i18n-en"><strong>Local data:</strong> some data may remain stored directly on your device.</span>
@@ -394,6 +425,12 @@
 
     <footer>
       <p>© 2026 GBO Studio — France</p>
+
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/support">Support</a>
+        <a href="/terms">Terms</a>
+      </div>
     </footer>
   </div>
 
