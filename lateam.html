@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#f6f5f2" />
+<meta name="description" content="La Team — l'application de communication interne des équipes, éditée par GBO Studio." />
+<link rel="canonical" href="https://gbostudio.fr/lateam" />
+<title>La Team — GBO Studio</title>
+<style>
+  :root{
+    --bg:#f6f5f2; --ink:#1b1b1a; --muted:#6b6b66; --line:#e7e5df;
+    --card:#ffffff; --accent:#DA291C; --accent-soft:#fbeae8; --radius:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased}
+  .nav{display:flex;align-items:center;justify-content:space-between;max-width:1000px;margin:0 auto;padding:22px 24px}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font-weight:700;letter-spacing:.2px}
+  .brand .dot{width:26px;height:26px;border-radius:8px;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800}
+  .nav a.link{color:var(--muted);text-decoration:none;font-size:14px;margin-left:18px}
+  .nav a.link:hover{color:var(--ink)}
+  .hero{max-width:1000px;margin:0 auto;padding:48px 24px 24px}
+  .tag{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1.4px}
+  h1{font-size:44px;line-height:1.1;margin:14px 0 12px;letter-spacing:-.5px}
+  .lead{font-size:18px;color:var(--muted);max-width:640px}
+  .btns{margin-top:26px;display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-block;text-decoration:none;font-weight:700;font-size:15px;padding:13px 22px;border-radius:14px}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .section{max-width:1000px;margin:0 auto;padding:28px 24px}
+  h2{font-size:24px;margin-bottom:6px;letter-spacing:-.3px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px}
+  .feat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+  .feat .ic{font-size:24px}
+  .feat h3{font-size:16px;margin:10px 0 4px}
+  .feat p{font-size:14px;color:var(--muted)}
+  .download{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:26px;margin-top:20px;text-align:center}
+  .download p{color:var(--muted);font-size:14px;margin-top:6px}
+  footer{border-top:1px solid var(--line);margin-top:36px}
+  .foot{max-width:1000px;margin:0 auto;padding:24px;display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;color:var(--muted);font-size:13px}
+  .foot a{color:var(--muted);text-decoration:none;margin-left:16px}
+  .foot a:hover{color:var(--ink)}
+  @media(max-width:720px){.grid{grid-template-columns:1fr}h1{font-size:34px}.nav a.link{display:none}}
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="https://gbostudio.fr/"><span class="dot">G</span> GBO Studio</a>
+    <div>
+      <a class="link" href="https://gbostudio.fr/">Accueil</a>
+      <a class="link" href="#fonctions">Fonctions</a>
+      <a class="link" href="https://gbostudio.fr/lateam-privacy">Confidentialité</a>
+      <a class="link" href="mailto:contact@gbostudio.fr">Contact</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="tag">Application interne • Entreprise</div>
+    <h1>La Team</h1>
+    <p class="lead">L'espace de communication des équipes en restaurant : actualités, discussions, vie d'équipe et documents utiles, réunis dans une seule application, sur le téléphone de chacun.</p>
+    <div class="btns">
+      <a class="btn primary" href="#telecharger">Télécharger</a>
+      <a class="btn ghost" href="https://gbostudio.fr/lateam-privacy">Politique de confidentialité</a>
+    </div>
+  </header>
+
+  <section class="section" id="fonctions">
+    <h2>Ce que permet l'application</h2>
+    <div class="grid">
+      <div class="feat"><div class="ic">🏠</div><h3>Accueil</h3><p>Un tableau de bord clair : annonces, anniversaires, événements et coups de chapeau du jour.</p></div>
+      <div class="feat"><div class="ic">💬</div><h3>Discussions</h3><p>Canaux par équipe et messages directs, en temps réel, avec photos et réactions.</p></div>
+      <div class="feat"><div class="ic">📣</div><h3>Actualités</h3><p>Les annonces officielles du groupe et de chaque restaurant, avec accusé de lecture.</p></div>
+      <div class="feat"><div class="ic">🎉</div><h3>Vie d'équipe</h3><p>Anniversaires, réussites, sondages, événements avec inscription et félicitations.</p></div>
+      <div class="feat"><div class="ic">📚</div><h3>Bibliothèque</h3><p>Check-lists et documents utiles, classés par dossier et imprimables en deux gestes.</p></div>
+      <div class="feat"><div class="ic">🔐</div><h3>Accès maîtrisés</h3><p>Chaque poste voit et fait uniquement ce qui le concerne, réglé par l'entreprise.</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="telecharger">
+    <h2>Télécharger</h2>
+    <div class="download">
+      <strong>Disponible sur l'App Store</strong>
+      <p>Le lien et le QR code seront ajoutés ici à la publication. Réservé aux collaborateurs ; un accès est créé par votre responsable.</p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="foot">
+      <span>© <span id="y"></span> GBO Studio — France</span>
+      <span>
+        <a href="https://gbostudio.fr/">GBO Studio</a>
+        <a href="https://gbostudio.fr/lateam-privacy">Confidentialité</a>
+        <a href="mailto:contact@gbostudio.fr">Contact</a>
+      </span>
+    </div>
+  </footer>
+  <script>document.getElementById('y').textContent=new Date().getFullYear()</script>
+</body>
+</html>
