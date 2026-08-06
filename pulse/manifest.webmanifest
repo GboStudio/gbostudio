@@ -1,0 +1,17 @@
+{
+  "name": "RUSH — Manager de quart",
+  "short_name": "RUSH",
+  "description": "Prends un quart, place ton équipe, tiens le rush. Le jeu de gestion de quart par GBO Studio.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#17141C",
+  "theme_color": "#17141C",
+  "icons": [
+    { "src": "icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
