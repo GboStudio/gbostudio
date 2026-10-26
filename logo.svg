@@ -1,1 +1,7 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="512" height="512" rx="128" fill="#153F2A"/><circle cx="256" cy="256" r="164" fill="#F2C84B" opacity="0.16"/><path d="M141 339V173h92c48 0 78 24 78 62 0 20-9 37-26 48 24 9 37 27 37 52 0 43-33 68-85 68h-96Zm47-99h39c23 0 36-10 36-27 0-17-13-26-36-26h-39v53Zm0 84h44c26 0 40-10 40-30 0-19-14-29-40-29h-44v59Z" fill="#F2C84B"/><path d="M336 339V173h47v166h-47Z" fill="#F2C84B"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <defs><linearGradient id="pearl" x1="55" y1="10" x2="470" y2="525" gradientUnits="userSpaceOnUse"><stop stop-color="#FCFDFF"/><stop offset=".43" stop-color="#DFE5F0"/><stop offset=".78" stop-color="#E1D5ED"/><stop offset="1" stop-color="#B4CBE7"/></linearGradient><linearGradient id="ink" x1="148" y1="80" x2="360" y2="424" gradientUnits="userSpaceOnUse"><stop stop-color="#2C3144"/><stop offset="1" stop-color="#555C79"/></linearGradient></defs>
+  <rect width="512" height="512" rx="144" fill="url(#pearl)"/>
+  <path d="M347 139C320 114 291 103 256 103c-84 0-151 67-151 153s67 153 151 153c80 0 139-54 151-124H253v-57h220v29c0 127-92 214-217 214C135 471 41 376 41 256S136 41 256 41c56 0 101 19 141 55l-50 43Z" transform="translate(24 24) scale(.905)" fill="url(#ink)"/>
+  <circle cx="363" cy="143" r="37" fill="#C3ADD7"/><circle cx="363" cy="143" r="22" fill="#E1DFEF" opacity=".7"/>
+  <path d="M82 90C153 40 260 28 359 68" stroke="#fff" stroke-width="9" stroke-linecap="round" opacity=".65"/>
+</svg>
