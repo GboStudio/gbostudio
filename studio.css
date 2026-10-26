@@ -57,9 +57,9 @@ html[data-theme="dark"] body.studio-v2 {
 .s-ring::before{content:"";position:absolute;inset:12%;border:1px solid rgba(124,131,159,.14);border-radius:50%}
 .s-phone{position:absolute;display:flex;flex-direction:column;overflow:hidden;border:8px solid #343744;border-radius:42px;background:#f7f5f2;box-shadow:0 45px 70px rgba(23,27,45,.25),inset 0 1px rgba(255,255,255,.9);transition:transform .55s cubic-bezier(.2,.9,.2,1);will-change:transform}
 .s-phone::before{content:"";position:absolute;z-index:4;top:10px;left:50%;transform:translateX(-50%);width:27%;height:21px;border-radius:20px;background:#22252e}
-.s-phone.main{z-index:3;width:248px;height:492px;left:37%;top:4%;transform:rotate(-6deg) translate3d(var(--move-x,0px),var(--move-y,0px),65px);background:linear-gradient(180deg,#f9f4e8,#e9dfcd)}
-.s-phone.back{z-index:2;width:224px;height:450px;left:7%;top:20%;transform:rotate(-22deg) translate3d(calc(var(--move-x,0px)*-.4),calc(var(--move-y,0px)*-.5),-35px);background:linear-gradient(180deg,#eff5f5,#dce8ea)}
-.s-phone.small{z-index:1;width:218px;height:445px;left:63%;top:25%;transform:rotate(15deg) translate3d(calc(var(--move-x,0px)*.3),calc(var(--move-y,0px)*.2),-70px);background:linear-gradient(180deg,#f0f2fc,#d9dff1)}
+.s-phone.main{z-index:3;width:248px;height:492px;left:37%;top:4%;transform:rotate(-6deg) scale(var(--s-art-scale,1)) translate3d(var(--move-x,0px),var(--move-y,0px),65px);background:linear-gradient(180deg,#f9f4e8,#e9dfcd)}
+.s-phone.back{z-index:2;width:224px;height:450px;left:7%;top:20%;transform:rotate(-22deg) scale(var(--s-art-scale,1)) translate3d(calc(var(--move-x,0px)*-.4),calc(var(--move-y,0px)*-.5),-35px);background:linear-gradient(180deg,#eff5f5,#dce8ea)}
+.s-phone.small{z-index:1;width:218px;height:445px;left:63%;top:25%;transform:rotate(15deg) scale(var(--s-art-scale,1)) translate3d(calc(var(--move-x,0px)*.3),calc(var(--move-y,0px)*.2),-70px);background:linear-gradient(180deg,#f0f2fc,#d9dff1)}
 .s-screen{height:100%;padding:59px 20px 20px;display:flex;flex-direction:column;position:relative;color:#1d2430}
 .s-screen-name{font-size:12px;font-weight:850;letter-spacing:-.035em}
 .s-capsule{margin:auto;width:145px;height:176px;position:relative;border-radius:80px 80px 28px 28px;background:linear-gradient(145deg,#f5d7a9,#e7ae68);box-shadow:inset 0 2px 10px rgba(255,255,255,.6),0 20px 28px rgba(154,103,47,.21);display:grid;place-items:center}
@@ -158,3 +158,68 @@ html[data-theme="dark"] body.studio-v2 {
 @media(max-width:620px){.studio-v2 .container{width:calc(100% - 28px)}.s-hero{padding:34px 0 20px}.s-hero h1,.s-page-hero h1{font-size:clamp(49px,13vw,74px);line-height:.98}.s-hero p{font-size:17px}.s-hero .actions{display:grid;grid-template-columns:1fr}.s-hero .actions .btn{width:100%}.s-micro{gap:8px 16px;margin-top:27px}.s-stage{height:355px;width:530px;max-width:none;left:50%;margin:18px 0 -24px;transform:translateX(-50%) scale(.60);transform-origin:center top}.s-float.one{left:12%}.s-float.two{right:10%}.s-section{padding:65px 0}.s-section.tight{padding:55px 0}.s-section-header{margin-bottom:26px}.s-title{font-size:clamp(38px,10vw,56px)}.s-rail{grid-template-columns:1fr}.s-project{min-height:330px}.s-project-visual{height:145px}.s-studio-grid{grid-template-columns:1fr}.s-service{min-height:150px}.s-studio-cta{flex-direction:column;align-items:flex-start}.s-manifesto p{font-size:24px}.s-orbit-art{width:94%}.s-cta-band{padding:30px 0 70px}.s-cta-inner{padding:29px;border-radius:28px;flex-direction:column;align-items:flex-start}.s-page-hero{padding:65px 0 38px}.s-directory-card{grid-template-columns:1fr;min-height:0;padding:23px}.s-directory-card .s-mini-art{height:160px;margin:0 -45px -30px 30%}.s-directory-card h2{font-size:34px}.s-process{grid-template-columns:1fr 1fr}.s-form-wrap{padding:22px 17px;border-radius:24px;margin-bottom:60px}.s-choice-grid{grid-template-columns:1fr}.s-wizard-nav{gap:6px}}
 @media(max-width:420px){.s-stage{transform:translateX(-50%) scale(.53);height:320px}.s-process{grid-template-columns:1fr}.s-micro span{font-size:11px}.s-hero h1{font-size:46px}}
 @media(prefers-reduced-motion:reduce){.studio-v2 *{animation:none!important;scroll-behavior:auto!important}.studio-v2 .reveal{opacity:1!important;transform:none!important}.s-phone,.s-project,.s-service{transition:none!important}}
+
+/* Correctif 2026-10-26 : les règles héritées neutralisaient les révélations
+   et annulaient la mise à l'échelle de la scène sur iPhone. */
+.studio-v2 .s-hero-grid,.studio-v2 .s-hero-copy,.studio-v2 .s-section-header{min-width:0}
+.studio-v2 .s-stage{max-width:100%}
+
+@media(max-width:620px){
+  .studio-v2 .s-hero{padding:30px 0 12px;min-height:0}
+  .studio-v2 .s-hero-grid{gap:12px}
+  .studio-v2 .s-hero-copy{width:100%;text-align:center}
+  .studio-v2 .s-overline{font-size:10px;letter-spacing:.10em;line-height:1.5;justify-content:center}
+  .studio-v2 .s-overline::before{width:18px;flex:0 0 18px}
+  .studio-v2 .s-hero h1{font-size:clamp(41px,11.6vw,58px);line-height:1.02;letter-spacing:-.078em;max-width:100%;margin:20px auto 20px}
+  .studio-v2 .s-hero p{font-size:16px;line-height:1.55;max-width:36ch;margin:0 auto}
+  .studio-v2 .s-hero .actions{margin-top:26px;gap:9px}
+  .studio-v2 .s-hero .actions .btn{width:100%;min-width:0;min-height:51px}
+  .studio-v2 .s-micro{justify-content:center;gap:8px 13px;margin-top:23px}
+  .studio-v2 .s-micro span{font-size:11px}
+  /* La scène occupe maintenant la largeur réelle du téléphone : seuls
+     les trois écrans intérieurs sont réduits, sans créer de débordement. */
+  .studio-v2 .s-stage{--s-art-scale:.60;width:100%;max-width:410px;left:auto;height:335px;margin:11px auto 0;transform:none;transform-origin:center}
+  .studio-v2 .s-phone{transform-origin:top left}
+  .studio-v2 .s-float{scale:.72;transform-origin:center}
+  .studio-v2 .s-float.one{left:0;top:5%}
+  .studio-v2 .s-float.two{right:0;bottom:8%}
+  .studio-v2 .s-scroll{padding-top:0}
+  .studio-v2 .s-title{overflow-wrap:break-word}
+}
+@media(max-width:420px){
+  .studio-v2 .s-stage{--s-art-scale:.53;height:292px}
+  .studio-v2 .s-hero h1{font-size:clamp(39px,11vw,47px)}
+  .studio-v2 .s-float{scale:.66}
+  .studio-v2 .s-section-header .s-title{font-size:clamp(34px,9.4vw,42px)}
+}
+@media(max-width:360px){
+  .studio-v2 .s-stage{--s-art-scale:.47;height:270px}
+  .studio-v2 .s-hero h1{font-size:38px}
+}
+
+/* Un mouvement perceptible mais doux, également sur écran tactile.
+   Le contenu reste lisible sans JavaScript et en mode mouvement réduit. */
+@keyframes s-stage-enter{
+  from{opacity:0;translate:0 25px;filter:blur(7px)}
+  to{opacity:1;translate:0 0;filter:blur(0)}
+}
+@keyframes s-phone-breathe{
+  0%,100%{translate:0 0}
+  50%{translate:0 -11px}
+}
+@keyframes s-background-drift{
+  from{opacity:.55;translate:-12px 0}
+  to{opacity:1;translate:13px 8px}
+}
+@media(prefers-reduced-motion:no-preference){
+  html.js body.studio-v2 .reveal{opacity:0!important;transform:translate3d(0,26px,0)!important;transition:opacity .85s cubic-bezier(.18,.8,.25,1),transform .85s cubic-bezier(.18,.8,.25,1)!important}
+  html.js body.studio-v2 .reveal.visible{opacity:1!important;transform:translate3d(0,0,0)!important}
+  .studio-v2 .s-stage{animation:s-stage-enter 1.05s .20s both}
+  .studio-v2 .s-phone{animation:s-phone-breathe 6.5s ease-in-out infinite}
+  .studio-v2 .s-phone.back{animation-delay:-2s;animation-duration:7.2s}
+  .studio-v2 .s-phone.small{animation-delay:-4s;animation-duration:7.8s}
+  .studio-v2 .s-shell::before{animation:s-background-drift 13s ease-in-out infinite alternate}
+  .studio-v2 .s-rail .s-project:nth-child(2),.studio-v2 .s-studio-grid .s-service:nth-child(2){transition-delay:.09s!important}
+  .studio-v2 .s-rail .s-project:nth-child(3),.studio-v2 .s-studio-grid .s-service:nth-child(3){transition-delay:.18s!important}
+  .studio-v2 .s-rail .s-project:nth-child(4),.studio-v2 .s-studio-grid .s-service:nth-child(4){transition-delay:.27s!important}
+}
