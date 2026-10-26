@@ -35,6 +35,64 @@
     });
   }
 
+  function setupStoreGalleries() {
+    const app = location.pathname.replace(/^\//,'').replace(/\.html$/,'');
+    const entries = {
+      conscience: {
+        label:'Conscience', icon:'conscience-icon.jpg', screenshots:['conscience-01.jpg','conscience-02.jpg'],
+        fr:['Les vrais écrans.','La clarté, dans les détails.','Découvrez les statistiques, les habitudes et les vues conçues pour mieux comprendre votre quotidien.'],
+        en:['The real app.','Clarity in every detail.','Explore the statistics, habits and thoughtfully designed screens that help you understand daily patterns.']
+      },
+      kapsy: {
+        label:'Kapsy', icon:'kapsy-icon.jpg', screenshots:['kapsy-01.jpg','kapsy-02.jpg'],
+        fr:['L’expérience en images.','Vos souvenirs ont leur univers.','Capsules, histoires, évolutions : un espace pensé pour conserver ce qui compte vraiment.'],
+        en:['A closer look.','Your memories have their own world.','Capsules, stories and progress: a space for keeping the moments that matter.']
+      },
+      pannego: {
+        label:'PanneGo', icon:'pannego-icon.jpg', screenshots:['pannego-01.jpg','pannego-02.jpg'],
+        fr:['L’application sur le terrain.','Tout suivre, d’un coup d’œil.','Déclarations, équipements et interventions : découvrez les interfaces de PanneGo.'],
+        en:['Inside the app.','Everything at a glance.','Issues, equipment and interventions: explore PanneGo’s real-world interface.']
+      }
+    };
+    const data = entries[app];
+    const main = qs('main.s-shell');
+    const hero = qs('.s-page-hero', main || document);
+    if (!data || !main || !hero) return;
+    const section = document.createElement('section');
+    section.className = 's-section s-gallery-section';
+    section.setAttribute('aria-label', 'Captures de l’application '+data.label);
+    const asset = name => '/assets/store/'+name;
+    section.innerHTML = `<div class="container s-gallery-shell">
+      <div class="s-gallery-copy"><span class="s-overline"><span data-fr>${data.fr[0]}</span><span data-en>${data.en[0]}</span></span>
+        <h2 class="s-title"><span data-fr>${data.fr[1]}</span><span data-en>${data.en[1]}</span></h2>
+        <p><span data-fr>${data.fr[2]}</span><span data-en>${data.en[2]}</span></p>
+        <div class="s-gallery-kicker"><img src="${asset(data.icon)}" alt="" width="50" height="50" loading="lazy"><strong>${data.label} · iOS & Android</strong></div>
+      </div>
+      <div class="s-gallery-images">
+        ${data.screenshots.map((name,index)=>`<figure><img src="${asset(name)}" loading="lazy" width="444" height="960" alt="${data.label}, capture d’écran ${index+1}"></figure>`).join('')}
+      </div></div>`;
+    hero.insertAdjacentElement('afterend',section);
+  }
+
+  function setupScrollProgress() {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const bar = document.createElement('div');
+    bar.className = 's-scroll-progress';
+    bar.setAttribute('aria-hidden','true');
+    document.body.prepend(bar);
+    let ticking = false;
+    const update = () => {
+      const max = Math.max(1,document.documentElement.scrollHeight-innerHeight);
+      bar.style.setProperty('--scroll-progress',Math.min(1,scrollY/max).toFixed(4));
+      ticking = false;
+    };
+    addEventListener('scroll',() => {
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    },{passive:true});
+    addEventListener('resize',update,{passive:true});
+    update();
+  }
+
   function setupWizard() {
     const form = qs('[data-project-form]');
     if (!form) return;
@@ -128,6 +186,8 @@
   }
 
   setupPortfolio();
+  setupStoreGalleries();
+  setupScrollProgress();
   setupStage();
   setupWizard();
 })();
