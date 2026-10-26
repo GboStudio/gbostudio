@@ -1,0 +1,87 @@
+/* Confidentialité GBO Studio — habillage commun, sans modification du contenu juridique. */
+body{
+  --policy-accent:#565c87;
+  --policy-accent-soft:#e8eaf6;
+  --policy-halo:rgba(163,172,223,.27);
+  --max:1220px;
+  background:radial-gradient(ellipse 66% 420px at 75% 0%,var(--policy-halo),transparent 75%),
+             radial-gradient(ellipse 45% 350px at 0% 25%,rgba(238,204,222,.2),transparent 80%),
+             var(--bg);
+  color:var(--text);
+}
+body .header{border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--surface) 78%,transparent);backdrop-filter:blur(22px)}
+body .nav{min-height:78px}
+body .brand{font-weight:800;letter-spacing:-.045em;font-size:17px}
+body .brand .logo{width:44px;height:44px;border:0;border-radius:15px;background:linear-gradient(145deg,#e3e8f7,#dbcee9);color:#393a5f;box-shadow:inset 0 1px rgba(255,255,255,.9),0 9px 26px rgba(54,52,97,.14);font-size:12px}
+body .nav-links{border-radius:999px;background:color-mix(in srgb,var(--surface) 89%,transparent)}
+body .nav-links a.active,body .nav-links a:hover{background:var(--policy-accent-soft);color:#3c416c}
+body .nav-right{gap:10px}
+body .switch button.active{background:var(--policy-accent);color:#fff}
+body .section{padding:clamp(28px,5vw,66px) 0 clamp(75px,8vw,125px)}
+body .narrow.legal,body .kapsy-policy{
+  position:relative;
+  box-shadow:0 32px 100px rgba(26,26,55,.08),0 4px 20px rgba(30,28,51,.04);
+  background:color-mix(in srgb,var(--surface) 96%,transparent);
+  border:1px solid color-mix(in srgb,var(--policy-accent) 16%,transparent);
+  border-radius:32px;
+  padding:clamp(24px,5.5vw,66px);
+  max-width:920px;
+  width:calc(100% - 30px);
+  margin:0 auto;
+  overflow:hidden;
+}
+body .narrow.legal::before,body .kapsy-policy::before{
+  content:"";position:absolute;inset:0 0 auto;height:5px;
+  background:linear-gradient(90deg,#7785bb,#d4a8c4,#a2ccbf);
+}
+body .eyebrow{
+  border-color:rgba(109,117,170,.24);color:var(--policy-accent);
+  background:var(--policy-accent-soft);font-weight:800;letter-spacing:.11em;text-transform:uppercase;
+}
+body .legal h1{font-size:clamp(35px,5.7vw,64px);line-height:1.06;letter-spacing:-.065em;color:var(--text);margin:24px 0 28px;max-width:760px;overflow-wrap:anywhere}
+body .legal h2{font-size:clamp(19px,2.6vw,26px);line-height:1.24;letter-spacing:-.035em;margin:40px 0 14px;padding-top:25px;border-top:1px solid var(--line);color:var(--text)}
+body .legal h2:first-of-type{margin-top:30px}
+body .legal p,body .legal li{color:var(--muted);font-size:15px;line-height:1.85}
+body .legal p{margin:0 0 16px}
+body .legal ul{padding-left:25px;margin:14px 0 22px}
+body .legal li+li{margin-top:8px}
+body .legal a,body .kapsy-policy a{color:var(--policy-accent);text-underline-offset:3px}
+body .minimal-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+body .minimal-list .list-link{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  border:1px solid var(--line);border-radius:17px;background:var(--surface-2);
+  padding:19px!important;text-decoration:none;transition:transform .25s,box-shadow .25s,border-color .25s;
+}
+body .minimal-list .list-link:hover{transform:translateY(-3px);border-color:rgba(128,132,187,.4);box-shadow:0 12px 30px rgba(36,32,65,.08)}
+body .minimal-list .list-link strong{color:var(--text);font-size:16px}body .minimal-list .list-link span{color:var(--policy-accent);font-size:12px;font-weight:760}
+body .kapsy-policy{--policy-accent:#9e7d8b;--policy-accent-soft:#f5e9ec;--policy-halo:rgba(227,192,208,.25);color:var(--text)!important}
+body .kapsy-policy .brand-title{font-family:inherit;font-size:clamp(42px,6vw,66px);font-weight:850;letter-spacing:-.07em;color:var(--text);line-height:1.1}
+body .kapsy-policy .motto{font-family:inherit;font-size:15px;letter-spacing:.06em;color:var(--muted)}
+body .kapsy-policy h1,body .kapsy-policy h2,body .kapsy-policy p,body .kapsy-policy li{font-family:inherit}
+body .kapsy-policy h1{font-size:clamp(29px,4vw,44px);letter-spacing:-.055em;line-height:1.1;margin:30px 0 8px;color:var(--text)}
+body .kapsy-policy h2{font-size:clamp(20px,2.7vw,26px);line-height:1.23;letter-spacing:-.035em;color:var(--text);border-top:1px solid var(--line);padding-top:24px;margin:36px 0 12px}
+body .kapsy-policy p,body .kapsy-policy li{font-size:15px;line-height:1.85;color:var(--muted)}
+body .kapsy-policy .lead-policy{background:var(--policy-accent-soft);border-left:4px solid #bf9aac;color:#534149;border-radius:10px}
+body .kapsy-policy .lang-jump{margin:20px 0}body .kapsy-policy .lang-jump a{display:inline-block;margin:0 10px 8px 0;border:1px solid var(--line);background:var(--surface-2);padding:9px 13px;border-radius:999px;text-decoration:none;font-size:13px;font-weight:760}
+body .kapsy-policy hr{border-color:var(--line);margin:48px 0 35px}
+body .kapsy-policy .policy-footer{color:var(--muted)}
+body .footer{border-top:1px solid var(--line);background:color-mix(in srgb,var(--bg-soft) 60%,transparent);padding:32px 0 45px}
+body .footer a:hover{color:var(--policy-accent);text-decoration:underline}
+@media(max-width:920px){body .nav-right{max-width:100%;min-width:0}body .nav{gap:12px}}
+@media(max-width:700px){
+  body .section{padding:28px 0 65px}
+  body .narrow.legal,body .kapsy-policy{width:calc(100% - 24px);padding:29px 20px;border-radius:23px}
+  body .legal h1{font-size:clamp(33px,10vw,48px)}
+  body .legal h2,body .kapsy-policy h2{margin-top:30px;padding-top:20px}
+  body .legal p,body .legal li,body .kapsy-policy p,body .kapsy-policy li{font-size:14px;line-height:1.8}
+  body .minimal-list{grid-template-columns:1fr}
+  body .nav{flex-wrap:wrap}body .nav-right{flex-wrap:wrap;justify-content:center;width:100%}
+  body .nav-right .nav-links{flex-direction:row;flex-wrap:wrap;justify-content:center;width:100%}
+  body .nav-right .nav-links a{width:auto;font-size:12px;padding:8px 11px}
+  body .switch{justify-content:center}
+}
+@media(prefers-reduced-motion:no-preference){
+  body .narrow.legal,body .kapsy-policy{animation:policy-enter .8s cubic-bezier(.2,.8,.2,1) both}
+  body .legal h2,body .kapsy-policy h2{scroll-margin-top:115px}
+}
+@keyframes policy-enter{from{opacity:0;transform:translateY(22px);filter:blur(5px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
