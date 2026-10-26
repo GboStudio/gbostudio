@@ -107,7 +107,7 @@
     const field = name => form.elements.namedItem(name);
     const chosen = name => qs(`[name="${name}"]:checked`, form);
     const text = name => String(field(name)?.value || '').trim();
-    const setStep = index => {
+    const setStep = (index, focusHeading = true) => {
       current = Math.max(0, Math.min(index, steps.length-1));
       steps.forEach((step,i) => { step.hidden = i !== current; });
       if (progress) progress.style.width = `${((current+1)/steps.length)*100}%`;
@@ -120,7 +120,7 @@
       if (englishLabel) englishLabel.textContent = finalStep ? (form.dataset.endpoint ? 'Send my request' : 'Prepare my email') : 'Continue';
       error.textContent = '';
       const heading = qs('h2',steps[current]);
-      heading?.focus({preventScroll:true});
+      if (focusHeading) heading?.focus({preventScroll:true});
     };
     const checkStep = () => {
       if (current === 0 && !chosen('type')) { message('Choisis le type de projet.','Choose a project type.'); return false; }
@@ -182,7 +182,7 @@
     }));
     // Éviter une soumission native non configurée ou une navigation accidentelle.
     form.addEventListener('submit', event => event.preventDefault());
-    setStep(0);
+    setStep(0, false);
   }
 
   setupPortfolio();
