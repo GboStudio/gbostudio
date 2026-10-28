@@ -157,7 +157,7 @@
       pulse:{name:'Pulse',kind:'concept',tone:'electric',symbol:'↗'},
       replay:{name:'Replay',kind:'concept',tone:'sun',symbol:'≋'},
       'gbo-ads':{name:'GBO Ads',kind:'concept',tone:'rose',symbol:'✦'},
-      applications:{name:'GBO / 08',kind:'concept',tone:'violet',symbol:'✳'},
+      applications:{name:'GBO / 10',kind:'concept',tone:'violet',symbol:'✳'},
       services:{name:'GBO / Studio',kind:'concept',tone:'violet',symbol:'◈'}
     }[page];
 
