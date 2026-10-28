@@ -174,18 +174,18 @@
   ::view-transition-old(root),::view-transition-new(root){animation:none!important}
 }
 
-/* V7 identity — original puffy GB STUDIO and blue/green Earth supplied by GBO.
-   They remain separate image layers so the globe can land in front of the B. */
+/* V8 identity: original artwork, genuinely transparent, no pale JPEG slab.
+   The globe animates only inside the homepage hero, never in the navigation. */
 .header .gbo-brand-animated,
 .footer .gbo-brand-animated{
   display:inline-flex;
-  width:176px;
-  min-width:176px;
-  height:78px;
+  width:154px;
+  min-width:154px;
+  height:91px;
   padding:0;
   align-items:center;
   justify-content:center;
-  isolation:auto;
+  isolation:isolate;
   text-decoration:none;
   transform:translateZ(0)
 }
@@ -195,33 +195,30 @@
   width:100%;
   height:100%;
   overflow:visible;
-  isolation:auto;
+  isolation:isolate;
   flex:none
 }
 .gbo-brand-lettering{
   position:absolute;
   z-index:1;
-  top:-10%;
-  left:-1%;
-  width:83%;
-  height:116%;
-  object-fit:fill;
-  mix-blend-mode:multiply;
+  top:0;
+  left:0;
+  width:100%;
+  height:auto;
+  object-fit:contain;
   user-select:none;
   pointer-events:none
 }
 .gbo-brand-planet-wrap{
   position:absolute;
   z-index:2;
-  width:37%;
+  width:39%;
   aspect-ratio:1;
-  top:13%;
-  right:-1%;
+  top:23%;
+  right:-9%;
   overflow:hidden;
   border-radius:50%;
-  clip-path:circle(41.1% at 50% 50%);
-  transform-origin:center bottom;
-  will-change:transform;
+  transform-origin:center;
   pointer-events:none
 }
 .gbo-brand-planet{
@@ -232,37 +229,74 @@
   pointer-events:none;
   user-select:none
 }
-.gbo-brand-animated:hover .gbo-brand-planet-wrap{filter:drop-shadow(0 6px 7px rgba(18,130,220,.15))}
+.gbo-brand-animated:hover .gbo-brand-planet-wrap{filter:drop-shadow(0 4px 7px rgba(18,130,220,.18))}
 .gbo-brand-animated:focus-visible{outline:3px solid #1599e5;outline-offset:3px;border-radius:8px}
-.footer .gbo-brand-footer{width:143px;min-width:143px;height:64px}
+.footer .gbo-brand-footer{width:139px;min-width:139px;height:82px}
 .studio-v2 .v6-entrance-stamp{display:none}
-html[data-theme="dark"] .gbo-brand-visual{
-  background:#f9fafb;
-  border-radius:14px;
-  box-shadow:0 8px 24px rgba(0,0,0,.12)
+/* Dark backgrounds use a silver treatment of the same 3D artwork. */
+html[data-theme="dark"] .header .gbo-brand-lettering,
+html[data-theme="dark"] .footer .gbo-brand-lettering{filter:invert(1) brightness(1.12)}
+html[data-theme="dark"] .header .gbo-brand-visual,
+html[data-theme="dark"] .footer .gbo-brand-visual{background:transparent;box-shadow:none}
+
+/* Replace the oversized, square grey hero glow with a precise brand scene. */
+.studio-v2 .s-shell::before{background:radial-gradient(ellipse 46% 35% at 76% 28%,rgba(174,194,244,.14),transparent 100%),radial-gradient(ellipse 30% 30% at 96% 3%,rgba(228,188,237,.1),transparent 100%)}
+.studio-v2 .s-hero-copy{position:relative;padding-top:145px}
+.gbo-hero-brand{
+  position:absolute;
+  top:-13px;
+  left:0;
+  width:228px;
+  height:149px;
+  pointer-events:none;
+  isolation:isolate;
+  transform:translateZ(0)
 }
-@keyframes gbo-earth-arrives{
-  0%{opacity:0;transform:translate3d(10%,-185%,0) rotate(-27deg) scale(.74)}
-  25%{opacity:1}
-  48%{transform:translate3d(0,13%,0) rotate(12deg) scale(1.08,.91)}
-  63%{transform:translate3d(0,-25%,0) rotate(-8deg) scale(.95,1.06)}
-  76%{transform:translate3d(0,6%,0) rotate(4deg) scale(1.025,.98)}
-  88%{transform:translate3d(0,-5%,0) rotate(-2deg) scale(.995,1.01)}
+.gbo-hero-brand::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:-25px -33px -20px -28px;
+  background:radial-gradient(ellipse at 45% 49%,rgba(251,252,255,.98) 0,rgba(235,238,248,.89) 40%,rgba(195,207,235,.33) 59%,transparent 72%);
+  border-radius:50%;
+  pointer-events:none
+}
+.gbo-hero-brand .gbo-brand-visual{width:100%;height:100%}
+.gbo-hero-brand .gbo-brand-lettering{top:4px;width:90%;filter:drop-shadow(0 15px 12px rgba(18,20,40,.13))}
+.gbo-hero-brand .gbo-brand-planet-wrap{
+  width:39%;top:25%;right:-1%;
+  filter:drop-shadow(0 12px 12px rgba(0,69,138,.24));
+  will-change:transform,opacity
+}
+.gbo-hero-brand .gbo-brand-planet{width:100%;height:100%}
+@keyframes gbo-hero-mark-enter{
+  from{opacity:0;transform:translate3d(0,13px,0) scale(.975)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+/* One restrained physical landing: anticipation, impact, tiny recovery, rest. */
+@keyframes gbo-hero-earth-land{
+  0%{opacity:0;transform:translate3d(-16px,-125px,0) rotate(-24deg) scale(.82)}
+  22%{opacity:1}
+  65%{transform:translate3d(0,6px,0) rotate(7deg) scale(1.055,.955)}
+  81%{transform:translate3d(0,-9px,0) rotate(-3deg) scale(.99,1.01)}
   100%{opacity:1;transform:translate3d(0,0,0) rotate(0) scale(1)}
 }
 @media(prefers-reduced-motion:no-preference){
-  html.gbo-brand-first-visit .header .gbo-brand-planet-wrap{
-    animation:gbo-earth-arrives 1.55s cubic-bezier(.19,.75,.24,1) .12s both
-  }
+  html.gbo-brand-first-visit .gbo-hero-brand .gbo-brand-lettering{animation:gbo-hero-mark-enter .75s cubic-bezier(.16,1,.3,1) .05s both}
+  html.gbo-brand-first-visit .gbo-hero-brand .gbo-brand-planet-wrap{animation:gbo-hero-earth-land 1.2s cubic-bezier(.17,.8,.24,1) .18s both}
 }
 @media(max-width:700px){
-  .header .gbo-brand-animated{width:143px;min-width:143px;height:65px}
-  .footer .gbo-brand-footer{width:132px;min-width:132px;height:59px}
-  .nav{min-height:74px}
+  .header .gbo-brand-animated{width:126px;min-width:126px;height:76px}
+  .footer .gbo-brand-footer{width:132px;min-width:132px;height:78px}
+  .nav{min-height:77px}
+  .studio-v2 .s-hero-copy{padding-top:125px}
+  .gbo-hero-brand{top:-5px;left:0;width:191px;height:127px}
 }
 @media(max-width:375px){
-  .header .gbo-brand-animated{width:125px;min-width:125px;height:59px}
+  .header .gbo-brand-animated{width:116px;min-width:116px;height:70px}
+  .gbo-hero-brand{width:177px;height:117px}
 }
+@media(prefers-reduced-motion:reduce){.gbo-hero-brand .gbo-brand-lettering,.gbo-hero-brand .gbo-brand-planet-wrap{animation:none!important}}
 
 /* V7 — two upcoming GBO Studio creations, without premature launch links. */
 .gbo-coming-next{margin-top:27px;padding:19px 20px;border:1px solid var(--line-strong);border-radius:22px;background:color-mix(in srgb,var(--surface) 78%,transparent);box-shadow:0 12px 34px rgba(53,52,78,.055)}

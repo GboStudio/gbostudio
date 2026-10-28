@@ -159,8 +159,7 @@
     anchor.insertAdjacentElement('afterend',section);
   }
 
-  /* The globe stays an independent layer so the original 3D artwork can land
-     in front of the B, without replacing the lettering with another drawing. */
+  /* Transparent 3D layers: compact, still navigation; hero-only cinematic landing. */
   function setupAnimatedBrand(){
     document.querySelectorAll('link[rel="icon"]').forEach(icon => {
       icon.href='/logo-v7.svg';
@@ -168,8 +167,8 @@
     });
     const brandMarkup = `
       <span class="gbo-brand-visual" aria-hidden="true">
-        <img class="gbo-brand-lettering" src="/assets/brand/gbo-studio-3d.jpg" width="1536" height="1024" alt="" decoding="async">
-        <span class="gbo-brand-planet-wrap"><img class="gbo-brand-planet" src="/assets/brand/gbo-earth-3d.jpg" width="1254" height="1254" alt="" decoding="async"></span>
+        <img class="gbo-brand-lettering" src="/assets/brand/gbo-studio-clean.webp" width="1241" height="772" alt="" decoding="async">
+        <span class="gbo-brand-planet-wrap"><img class="gbo-brand-planet" src="/assets/brand/gbo-earth-clean.webp" width="1030" height="1039" alt="" decoding="async"></span>
       </span>`;
     $$('.header a.brand').forEach(link => {
       link.setAttribute('aria-label','GBO Studio, accueil');
@@ -181,11 +180,19 @@
       link.classList.add('gbo-brand-animated','gbo-brand-footer');
       link.innerHTML = brandMarkup;
     });
+    const heroCopy=$('.s-hero-copy');
+    if(heroCopy && !$('.gbo-hero-brand',heroCopy)){
+      const heroBrand=document.createElement('div');
+      heroBrand.className='gbo-hero-brand';
+      heroBrand.setAttribute('aria-hidden','true');
+      heroBrand.innerHTML=brandMarkup;
+      heroCopy.prepend(heroBrand);
+    }
     if(reduced.matches) return;
     try {
-      if(!sessionStorage.getItem('gbo-brand-bounce-v7')){
+      if(!sessionStorage.getItem('gbo-brand-landing-v8')){
         document.documentElement.classList.add('gbo-brand-first-visit');
-        sessionStorage.setItem('gbo-brand-bounce-v7','1');
+        sessionStorage.setItem('gbo-brand-landing-v8','1');
       }
     } catch (_) {
       document.documentElement.classList.add('gbo-brand-first-visit');
