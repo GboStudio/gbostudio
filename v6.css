@@ -327,3 +327,15 @@ html[data-theme="dark"] .footer .gbo-brand-visual{background:transparent;box-sha
   .gbo-coming-next{padding:15px 16px;margin-top:21px}
   .s-directory-card .gbo-upcoming-art{min-height:180px}
 }
+
+/* V8.2 mobile — small editorial brand, centered and clear of the eyebrow/title. */
+@media(max-width:700px){
+  .studio-v2 .s-hero-copy{padding-top:90px}
+  .gbo-hero-brand{top:0;left:50%;width:116px;height:78px;transform:translateX(-50%)}
+  .gbo-hero-brand::before{inset:-9px -13px -8px;opacity:.66}
+  .gbo-hero-brand .gbo-brand-planet-wrap{filter:drop-shadow(0 5px 6px rgba(0,69,138,.2))}
+}
+@media(max-width:375px){
+  .studio-v2 .s-hero-copy{padding-top:83px}
+  .gbo-hero-brand{width:108px;height:73px}
+}
