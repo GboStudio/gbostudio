@@ -231,6 +231,11 @@
 }
 .gbo-brand-animated:hover .gbo-brand-planet-wrap{filter:drop-shadow(0 4px 7px rgba(18,130,220,.18))}
 .gbo-brand-animated:focus-visible{outline:3px solid #1599e5;outline-offset:3px;border-radius:8px}
+.studio-v2 .header .gbo-header-wordmark{padding:12px 0;text-decoration:none;min-width:0;white-space:nowrap}
+.gbo-header-mark{display:inline-flex;align-items:baseline;gap:7px;color:var(--text);line-height:1}
+.gbo-header-mark strong{font-size:25px;font-weight:900;letter-spacing:-.075em}
+.gbo-header-mark span{font-size:15px;font-weight:650;letter-spacing:-.035em;color:var(--muted)}
+.gbo-header-mark i{align-self:center;width:7px;height:7px;border-radius:50%;margin-left:1px;background:linear-gradient(135deg,#56d5cb,#789cf7);box-shadow:0 0 14px rgba(83,156,244,.3)}
 .footer .gbo-brand-footer{width:139px;min-width:139px;height:82px}
 .studio-v2 .v6-entrance-stamp{display:none}
 /* Dark backgrounds use a silver treatment of the same 3D artwork. */
@@ -286,6 +291,8 @@ html[data-theme="dark"] .footer .gbo-brand-visual{background:transparent;box-sha
   html.gbo-brand-first-visit .gbo-hero-brand .gbo-brand-planet-wrap{animation:gbo-hero-earth-land 1.2s cubic-bezier(.17,.8,.24,1) .18s both}
 }
 @media(max-width:700px){
+  .gbo-header-mark strong{font-size:22px}
+  .gbo-header-mark span{font-size:13px}
   .header .gbo-brand-animated{width:126px;min-width:126px;height:76px}
   .footer .gbo-brand-footer{width:132px;min-width:132px;height:78px}
   .nav{min-height:77px}

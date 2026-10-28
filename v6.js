@@ -172,8 +172,9 @@
       </span>`;
     $$('.header a.brand').forEach(link => {
       link.setAttribute('aria-label','GBO Studio, accueil');
-      link.classList.add('gbo-brand-animated');
-      link.innerHTML = brandMarkup;
+      link.classList.remove('gbo-brand-animated');
+      link.classList.add('gbo-header-wordmark');
+      link.innerHTML = '<span class="gbo-header-mark"><strong>GBO</strong><span>studio</span><i aria-hidden="true"></i></span>';
     });
     $$('.footer a.brand').forEach(link => {
       link.setAttribute('aria-label','GBO Studio, accueil');
