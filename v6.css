@@ -173,3 +173,116 @@
   .v6-promo *,.v6-demo-layout *,.page-projet .s-wizard-step:not([hidden]){animation:none!important;transition:none!important}
   ::view-transition-old(root),::view-transition-new(root){animation:none!important}
 }
+
+/* V7 identity — original puffy GB STUDIO and blue/green Earth supplied by GBO.
+   They remain separate image layers so the globe can land in front of the B. */
+.header .gbo-brand-animated,
+.footer .gbo-brand-animated{
+  display:inline-flex;
+  width:176px;
+  min-width:176px;
+  height:78px;
+  padding:0;
+  align-items:center;
+  justify-content:center;
+  isolation:auto;
+  text-decoration:none;
+  transform:translateZ(0)
+}
+.gbo-brand-visual{
+  position:relative;
+  display:block;
+  width:100%;
+  height:100%;
+  overflow:visible;
+  isolation:auto;
+  flex:none
+}
+.gbo-brand-lettering{
+  position:absolute;
+  z-index:1;
+  top:-10%;
+  left:-1%;
+  width:83%;
+  height:116%;
+  object-fit:fill;
+  mix-blend-mode:multiply;
+  user-select:none;
+  pointer-events:none
+}
+.gbo-brand-planet-wrap{
+  position:absolute;
+  z-index:2;
+  width:37%;
+  aspect-ratio:1;
+  top:13%;
+  right:-1%;
+  overflow:hidden;
+  border-radius:50%;
+  clip-path:circle(41.1% at 50% 50%);
+  transform-origin:center bottom;
+  will-change:transform;
+  pointer-events:none
+}
+.gbo-brand-planet{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  pointer-events:none;
+  user-select:none
+}
+.gbo-brand-animated:hover .gbo-brand-planet-wrap{filter:drop-shadow(0 6px 7px rgba(18,130,220,.15))}
+.gbo-brand-animated:focus-visible{outline:3px solid #1599e5;outline-offset:3px;border-radius:8px}
+.footer .gbo-brand-footer{width:143px;min-width:143px;height:64px}
+.studio-v2 .v6-entrance-stamp{display:none}
+html[data-theme="dark"] .gbo-brand-visual{
+  background:#f9fafb;
+  border-radius:14px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12)
+}
+@keyframes gbo-earth-arrives{
+  0%{opacity:0;transform:translate3d(10%,-185%,0) rotate(-27deg) scale(.74)}
+  25%{opacity:1}
+  48%{transform:translate3d(0,13%,0) rotate(12deg) scale(1.08,.91)}
+  63%{transform:translate3d(0,-25%,0) rotate(-8deg) scale(.95,1.06)}
+  76%{transform:translate3d(0,6%,0) rotate(4deg) scale(1.025,.98)}
+  88%{transform:translate3d(0,-5%,0) rotate(-2deg) scale(.995,1.01)}
+  100%{opacity:1;transform:translate3d(0,0,0) rotate(0) scale(1)}
+}
+@media(prefers-reduced-motion:no-preference){
+  html.gbo-brand-first-visit .header .gbo-brand-planet-wrap{
+    animation:gbo-earth-arrives 1.55s cubic-bezier(.19,.75,.24,1) .12s both
+  }
+}
+@media(max-width:700px){
+  .header .gbo-brand-animated{width:143px;min-width:143px;height:65px}
+  .footer .gbo-brand-footer{width:132px;min-width:132px;height:59px}
+  .nav{min-height:74px}
+}
+@media(max-width:375px){
+  .header .gbo-brand-animated{width:125px;min-width:125px;height:59px}
+}
+
+/* V7 — two upcoming GBO Studio creations, without premature launch links. */
+.gbo-coming-next{margin-top:27px;padding:19px 20px;border:1px solid var(--line-strong);border-radius:22px;background:color-mix(in srgb,var(--surface) 78%,transparent);box-shadow:0 12px 34px rgba(53,52,78,.055)}
+.gbo-coming-next-title{display:block;margin-bottom:13px;font-size:10px;font-weight:850;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.gbo-coming-next>div{display:flex;gap:8px;flex-wrap:wrap}
+.gbo-coming-next>div>span{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:13px;background:var(--surface);font-size:12px;font-weight:800;color:var(--text)}
+.gbo-coming-next>div>span::before{content:"";width:7px;height:7px;flex:none;border-radius:50%;background:#d8ac6c}
+.s-directory-card .gbo-upcoming-label{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border:1px dashed var(--line-strong);border-radius:99px;color:var(--muted);font-size:12px;font-weight:750}
+.s-directory-card .gbo-upcoming-art{overflow:hidden;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:17px;isolation:isolate}
+.s-directory-card .gbo-upcoming-art::before{content:"";position:absolute;inset:-20%;background:radial-gradient(circle at center,rgba(255,255,255,.32),transparent 65%);z-index:-1}
+.s-directory-card .gbo-upcoming-art small{position:relative;z-index:2;font-size:12px;line-height:1.2;text-align:center;letter-spacing:.2em;font-weight:900}
+.s-directory-card .gbo-museum-art{background:linear-gradient(135deg,#f7f4ed,#ddd4c8 65%,#bbb5ae);color:#47413b}
+.gbo-museum-room{display:flex;align-items:center;justify-content:space-around;gap:11px;width:82%;height:96px;transform:perspective(160px) rotateY(-12deg)}
+.gbo-museum-room i{display:block;height:86px;flex:1;border:6px solid #fcfaf6;box-shadow:8px 12px 22px rgba(54,48,38,.16),inset 0 0 0 1px rgba(80,70,55,.12);background:rgba(255,255,255,.25)}
+.gbo-museum-room i:nth-child(2){height:68px}
+.s-directory-card .gbo-motion-art{background:radial-gradient(circle at 45% 40%,#414472,#15172b 69%,#0a0d19);color:#fff}
+.gbo-motion-art::after{content:"";position:absolute;left:-40%;right:-40%;top:30%;height:35%;border-top:1px solid rgba(220,222,255,.21);border-bottom:1px solid rgba(220,222,255,.13);transform:rotate(-24deg)}
+.s-directory-card .gbo-motion-art .gbo-motion-play{z-index:2;display:grid;place-items:center;width:83px;height:83px;border-radius:25px;transform:rotate(-8deg);font-size:35px;color:#fff;background:linear-gradient(145deg,#aeb1fd,#686ae7);box-shadow:0 15px 40px rgba(4,5,36,.4),inset 0 2px 2px rgba(255,255,255,.45)}
+.s-directory-card .gbo-motion-art small{color:#d1d5ff}
+@media(max-width:620px){
+  .gbo-coming-next{padding:15px 16px;margin-top:21px}
+  .s-directory-card .gbo-upcoming-art{min-height:180px}
+}

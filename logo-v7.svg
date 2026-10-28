@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">GBO Studio — Terre bleue et verte</title>
+  <defs>
+    <radialGradient id="water" cx="34%" cy="25%" r="86%">
+      <stop offset="0" stop-color="#5fd9ff"/>
+      <stop offset=".47" stop-color="#129cf4"/>
+      <stop offset="1" stop-color="#075ecb"/>
+    </radialGradient>
+    <linearGradient id="land" x1=".12" y1="0" x2=".93" y2="1">
+      <stop stop-color="#b8ffb7"/>
+      <stop offset="1" stop-color="#5ce88c"/>
+    </linearGradient>
+    <filter id="sh" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.7"/>
+    </filter>
+  </defs>
+  <circle cx="48" cy="48" r="44" fill="url(#water)"/>
+  <g fill="url(#land)" stroke="#27ce93" stroke-width=".3" stroke-linejoin="round">
+    <path d="M13 26 21 20 33 16 42 18 49 15 60 18 65 23 59 28 54 28 53 35 47 37 44 42 39 43 35 49 30 45 25 44 22 37 17 35 16 30Z"/>
+    <path d="M36 47 42 45 47 49 54 52 55 58 50 64 48 70 46 79 40 88 38 76 35 66 32 59 34 52Z"/>
+    <path d="M64 16 71 17 79 24 83 34 78 36 73 29 68 28 64 24Z"/>
+    <path d="M54 43 58 41 63 44 61 48 56 48Z"/>
+  </g>
+  <path d="M14 53c3 19 17 32 35 35" fill="none" stroke="#003eac" stroke-opacity=".22" stroke-width="5" stroke-linecap="round"/>
+</svg>

@@ -159,6 +159,40 @@
     anchor.insertAdjacentElement('afterend',section);
   }
 
+  /* The globe stays an independent layer so the original 3D artwork can land
+     in front of the B, without replacing the lettering with another drawing. */
+  function setupAnimatedBrand(){
+    document.querySelectorAll('link[rel="icon"]').forEach(icon => {
+      icon.href='/logo-v7.svg';
+      icon.type='image/svg+xml';
+    });
+    const brandMarkup = `
+      <span class="gbo-brand-visual" aria-hidden="true">
+        <img class="gbo-brand-lettering" src="/assets/brand/gbo-studio-3d.jpg" width="1536" height="1024" alt="" decoding="async">
+        <span class="gbo-brand-planet-wrap"><img class="gbo-brand-planet" src="/assets/brand/gbo-earth-3d.jpg" width="1254" height="1254" alt="" decoding="async"></span>
+      </span>`;
+    $$('.header a.brand').forEach(link => {
+      link.setAttribute('aria-label','GBO Studio, accueil');
+      link.classList.add('gbo-brand-animated');
+      link.innerHTML = brandMarkup;
+    });
+    $$('.footer a.brand').forEach(link => {
+      link.setAttribute('aria-label','GBO Studio, accueil');
+      link.classList.add('gbo-brand-animated','gbo-brand-footer');
+      link.innerHTML = brandMarkup;
+    });
+    if(reduced.matches) return;
+    try {
+      if(!sessionStorage.getItem('gbo-brand-bounce-v7')){
+        document.documentElement.classList.add('gbo-brand-first-visit');
+        sessionStorage.setItem('gbo-brand-bounce-v7','1');
+      }
+    } catch (_) {
+      document.documentElement.classList.add('gbo-brand-first-visit');
+    }
+  }
+
+  setupAnimatedBrand();
   setupPromo();
   setupDemoLab();
   setupHomeSwipe();
