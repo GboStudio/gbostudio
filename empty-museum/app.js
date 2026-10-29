@@ -18,9 +18,23 @@ const base=[
 {id:16,title:'Bench 01',author:'Kian',category:'build',tools:'ChatGPT + SketchUp',description:'Un banc produit après avoir demandé comment faire tenir trois personnes sans créer trois places séparées.',size:'large',image:'linear-gradient(150deg,#85796e,#d7cec2 50%,#3d3935)',date:'Oct. 2026'},
 {id:17,title:'Signal',author:'Eva',category:'design',tools:'ChatGPT + Figma',description:'Identité visuelle pour un projet qui n’existera probablement jamais.',size:'standard',image:'linear-gradient(135deg,#161616 0 45%,#d1ff39 45% 58%,#f0eee5 58%)',date:'Oct. 2026'},
 {id:18,title:'Tomorrow, Maybe',author:'Iris',category:'image',tools:'ChatGPT + image generation',description:'Une image produite à partir d’une phrase : demain, mais sans certitude.',size:'xl',image:'linear-gradient(165deg,#d9d6cf,#b7c6d3 45%,#f1c1a6 70%,#393f49)',date:'Oct. 2026'}];
-let pieces=[...base], filter='all', plan={size:'standard',price:9.9}, upload='';
-try{const s=JSON.parse(localStorage.getItem('tem-demo')||'[]');if(Array.isArray(s))pieces=[...base,...s]}catch(e){}
+let pieces=base.slice(0,6), filter='all', plan={size:'standard',price:9.9}, upload='', selectedSlot=null;
+try{const s=JSON.parse(localStorage.getItem('tem-demo')||'[]');if(Array.isArray(s))pieces=[...base.slice(0,6),...s]}catch(e){}
 const grid=$('#grid'),viewport=$('#viewport');
+const SLOT_SIZES=['standard','mini','large','standard','standard','xl','mini','standard','large','standard','xl','standard','mini','large','standard','standard','mini','large','standard','xl'];
+const SLOT_PRICES={mini:4.9,standard:9.9,large:24.9,xl:49.9};
+function getSlots(){
+  const placements=new Map();
+  [2,5,8,11,14,17].forEach((slot,index)=>{if(pieces[index] && pieces[index].id<=18) placements.set(slot,pieces[index]);});
+  pieces.filter(p=>p.id>18).forEach(p=>{
+    let slot=Number.isInteger(p.slot)&&p.slot>=0?p.slot:-1;
+    if(slot<0||placements.has(slot)){slot=1;while(placements.has(slot))slot++;}
+    placements.set(slot,p);
+  });
+  const highest=Math.max(17,...placements.keys());
+  const total=Math.max(20,highest+6);
+  return Array.from({length:total},(_,id)=>{const piece=placements.get(id)||null,size=piece?.size||SLOT_SIZES[id%SLOT_SIZES.length];return{id,size,price:SLOT_PRICES[size]||9.9,piece};});
+}
 const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 function bg(p){if(p.image?.startsWith('data:'))return `url("${p.image}")`;return p.image||'linear-gradient(145deg,#ddd8cd,#f8f6f0)'}
 function render(){grid.innerHTML='';const arr=filter==='all'?pieces:pieces.filter(p=>p.category===filter);arr.forEach(p=>{const el=document.createElement('article');el.className=`tile ${p.size} ${p.category==='words'?'words':''} ${p.category==='3d'?'threed':''}`;el.dataset.id=p.id;if(p.category==='words'){el.innerHTML=`<div class="wordsArt">${esc(p.words||p.title)}</div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}else if(p.category==='3d'){el.innerHTML=`<div class="img"></div><div class="shape"></div><div class="shade"></div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}else{el.innerHTML=`<div class="img"></div><div class="shade"></div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}if(p.category!=='words'&&p.category!=='3d')el.querySelector('.img').style.backgroundImage=bg(p);el.querySelector('button').onclick=()=>openPiece(p);grid.appendChild(el)});stats()}
@@ -30,9 +44,37 @@ $('#reset').onclick=()=>viewport.scrollTo({left:0,behavior:'smooth'});$('#random
 let down=false,sx=0,sl=0;viewport.onmousedown=e=>{down=true;sx=e.pageX-viewport.offsetLeft;sl=viewport.scrollLeft};window.onmouseup=()=>down=false;viewport.onmouseleave=()=>down=false;viewport.onmousemove=e=>{if(!down)return;e.preventDefault();viewport.scrollLeft=sl-(e.pageX-viewport.offsetLeft-sx)*1.35};
 function openPiece(p){const m=$('#media');m.className='media';m.style.backgroundImage='';m.textContent='';if(p.category==='words'){m.classList.add('words');m.textContent=p.words||p.title}else if(p.category==='3d')m.classList.add('threed');else m.style.backgroundImage=bg(p);$('#pcat').textContent=`${p.category.toUpperCase()} / #${String(p.id).padStart(3,'0')}`;$('#ptitle').textContent=p.title;$('#pauthor').textContent=p.author;$('#pdesc').textContent=p.description;$('#ptools').textContent=p.tools;$('#pdate').textContent=p.date;$('#psize').textContent=p.size.toUpperCase();$('#sharePiece').onclick=()=>shareGeneric(p);$('#piece').showModal()}
 $('#closePiece').onclick=()=>$('#piece').close();function shareGeneric(p){const url=location.href.split('#')[0]+`#piece-${p.id}`;if(navigator.share)navigator.share({title:p.title,text:`${p.title} — exposé dans The Empty Museum`,url}).catch(()=>{});else navigator.clipboard?.writeText(url)}
-function openExhibit(size='standard',price=9.9){plan={size,price:Number(price)};$$('.pick button').forEach(b=>b.classList.toggle('active',b.dataset.size===size));$('#price').textContent=plan.price.toFixed(2).replace('.',',')+' €';$('#pnum').textContent='#'+String(pieces.length+1).padStart(3,'0');$('#exhibit').showModal()}
-$$('[data-open]').forEach(b=>b.onclick=()=>openExhibit());$$('[data-plan]').forEach(b=>b.onclick=()=>openExhibit(b.dataset.plan,b.dataset.price));$$('.pick button').forEach(b=>b.onclick=()=>{$$('.pick button').forEach(x=>x.classList.remove('active'));b.classList.add('active');plan={size:b.dataset.size,price:Number(b.dataset.p)};$('#price').textContent=plan.price.toFixed(2).replace('.',',')+' €'});$('#title').oninput=()=>$('#prevTitle').textContent=($('#title').value||'YOUR PIECE').toUpperCase();$('#file').onchange=e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{upload=r.result;$('#preview').style.backgroundImage=`url("${upload}")`};r.readAsDataURL(f)};
-$('#publish').onclick=()=>{const p={id:pieces.length+1,title:$('#title').value.trim()||'Untitled',author:$('#author').value.trim()||'Anonymous',category:$('#category').value,tools:$('#tools').value.trim()||'AI tools',description:$('#desc').value.trim()||'Une création exposée dans The Empty Museum.',size:plan.size,date:new Date().toLocaleDateString('fr-FR',{month:'short',year:'numeric'}),image:upload||'linear-gradient(145deg,#c7d1d8,#eee5d8 60%,#6f7b83)',words:$('#category').value==='words'?($('#desc').value.trim()||'Untitled'):''};pieces.push(p);localStorage.setItem('tem-demo',JSON.stringify(pieces.filter(x=>x.id>18)));$('#exhibit').close();filter='all';$$('[data-filter]').forEach(x=>x.classList.toggle('active',x.dataset.filter==='all'));render();setTimeout(()=>viewport.scrollTo({left:grid.scrollWidth,behavior:'smooth'}),80);drawShare(p);$('#share').showModal();$('#form').reset();$('#preview').style.backgroundImage='';upload=''};
+function openExhibit(size='standard',price=9.9,slot=null){selectedSlot=slot;plan={size,price:Number(price)};$$('.pick button').forEach(b=>b.classList.toggle('active',b.dataset.size===size));$('#price').textContent=plan.price.toFixed(2).replace('.',',')+' €';$('#pnum').textContent=slot===null?'PLACE LIBRE':'EMPLACEMENT '+String(slot+1).padStart(2,'0');$('#slotName').textContent=slot===null?'CHOISISSEZ VOTRE FORMAT':'EMPLACEMENT N°'+String(slot+1).padStart(2,'0');$('#exhibit').showModal()}
+$$('[data-open]').forEach(b=>b.onclick=()=>openExhibit());$$('[data-plan]').forEach(b=>b.onclick=()=>openExhibit(b.dataset.plan,b.dataset.price));$$('.pick button').forEach(b=>b.onclick=()=>{$$('.pick button').forEach(x=>x.classList.remove('active'));b.classList.add('active');plan={size:b.dataset.size,price:Number(b.dataset.p)};$('#price').textContent=plan.price.toFixed(2).replace('.',',')+' €'});$('#title').oninput=()=>$('#prevTitle').textContent=($('#title').value||'YOUR PIECE').toUpperCase();$('#file').onchange=e=>{
+  const f=e.target.files?.[0];if(!f)return;
+  if(!f.type.startsWith('image/')){alert('Choisissez une image.');return;}
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const ratio=Math.min(1,1100/Math.max(img.width,img.height));
+      const work=document.createElement('canvas');
+      work.width=Math.max(1,Math.round(img.width*ratio));
+      work.height=Math.max(1,Math.round(img.height*ratio));
+      const c=work.getContext('2d');c.drawImage(img,0,0,work.width,work.height);
+      upload=work.toDataURL('image/jpeg',.82);
+      $('#preview').style.backgroundImage='url("'+upload+'")';
+    };img.src=String(reader.result);
+  };reader.readAsDataURL(f);
+};
+const sketch=$('#sketch'),sketchCtx=sketch?.getContext('2d');
+let sketchUsed=false,sketchPointer=null;
+if(sketchCtx){
+  sketchCtx.fillStyle='#faf8f3';sketchCtx.fillRect(0,0,sketch.width,sketch.height);
+  sketchCtx.strokeStyle='#1d2420';sketchCtx.lineWidth=4;sketchCtx.lineCap='round';sketchCtx.lineJoin='round';
+  const pos=e=>{const r=sketch.getBoundingClientRect();return{x:(e.clientX-r.left)*sketch.width/r.width,y:(e.clientY-r.top)*sketch.height/r.height}};
+  sketch.addEventListener('pointerdown',e=>{e.preventDefault();sketch.setPointerCapture(e.pointerId);sketchPointer=e.pointerId;const p=pos(e);sketchCtx.beginPath();sketchCtx.moveTo(p.x,p.y);sketchCtx.lineTo(p.x+.1,p.y+.1);sketchCtx.stroke();sketchUsed=true;});
+  sketch.addEventListener('pointermove',e=>{if(sketchPointer!==e.pointerId)return;const p=pos(e);sketchCtx.lineTo(p.x,p.y);sketchCtx.stroke();});
+  const done=e=>{if(sketchPointer!==e.pointerId)return;sketchPointer=null;upload=sketch.toDataURL('image/png');$('#preview').style.backgroundImage='url("'+upload+'")';};
+  sketch.addEventListener('pointerup',done);sketch.addEventListener('pointercancel',done);
+  $('#clearSketch').onclick=()=>{sketchCtx.fillStyle='#faf8f3';sketchCtx.fillRect(0,0,sketch.width,sketch.height);sketchUsed=false;upload='';$('#preview').style.backgroundImage='';};
+}
+$('#publish').onclick=()=>{const p={id:Math.max(18,...pieces.map(p=>Number(p.id)||18))+1,slot:selectedSlot,title:$('#title').value.trim()||'Untitled',author:$('#author').value.trim()||'Anonymous',category:$('#category').value,tools:$('#tools').value.trim()||'Création personnelle',description:$('#desc').value.trim()||'Une création exposée dans The Empty Museum.',size:plan.size,date:new Date().toLocaleDateString('fr-FR',{month:'short',year:'numeric'}),image:upload||'linear-gradient(145deg,#c7d1d8,#eee5d8 60%,#6f7b83)',words:$('#category').value==='words'?($('#desc').value.trim()||'Untitled'):''};pieces.push(p);try{localStorage.setItem('tem-demo',JSON.stringify(pieces.filter(x=>x.id>18)))}catch(e){alert('La création est visible pendant cette visite, mais le stockage de votre appareil est saturé. Réduisez la taille du fichier pour la conserver.')}$('#exhibit').close();filter='all';$$('[data-filter]').forEach(x=>x.classList.toggle('active',x.dataset.filter==='all'));render();setTimeout(()=>viewport.scrollTo({left:grid.scrollWidth,behavior:'smooth'}),80);drawShare(p);$('#share').showModal();$('#form').reset();$('#preview').style.backgroundImage='';upload='';selectedSlot=null;if(sketchCtx){sketchCtx.fillStyle='#faf8f3';sketchCtx.fillRect(0,0,sketch.width,sketch.height);sketchUsed=false;}window.dispatchEvent(new Event('tem:exhibited'))};
 function drawShare(p){const c=$('#canvas'),x=c.getContext('2d'),W=c.width,H=c.height;x.fillStyle='#efede5';x.fillRect(0,0,W,H);x.strokeStyle='#161613';x.lineWidth=3;x.strokeRect(75,75,W-150,H-150);x.fillStyle='#11110f';x.font='700 25px Arial';x.fillText('THE EMPTY MUSEUM',110,130);x.fillStyle='#77736b';x.font='700 20px Arial';x.fillText(`#${String(p.id).padStart(3,'0')} / NOW EXHIBITED`,110,185);x.fillStyle='#11110f';x.font='700 65px Arial';wrap(x,p.title.toUpperCase(),110,340,W-220,73,3);x.font='italic 46px Georgia';x.fillStyle='#4f4d48';wrap(x,`by ${p.author}`,110,575,W-220,55,2);x.font='500 24px Arial';x.fillStyle='#6c6963';wrap(x,p.description,110,735,W-220,35,5);x.fillStyle='#11110f';x.font='700 22px Arial';x.fillText(`${p.size.toUpperCase()} / 12 MONTHS`,110,H-170);x.fillStyle='#77736b';x.font='500 18px Arial';x.fillText('A MUSEUM OF WHAT HUMANS MAKE WITH AI',110,H-125)}
 function wrap(ctx,t,x,y,w,lh,n){const words=String(t).split(/\s+/),lines=[];let line='';for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>w&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);lines.slice(0,n).forEach((l,i)=>ctx.fillText(l,x,y+i*lh))}
 $('#closeShare').onclick=()=>$('#share').close();$('#download').onclick=()=>{const a=document.createElement('a');a.download='the-empty-museum-exhibition.png';a.href=$('#canvas').toDataURL('image/png');a.click()};$('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(location.href.split('#')[0]+'#my-exhibition');$('#copy').textContent='LIEN COPIÉ ✓';setTimeout(()=>$('#copy').textContent='COPIER LE LIEN',1400)}catch(e){}};$('#shareNative').onclick=async()=>{if(navigator.share)try{await navigator.share({title:'The Empty Museum',text:'Ma création est exposée dans The Empty Museum.',url:location.href})}catch(e){}};render();
@@ -42,4 +84,4 @@ function openLinkedPiece(){const m=location.hash.match(/^#piece-(\d+)$/);if(!m)r
 window.addEventListener('hashchange',openLinkedPiece);openLinkedPiece();
 
 // Read-only bridge for the immersive gallery; the public demo remains browser-local.
-window.TEM = { getPieces: () => pieces, openPiece };
+window.TEM = { getPieces: () => pieces, getSlots, openPiece, openExhibit };
