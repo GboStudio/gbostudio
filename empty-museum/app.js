@@ -30,6 +30,8 @@ const FORMATS={
   panorama:{name:'Panoramique',dimensions:'100 × 40 cm',ratio:5/2,price:30},
   floor:{name:'Emplacement au sol',dimensions:'1,20 × 1,20 m',ratio:1,price:499}
 };
+// Deux premiers cadres à gauche (0, 2) et à droite (1, 3) : espaces publicitaires hors vente.
+const AD_RESERVED_SLOTS=new Set([0,1,2,3]);
 const SLOT_SIZES=['landscape','portrait','mini','wide','portrait','landscape','panorama','tall','mini','wide','portrait','landscape','panorama','tall','portrait','wide','mini','landscape','wide','portrait','panorama','landscape','tall'];
 const FLOOR_POSITIONS=[{id:'S01',z:12,x:1.45},{id:'S02',z:32,x:-1.45},{id:'S03',z:58,x:1.45}];
 const euros=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
@@ -39,13 +41,13 @@ function getSlots(){
   [2,5,8,11,14,17].forEach((slot,index)=>{if(pieces[index] && pieces[index].id<=18) placements.set(slot,pieces[index]);});
   pieces.filter(p=>p.id>18 && typeof p.slot!=='string').forEach(p=>{
     let slot=Number.isInteger(p.slot)&&p.slot>=0?p.slot:-1;
-    if(slot<0||placements.has(slot)){slot=0;while(placements.has(slot))slot++;}
+    if(slot<0||AD_RESERVED_SLOTS.has(slot)||placements.has(slot)){slot=4;while(AD_RESERVED_SLOTS.has(slot)||placements.has(slot))slot++;}
     placements.set(slot,p);
   });
   const highest=Math.max(17,...placements.keys()),total=Math.max(23,highest+5);
   return Array.from({length:total},(_,id)=>{
     const piece=placements.get(id)||null,size=piece&&piece.id>18?normalizeSize(piece.size):SLOT_SIZES[id%SLOT_SIZES.length];
-    return{id,size,price:FORMATS[size]?.price||19.9,format:FORMATS[size]||FORMATS.landscape,piece};
+    return{id,size,price:FORMATS[size]?.price||19.9,format:FORMATS[size]||FORMATS.landscape,piece,reservedForAds:AD_RESERVED_SLOTS.has(id)};
   });
 }
 function getFloorSlots(){
@@ -66,6 +68,7 @@ function setReserveStage(n){
   $('#form').scrollTop=0;
 }
 function openExhibit(size='landscape',price=null,slot=null){
+  if(Number.isInteger(slot)&&AD_RESERVED_SLOTS.has(slot))return;
   const chosen=FORMATS[size]||FORMATS.landscape;
   plan={size,price:price===null?chosen.price:Number(price)};
   selectedSlot=slot;
@@ -84,7 +87,7 @@ function openExhibit(size='landscape',price=null,slot=null){
   setReserveStage(1);
   $('#exhibit').showModal();
 }
-function firstVacantWall(size=null){return getSlots().find(s=>!s.piece&&(!size||s.size===size))||getSlots().find(s=>!s.piece);}
+function firstVacantWall(size=null){return getSlots().find(s=>!s.piece&&!s.reservedForAds&&(!size||s.size===size))||getSlots().find(s=>!s.piece&&!s.reservedForAds);}
 $$('[data-open]').forEach(b=>b.onclick=()=>{const s=firstVacantWall();if(s)openExhibit(s.size,s.price,s.id);});
 $$('[data-plan]').forEach(b=>b.onclick=()=>{
   const size=b.dataset.plan;
