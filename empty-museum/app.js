@@ -77,6 +77,9 @@ function openExhibit(size='landscape',price=null,slot=null){
   $('#price').textContent=euros(plan.price);
   $('#reservePreview').style.setProperty('--frame-ratio',String(chosen.ratio));
   $('#reservePreview').classList.toggle('is-floor',isFloor);
+  $('#reserveExplain').textContent=isFloor
+    ?'Cet espace au sol est réservé à une sculpture, un objet ou une installation. Dans cette démo, vous pouvez présenter votre projet avec une photo et un texte.'
+    :'Ce cadre précis vous est réservé pendant 12 mois. Votre image conserve ses proportions : elle ne sera ni étirée ni déformée.';
   setReserveStage(1);
   $('#exhibit').showModal();
 }
