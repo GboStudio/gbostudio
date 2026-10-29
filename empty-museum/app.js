@@ -38,7 +38,7 @@ const euros=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximum
 const normalizeSize=s=>({standard:'landscape',large:'wide',xl:'panorama'}[s]||s);
 function getSlots(){
   const placements=new Map();
-  [2,5,8,11,14,17].forEach((slot,index)=>{if(pieces[index] && pieces[index].id<=18) placements.set(slot,pieces[index]);});
+  [4,5,8,11,14,17].forEach((slot,index)=>{if(pieces[index] && pieces[index].id<=18) placements.set(slot,pieces[index]);});
   pieces.filter(p=>p.id>18 && typeof p.slot!=='string').forEach(p=>{
     let slot=Number.isInteger(p.slot)&&p.slot>=0?p.slot:-1;
     if(slot<0||AD_RESERVED_SLOTS.has(slot)||placements.has(slot)){slot=4;while(AD_RESERVED_SLOTS.has(slot)||placements.has(slot))slot++;}
