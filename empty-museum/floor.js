@@ -66,7 +66,7 @@
   });
   $('#floorClose').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
-  function showError(t){$('#floorError').textContent=t;}
+  function showError(t){const el=$('#floorError');el.textContent=t;el.scrollIntoView({block:'center',behavior:'smooth'});}
   let currentImage=null,lastImgSrc='';
   function project(x,y,z) {
     const ca=Math.cos(angle),sa=Math.sin(angle);
