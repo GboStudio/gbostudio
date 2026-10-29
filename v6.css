@@ -395,3 +395,11 @@ html[data-theme="dark"] .footer .gbo-brand-visual{background:transparent;box-sha
     background:radial-gradient(ellipse at 50% 49%,rgba(97,89,218,.55),rgba(53,81,202,.25) 43%,transparent 73%)
   }
 }
+
+/* V8.4 — mobile: one identity only. Keep the compact header wordmark. */
+@media(max-width:700px){
+  .studio-v2 .gbo-hero-brand{display:none!important}
+  .studio-v2 .s-hero{padding-top:38px}
+  .studio-v2 .s-hero-copy{padding-top:0}
+  .studio-v2 .s-hero-copy>.s-overline{margin-top:0}
+}
