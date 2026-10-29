@@ -25,6 +25,7 @@
 
   function list() { return window.TEM.getPieces(); }
   function slots() { return window.TEM.getSlots(); }
+  function floorSlots() { return window.TEM.getFloorSlots(); }
   function galleryLength() { return Math.max(28, 9 + slots().length * step); }
   function limit(v, min, max) { return Math.max(min, Math.min(max, v)); }
   function resize() {
@@ -151,7 +152,9 @@
     const img = artImage(piece);
     if (img && w > 3 && h > 3) {
       ctx.save(); path(points); ctx.clip();
-      ctx.drawImage(img, x, y, w, h);
+      const scale=Math.min(w/img.naturalWidth,h/img.naturalHeight);
+      const iw=img.naturalWidth*scale,ih=img.naturalHeight*scale;
+      ctx.drawImage(img,x+(w-iw)/2,y+(h-ih)/2,iw,ih);
       ctx.restore();
     } else if (w > 22 && h > 25) {
       paintSample(piece,x,y,w,h,points);
@@ -170,25 +173,41 @@
     const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
     ctx.save();path(pts);ctx.clip();
     const bg=ctx.createLinearGradient(x,y,x+w,y+h);
-    bg.addColorStop(0,'#fdfcf8');bg.addColorStop(1,'#e5e1d4');
+    bg.addColorStop(0,'#faf9f4');bg.addColorStop(1,'#eae8e0');
     ctx.fillStyle=bg;ctx.fill();
-    ctx.fillStyle='rgba(130,143,104,.07)';
-    for(let line=-h;line<w+h;line+=20){ctx.fillRect(x+line,y,1,Math.max(w,h));}
-    if(w>30 && h>32){
-      ctx.strokeStyle='#8f9c78';ctx.lineWidth=Math.max(1,Math.min(4,w*.014));
-      ctx.setLineDash([Math.max(3,w*.04),Math.max(2,w*.025)]);
-      ctx.strokeRect(x+w*.09,y+h*.09,w*.82,h*.82);ctx.setLineDash([]);
-      const r=Math.min(w,h)*.1,cx=x+w*.5,cy=y+h*.38;
-      ctx.strokeStyle='#69775a';ctx.lineWidth=Math.max(1,r*.17);
+    if(w>30 && h>30){
+      ctx.strokeStyle='#8c9b84';ctx.lineWidth=Math.max(1,Math.min(4,w*.013));
+      ctx.setLineDash([Math.max(3,w*.035),Math.max(2,w*.018)]);
+      ctx.strokeRect(x+w*.075,y+h*.07,w*.85,h*.86);ctx.setLineDash([]);
+      const r=Math.min(w,h)*.085,cx=x+w*.5,cy=y+h*.34;
+      ctx.strokeStyle='#697d65';ctx.lineWidth=Math.max(1,r*.17);
       ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
       ctx.beginPath();ctx.moveTo(cx-r*.5,cy);ctx.lineTo(cx+r*.5,cy);ctx.moveTo(cx,cy-r*.5);ctx.lineTo(cx,cy+r*.5);ctx.stroke();
-      if(w>65&&h>52){
+      if(w>65&&h>48){
         ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.fillStyle='#263126';ctx.font='700 '+Math.max(9,Math.min(20,w*.09))+'px Arial';
-        ctx.fillText('PLACE LIBRE',cx,y+h*.66,w*.84);
-        ctx.fillStyle='#67765a';ctx.font='700 '+Math.max(9,Math.min(16,w*.073))+'px Arial';
-        ctx.fillText(slot.price.toFixed(2).replace('.',',')+' € / 12 MOIS',cx,y+h*.80,w*.84);
+        ctx.fillStyle='#263126';ctx.font='700 '+Math.max(9,Math.min(18,w*.092))+'px Arial';
+        ctx.fillText('CADRE LIBRE',cx,y+h*.58,w*.86);
+        ctx.fillStyle='#53694f';ctx.font='500 '+Math.max(9,Math.min(15,w*.064))+'px Arial';
+        ctx.fillText((slot.format?.name||'Photo').toUpperCase(),cx,y+h*.72,w*.86);
+        ctx.font='700 '+Math.max(9,Math.min(16,w*.08))+'px Arial';
+        ctx.fillText(slot.price.toLocaleString('fr-FR',{maximumFractionDigits:2})+' € / 12 MOIS',cx,y+h*.83,w*.88);
       }
+    }
+    ctx.restore();
+  }
+  function drawFloorSpot(slot,pts,kind){
+    const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+    const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
+    ctx.save();path(pts);ctx.clip();
+    ctx.fillStyle=slot.piece?'#d4c6aa':'#dee9da';ctx.fill();
+    ctx.strokeStyle=slot.piece?'#9e8d72':'#879e84';ctx.lineWidth=Math.max(2,Math.min(6,w*.03));
+    ctx.setLineDash(slot.piece?[]:[10,6]);path(pts);ctx.stroke();ctx.setLineDash([]);
+    if(w>65&&h>28){
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillStyle='#21352a';ctx.font='800 '+Math.max(11,Math.min(18,w*.095))+'px Arial';
+      ctx.fillText(slot.piece?'INSTALLATION':'ESPACE AU SOL',x+w*.5,y+h*.40,w*.88);
+      ctx.font='700 '+Math.max(11,Math.min(20,w*.10))+'px Arial';
+      ctx.fillText(slot.piece?String(slot.piece.title).slice(0,25):'499 € / 12 MOIS',x+w*.5,y+h*.69,w*.9);
     }
     ctx.restore();
   }
@@ -219,7 +238,10 @@
   }
   function paint(f) {
     path(f.points);
-    if (f.kind === "art" || f.kind === "free") {
+    if(f.kind==='floor-spot'){
+      drawFloorSpot(f.slot,f.points,f.kind);
+      hits.push({points:f.points,depth:f.depth,piece:f.piece,slot:f.slot});
+    } else if (f.kind === "art" || f.kind === "free") {
       ctx.fillStyle = "#fffdfa"; ctx.fill();
       ctx.lineWidth = Math.max(2, Math.min(9, F / (f.depth + 1) * .065));
       ctx.strokeStyle = "#ddd5c5"; ctx.stroke();
@@ -265,17 +287,27 @@
     }
     add([[-half, 0, length], [half, 0, length], [half, height, length], [-half, height, length]], "#e5e0d5", "#cac3b6", "end");
 
-    const all = list(), allSlots = slots();
+    const all = list(), allSlots = slots(), floors=floorSlots();
+    const shapes={
+      mini:[1.30,1.95],portrait:[1.65,2.45],landscape:[2.55,1.70],
+      tall:[1.85,2.75],wide:[3.15,2.10],panorama:[3.15,1.28],
+      standard:[2.55,1.70],large:[3.15,2.10],xl:[3.15,1.28]
+    };
     allSlots.forEach((slot,i)=>{
-      const z=5.7+i*step, side=i%2?1:-1;
-      const x=side*(half-.075),s=slot.size;
-      const pw=({mini:1.50,standard:1.95,large:2.45,xl:2.95}[s]||1.95);
-      const ph=({mini:1.24,standard:1.7,large:1.95,xl:2.15}[s]||1.7);
+      const z=5.7+i*step,side=i%2?1:-1,x=side*(half-.075);
+      const [pw,ph]=shapes[slot.size]||shapes.landscape;
       const low=(height-ph)/2,high=low+ph;
       add([[x,low,z-pw/2],[x,low,z+pw/2],[x,high,z+pw/2],[x,high,z-pw/2]],slot.piece?"#e6dfd3":"#f3f0e7",slot.piece?"#b8a994":"#829371",slot.piece?"art":"free",slot.piece,slot);
     });
-    const structure = faces.filter(f => f.kind !== "art" && f.kind !== "free").sort((a,b) => b.depth - a.depth);
-    const artworks = faces.filter(f => f.kind === "art" || f.kind === "free").sort((a,b) => b.depth - a.depth);
+    floors.forEach(slot=>{
+      const x=slot.x,z=slot.z,r=1.05;
+      add([[x-r,.21,z-r],[x+r,.21,z-r],[x+r,.21,z+r],[x-r,.21,z+r]],slot.piece?'#ded0b9':'#e3ebdd',null,'floor-spot',slot.piece,slot);
+      // The museum plinth makes floor spaces visible without blocking the aisle.
+      add([[x-.68,.02,z+.60],[x+.68,.02,z+.60],[x+.68,.18,z+.60],[x-.68,.18,z+.60]],'#d1cbbf','#a9a396','plinth');
+      add([[x-.68,.18,z-.60],[x+.68,.18,z-.60],[x+.68,.18,z+.60],[x-.68,.18,z+.60]],'#eeeae2','#b8b0a4','plinth');
+    });
+    const structure = faces.filter(f => !["art","free","floor-spot"].includes(f.kind)).sort((a,b) => b.depth - a.depth);
+    const artworks = faces.filter(f => ["art","free","floor-spot"].includes(f.kind)).sort((a,b) => b.depth - a.depth);
     hits = [];
     structure.forEach(paint);
     artworks.forEach(paint);
@@ -298,7 +330,7 @@
     ctx.fillRect(W / 2, H / 2 - 9, 1, 18);
     drawPerson(performance.now()/1000);
     document.getElementById("walkProgress").textContent =
-      Math.floor(view.z) + " / " + Math.floor(length) + " M  ·  " + all.length + " CRÉATIONS  ·  " + allSlots.filter(s=>!s.piece).length + " PLACES LIBRES";
+      Math.floor(view.z) + " / " + Math.floor(length) + " M  ·  " + all.length + " CRÉATIONS  ·  " + (allSlots.filter(s=>!s.piece).length+floors.filter(s=>!s.piece).length) + " PLACES LIBRES";
     document.getElementById("walkMeter").style.width = (100 * view.z / length) + "%";
   }
   function tick(time) {
