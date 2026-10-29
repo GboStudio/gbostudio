@@ -24,7 +24,6 @@
     angle=-.25;
     select('photo');
     dialog.showModal();
-    dialog.querySelector('#floorTitle').focus({preventScroll:true});
   }
   function select(type){
     state.type=type;state.tint=colors[type];
