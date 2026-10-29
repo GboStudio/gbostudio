@@ -12,6 +12,7 @@
   const half = 4.6, height = 4.5, step = 3.5, near = 0.15;
   const palette = {
     image: ["#c4cfdb", "#e3beb0"],
+    drawing: ["#e6d9b7", "#c0bbdc"],
     design: ["#8dc4cb", "#1b3f54"],
     "3d": ["#d9caba", "#8b7b74"],
     build: ["#879c82", "#d6c7a7"],
@@ -19,11 +20,12 @@
     weird: ["#d2d96c", "#c288a5"]
   };
   let active = false, raf = 0, lastTime = 0, W = 1, H = 1, F = 1, length = 30;
-  let hits = [], pointer = null, lastFocus = null;
+  let hits = [], pointer = null, lastFocus = null, autoWalk = null, walking = 0;
   const imageCache = new Map();
 
   function list() { return window.TEM.getPieces(); }
-  function galleryLength() { return Math.max(25, 9 + list().length * step); }
+  function slots() { return window.TEM.getSlots(); }
+  function galleryLength() { return Math.max(28, 9 + slots().length * step); }
   function limit(v, min, max) { return Math.max(min, Math.min(max, v)); }
   function resize() {
     const rect = canvas.getBoundingClientRect();
@@ -121,15 +123,68 @@
       ctx.restore();
     }
   }
+  function drawEmpty(slot, pts) {
+    const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+    const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
+    ctx.save();path(pts);ctx.clip();
+    const bg=ctx.createLinearGradient(x,y,x+w,y+h);
+    bg.addColorStop(0,'#fdfcf8');bg.addColorStop(1,'#e5e1d4');
+    ctx.fillStyle=bg;ctx.fill();
+    ctx.fillStyle='rgba(130,143,104,.07)';
+    for(let line=-h;line<w+h;line+=20){ctx.fillRect(x+line,y,1,Math.max(w,h));}
+    if(w>30 && h>32){
+      ctx.strokeStyle='#8f9c78';ctx.lineWidth=Math.max(1,Math.min(4,w*.014));
+      ctx.setLineDash([Math.max(3,w*.04),Math.max(2,w*.025)]);
+      ctx.strokeRect(x+w*.09,y+h*.09,w*.82,h*.82);ctx.setLineDash([]);
+      const r=Math.min(w,h)*.1,cx=x+w*.5,cy=y+h*.38;
+      ctx.strokeStyle='#69775a';ctx.lineWidth=Math.max(1,r*.17);
+      ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cx-r*.5,cy);ctx.lineTo(cx+r*.5,cy);ctx.moveTo(cx,cy-r*.5);ctx.lineTo(cx,cy+r*.5);ctx.stroke();
+      if(w>65&&h>52){
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillStyle='#263126';ctx.font='700 '+Math.max(9,Math.min(20,w*.09))+'px Arial';
+        ctx.fillText('PLACE LIBRE',cx,y+h*.66,w*.84);
+        ctx.fillStyle='#67765a';ctx.font='700 '+Math.max(9,Math.min(16,w*.073))+'px Arial';
+        ctx.fillText(slot.price.toFixed(2).replace('.',',')+' € / 12 MOIS',cx,y+h*.80,w*.84);
+      }
+    }
+    ctx.restore();
+  }
+  function drawPerson(t){
+    // A small third-person visitor, drawn after the gallery so it remains in view.
+    const scale=Math.max(.72,Math.min(1.26,H/700));
+    const px=W*.5,py=H+9;
+    const sway=Math.sin(t*8)*Math.min(1,Math.abs(walking));
+    ctx.save();ctx.translate(px,py);ctx.scale(scale,scale);
+    ctx.fillStyle='rgba(21,22,20,.20)';ctx.beginPath();ctx.ellipse(0,-3,53,13,0,0,Math.PI*2);ctx.fill();
+    function limb(x1,y1,x2,y2,w,color){ctx.lineCap='round';ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
+    const kick=Math.min(9,Math.abs(sway)*9);
+    limb(-12,-65,-17+sway*9,-15,20,'#343834');
+    limb(12,-65,17-sway*9,-15,20,'#292d2a');
+    limb(-17+sway*9,-15,-20+sway*9,-5,17,'#1c211f');
+    limb(17-sway*9,-15,20-sway*9,-5,17,'#1c211f');
+    limb(-25,-111,-31-sway*5,-67,14,'#323b35');
+    limb(25,-111,31+sway*5,-67,14,'#2b342e');
+    const body=ctx.createLinearGradient(-32,-142,32,-58);
+    body.addColorStop(0,'#515f51');body.addColorStop(.55,'#313c35');body.addColorStop(1,'#1f2723');
+    ctx.fillStyle=body;ctx.beginPath();ctx.moveTo(-21,-144);ctx.lineTo(21,-144);ctx.quadraticCurveTo(32,-130,26,-110);ctx.lineTo(22,-69);ctx.quadraticCurveTo(0,-61,-22,-69);ctx.lineTo(-26,-110);ctx.quadraticCurveTo(-32,-130,-21,-144);ctx.fill();
+    ctx.fillStyle='#202923';ctx.beginPath();ctx.roundRect(-17,-116,34,33,8);ctx.fill();
+    ctx.strokeStyle='rgba(231,229,211,.24)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-139);ctx.lineTo(0,-83);ctx.stroke();
+    ctx.fillStyle='#b98d72';ctx.fillRect(-8,-152,16,16);
+    ctx.fillStyle='#d6b39a';ctx.beginPath();ctx.ellipse(0,-167,16,20,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#292921';ctx.beginPath();ctx.ellipse(0,-174,17,13,0,Math.PI,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
   function paint(f) {
     path(f.points);
-    if (f.kind === "art") {
+    if (f.kind === "art" || f.kind === "free") {
       ctx.fillStyle = "#fffdfa"; ctx.fill();
       ctx.lineWidth = Math.max(2, Math.min(9, F / (f.depth + 1) * .065));
       ctx.strokeStyle = "#ddd5c5"; ctx.stroke();
-      drawArt(f.piece, f.points);
-      path(f.points); ctx.strokeStyle = "#c5bbae"; ctx.stroke();
-      hits.push({ points: f.points, depth: f.depth, piece: f.piece });
+      if(f.kind==="art")drawArt(f.piece, f.points);
+      else drawEmpty(f.slot,f.points);
+      path(f.points); ctx.strokeStyle = f.kind==="free"?"#889276":"#c5bbae"; ctx.stroke();
+      hits.push({ points: f.points, depth: f.depth, piece: f.piece, slot: f.slot });
     } else {
       ctx.fillStyle = f.fill; ctx.fill();
       if (f.stroke) { ctx.lineWidth = f.kind === "seam" ? 1 : .6; ctx.strokeStyle = f.stroke; ctx.stroke(); }
@@ -151,13 +206,15 @@
     sky.addColorStop(0, "#f6f4ee"); sky.addColorStop(.53, "#ebe8e0"); sky.addColorStop(1, "#b8aea0");
     ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
     const faces = [], n = Math.ceil(length / step);
-    function add(vertices, fill, stroke, kind, piece) {
+    function add(vertices, fill, stroke, kind, piece, slot) {
       const f = face(vertices, fill, stroke, kind, piece);
+      if(f)f.slot=slot;
       if (f && f.depth > -step && f.depth < 160) faces.push(f);
     }
     for (let i = 0; i < n; i++) {
       const z0 = i * step, z1 = Math.min(length, (i + 1) * step);
       add([[-half, 0, z0], [half, 0, z0], [half, 0, z1], [-half, 0, z1]], i % 2 ? "#d9d4c9" : "#dfd9ce", "#c5beb1", "floor");
+      add([[-1.65,.012,z0],[1.65,.012,z0],[1.65,.012,z1],[-1.65,.012,z1]], i%2?"#d0c9bc":"#d6cec1",null,"runner");
       add([[-half, height, z0], [half, height, z0], [half, height, z1], [-half, height, z1]], "#f8f7f2", "#e4e0d6", "ceiling");
       add([[-half, 0, z0], [-half, height, z0], [-half, height, z1], [-half, 0, z1]], i % 2 ? "#edeae3" : "#f2f0ea", "#dad7ce", "wall");
       add([[half, 0, z0], [half, height, z0], [half, height, z1], [half, 0, z1]], i % 2 ? "#e8e5dd" : "#efede7", "#d7d3c8", "wall");
@@ -166,17 +223,17 @@
     }
     add([[-half, 0, length], [half, 0, length], [half, height, length], [-half, height, length]], "#e5e0d5", "#cac3b6", "end");
 
-    const all = list();
-    all.forEach((piece, i) => {
-      const z = 5.7 + i * step, side = i % 2 ? 1 : -1;
-      const x = side * (half - .075);
-      const pw = ({mini: 1.5, standard: 1.95, large: 2.45, xl: 2.95}[piece.size] || 1.95);
-      const ph = ({mini: 1.25, standard: 1.7, large: 1.95, xl: 2.15}[piece.size] || 1.7);
-      const low = (height - ph) / 2, high = low + ph;
-      add([[x, low, z - pw / 2], [x, low, z + pw / 2], [x, high, z + pw / 2], [x, high, z - pw / 2]], "#e6dfd3", "#b8a994", "art", piece);
+    const all = list(), allSlots = slots();
+    allSlots.forEach((slot,i)=>{
+      const z=5.7+i*step, side=i%2?1:-1;
+      const x=side*(half-.075),s=slot.size;
+      const pw=({mini:1.50,standard:1.95,large:2.45,xl:2.95}[s]||1.95);
+      const ph=({mini:1.24,standard:1.7,large:1.95,xl:2.15}[s]||1.7);
+      const low=(height-ph)/2,high=low+ph;
+      add([[x,low,z-pw/2],[x,low,z+pw/2],[x,high,z+pw/2],[x,high,z-pw/2]],slot.piece?"#e6dfd3":"#f3f0e7",slot.piece?"#b8a994":"#829371",slot.piece?"art":"free",slot.piece,slot);
     });
-    const structure = faces.filter(f => f.kind !== "art").sort((a,b) => b.depth - a.depth);
-    const artworks = faces.filter(f => f.kind === "art").sort((a,b) => b.depth - a.depth);
+    const structure = faces.filter(f => f.kind !== "art" && f.kind !== "free").sort((a,b) => b.depth - a.depth);
+    const artworks = faces.filter(f => f.kind === "art" || f.kind === "free").sort((a,b) => b.depth - a.depth);
     hits = [];
     structure.forEach(paint);
     artworks.forEach(paint);
@@ -197,8 +254,9 @@
     ctx.fillStyle = "rgba(255,255,255,.6)";
     ctx.fillRect(W / 2 - 9, H / 2, 18, 1);
     ctx.fillRect(W / 2, H / 2 - 9, 1, 18);
+    drawPerson(performance.now()/1000);
     document.getElementById("walkProgress").textContent =
-      "ORIGINAL WALL 2026  ·  " + Math.floor(view.z) + " / " + Math.floor(length) + " M  ·  " + all.length + " PIÈCES";
+      Math.floor(view.z) + " / " + Math.floor(length) + " M  ·  " + all.length + " CRÉATIONS  ·  " + allSlots.filter(s=>!s.piece).length + " PLACES LIBRES";
     document.getElementById("walkMeter").style.width = (100 * view.z / length) + "%";
   }
   function tick(time) {
@@ -207,9 +265,11 @@
     lastTime = time;
     function pressed(...codes) { return codes.some(c => keys.has(c) || held.has(c)); }
     const turn = (pressed("ArrowRight", "turn-right") ? 1 : 0) - (pressed("ArrowLeft", "turn-left") ? 1 : 0);
-    const forward = (pressed("ArrowUp", "KeyW", "KeyZ", "forward") ? 1 : 0) - (pressed("ArrowDown", "KeyS", "back") ? 1 : 0);
+    let forward = (pressed("ArrowUp", "KeyW", "KeyZ", "forward") ? 1 : 0) - (pressed("ArrowDown", "KeyS", "back") ? 1 : 0);
+    if(autoWalk!==null){if(view.z<autoWalk-.2)forward=1;else autoWalk=null;}
+    walking=walking*.85+Math.abs(forward)*.15;
     const strafe = (pressed("KeyD") ? 1 : 0) - (pressed("KeyA", "KeyQ") ? 1 : 0);
-    view.yaw = limit(view.yaw + turn * dt * 1.28, -.93, .93);
+    view.yaw += turn * dt * 1.48;
     view.x += (Math.sin(view.yaw) * forward + Math.cos(view.yaw) * strafe) * 3.5 * dt;
     view.z += (Math.cos(view.yaw) * forward - Math.sin(view.yaw) * strafe) * 3.5 * dt;
     view.x = limit(view.x, -half + .7, half - .7);
@@ -220,7 +280,7 @@
   function open() {
     if (active) return;
     lastFocus = document.activeElement;
-    active = true; view.x = 0; view.z = .8; view.yaw = 0;
+    active = true; view.x = 0; view.z = .8; view.yaw = 0; autoWalk=null;
     overlay.hidden = false;
     document.body.classList.add("walk-is-open");
     resize(); lastTime = 0;
@@ -230,19 +290,23 @@
   function close() {
     if (!active) return;
     active = false; cancelAnimationFrame(raf);
-    held.clear(); keys.clear(); pointer = null;
+    held.clear(); keys.clear(); pointer = null; autoWalk=null;
     overlay.hidden = true; document.body.classList.remove("walk-is-open");
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
   document.querySelectorAll("[data-walk-open]").forEach(b => b.addEventListener("click", open));
   overlay.querySelectorAll("[data-walk-close]").forEach(b => b.addEventListener("click", close));
+  overlay.querySelectorAll("[data-walk-exhibit]").forEach(b=>b.addEventListener("click",()=>{
+    const spot=slots().find(s=>!s.piece);
+    if(spot)window.TEM.openExhibit(spot.size,spot.price,spot.id);
+  }));
   overlay.querySelectorAll("[data-walk-hold]").forEach(b => {
     const action = b.dataset.walkHold;
     b.addEventListener("pointerdown", e => { e.preventDefault(); held.add(action); b.setPointerCapture(e.pointerId); });
     for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) b.addEventListener(name, () => held.delete(action));
   });
   window.addEventListener("keydown", e => {
-    if (!active || document.getElementById("piece").open) return;
+    if (!active || [...document.querySelectorAll("dialog")].some(d=>d.open)) return;
     if (e.code === "Escape") { e.preventDefault(); close(); return; }
     if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","KeyW","KeyZ","KeyQ","KeyA","KeyS","KeyD"].includes(e.code)) {
       e.preventDefault(); keys.add(e.code);
@@ -258,10 +322,11 @@
     canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener("pointermove", e => {
-    if (!pointer || pointer.id !== e.pointerId) return;
+    if(!pointer){const r=canvas.getBoundingClientRect(),hx=e.clientX-r.left,hy=e.clientY-r.top;canvas.style.cursor=hits.some(h=>inside(h.points,hx,hy))?'pointer':'grab';return;}
+    if (pointer.id !== e.pointerId) return;
     const dx = e.clientX - pointer.x;
     if (Math.abs(e.clientX - pointer.originalX) > 7 || Math.abs(e.clientY - pointer.originalY) > 7) pointer.dragged = true;
-    if (pointer.dragged) view.yaw = limit(view.yaw + dx * .005, -.93, .93);
+    if (pointer.dragged) {view.yaw += dx * .005;autoWalk=null;}
     pointer.x = e.clientX; pointer.y = e.clientY;
   });
   canvas.addEventListener("pointerup", e => {
@@ -269,9 +334,12 @@
     if (!pointer.dragged) {
       const rect = canvas.getBoundingClientRect(), x = e.clientX - rect.left, y = e.clientY - rect.top;
       const selected = hits.filter(h => inside(h.points, x, y)).sort((a,b) => a.depth - b.depth)[0];
-      if (selected) window.TEM.openPiece(selected.piece);
+      if (selected) {autoWalk=null;if(selected.piece)window.TEM.openPiece(selected.piece);else if(selected.slot)window.TEM.openExhibit(selected.slot.size,selected.slot.price,selected.slot.id);}
+      else if(y>H*.49&&Math.cos(view.yaw)>.35){autoWalk=Math.min(length-2.7,view.z+7);}
     }
     pointer = null;
   });
   canvas.addEventListener("pointercancel", () => pointer = null);
+  window.addEventListener('tem:exhibited',()=>{if(active)draw()});
+  requestAnimationFrame(open);
 })();
