@@ -167,3 +167,5 @@ body.walk-is-open{overflow:hidden}
   .reserve-back{font-size:9px}
   .reserve-disclaimer{font-size:9px}
 }
+
+#exhibit.reserve-dialog{width:min(760px,calc(100vw - 28px));}
