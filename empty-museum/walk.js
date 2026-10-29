@@ -234,16 +234,59 @@
       ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#21352a';
       if(h<48){
         ctx.font='800 '+Math.max(10,Math.min(15,w*.065))+'px Arial';
-        ctx.fillText(slot.piece?'INSTALLATION':'SOL · 499 €',x+w*.5,y+h*.54,w*.9);
+        ctx.fillText(slot.piece?'INSTALLATION':'SOL · 499 € / MOIS',x+w*.5,y+h*.54,w*.9);
       }else{
         ctx.font='800 '+Math.max(11,Math.min(18,w*.095))+'px Arial';
         ctx.fillText(slot.piece?'INSTALLATION':'ESPACE AU SOL',x+w*.5,y+h*.40,w*.88);
         ctx.font='700 '+Math.max(11,Math.min(20,w*.10))+'px Arial';
-        ctx.fillText(slot.piece?String(slot.piece.title).slice(0,25):'499 € / 12 MOIS',x+w*.5,y+h*.69,w*.9);
+        ctx.fillText(slot.piece?String(slot.piece.title).slice(0,25):'499 € / 1 MOIS',x+w*.5,y+h*.69,w*.9);
       }
     }
     ctx.restore();
   }
+
+  // In-gallery display of actual floor installations: photo, sculpture, panel and 3D neon.
+  function drawFloorWork(f) {
+    const p=f.piece,pts=f.points;
+    const xs=pts.map(q=>q.x),ys=pts.map(q=>q.y);
+    const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
+    const neon=p.floorType==='neon',billboard=p.floorType==='billboard',photo=p.floorType==='photo';
+    ctx.save();path(pts);ctx.clip();
+    ctx.fillStyle=neon?'#172421':billboard?'#2b332e':'#e1ded3';ctx.fill();
+    const img=artImage(p);
+    if(img&&!neon&&w>7&&h>7) {
+      const scale=Math.min(w/img.naturalWidth,h/img.naturalHeight);
+      const iw=img.naturalWidth*scale,ih=img.naturalHeight*scale;
+      ctx.drawImage(img,x+(w-iw)/2,y+(h-ih)/2,iw,ih);
+    }
+    if(neon||billboard||(!img&&photo)){
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      const content=neon?String(p.floorText||p.title||'NÉON').slice(0,30):billboard?String(p.floorText||p.title||'ANNONCE').slice(0,46):'PHOTO';
+      const words=content.split(' ');
+      let line='',lines=[];
+      const fs=Math.max(10,Math.min(23,w*.115));
+      ctx.font='800 '+fs+'px Arial';
+      for(const word of words){
+        const test=line?line+' '+word:word;
+        if(ctx.measureText(test).width>w*.81&&line){lines.push(line);line=word;} else line=test;
+      }
+      if(line)lines.push(line);
+      const color=neon&&/^#[0-9a-f]{6}$/i.test(p.floorColor)?p.floorColor:neon?'#8fd6e8':'#f8f2e5';
+      ctx.fillStyle=color;
+      if(neon){ctx.shadowBlur=Math.max(8,w*.18);ctx.shadowColor=color;}
+      lines.slice(0,3).forEach((text,i)=>ctx.fillText(text,x+w/2,y+h*(.5+(i-(Math.min(3,lines.length)-1)/2)*.18),w*.83));
+      ctx.shadowBlur=0;
+    }
+    ctx.restore();
+    path(pts);ctx.strokeStyle=neon?'#b5d8c8':'#b2ae9d';ctx.lineWidth=Math.max(2,Math.min(6,w*.025));ctx.stroke();
+    hits.push({points:pts,depth:f.depth,piece:p,slot:f.slot});
+  }
+  function sculptureColor(piece,idx){
+    const hex=/^#[0-9a-fA-F]{6}$/.test(piece.floorColor||'')?piece.floorColor:'#d8b68b';
+    if(idx%3===0)return hex;
+    return idx%3===1?'#c3c7bc':'#acaaa0';
+  }
+
   function drawPerson(t){
     // A small third-person visitor, drawn after the gallery so it remains in view.
     const scale=Math.max(.72,Math.min(1.26,H/700));
@@ -273,6 +316,12 @@
     path(f.points);
     if(f.kind==='ad'){
       drawReservedAd(f.slot,f.points);
+    } else if (f.kind==='floor-install') {
+      drawFloorWork(f);
+    } else if (f.kind==='floor-statue') {
+      path(f.points);ctx.fillStyle=f.fill;ctx.fill();
+      ctx.strokeStyle='rgba(72,72,60,.42)';ctx.lineWidth=1;ctx.stroke();
+      hits.push({points:f.points,depth:f.depth,piece:f.piece,slot:f.slot});
     } else if(f.kind==='floor-spot'){
       drawFloorSpot(f.slot,f.points,f.kind);
       hits.push({points:f.points,depth:f.depth,piece:f.piece,slot:f.slot});
@@ -335,14 +384,50 @@
       add([[x,low,z-pw/2],[x,low,z+pw/2],[x,high,z+pw/2],[x,high,z-pw/2]],slot.reservedForAds?"#252c29":slot.piece?"#e6dfd3":"#f3f0e7",slot.reservedForAds?"#b6b09a":slot.piece?"#b8a994":"#829371",slot.reservedForAds?"ad":slot.piece?"art":"free",slot.piece,slot);
     });
     floors.forEach(slot=>{
-      const x=slot.x,z=slot.z,r=1.05;
+      const x=slot.x,z=slot.z,r=.60;
       add([[x-r,.21,z-r],[x+r,.21,z-r],[x+r,.21,z+r],[x-r,.21,z+r]],slot.piece?'#ded0b9':'#e3ebdd',null,'floor-spot',slot.piece,slot);
       // The museum plinth makes floor spaces visible without blocking the aisle.
-      add([[x-.68,.02,z+.60],[x+.68,.02,z+.60],[x+.68,.18,z+.60],[x-.68,.18,z+.60]],'#d1cbbf','#a9a396','plinth');
-      add([[x-.68,.18,z-.60],[x+.68,.18,z-.60],[x+.68,.18,z+.60],[x-.68,.18,z+.60]],'#eeeae2','#b8b0a4','plinth');
+      add([[x-.55,.02,z+.52],[x+.55,.02,z+.52],[x+.55,.18,z+.52],[x-.55,.18,z+.52]],'#d1cbbf','#a9a396','plinth');
+      add([[x-.55,.18,z-.52],[x+.55,.18,z-.52],[x+.55,.18,z+.52],[x-.55,.18,z+.52]],'#eeeae2','#b8b0a4','plinth');
+      const p=slot.piece;
+      if(!p)return;
+      if(p.floorType==='statue'){
+        const form=p.floorShape||'spire',segments=10;
+        if(form==='orb'){
+          for(let layer=0;layer<7;layer++){
+            const t0=Math.PI*layer/7,t1=Math.PI*(layer+1)/7;
+            for(let seg=0;seg<segments;seg++){
+              const a=seg*2*Math.PI/segments,b=(seg+1)*2*Math.PI/segments;
+              const v=(t,q)=>[x+.39*Math.sin(t)*Math.cos(q),1.07+.39*Math.cos(t),z+.39*Math.sin(t)*Math.sin(q)];
+              add([v(t0,a),v(t0,b),v(t1,b),v(t1,a)],sculptureColor(p,seg+layer),null,'floor-statue',p,slot);
+            }
+          }
+        }else if(form==='rings'){
+          for(let ring=0;ring<3;ring++){
+            const y=.70+ring*.32, radius=.34;
+            for(let seg=0;seg<segments;seg++){
+              const a=seg*2*Math.PI/segments,b=(seg+1)*2*Math.PI/segments;
+              add([[x+radius*Math.cos(a),y,z+radius*Math.sin(a)],[x+radius*Math.cos(b),y,z+radius*Math.sin(b)],
+                [x+.26*Math.cos(b),y+.09,z+.26*Math.sin(b)],[x+.26*Math.cos(a),y+.09,z+.26*Math.sin(a)]],
+                sculptureColor(p,ring+seg),null,'floor-statue',p,slot);
+            }
+          }
+        }else{
+          for(let seg=0;seg<segments;seg++){
+            const a=seg*2*Math.PI/segments,b=(seg+1)*2*Math.PI/segments;
+            add([[x+.37*Math.cos(a),.55,z+.37*Math.sin(a)],[x+.37*Math.cos(b),.55,z+.37*Math.sin(b)],
+              [x,1.69,z]],sculptureColor(p,seg),null,'floor-statue',p,slot);
+          }
+        }
+      }else{
+        // Floating digital sign on a slender support. Both remain within 1.20 x 1.20 m.
+        const high=p.floorType==='photo'?1.65:1.80, low=.68;
+        add([[x-.045,.18,z+.12],[x+.045,.18,z+.12],[x+.045,low,z+.12],[x-.045,low,z+.12]],'#62675e','#454a42','plinth');
+        add([[x-.52,low,z],[x+.52,low,z],[x+.52,high,z],[x-.52,high,z]],'#23302a','#b6b2a2','floor-install',p,slot);
+      }
     });
-    const structure = faces.filter(f => !["art","free","floor-spot","ad"].includes(f.kind)).sort((a,b) => b.depth - a.depth);
-    const artworks = faces.filter(f => ["art","free","floor-spot","ad"].includes(f.kind)).sort((a,b) => b.depth - a.depth);
+    const structure = faces.filter(f => !["art","free","floor-spot","ad","floor-install","floor-statue"].includes(f.kind)).sort((a,b) => b.depth - a.depth);
+    const artworks = faces.filter(f => ["art","free","floor-spot","ad","floor-install","floor-statue"].includes(f.kind)).sort((a,b) => b.depth - a.depth);
     hits = [];
     structure.forEach(paint);
     artworks.forEach(paint);
