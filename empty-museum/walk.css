@@ -172,3 +172,66 @@ body.walk-is-open{overflow:hidden}
 
 #exhibit.is-step-two .reserve-header h2{display:none}
 #exhibit.is-step-two .reserve-header{margin-bottom:15px}
+
+
+/* Premium compact installation configurator (floor leases are 1 month). */
+.floor-studio{
+ width:min(980px,calc(100vw - 22px));max-height:92dvh;
+ border:1px solid #d0d0c5;border-radius:16px;background:#f5f4ee;color:#1c201d;
+ padding:0;overflow-y:auto;overscroll-behavior:contain;box-shadow:0 28px 85px rgba(0,0,0,.32);
+ font:normal 13px Arial,Helvetica,sans-serif;
+}
+.floor-studio[open]{display:block}
+.floor-header{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;padding:28px 30px 12px}
+.floor-header h2{font-size:clamp(29px,4.1vw,48px);font-weight:800;line-height:.93;letter-spacing:-.06em;margin:13px 0 6px}
+.floor-header h2 em{font:italic 400 1em Georgia,serif}
+.floor-header .eyebrow{font-size:9px;color:#5c6c57}
+.floor-close{border:1px solid #d5d5ca;border-radius:50%;background:#fff;font-size:22px;width:38px;height:38px;flex:0 0 38px}
+.floor-price{margin:0 30px 23px;padding:14px 18px;background:#e6ecd9;border:1px solid #d2ddc9;border-radius:9px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.floor-price div{display:flex;align-items:baseline;gap:7px;flex-shrink:0}
+.floor-price b{font-size:29px;font-weight:800;letter-spacing:-.055em}
+.floor-price span{font-weight:800;font-size:11px}
+.floor-price small{max-width:320px;color:#596653;font-size:10px;line-height:1.5}
+.floor-layout{display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:0 30px 30px}
+.floor-editor,.floor-preview-side{min-width:0}
+.floor-step{display:block;color:#656f60;font-size:9px;letter-spacing:.12em;font-weight:800;margin-bottom:13px}
+.floor-types{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:25px}
+.floor-types button{background:#fefdf8;border:1px solid #d6d8d0;border-radius:8px;min-height:94px;padding:10px 5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#282f27;transition:.13s}
+.floor-types button.active{border:2px solid #4d6746;background:#eaf0e4}
+.floor-types button span{font-size:24px;line-height:1;color:#607b58}
+.floor-types button strong{font-size:9px;letter-spacing:.035em}
+.floor-types button small{font-size:8px;color:#85857e}
+.floor-fields{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px}
+.floor-fields .full{grid-column:1/-1}
+.floor-fields label{display:block;border:0;padding:0;margin:0 0 13px;color:#596158;letter-spacing:.045em;font-size:10px;font-weight:700}
+.floor-fields input,.floor-fields select{background:#fff;border:1px solid #d1d5ce;border-radius:6px;margin-top:7px;padding:12px;width:100%;font-size:14px;color:#212621;outline:none}
+.floor-fields input:focus,.floor-fields select:focus{border-color:#507b49}
+.floor-fields [hidden]{display:none!important}
+.floor-upload{position:relative;border:1px dashed #93a58d!important;border-radius:7px!important;padding:15px!important;background:#eaf0e4;text-align:center;cursor:pointer;color:#42613d!important;font-size:11px!important}
+.floor-upload input{position:absolute;inset:0;opacity:0;margin:0;padding:0;cursor:pointer}
+.floor-error{font-size:11px;color:#9b3430;font-weight:700;line-height:1.5;min-height:18px}
+#floorPreviewCanvas{display:block;width:100%;height:auto;border-radius:8px;border:1px solid #dadecf;background:#f6f4ed;touch-action:none;cursor:grab}
+#floorPreviewCanvas:active{cursor:grabbing}
+.floor-preview-notes{display:flex;justify-content:space-between;gap:10px;font-size:9px;font-weight:700;letter-spacing:.12em;color:#62725b;margin:11px 0}
+.floor-preview-side p{font-size:11px;line-height:1.55;color:#7b8076;margin:10px 0 14px}
+.floor-publish{display:block;width:100%;border-radius:7px;min-height:51px;font-size:10px;line-height:1.3}
+.floor-disclaimer{display:block;margin:12px 0 0;font-size:10px;line-height:1.55;color:#6c6d64}
+@media(max-width:760px){
+ .floor-studio{width:calc(100vw - 18px);max-height:calc(100dvh - 28px);border-radius:14px}
+ .floor-header{padding:20px 18px 7px}
+ .floor-header h2{font-size:clamp(31px,8vw,39px)}
+ .floor-price{margin:0 18px 18px;padding:11px 13px;align-items:flex-start;flex-direction:column;gap:4px}
+ .floor-price b{font-size:27px}
+ .floor-price small{font-size:9px}
+ .floor-layout{grid-template-columns:1fr;padding:0 18px 20px;gap:18px}
+ .floor-types{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-bottom:21px}
+ .floor-types button{min-height:85px;padding:8px 4px}
+ .floor-types button strong{font-size:8px}
+ .floor-types button small{font-size:8px}
+ .floor-preview-side{order:1}
+ .floor-editor{order:0}
+ .floor-step{font-size:9px}
+ #floorPreviewCanvas{max-height:320px;object-fit:contain}
+ .floor-fields input,.floor-fields select{font-size:16px}
+ .floor-studio .floor-price{position:relative}
+}
