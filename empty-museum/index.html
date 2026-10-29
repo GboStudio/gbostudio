@@ -14,7 +14,7 @@
 <button data-plan="mini"><span>PETIT PORTRAIT · 20 × 30 CM</span><strong>9,90 €</strong><small>/ 12 mois</small><p>Une idée, un petit dessin ou une photo.</p><i>CHOISIR UNE PLACE ↗</i></button>
 <button data-plan="landscape" class="featured"><span>PHOTO · PORTRAIT OU PAYSAGE</span><strong>19,90 €</strong><small>/ 12 mois</small><p>40 × 60 ou 60 × 40 cm, au bon ratio.</p><i>CHOISIR UNE PLACE ↗</i></button>
 <button data-plan="wide"><span>GRAND FORMAT OU PANORAMA</span><strong>30 €</strong><small>/ 12 mois</small><p>Grand paysage, grand portrait ou format long.</p><i>CHOISIR UNE PLACE ↗</i></button>
-<button data-plan="floor"><span>EMPLACEMENT AU SOL</span><strong>499 €</strong><small>/ 12 mois</small><p>1,20 × 1,20 m pour sculptures et installations.</p><i>CHOISIR UNE PLACE ↗</i></button>
+<button data-plan="floor"><span>EMPLACEMENT AU SOL</span><strong>499 €</strong><small>/ 1 mois</small><p>1,20 × 1,20 m : photo, sculpture, panneau ou enseigne 3D.</p><i>CHOISIR UNE PLACE ↗</i></button>
 </div></section>
 <section class="cats"><span class="eyebrow">PAS SEULEMENT DE L’ART IA</span><h2>TOUT CE QUE<br>VOUS AVEZ ENVIE<br>DE PARTAGER.</h2><div><article><b>MEDIA</b><p>Images, illustration, vidéo, musique.</p></article><article><b>DESIGN</b><p>Interfaces, logos, affiches, produits.</p></article><article><b>3D</b><p>Modèles, sculptures, architecture, imprimables.</p></article><article><b>BUILD</b><p>Ce que vous avez réellement fabriqué.</p></article><article><b>WORDS</b><p>Histoires, textes, poésie, concepts.</p></article><article><b>WEIRD</b><p>Tout ce qui n’aurait probablement jamais dû exister.</p></article></div></section>
 <section class="final"><span class="eyebrow">THE EMPTY MUSEUM</span><h2>LE MUR EST<br>ENCORE PETIT.</h2><p>C’est justement le moment d’y être.</p><button class="btn dark" data-open>EXPOSER MA CRÉATION</button></section>
@@ -41,6 +41,42 @@
     </div>
   </div>
 </section>
+<dialog id="floorStudio" class="floor-studio" aria-label="Créer une installation au sol">
+ <div class="floor-header">
+  <div><span class="eyebrow" id="floorSlotLabel">SOL S01 · 1,20 × 1,20 M</span><h2>VOTRE ESPACE.<br><em>VOTRE INSTALLATION.</em></h2></div>
+  <button type="button" class="floor-close" id="floorClose" aria-label="Fermer">×</button>
+ </div>
+ <div class="floor-price"><div><b>499 €</b><span>/ 1 MOIS</span></div><small>Un carré au sol réservé pendant 1 mois. Aucun paiement dans cette démo.</small></div>
+ <div class="floor-layout">
+  <div class="floor-editor">
+   <span class="floor-step">01 / CHOISISSEZ CE QUE VOUS INSTALLEZ</span>
+   <div class="floor-types" role="group" aria-label="Type d'installation">
+    <button type="button" class="active" data-floor-type="photo"><span>▣</span><strong>PHOTO</strong><small>Sur chevalet</small></button>
+    <button type="button" data-floor-type="statue"><span>◈</span><strong>SCULPTURE</strong><small>Créer en 3 clics</small></button>
+    <button type="button" data-floor-type="billboard"><span>▤</span><strong>PANNEAU</strong><small>Publicité ou annonce</small></button>
+    <button type="button" data-floor-type="neon"><span>✳</span><strong>NÉON 3D</strong><small>Texte lumineux</small></button>
+   </div>
+   <span class="floor-step">02 / PERSONNALISEZ</span>
+   <div class="floor-fields">
+    <label>VOTRE NOM OU PSEUDO<input id="floorAuthor" type="text" maxlength="40" placeholder="Votre nom" autocomplete="nickname"></label>
+    <label>TITRE DE L'INSTALLATION<input id="floorTitle" type="text" maxlength="55" placeholder="Donnez-lui un titre"></label>
+    <div id="floorTextGroup" class="floor-field full"><label id="floorTextLabel">VOTRE MESSAGE<input id="floorText" type="text" maxlength="46" placeholder="Votre message dans le musée"></label></div>
+    <label id="floorUploadGroup" class="floor-upload full">+ <span id="floorUploadLabel">AJOUTER UNE PHOTO</span><input id="floorFile" type="file" accept="image/png,image/jpeg,image/webp"></label>
+    <div class="floor-field full" id="floorShapeGroup" hidden><label>FORME DE LA SCULPTURE<select id="floorShape"><option value="spire">Totem géométrique</option><option value="orb">Sphère</option><option value="rings">Anneaux sculptés</option></select></label></div>
+    <div class="floor-field full" id="floorTintGroup"><label>COULEUR / MATIÈRE<select id="floorTint"><option value="#d8b68b">Pierre dorée</option><option value="#26342e">Noir minéral</option><option value="#8fd6e8">Bleu lumineux</option><option value="#f58daf">Rose lumineux</option><option value="#c2f06d">Vert lumineux</option></select></label></div>
+   </div>
+   <div id="floorError" class="floor-error" role="alert" aria-live="polite"></div>
+  </div>
+  <div class="floor-preview-side">
+   <span class="floor-step">03 / APERÇU DE VOTRE INSTALLATION</span>
+   <canvas id="floorPreviewCanvas" width="720" height="500" aria-label="Prévisualisation de votre installation au sol"></canvas>
+   <div class="floor-preview-notes"><span>APERÇU INDICATIF</span><span>1,20 × 1,20 M</span></div>
+   <p>Le panneau, le néon ou la sculpture apparaîtront dans la salle. Déplacez-vous autour pour les regarder.</p>
+   <button type="button" id="floorPublish" class="btn dark floor-publish">AJOUTER DANS LE MUSÉE (DÉMO) →</button>
+   <small class="floor-disclaimer">Aucun paiement, aucune réservation publique. L'installation sera enregistrée uniquement sur cet appareil.</small>
+  </div>
+ </div>
+</dialog>
 <dialog id="piece"><button class="x" id="closePiece">×</button><div class="pieceGrid"><div class="media" id="media"></div><div class="detail"><span class="eyebrow" id="pcat"></span><h2 id="ptitle"></h2><p>Par <b id="pauthor"></b></p><p id="pdesc"></p><div class="meta"><div><span>CRÉÉ AVEC</span><b id="ptools"></b></div><div><span>EXPOSÉ DEPUIS</span><b id="pdate"></b></div><div><span>FORMAT</span><b id="psize"></b></div></div><button class="btn dark" id="sharePiece">PARTAGER CETTE PIÈCE</button></div></div></dialog>
 <dialog id="exhibit" class="reserve-dialog" aria-label="Choisir et exposer à cet emplacement">
 <form id="form">
@@ -84,4 +120,4 @@
   <p class="reserve-disclaimer"><strong>VERSION DÉMONSTRATION.</strong> Aucun paiement n’est effectué. La création reste uniquement sur cet appareil et n’est pas visible par les autres visiteurs.</p>
 </form></dialog>
 <dialog id="share"><button class="x" id="closeShare">×</button><div class="shareWrap"><span class="eyebrow">APERÇU D’EXPOSITION</span><h2>VOTRE CRÉATION<br>EST DANS LE MUSÉE.</h2><p>Démo : elle est visible seulement sur cet appareil, sans paiement.</p><canvas id="canvas" width="1080" height="1350"></canvas><div class="shareActions"><button class="btn dark" id="shareNative">PARTAGER</button><button class="btn" id="download">TÉLÉCHARGER LA CARTE</button><button class="btn" id="copy">COPIER L’ADRESSE DU MUSÉE</button></div></div></dialog>
-<script src="app.js?v=20261029ads1"></script><script src="walk.js?v=20261029ads1"></script></body></html>
+<script src="app.js?v=20261029floor1"></script><script src="floor.js?v=20261029floor1"></script><script src="walk.js?v=20261029floor1"></script></body></html>
