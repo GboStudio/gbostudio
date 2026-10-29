@@ -235,3 +235,21 @@ body.walk-is-open{overflow:hidden}
  .floor-fields input,.floor-fields select{font-size:16px}
  .floor-studio .floor-price{position:relative}
 }
+
+
+/* Mobile journey: select installation > see it > customize > preview/confirm. */
+@media(max-width:760px){
+ .floor-layout{display:flex;flex-direction:column;gap:0}
+ .floor-editor,.floor-preview-side{display:contents}
+ .floor-editor>.floor-step:first-child{order:1}
+ .floor-types{order:2}
+ .floor-preview-side>.floor-step{order:3}
+ #floorPreviewCanvas{order:4}
+ .floor-preview-notes{order:5;margin-bottom:16px}
+ .floor-editor>.floor-step:nth-of-type(2){order:6;margin-top:5px}
+ .floor-fields{order:7}
+ .floor-error{order:8}
+ .floor-preview-side>p{order:9;margin:8px 0 13px}
+ .floor-publish{order:10}
+ .floor-disclaimer{order:11}
+}
