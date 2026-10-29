@@ -60,7 +60,7 @@ function stats(){ $('#liveCount').textContent=pieces.length;$('#countHero').text
 $$('[data-filter]').forEach(b=>b.onclick=()=>{$$('[data-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;render();viewport.scrollTo({left:0,behavior:'smooth'})});
 $('#reset').onclick=()=>viewport.scrollTo({left:0,behavior:'smooth'});$('#random').onclick=()=>{const a=filter==='all'?pieces:pieces.filter(p=>p.category===filter);if(!a.length)return;const p=a[Math.floor(Math.random()*a.length)],el=grid.querySelector(`[data-id="${p.id}"]`);if(el){viewport.scrollTo({left:Math.max(0,el.offsetLeft-viewport.clientWidth/2),behavior:'smooth'});el.animate([{transform:'translateY(0)'},{transform:'translateY(-12px)'},{transform:'translateY(0)'}],{duration:700});setTimeout(()=>openPiece(p),600)}};
 let down=false,sx=0,sl=0;viewport.onmousedown=e=>{down=true;sx=e.pageX-viewport.offsetLeft;sl=viewport.scrollLeft};window.onmouseup=()=>down=false;viewport.onmouseleave=()=>down=false;viewport.onmousemove=e=>{if(!down)return;e.preventDefault();viewport.scrollLeft=sl-(e.pageX-viewport.offsetLeft-sx)*1.35};
-function openPiece(p){const m=$('#media');m.className='media';m.style.backgroundImage='';m.textContent='';if(p.category==='words'){m.classList.add('words');m.textContent=p.words||p.title}else if(p.category==='3d')m.classList.add('threed');else m.style.backgroundImage=bg(p);$('#pcat').textContent=`${p.category.toUpperCase()} / #${String(p.id).padStart(3,'0')}`;$('#ptitle').textContent=p.title;$('#pauthor').textContent=p.author;$('#pdesc').textContent=p.description;$('#ptools').textContent=p.tools;$('#pdate').textContent=p.date;$('#psize').textContent=FORMATS[normalizeSize(p.size)]?.name||p.size.toUpperCase();$('#sharePiece').onclick=()=>shareGeneric(p);$('#piece').showModal()}
+function openPiece(p){const m=$('#media');m.className='media';m.style.backgroundImage='';m.textContent='';if(p.category==='words'){m.classList.add('words');m.textContent=p.floorText||p.words||p.title}else if(p.category==='3d')m.classList.add('threed');else m.style.backgroundImage=bg(p);$('#pcat').textContent=`${p.category.toUpperCase()} / #${String(p.id).padStart(3,'0')}`;$('#ptitle').textContent=p.title;$('#pauthor').textContent=p.author;$('#pdesc').textContent=p.description;$('#ptools').textContent=p.tools;$('#pdate').textContent=p.date;$('#psize').textContent=(FORMATS[normalizeSize(p.size)]?.name||p.size.toUpperCase())+' · '+(p.size==='floor'?'1 MOIS':'12 MOIS');$('#sharePiece').onclick=()=>shareGeneric(p);$('#piece').showModal()}
 $('#closePiece').onclick=()=>$('#piece').close();function shareGeneric(p){const url=location.href.split('#')[0]+`#piece-${p.id}`;if(navigator.share)navigator.share({title:p.title,text:`${p.title} — exposé dans The Empty Museum`,url}).catch(()=>{});else navigator.clipboard?.writeText(url)}
 function setReserveStage(n){
   $('#exhibit').classList.toggle('is-step-two',n===2);
@@ -68,6 +68,7 @@ function setReserveStage(n){
   $('#form').scrollTop=0;
 }
 function openExhibit(size='landscape',price=null,slot=null){
+  if(typeof slot==='string'){window.TEM?.openFloor?.(slot);return;}
   if(Number.isInteger(slot)&&AD_RESERVED_SLOTS.has(slot))return;
   const chosen=FORMATS[size]||FORMATS.landscape;
   plan={size,price:price===null?chosen.price:Number(price)};
@@ -127,7 +128,7 @@ if(sketchCtx){
   $('#clearSketch').onclick=()=>{sketchCtx.fillStyle='#faf8f3';sketchCtx.fillRect(0,0,sketch.width,sketch.height);sketchUsed=false;upload='';$('#preview').style.backgroundImage='';};
 }
 $('#publish').onclick=()=>{const p={id:Math.max(18,...pieces.map(p=>Number(p.id)||18))+1,slot:selectedSlot,title:$('#title').value.trim()||'Untitled',author:$('#author').value.trim()||'Anonymous',category:$('#category').value,tools:$('#tools').value.trim()||'Création personnelle',description:$('#desc').value.trim()||'Une création exposée dans The Empty Museum.',size:plan.size,date:new Date().toLocaleDateString('fr-FR',{month:'short',year:'numeric'}),image:upload||'linear-gradient(145deg,#c7d1d8,#eee5d8 60%,#6f7b83)',words:$('#category').value==='words'?($('#desc').value.trim()||'Untitled'):''};pieces.push(p);try{localStorage.setItem('tem-demo',JSON.stringify(pieces.filter(x=>x.id>18)))}catch(e){alert('La création est visible pendant cette visite, mais le stockage de votre appareil est saturé. Réduisez la taille du fichier pour la conserver.')}$('#exhibit').close();filter='all';$$('[data-filter]').forEach(x=>x.classList.toggle('active',x.dataset.filter==='all'));render();setTimeout(()=>viewport.scrollTo({left:grid.scrollWidth,behavior:'smooth'}),80);drawShare(p);$('#share').showModal();$('#form').reset();$('#prevTitle').textContent='VOTRE CRÉATION';$('#preview').style.backgroundImage='';upload='';selectedSlot=null;if(sketchCtx){sketchCtx.fillStyle='#faf8f3';sketchCtx.fillRect(0,0,sketch.width,sketch.height);sketchUsed=false;}window.dispatchEvent(new Event('tem:exhibited'))};
-function drawShare(p){const c=$('#canvas'),x=c.getContext('2d'),W=c.width,H=c.height;x.fillStyle='#efede5';x.fillRect(0,0,W,H);x.strokeStyle='#161613';x.lineWidth=3;x.strokeRect(75,75,W-150,H-150);x.fillStyle='#11110f';x.font='700 25px Arial';x.fillText('THE EMPTY MUSEUM',110,130);x.fillStyle='#77736b';x.font='700 20px Arial';x.fillText(`#${String(p.id).padStart(3,'0')} / APERÇU LOCAL`,110,185);x.fillStyle='#11110f';x.font='700 65px Arial';wrap(x,p.title.toUpperCase(),110,340,W-220,73,3);x.font='italic 46px Georgia';x.fillStyle='#4f4d48';wrap(x,`by ${p.author}`,110,575,W-220,55,2);x.font='500 24px Arial';x.fillStyle='#6c6963';wrap(x,p.description,110,735,W-220,35,5);x.fillStyle='#11110f';x.font='700 22px Arial';x.fillText(`${p.size.toUpperCase()} / 12 MONTHS`,110,H-170);x.fillStyle='#77736b';x.font='500 18px Arial';x.fillText('UN MUSÉE POUR TOUTES LES CRÉATIONS',110,H-125)}
+function drawShare(p){const c=$('#canvas'),x=c.getContext('2d'),W=c.width,H=c.height;x.fillStyle='#efede5';x.fillRect(0,0,W,H);x.strokeStyle='#161613';x.lineWidth=3;x.strokeRect(75,75,W-150,H-150);x.fillStyle='#11110f';x.font='700 25px Arial';x.fillText('THE EMPTY MUSEUM',110,130);x.fillStyle='#77736b';x.font='700 20px Arial';x.fillText(`#${String(p.id).padStart(3,'0')} / APERÇU LOCAL`,110,185);x.fillStyle='#11110f';x.font='700 65px Arial';wrap(x,p.title.toUpperCase(),110,340,W-220,73,3);x.font='italic 46px Georgia';x.fillStyle='#4f4d48';wrap(x,`by ${p.author}`,110,575,W-220,55,2);x.font='500 24px Arial';x.fillStyle='#6c6963';wrap(x,p.description,110,735,W-220,35,5);x.fillStyle='#11110f';x.font='700 22px Arial';x.fillText(p.size==='floor'?'FLOOR INSTALLATION / 1 MONTH':`${p.size.toUpperCase()} / 12 MONTHS`,110,H-170);x.fillStyle='#77736b';x.font='500 18px Arial';x.fillText('UN MUSÉE POUR TOUTES LES CRÉATIONS',110,H-125)}
 function wrap(ctx,t,x,y,w,lh,n){const words=String(t).split(/\s+/),lines=[];let line='';for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>w&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);lines.slice(0,n).forEach((l,i)=>ctx.fillText(l,x,y+i*lh))}
 $('#closeShare').onclick=()=>$('#share').close();$('#download').onclick=()=>{const a=document.createElement('a');a.download='the-empty-museum-exhibition.png';a.href=$('#canvas').toDataURL('image/png');a.click()};$('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(location.href.split('#')[0]);$('#copy').textContent='LIEN COPIÉ ✓';setTimeout(()=>$('#copy').textContent='COPIER LE LIEN',1400)}catch(e){}};$('#shareNative').onclick=async()=>{if(navigator.share)try{await navigator.share({title:'The Empty Museum',text:'Ma création est exposée dans The Empty Museum.',url:location.href})}catch(e){}};render();
 
@@ -135,5 +136,17 @@ $('#closeShare').onclick=()=>$('#share').close();$('#download').onclick=()=>{con
 function openLinkedPiece(){const m=location.hash.match(/^#piece-(\d+)$/);if(!m)return;const p=pieces.find(piece=>piece.id===Number(m[1]));if(p)openPiece(p)}
 window.addEventListener('hashchange',openLinkedPiece);openLinkedPiece();
 
-// Read-only bridge for the immersive gallery; the public demo remains browser-local.
-window.TEM = { getPieces: () => pieces, getSlots, getFloorSlots, openPiece, openExhibit };
+// The demo stores floor pieces only in this visitor's browser (not a public purchase).
+function publishFloor(spec){
+  if(!spec||!getFloorSlots().some(s=>s.id===spec.slot&&!s.piece))return false;
+  const piece={...spec,id:Math.max(18,...pieces.map(p=>Number(p.id)||18))+1,
+    date:new Date().toLocaleDateString('fr-FR',{month:'short',year:'numeric'}),durationMonths:1};
+  pieces.push(piece);
+  try{localStorage.setItem('tem-demo',JSON.stringify(pieces.filter(p=>p.id>18)));}
+  catch(e){alert('Votre installation est visible pendant cette visite, mais le stockage de votre appareil est saturé.');}
+  render();drawShare(piece);$('#share').showModal();
+  window.dispatchEvent(new Event('tem:exhibited'));
+  return true;
+}
+// Browser-local demo bridge for the immersive gallery and floor studio.
+window.TEM = { getPieces: () => pieces, getSlots, getFloorSlots, openPiece, openExhibit, publishFloor };
