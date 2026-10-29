@@ -168,6 +168,34 @@
       ctx.restore();
     }
   }
+  // Espaces dédiés à la publicité : réservés, non cliquables, sans tarif de vente.
+  function drawReservedAd(slot, pts) {
+    const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+    const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
+    ctx.save();path(pts);ctx.clip();
+    const g=ctx.createLinearGradient(x,y,x+w,y+h);
+    g.addColorStop(0,'#29302e');g.addColorStop(.57,'#171e1d');g.addColorStop(1,'#394039');
+    ctx.fillStyle=g;ctx.fill();
+    ctx.strokeStyle='#c7bd9f';ctx.lineWidth=Math.max(1,Math.min(3,w*.012));
+    ctx.strokeRect(x+w*.055,y+h*.07,w*.89,h*.86);
+    if(w>28&&h>24){
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillStyle='#b9c6b7';
+      ctx.font='700 '+Math.max(8,Math.min(13,w*.058))+'px Arial';
+      ctx.fillText('THE EMPTY MUSEUM',x+w*.5,y+h*.23,w*.84);
+      ctx.fillStyle='#f3ead5';
+      ctx.font='700 '+Math.max(12,Math.min(26,w*.14))+'px Arial';
+      ctx.fillText('PUBLICITÉ',x+w*.5,y+h*.49,w*.88);
+      if(w>65&&h>45){
+        ctx.fillStyle='#d1d6cc';
+        ctx.font='600 '+Math.max(9,Math.min(14,w*.07))+'px Arial';
+        ctx.fillText('ESPACE RÉSERVÉ',x+w*.5,y+h*.67,w*.88);
+        ctx.font='500 '+Math.max(8,Math.min(12,w*.055))+'px Arial';
+        ctx.fillText('NON DISPONIBLE À LA VENTE',x+w*.5,y+h*.79,w*.9);
+      }
+    }
+    ctx.restore();
+  }
   function drawEmpty(slot, pts) {
     const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
     const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
@@ -243,7 +271,9 @@
   }
   function paint(f) {
     path(f.points);
-    if(f.kind==='floor-spot'){
+    if(f.kind==='ad'){
+      drawReservedAd(f.slot,f.points);
+    } else if(f.kind==='floor-spot'){
       drawFloorSpot(f.slot,f.points,f.kind);
       hits.push({points:f.points,depth:f.depth,piece:f.piece,slot:f.slot});
     } else if (f.kind === "art" || f.kind === "free") {
@@ -302,7 +332,7 @@
       const z=5.7+i*step,side=i%2?1:-1,x=side*(half-.075);
       const [pw,ph]=shapes[slot.size]||shapes.landscape;
       const low=(height-ph)/2,high=low+ph;
-      add([[x,low,z-pw/2],[x,low,z+pw/2],[x,high,z+pw/2],[x,high,z-pw/2]],slot.piece?"#e6dfd3":"#f3f0e7",slot.piece?"#b8a994":"#829371",slot.piece?"art":"free",slot.piece,slot);
+      add([[x,low,z-pw/2],[x,low,z+pw/2],[x,high,z+pw/2],[x,high,z-pw/2]],slot.reservedForAds?"#252c29":slot.piece?"#e6dfd3":"#f3f0e7",slot.reservedForAds?"#b6b09a":slot.piece?"#b8a994":"#829371",slot.reservedForAds?"ad":slot.piece?"art":"free",slot.piece,slot);
     });
     floors.forEach(slot=>{
       const x=slot.x,z=slot.z,r=1.05;
@@ -311,8 +341,8 @@
       add([[x-.68,.02,z+.60],[x+.68,.02,z+.60],[x+.68,.18,z+.60],[x-.68,.18,z+.60]],'#d1cbbf','#a9a396','plinth');
       add([[x-.68,.18,z-.60],[x+.68,.18,z-.60],[x+.68,.18,z+.60],[x-.68,.18,z+.60]],'#eeeae2','#b8b0a4','plinth');
     });
-    const structure = faces.filter(f => !["art","free","floor-spot"].includes(f.kind)).sort((a,b) => b.depth - a.depth);
-    const artworks = faces.filter(f => ["art","free","floor-spot"].includes(f.kind)).sort((a,b) => b.depth - a.depth);
+    const structure = faces.filter(f => !["art","free","floor-spot","ad"].includes(f.kind)).sort((a,b) => b.depth - a.depth);
+    const artworks = faces.filter(f => ["art","free","floor-spot","ad"].includes(f.kind)).sort((a,b) => b.depth - a.depth);
     hits = [];
     structure.forEach(paint);
     artworks.forEach(paint);
@@ -335,7 +365,7 @@
     ctx.fillRect(W / 2, H / 2 - 9, 1, 18);
     drawPerson(performance.now()/1000);
     document.getElementById("walkProgress").textContent =
-      Math.floor(view.z) + " / " + Math.floor(length) + " M  ·  " + all.length + " CRÉATIONS  ·  " + (allSlots.filter(s=>!s.piece).length+floors.filter(s=>!s.piece).length) + " PLACES LIBRES";
+      Math.floor(view.z) + " / " + Math.floor(length) + " M  ·  " + all.length + " CRÉATIONS  ·  " + (allSlots.filter(s=>!s.piece&&!s.reservedForAds).length+floors.filter(s=>!s.piece).length) + " PLACES LIBRES";
     document.getElementById("walkMeter").style.width = (100 * view.z / length) + "%";
   }
   function tick(time) {
@@ -376,7 +406,7 @@
   document.querySelectorAll("[data-walk-open]").forEach(b => b.addEventListener("click", open));
   overlay.querySelectorAll("[data-walk-close]").forEach(b => b.addEventListener("click", close));
   overlay.querySelectorAll("[data-walk-exhibit]").forEach(b=>b.addEventListener("click",()=>{
-    const spot=slots().find(s=>!s.piece);
+    const spot=slots().find(s=>!s.piece&&!s.reservedForAds);
     if(spot)window.TEM.openExhibit(spot.size,spot.price,spot.id);
   }));
   overlay.querySelectorAll("[data-walk-hold]").forEach(b => {
