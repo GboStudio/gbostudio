@@ -63,7 +63,7 @@ $('#closePiece').onclick=()=>$('#piece').close();function shareGeneric(p){const 
 function setReserveStage(n){
   $('#exhibit').classList.toggle('is-step-two',n===2);
   document.querySelectorAll('#exhibit [data-stage]').forEach(el=>{el.hidden=Number(el.dataset.stage)!==n;});
-  $('#exhibit').scrollTop=0;
+  $('#form').scrollTop=0;
 }
 function openExhibit(size='landscape',price=null,slot=null){
   const chosen=FORMATS[size]||FORMATS.landscape;
