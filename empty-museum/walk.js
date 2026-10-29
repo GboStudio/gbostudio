@@ -228,7 +228,7 @@
   }
   // Plafond premium : cadre suspendu, caisson lumineux ou bannière aérienne.
   // L'intégralité de la face est interactive, depuis la visite en 3D.
-  function drawCeilingSpot(slot,pts,piece){
+  function drawCeilingSpot(slot,pts,piece,depth){
     const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
     const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
     ctx.save();path(pts);ctx.clip();
@@ -266,7 +266,7 @@
       ctx.lineWidth=Math.max(2,Math.min(5,w*.019));
       path(pts);ctx.strokeStyle='#e5ffda';ctx.stroke();ctx.restore();
     }
-    hits.push({points:pts,depth:pts.length?slot.z-view.z:0,piece,slot});
+    hits.push({points:pts,depth,piece,slot});
   }
   function drawFloorSpot(slot,pts,kind){
     const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
@@ -368,7 +368,7 @@
       ctx.strokeStyle='rgba(72,72,60,.42)';ctx.lineWidth=1;ctx.stroke();
       hits.push({points:f.points,depth:f.depth,piece:f.piece,slot:f.slot});
     } else if(f.kind==='ceiling-display'){
-      drawCeilingSpot(f.slot,f.points,f.piece);
+      drawCeilingSpot(f.slot,f.points,f.piece,f.depth);
     } else if(f.kind==='floor-spot'){
       drawFloorSpot(f.slot,f.points,f.kind);
       hits.push({points:f.points,depth:f.depth,piece:f.piece,slot:f.slot});
