@@ -169,3 +169,6 @@ body.walk-is-open{overflow:hidden}
 }
 
 #exhibit.reserve-dialog{width:min(760px,calc(100vw - 28px));}
+
+#exhibit.is-step-two .reserve-header h2{display:none}
+#exhibit.is-step-two .reserve-header{margin-bottom:15px}
