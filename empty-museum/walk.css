@@ -253,3 +253,28 @@ body.walk-is-open{overflow:hidden}
  .floor-publish{order:10}
  .floor-disclaimer{order:11}
 }
+
+
+/* V2 — premium suspended ceiling inventory and responsive sales presentation. */
+.ceiling-offers{border-top:1px solid rgba(17,17,15,.23);margin-top:46px;padding:43px 0 10px}
+.ceiling-offers-head{display:grid;grid-template-columns:1.15fr .85fr;gap:24px;align-items:end}
+.ceiling-offers-head .eyebrow{grid-column:1/-1;display:block;margin-bottom:2px}
+.ceiling-offers-head h3{font:800 clamp(40px,5.7vw,88px)/.85 Arial,Helvetica,sans-serif;letter-spacing:-.07em;margin:0;color:#20231f}
+.ceiling-offers-head h3 em{font-family:Georgia,serif;font-weight:400}
+.ceiling-offers-head p{font:400 13px/1.8 Arial,sans-serif;color:#696a62;max-width:420px;margin:0 0 3px}
+.ceiling-offers-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:36px;border-top:1px solid rgba(17,17,15,.21);border-left:1px solid rgba(17,17,15,.21)}
+.ceiling-offers-grid button{background:linear-gradient(155deg,#f9f8f2,#e7e9df);color:#252923;border:0;border-bottom:1px solid rgba(17,17,15,.21);border-right:1px solid rgba(17,17,15,.21);min-height:280px;padding:22px;text-align:left;display:flex;align-items:flex-start;flex-direction:column;transition:background .18s,transform .18s}
+.ceiling-offers-grid button:hover{background:#f3f8e8;transform:translateY(-3px)}
+.ceiling-icon{font-size:31px;color:#627b62;margin-bottom:15px}
+.ceiling-offers-grid small{font:700 9px Arial,sans-serif;letter-spacing:.17em;color:#767970;margin-bottom:7px}
+.ceiling-offers-grid b{font:800 clamp(17px,2vw,25px) Arial,sans-serif;letter-spacing:-.035em}
+.ceiling-offers-grid strong{font:400 clamp(34px,3.1vw,54px) Georgia,serif;margin-top:26px}
+.ceiling-offers-grid button>span:not(.ceiling-icon){font:500 10px Arial,sans-serif;letter-spacing:.05em;color:#6c7168;margin-top:5px}
+.ceiling-offers-grid i{font:800 9px Arial,sans-serif;font-style:normal;letter-spacing:.13em;margin-top:auto;padding-top:27px}
+.ceiling-disclaimer{font:400 10px/1.55 Arial,sans-serif;color:#71736d;margin:15px 0 0}
+.reserve-art-preview.is-ceiling{position:relative;transform:perspective(450px) rotateX(-18deg);border:7px solid #e0e8d5;box-shadow:0 0 17px rgba(183,224,144,.5),0 18px 20px rgba(36,56,35,.18);background:#fbfff4}
+.reserve-art-preview.is-ceiling:before,.reserve-art-preview.is-ceiling:after{content:"";position:absolute;width:1px;height:22px;background:#8c9983;top:-28px}
+.reserve-art-preview.is-ceiling:before{left:12%}
+.reserve-art-preview.is-ceiling:after{right:12%}
+@media(max-width:900px){.ceiling-offers-head{grid-template-columns:1fr}.ceiling-offers-head p{max-width:640px}}
+@media(max-width:650px){.ceiling-offers{padding-top:28px;margin-top:26px}.ceiling-offers-grid{grid-template-columns:1fr}.ceiling-offers-grid button{min-height:195px;padding:19px}.ceiling-icon{font-size:23px;margin-bottom:7px}.ceiling-offers-grid strong{margin-top:14px;font-size:38px}.ceiling-offers-head h3{font-size:50px}.ceiling-offers-head p{font-size:12px}}
