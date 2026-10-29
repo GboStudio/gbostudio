@@ -39,3 +39,53 @@ body.walk-is-open{overflow:hidden}
   .walk-controls button{width:min(19vw,64px);height:54px}
   .walk-hint{top:46%;font-size:8px;transform:translate(-50%,55px)}
 }
+
+/* Museum-first experience */
+.walk-topbar{padding:22px clamp(16px,3vw,46px);background:linear-gradient(180deg,rgba(18,21,18,.82) 0%,rgba(18,21,18,0) 100%);gap:12px}
+.walk-identity strong{font-family:Georgia,serif;font-size:clamp(19px,2vw,28px);letter-spacing:.055em;font-weight:400;white-space:nowrap}
+.walk-identity-mark{vertical-align:super;font:700 7px Arial,sans-serif;letter-spacing:.08em;margin-left:5px;opacity:.65}
+.walk-actions{display:flex;align-items:center;gap:8px}
+.walk-exhibit,.walk-close{white-space:nowrap;min-height:42px;font-size:10px;font-weight:800;letter-spacing:.075em;border-radius:30px;padding:12px 18px;box-shadow:0 9px 24px rgba(0,0,0,.16)}
+.walk-exhibit{background:#d6ecaf;color:#20291f;border:1px solid #d6ecaf}
+.walk-close{background:rgba(255,255,255,.92);color:#172017;border:1px solid rgba(255,255,255,.65)}
+.walk-guide{top:114px;max-width:360px;border-left:0;border-radius:7px;padding:14px 18px;color:#f8f7ee;background:rgba(19,26,20,.67);backdrop-filter:blur(12px);box-shadow:0 12px 36px rgba(0,0,0,.08)}
+.walk-progress strong{margin:7px 0 11px;font-weight:700}
+.walk-progress small{display:block}
+.walk-legend{display:flex;align-items:center;gap:7px;font-size:9px;color:rgba(255,255,255,.8);margin-top:10px;letter-spacing:.075em}
+.walk-legend i{height:9px;width:9px;border:1px solid #d6ecaf;background:#e9eee1;display:inline-block;transform:rotate(45deg)}
+.walk-hint{top:auto;bottom:138px;left:50%;transform:translateX(-50%);background:rgba(248,247,243,.88);border:1px solid rgba(140,154,117,.3);border-radius:24px;padding:11px 16px;color:#37442f;box-shadow:0 4px 20px rgba(0,0,0,.08);font-size:10px}
+.walk-controls button{border-radius:50%;background:rgba(24,28,23,.78);backdrop-filter:blur(10px);border-color:rgba(255,255,255,.27);box-shadow:0 6px 22px rgba(0,0,0,.18)}
+.walk-controls button:active{background:#d6ecaf}
+#exhibit{max-height:calc(100dvh - 28px);overflow-y:auto;overscroll-behavior:contain;border-radius:12px}
+#form>h2{margin-bottom:10px}
+.form-intro{max-width:670px;color:#696860;font:400 13px/1.6 Arial,sans-serif;margin:0 0 26px}
+#form .checkout .btn{font-size:9px;line-height:1.2;padding:13px 15px;max-width:260px}
+.sketch-area{border:1px solid rgba(17,17,15,.14);margin:12px 0 0;padding:10px 12px;background:rgba(255,255,255,.45)}
+.sketch-area summary{list-style:none;font-size:10px;font-weight:800;letter-spacing:.08em;display:flex;justify-content:space-between;cursor:pointer}
+.sketch-area summary::-webkit-details-marker{display:none}
+.sketch-area summary span{font-size:18px}
+#sketch{display:block;width:100%;height:auto;aspect-ratio:540/280;touch-action:none;border:1px solid #c5c4b9;margin-top:14px;background:#faf8f3;cursor:crosshair}
+#clearSketch{border:0;background:transparent;text-decoration:underline;font-size:10px;margin-top:10px;cursor:pointer}
+@media(max-width:700px){
+  .walk-topbar{align-items:start;padding:17px 14px}
+  .walk-identity small{font-size:7px;letter-spacing:.11em}
+  .walk-identity strong{font-size:clamp(14px,4vw,19px)}
+  .walk-actions{gap:5px}
+  .walk-exhibit,.walk-close{font-size:9px;padding:9px 11px;min-height:38px}
+  .walk-guide{top:80px;left:14px;right:14px;max-width:380px;font-size:11px;line-height:1.45;padding:10px 12px}
+  .walk-hint{font-size:8px;bottom:160px;max-width:calc(100% - 28px);text-align:center;white-space:normal}
+  .walk-progress{max-width:none}
+  .walk-progress strong{font-size:9px}
+  .walk-legend{font-size:8px}
+  .walk-bottom{gap:11px}
+  .walk-controls button{width:54px;height:54px}
+  #form>h2{font-size:clamp(36px,11vw,54px)}
+  .form-intro{font-size:12px}
+  #form .checkout{gap:12px;align-items:center}
+  #form .checkout .btn{max-width:190px}
+}
+@media(max-width:390px){
+  .walk-identity strong{font-size:13px}
+  .walk-exhibit,.walk-close{font-size:8px;padding:8px}
+}
+@media(prefers-reduced-motion:reduce){.walk-progress-track span,.walk-controls button{transition:none}}
