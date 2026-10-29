@@ -339,3 +339,59 @@ html[data-theme="dark"] .footer .gbo-brand-visual{background:transparent;box-sha
   .studio-v2 .s-hero-copy{padding-top:83px}
   .gbo-hero-brand{width:108px;height:73px}
 }
+
+/* V8.3 — Mobile cinematic identity (centered composition, no floating sticker). */
+@media(max-width:700px){
+  .studio-v2 .s-hero{padding-top:25px}
+  .studio-v2 .s-hero-copy{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding-top:0
+  }
+  .gbo-hero-brand{
+    position:relative;
+    inset:auto;
+    display:block;
+    width:min(68vw,278px);
+    height:auto;
+    aspect-ratio:1241 / 772;
+    margin:0 auto 16px;
+    transform:none
+  }
+  .gbo-hero-brand::before{
+    inset:-17% -21% -15%;
+    border-radius:50%;
+    opacity:1;
+    background:radial-gradient(ellipse at 50% 49%,rgba(130,133,244,.24),rgba(128,149,244,.11) 42%,transparent 73%)
+  }
+  .gbo-hero-brand .gbo-brand-lettering{
+    top:0;
+    left:0;
+    width:96%;
+    filter:drop-shadow(0 11px 16px rgba(15,19,49,.22))
+  }
+  .gbo-hero-brand .gbo-brand-planet-wrap{
+    top:25%;
+    right:-1%;
+    width:39%;
+    filter:drop-shadow(0 10px 16px rgba(15,88,226,.22))
+  }
+  .studio-v2 .s-hero-copy>.s-overline{margin-top:4px}
+  .studio-v2 .s-hero h1{margin-top:21px}
+  html.gbo-brand-first-visit .gbo-hero-brand .gbo-brand-lettering,
+  html.gbo-brand-first-visit .gbo-hero-brand .gbo-brand-planet-wrap{animation:none!important}
+}
+@media(max-width:375px){
+  .gbo-hero-brand{width:min(69vw,245px);margin-bottom:14px}
+}
+@media(max-width:700px){
+  html[data-theme="dark"] .gbo-hero-brand::before{
+    background:radial-gradient(ellipse at 50% 49%,rgba(97,89,218,.55),rgba(53,81,202,.25) 43%,transparent 73%)
+  }
+}
+@media(max-width:700px) and (prefers-color-scheme:dark){
+  html[data-theme="auto"] .gbo-hero-brand::before{
+    background:radial-gradient(ellipse at 50% 49%,rgba(97,89,218,.55),rgba(53,81,202,.25) 43%,transparent 73%)
+  }
+}
