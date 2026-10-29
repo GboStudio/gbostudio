@@ -61,6 +61,7 @@ let down=false,sx=0,sl=0;viewport.onmousedown=e=>{down=true;sx=e.pageX-viewport.
 function openPiece(p){const m=$('#media');m.className='media';m.style.backgroundImage='';m.textContent='';if(p.category==='words'){m.classList.add('words');m.textContent=p.words||p.title}else if(p.category==='3d')m.classList.add('threed');else m.style.backgroundImage=bg(p);$('#pcat').textContent=`${p.category.toUpperCase()} / #${String(p.id).padStart(3,'0')}`;$('#ptitle').textContent=p.title;$('#pauthor').textContent=p.author;$('#pdesc').textContent=p.description;$('#ptools').textContent=p.tools;$('#pdate').textContent=p.date;$('#psize').textContent=FORMATS[normalizeSize(p.size)]?.name||p.size.toUpperCase();$('#sharePiece').onclick=()=>shareGeneric(p);$('#piece').showModal()}
 $('#closePiece').onclick=()=>$('#piece').close();function shareGeneric(p){const url=location.href.split('#')[0]+`#piece-${p.id}`;if(navigator.share)navigator.share({title:p.title,text:`${p.title} — exposé dans The Empty Museum`,url}).catch(()=>{});else navigator.clipboard?.writeText(url)}
 function setReserveStage(n){
+  $('#exhibit').classList.toggle('is-step-two',n===2);
   document.querySelectorAll('#exhibit [data-stage]').forEach(el=>{el.hidden=Number(el.dataset.stage)!==n;});
   $('#exhibit').scrollTop=0;
 }
