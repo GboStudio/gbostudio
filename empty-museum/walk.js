@@ -202,12 +202,17 @@
     ctx.fillStyle=slot.piece?'#d4c6aa':'#dee9da';ctx.fill();
     ctx.strokeStyle=slot.piece?'#9e8d72':'#879e84';ctx.lineWidth=Math.max(2,Math.min(6,w*.03));
     ctx.setLineDash(slot.piece?[]:[10,6]);path(pts);ctx.stroke();ctx.setLineDash([]);
-    if(w>65&&h>28){
-      ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillStyle='#21352a';ctx.font='800 '+Math.max(11,Math.min(18,w*.095))+'px Arial';
-      ctx.fillText(slot.piece?'INSTALLATION':'ESPACE AU SOL',x+w*.5,y+h*.40,w*.88);
-      ctx.font='700 '+Math.max(11,Math.min(20,w*.10))+'px Arial';
-      ctx.fillText(slot.piece?String(slot.piece.title).slice(0,25):'499 € / 12 MOIS',x+w*.5,y+h*.69,w*.9);
+    if(w>65&&h>15){
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#21352a';
+      if(h<48){
+        ctx.font='800 '+Math.max(10,Math.min(15,w*.065))+'px Arial';
+        ctx.fillText(slot.piece?'INSTALLATION':'SOL · 499 €',x+w*.5,y+h*.54,w*.9);
+      }else{
+        ctx.font='800 '+Math.max(11,Math.min(18,w*.095))+'px Arial';
+        ctx.fillText(slot.piece?'INSTALLATION':'ESPACE AU SOL',x+w*.5,y+h*.40,w*.88);
+        ctx.font='700 '+Math.max(11,Math.min(20,w*.10))+'px Arial';
+        ctx.fillText(slot.piece?String(slot.piece.title).slice(0,25):'499 € / 12 MOIS',x+w*.5,y+h*.69,w*.9);
+      }
     }
     ctx.restore();
   }
