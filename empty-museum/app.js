@@ -40,3 +40,6 @@ $('#closeShare').onclick=()=>$('#share').close();$('#download').onclick=()=>{con
 // A direct link works for demo pieces and browser-local creations stored on this device.
 function openLinkedPiece(){const m=location.hash.match(/^#piece-(\d+)$/);if(!m)return;const p=pieces.find(piece=>piece.id===Number(m[1]));if(p)openPiece(p)}
 window.addEventListener('hashchange',openLinkedPiece);openLinkedPiece();
+
+// Read-only bridge for the immersive gallery; the public demo remains browser-local.
+window.TEM = { getPieces: () => pieces, openPiece };
