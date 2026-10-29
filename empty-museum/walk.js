@@ -127,10 +127,8 @@
       ctx.fillStyle = "#fffdfa"; ctx.fill();
       ctx.lineWidth = Math.max(2, Math.min(9, F / (f.depth + 1) * .065));
       ctx.strokeStyle = "#ddd5c5"; ctx.stroke();
-      ctx.save();
-      ctx.shadowBlur = 15; ctx.shadowColor = "rgba(0,0,0,.18)";
-      ctx.stroke(); ctx.restore();
       drawArt(f.piece, f.points);
+      path(f.points); ctx.strokeStyle = "#c5bbae"; ctx.stroke();
       hits.push({ points: f.points, depth: f.depth, piece: f.piece });
     } else {
       ctx.fillStyle = f.fill; ctx.fill();
@@ -177,9 +175,11 @@
       const low = (height - ph) / 2, high = low + ph;
       add([[x, low, z - pw / 2], [x, low, z + pw / 2], [x, high, z + pw / 2], [x, high, z - pw / 2]], "#e6dfd3", "#b8a994", "art", piece);
     });
-    faces.sort((a, b) => b.depth - a.depth || (a.kind === "art" ? 1 : -1));
+    const structure = faces.filter(f => f.kind !== "art").sort((a,b) => b.depth - a.depth);
+    const artworks = faces.filter(f => f.kind === "art").sort((a,b) => b.depth - a.depth);
     hits = [];
-    faces.forEach(paint);
+    structure.forEach(paint);
+    artworks.forEach(paint);
 
     // Warm, unobtrusive ceiling lights emphasize the scale of the gallery.
     for (let z = 3; z < length; z += 7) {
