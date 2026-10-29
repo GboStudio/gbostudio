@@ -28,12 +28,25 @@ const FORMATS={
   tall:{name:'Grand portrait',dimensions:'60 × 90 cm',ratio:2/3,price:30},
   wide:{name:'Grand paysage',dimensions:'90 × 60 cm',ratio:3/2,price:30},
   panorama:{name:'Panoramique',dimensions:'100 × 40 cm',ratio:5/2,price:30},
-  floor:{name:'Emplacement au sol',dimensions:'1,20 × 1,20 m',ratio:1,price:499}
+  floor:{name:'Emplacement au sol',dimensions:'1,20 × 1,20 m',ratio:1,price:499},
+  'ceiling-mini':{name:'Cadre suspendu',dimensions:'20 × 30 cm',ratio:2/3,price:19.90},
+  'ceiling-medium':{name:'Caisson lumineux',dimensions:'60 × 40 cm',ratio:3/2,price:29.90},
+  'ceiling-large':{name:'Bannière aérienne',dimensions:'90 × 60 cm',ratio:3/2,price:40}
 };
 // Deux premiers cadres à gauche (0, 2) et à droite (1, 3) : espaces publicitaires hors vente.
 const AD_RESERVED_SLOTS=new Set([0,1,2,3]);
 const SLOT_SIZES=['landscape','portrait','mini','wide','portrait','landscape','panorama','tall','mini','wide','portrait','landscape','panorama','tall','portrait','wide','mini','landscape','wide','portrait','panorama','landscape','tall'];
-const FLOOR_POSITIONS=[{id:'S01',z:12,x:1.45},{id:'S02',z:32,x:-1.45},{id:'S03',z:58,x:1.45}];
+// La galerie V2 occupe toute la longueur : 3 stations au départ, 2 dans l'extension.
+const FLOOR_POSITIONS=[{id:'S01',z:12,x:1.45},{id:'S02',z:32,x:-1.45},{id:'S03',z:58,x:1.45},{id:'S04',z:96,x:-1.45},{id:'S05',z:123,x:1.45}];
+// Peu de places au plafond pour conserver un vrai caractère premium.
+const CEILING_POSITIONS=[
+ {id:'P01',z:18,size:'ceiling-mini',style:'frame'},
+ {id:'P02',z:40,size:'ceiling-medium',style:'lightbox'},
+ {id:'P03',z:62,size:'ceiling-large',style:'banner'},
+ {id:'P04',z:85,size:'ceiling-mini',style:'frame'},
+ {id:'P05',z:109,size:'ceiling-medium',style:'lightbox'},
+ {id:'P06',z:132,size:'ceiling-large',style:'banner'}
+];
 const euros=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
 const normalizeSize=s=>({standard:'landscape',large:'wide',xl:'panorama'}[s]||s);
 function getSlots(){
@@ -44,7 +57,7 @@ function getSlots(){
     if(slot<0||AD_RESERVED_SLOTS.has(slot)||placements.has(slot)){slot=4;while(AD_RESERVED_SLOTS.has(slot)||placements.has(slot))slot++;}
     placements.set(slot,p);
   });
-  const highest=Math.max(17,...placements.keys()),total=Math.max(23,highest+5);
+  const highest=Math.max(17,...placements.keys()),total=Math.max(38,highest+5);
   return Array.from({length:total},(_,id)=>{
     const piece=placements.get(id)||null,size=piece&&piece.id>18?normalizeSize(piece.size):SLOT_SIZES[id%SLOT_SIZES.length];
     return{id,size,price:FORMATS[size]?.price||19.9,format:FORMATS[size]||FORMATS.landscape,piece,reservedForAds:AD_RESERVED_SLOTS.has(id)};
@@ -53,9 +66,12 @@ function getSlots(){
 function getFloorSlots(){
   return FLOOR_POSITIONS.map(s=>({...s,size:'floor',price:499,format:FORMATS.floor,piece:pieces.find(p=>p.slot===s.id)||null}));
 }
+function getCeilingSlots(){
+  return CEILING_POSITIONS.map(s=>({...s,price:FORMATS[s.size].price,format:FORMATS[s.size],piece:pieces.find(p=>p.slot===s.id)||null}));
+}
 const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 function bg(p){if(p.image?.startsWith('data:'))return `url("${p.image}")`;return p.image||'linear-gradient(145deg,#ddd8cd,#f8f6f0)'}
-function render(){grid.innerHTML='';const arr=filter==='all'?pieces:pieces.filter(p=>p.category===filter);arr.forEach(p=>{const el=document.createElement('article');el.className=`tile ${p.size} ${p.category==='words'?'words':''} ${p.category==='3d'?'threed':''}`;el.dataset.id=p.id;if(p.category==='words'){el.innerHTML=`<div class="wordsArt">${esc(p.words||p.title)}</div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}else if(p.category==='3d'){el.innerHTML=`<div class="img"></div><div class="shape"></div><div class="shade"></div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}else{el.innerHTML=`<div class="img"></div><div class="shade"></div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}if(p.category!=='words'&&p.category!=='3d')el.querySelector('.img').style.backgroundImage=bg(p);el.querySelector('button').onclick=()=>openPiece(p);grid.appendChild(el)});stats()}
+function render(){grid.innerHTML='';const arr=filter==='all'?pieces:pieces.filter(p=>p.category===filter);arr.forEach(p=>{const el=document.createElement('article');el.className=`tile ${p.size.startsWith('ceiling-')?({'ceiling-mini':'mini','ceiling-medium':'landscape','ceiling-large':'wide'}[p.size]):p.size} ${p.size.startsWith('ceiling-')?'ceiling-tile':''} ${p.category==='words'?'words':''} ${p.category==='3d'?'threed':''}`;el.dataset.id=p.id;if(p.category==='words'){el.innerHTML=`<div class="wordsArt">${esc(p.words||p.title)}</div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}else if(p.category==='3d'){el.innerHTML=`<div class="img"></div><div class="shape"></div><div class="shade"></div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}else{el.innerHTML=`<div class="img"></div><div class="shade"></div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}if(p.category!=='words'&&p.category!=='3d')el.querySelector('.img').style.backgroundImage=bg(p);el.querySelector('button').onclick=()=>openPiece(p);grid.appendChild(el)});stats()}
 function stats(){ $('#liveCount').textContent=pieces.length;$('#countHero').textContent=String(pieces.length).padStart(3,'0');const m=4.8+pieces.reduce((a,p)=>a+({mini:.22,standard:.42,large:.72,xl:1.12}[p.size]||.42),0);$('#metersHero').textContent=m.toFixed(1).replace('.',',')+' M'}
 $$('[data-filter]').forEach(b=>b.onclick=()=>{$$('[data-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;render();viewport.scrollTo({left:0,behavior:'smooth'})});
 $('#reset').onclick=()=>viewport.scrollTo({left:0,behavior:'smooth'});$('#random').onclick=()=>{const a=filter==='all'?pieces:pieces.filter(p=>p.category===filter);if(!a.length)return;const p=a[Math.floor(Math.random()*a.length)],el=grid.querySelector(`[data-id="${p.id}"]`);if(el){viewport.scrollTo({left:Math.max(0,el.offsetLeft-viewport.clientWidth/2),behavior:'smooth'});el.animate([{transform:'translateY(0)'},{transform:'translateY(-12px)'},{transform:'translateY(0)'}],{duration:700});setTimeout(()=>openPiece(p),600)}};
@@ -68,13 +84,16 @@ function setReserveStage(n){
   $('#form').scrollTop=0;
 }
 function openExhibit(size='landscape',price=null,slot=null){
-  if(typeof slot==='string'){window.TEM?.openFloor?.(slot);return;}
+  if(typeof slot==='string' && slot.startsWith('S')){window.TEM?.openFloor?.(slot);return;}
+  if(typeof slot==='string' && slot.startsWith('P') && !getCeilingSlots().some(s=>s.id===slot&&!s.piece))return;
   if(Number.isInteger(slot)&&AD_RESERVED_SLOTS.has(slot))return;
   const chosen=FORMATS[size]||FORMATS.landscape;
   plan={size,price:price===null?chosen.price:Number(price)};
   selectedSlot=slot;
-  const isFloor=typeof slot==='string';
-  const name=isFloor?'ESPACE AU SOL N°'+slot.slice(1):(Number.isInteger(slot)?'MUR '+(slot%2?'DROIT':'GAUCHE')+' · CADRE N°'+String(slot+1).padStart(2,'0'):'EMPLACEMENT LIBRE');
+  const isFloor=typeof slot==='string' && slot.startsWith('S');
+  const isCeiling=typeof slot==='string' && slot.startsWith('P');
+  $('#durationLabel').textContent='EXPOSITION · 12 MOIS';
+  const name=isCeiling?'PLAFOND · '+slot:isFloor?'ESPACE AU SOL N°'+slot.slice(1):(Number.isInteger(slot)?'MUR '+(slot%2?'DROIT':'GAUCHE')+' · CADRE N°'+String(slot+1).padStart(2,'0'):'EMPLACEMENT LIBRE');
   $('#slotName').textContent=name;
   $('#formatName').textContent=chosen.name;
   $('#dimensions').textContent=chosen.dimensions;
@@ -82,17 +101,22 @@ function openExhibit(size='landscape',price=null,slot=null){
   $('#price').textContent=euros(plan.price);
   $('#reservePreview').style.setProperty('--frame-ratio',String(chosen.ratio));
   $('#reservePreview').classList.toggle('is-floor',isFloor);
+  $('#reservePreview').classList.toggle('is-ceiling',isCeiling);
   $('#reserveExplain').textContent=isFloor
     ?'Cet espace au sol est réservé à une sculpture, un objet ou une installation. Dans cette démo, vous pouvez présenter votre projet avec une photo et un texte.'
+    :isCeiling
+    ?'Cet emplacement premium est suspendu au plafond. Il reste exposé pendant 12 mois. Tournez la caméra vers le haut pour le retrouver.'
     :'Ce cadre précis vous est réservé pendant 12 mois. Votre image conserve ses proportions : elle ne sera ni étirée ni déformée.';
   setReserveStage(1);
   $('#exhibit').showModal();
 }
 function firstVacantWall(size=null){return getSlots().find(s=>!s.piece&&!s.reservedForAds&&(!size||s.size===size))||getSlots().find(s=>!s.piece&&!s.reservedForAds);}
+function firstVacantCeiling(size=null){return getCeilingSlots().find(s=>!s.piece&&(!size||s.size===size));}
 $$('[data-open]').forEach(b=>b.onclick=()=>{const s=firstVacantWall();if(s)openExhibit(s.size,s.price,s.id);});
 $$('[data-plan]').forEach(b=>b.onclick=()=>{
   const size=b.dataset.plan;
   if(size==='floor'){const x=getFloorSlots().find(s=>!s.piece);if(x)openExhibit('floor',499,x.id);}
+  else if(size.startsWith('ceiling-')){const x=firstVacantCeiling(size);if(x)openExhibit(x.size,x.price,x.id);}
   else{const x=firstVacantWall(size);if(x)openExhibit(x.size,x.price,x.id);}
 });
 $('#reserveContinue').onclick=()=>setReserveStage(2);
@@ -149,4 +173,4 @@ function publishFloor(spec){
   return true;
 }
 // Browser-local demo bridge for the immersive gallery and floor studio.
-window.TEM = { getPieces: () => pieces, getSlots, getFloorSlots, openPiece, openExhibit, publishFloor };
+window.TEM = { getPieces: () => pieces, getSlots, getFloorSlots, getCeilingSlots, openPiece, openExhibit, publishFloor };

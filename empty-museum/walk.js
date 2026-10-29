@@ -26,6 +26,9 @@
   function list() { return window.TEM.getPieces(); }
   function slots() { return window.TEM.getSlots(); }
   function floorSlots() { return window.TEM.getFloorSlots(); }
+  function ceilingSlots() { return window.TEM.getCeilingSlots(); }
+  // 38 wall bays x 3.5 m (+ a 9 m entrance) instead of 23 bays in V1.
+  // Gallery measures 142 m versus 89.5 m: approximately +60%.
   function galleryLength() { return Math.max(28, 9 + slots().length * step); }
   function limit(v, min, max) { return Math.max(min, Math.min(max, v)); }
   function resize() {
@@ -223,6 +226,48 @@
     }
     ctx.restore();
   }
+  // Plafond premium : cadre suspendu, caisson lumineux ou bannière aérienne.
+  // L'intégralité de la face est interactive, depuis la visite en 3D.
+  function drawCeilingSpot(slot,pts,piece,depth){
+    const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+    const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
+    ctx.save();path(pts);ctx.clip();
+    const g=ctx.createLinearGradient(x,y,x+w,y+h);
+    if(slot.style==='lightbox'){
+      g.addColorStop(0,'#ffffff');g.addColorStop(1,'#f2f9ef');
+    } else if(slot.style==='banner'){
+      g.addColorStop(0,'#f2f2ee');g.addColorStop(1,'#dfe4dd');
+    } else {
+      g.addColorStop(0,'#fdfcf7');g.addColorStop(1,'#eae6db');
+    }
+    ctx.fillStyle=g;ctx.fill();
+    if(piece) {
+      drawArt(piece,pts);
+    } else if(w>25&&h>20) {
+      const mid=x+w*.5;
+      ctx.fillStyle='#45564a';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.font='700 '+Math.max(9,Math.min(18,w*.085))+'px Arial';
+      ctx.fillText('PLAFOND LIBRE',mid,y+h*.29,w*.86);
+      if(w>65&&h>38){
+        ctx.fillStyle='#647364';ctx.font='600 '+Math.max(8,Math.min(14,w*.065))+'px Arial';
+        ctx.fillText(slot.format.name.toUpperCase(),mid,y+h*.52,w*.85);
+        ctx.fillStyle='#273c2f';ctx.font='700 '+Math.max(9,Math.min(16,w*.077))+'px Arial';
+        ctx.fillText(slot.price.toLocaleString('fr-FR',{maximumFractionDigits:2})+' € / 12 MOIS',mid,y+h*.75,w*.9);
+      }
+    }
+    ctx.restore();
+    path(pts);
+    ctx.strokeStyle=slot.style==='lightbox'?'#bddda6':'#a8ae9e';
+    ctx.lineWidth=Math.max(2,Math.min(7,w*.028));
+    ctx.stroke();
+    if(slot.style==='lightbox'){
+      ctx.save();ctx.shadowBlur=Math.min(28,Math.max(6,w*.14));
+      ctx.shadowColor='rgba(202,245,179,.78)';
+      ctx.lineWidth=Math.max(2,Math.min(5,w*.019));
+      path(pts);ctx.strokeStyle='#e5ffda';ctx.stroke();ctx.restore();
+    }
+    hits.push({points:pts,depth,piece,slot});
+  }
   function drawFloorSpot(slot,pts,kind){
     const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
     const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
@@ -322,6 +367,8 @@
       path(f.points);ctx.fillStyle=f.fill;ctx.fill();
       ctx.strokeStyle='rgba(72,72,60,.42)';ctx.lineWidth=1;ctx.stroke();
       hits.push({points:f.points,depth:f.depth,piece:f.piece,slot:f.slot});
+    } else if(f.kind==='ceiling-display'){
+      drawCeilingSpot(f.slot,f.points,f.piece,f.depth);
     } else if(f.kind==='floor-spot'){
       drawFloorSpot(f.slot,f.points,f.kind);
       hits.push({points:f.points,depth:f.depth,piece:f.piece,slot:f.slot});
@@ -371,7 +418,7 @@
     }
     add([[-half, 0, length], [half, 0, length], [half, height, length], [-half, height, length]], "#e5e0d5", "#cac3b6", "end");
 
-    const all = list(), allSlots = slots(), floors=floorSlots();
+    const all = list(), allSlots = slots(), floors=floorSlots(), ceilings=ceilingSlots();
     const shapes={
       mini:[1.30,1.95],portrait:[1.65,2.45],landscape:[2.55,1.70],
       tall:[1.85,2.75],wide:[3.15,2.10],panorama:[3.15,1.28],
@@ -382,6 +429,23 @@
       const [pw,ph]=shapes[slot.size]||shapes.landscape;
       const low=(height-ph)/2,high=low+ph;
       add([[x,low,z-pw/2],[x,low,z+pw/2],[x,high,z+pw/2],[x,high,z-pw/2]],slot.reservedForAds?"#252c29":slot.piece?"#e6dfd3":"#f3f0e7",slot.reservedForAds?"#b6b09a":slot.piece?"#b8a994":"#829371",slot.reservedForAds?"ad":slot.piece?"art":"free",slot.piece,slot);
+    });
+    ceilings.forEach(slot=>{
+      const z=slot.z, style=slot.style, centerX=(Number(slot.id.slice(1))%2===0?1:-1)*.52;
+      const width=style==='frame'?1.22:style==='lightbox'?2.15:2.65;
+      const bottom=style==='banner'?3.04:style==='lightbox'?3.30:3.45;
+      const top=style==='banner'?4.24:style==='lightbox'?4.20:4.15;
+      const left=centerX-width/2,right=centerX+width/2;
+      // Deux filins discrets, attaches au plafond pour un vrai effet suspendu.
+      for(const x of [left+.13,right-.13]){
+        add([[x,top,z],[x+.014,top,z],[x+.014,height-.04,z],[x,height-.04,z]],'#929789','#777f73','suspension');
+      }
+      // La petite tranche supérieure donne du volume à l'installation.
+      add([[left,top,z-.11],[right,top,z-.11],[right,top,z+.11],[left,top,z+.11]],
+        style==='lightbox'?'#e5f1d8':'#cecfc7','#aeb4a4','ceiling-rim');
+      // Face avant, visible depuis l'entrée et lorsqu'on lève la caméra.
+      add([[left,bottom,z-.12],[right,bottom,z-.12],[right,top,z-.12],[left,top,z-.12]],
+        '#fdfcf7','#a8ae9e','ceiling-display',slot.piece,slot);
     });
     floors.forEach(slot=>{
       const x=slot.x,z=slot.z,r=.60;
@@ -426,8 +490,9 @@
         add([[x-.52,low,z],[x+.52,low,z],[x+.52,high,z],[x-.52,high,z]],'#23302a','#b6b2a2','floor-install',p,slot);
       }
     });
-    const structure = faces.filter(f => !["art","free","floor-spot","ad","floor-install","floor-statue"].includes(f.kind)).sort((a,b) => b.depth - a.depth);
-    const artworks = faces.filter(f => ["art","free","floor-spot","ad","floor-install","floor-statue"].includes(f.kind)).sort((a,b) => b.depth - a.depth);
+    const interactiveTypes=["art","free","floor-spot","ad","floor-install","floor-statue","ceiling-display"];
+    const structure = faces.filter(f => !interactiveTypes.includes(f.kind)).sort((a,b) => b.depth - a.depth);
+    const artworks = faces.filter(f => interactiveTypes.includes(f.kind)).sort((a,b) => b.depth - a.depth);
     hits = [];
     structure.forEach(paint);
     artworks.forEach(paint);
@@ -450,7 +515,7 @@
     ctx.fillRect(W / 2, H / 2 - 9, 1, 18);
     drawPerson(performance.now()/1000);
     document.getElementById("walkProgress").textContent =
-      Math.floor(view.z) + " / " + Math.floor(length) + " M  ·  " + all.length + " CRÉATIONS  ·  " + (allSlots.filter(s=>!s.piece&&!s.reservedForAds).length+floors.filter(s=>!s.piece).length) + " PLACES LIBRES";
+      Math.floor(view.z) + " / " + Math.floor(length) + " M  ·  " + all.length + " CRÉATIONS  ·  " + (allSlots.filter(s=>!s.piece&&!s.reservedForAds).length+ceilings.filter(s=>!s.piece).length+floors.filter(s=>!s.piece).length) + " PLACES LIBRES";
     document.getElementById("walkMeter").style.width = (100 * view.z / length) + "%";
   }
   function tick(time) {
