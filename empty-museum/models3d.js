@@ -17,6 +17,23 @@ export function modelFormat(name="") {
 export function modelKey(){
   return "model-"+(globalThis.crypto?.randomUUID?.() || Date.now()+"-"+Math.random().toString(36).slice(2));
 }
+function inspectGLTF(json) {
+  if(!json?.asset?.version || !String(json.asset.version).startsWith("2.")){
+    throw Error("Seuls les fichiers glTF 2.0 sont pris en charge.");
+  }
+  // External buffer/image URIs could request an arbitrary network resource.
+  // The offline demo intentionally accepts embedded data only.
+  for(const entry of [...(json.buffers||[]),...(json.images||[])]){
+    if(entry.uri && !/^data:(?:application\/octet-stream|application\/gltf-buffer|image\/(?:png|jpeg|webp));base64,/i.test(entry.uri)){
+      throw Error("Ce modèle référence des ressources externes : exportez un GLB avec textures intégrées.");
+    }
+  }
+  const unsupported=(json.extensionsRequired||[]).filter(x=>/draco|meshopt|basisu|ktx2/i.test(x));
+  if(unsupported.length)throw Error("Ce modèle utilise une compression non prise en charge. Exportez un GLB standard sans Draco/Meshopt/KTX2.");
+  if((json.nodes||[]).length>10000 || (json.meshes||[]).length>2000 || (json.images||[]).length>200){
+    throw Error("Ce modèle comporte trop d’éléments pour être affiché dans le musée.");
+  }
+}
 export async function validateFile(file) {
   if (!file || !(file instanceof Blob)) throw Error("Choisissez un fichier 3D.");
   const format=modelFormat(file.name);
@@ -26,15 +43,22 @@ export async function validateFile(file) {
   if(format==="gltf"){
     let json;
     try{json=JSON.parse(await file.text());}catch(e){throw Error("Le fichier glTF n’est pas un JSON valide.");}
-    if(!json?.asset?.version || !String(json.asset.version).startsWith("2."))throw Error("Seuls les fichiers glTF 2.0 sont pris en charge.");
-    for(const entry of [...(json.buffers||[]),...(json.images||[])]){
-      if(entry.uri && !entry.uri.startsWith("data:")){
-        throw Error("Le fichier .gltf référence des fichiers externes. Exportez-le en .glb ou avec ressources intégrées.");
-      }
+    inspectGLTF(json);
+  }
+  if(format==="glb"){
+    const buffer=await file.arrayBuffer();
+    const view=new DataView(buffer);
+    if(buffer.byteLength<20 || view.getUint32(0,true)!==0x46546c67 || view.getUint32(4,true)!==2 || view.getUint32(8,true)!==buffer.byteLength){
+      throw Error("Le fichier GLB est invalide (en-tête ou version incorrecte).");
     }
-    if((json.extensionsRequired||[]).some(x=>/draco|meshopt|basisu|ktx2/i.test(x))){
-      throw Error("Compression non prise en charge dans cette démo. Exportez un GLB standard, sans Draco/Meshopt/KTX2.");
+    if(view.getUint32(16,true)!==0x4e4f534a || view.getUint32(12,true)>buffer.byteLength-20){
+      throw Error("Le fichier GLB ne contient pas une scène glTF valide.");
     }
+    const jsonData=new Uint8Array(buffer,20,view.getUint32(12,true));
+    let json;
+    try{json=JSON.parse(new TextDecoder().decode(jsonData).replace(/\u0000+$/g,"").trim());}
+    catch(e){throw Error("Impossible de lire la scène du fichier GLB.");}
+    inspectGLTF(json);
   }
   return format;
 }
