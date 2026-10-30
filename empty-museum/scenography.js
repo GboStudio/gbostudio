@@ -63,6 +63,28 @@ export function buildMuseumScenography({scene,architecture,half,height,length,mo
     const keystone=box(p,.33,.28,.29,porcelain,0,centerY+ringRadius-.07,z+.12);
     keystone.rotation.z=Math.PI/4;
   }
+  // Pool of diffused daylight under each ceiling oculus. Texture opacity falls
+  // off continuously; a gentle focal cue rather than a spotlight decal.
+  const daylightPoolTexture=(()=>{
+    const canvas=document.createElement("canvas");canvas.width=256;canvas.height=256;
+    const g=canvas.getContext("2d");
+    const grad=g.createRadialGradient(128,128,4,128,128,127);
+    grad.addColorStop(0,"rgba(255,255,252,.64)");
+    grad.addColorStop(.55,"rgba(255,255,250,.32)");
+    grad.addColorStop(.80,"rgba(255,255,248,.09)");
+    grad.addColorStop(1,"rgba(255,255,248,0)");
+    g.fillStyle=grad;g.fillRect(0,0,256,256);
+    const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;return t;
+  })();
+  const daylightPool=new THREE.MeshBasicMaterial({
+    map:daylightPoolTexture,transparent:true,opacity:.62,depthWrite:false,
+    polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,
+    side:THREE.DoubleSide
+  });
+  for(const z of [21,48,76,104,138]){
+    place(architecture,new THREE.PlaneGeometry(5.4,5.4),daylightPool,
+      0,.046,z,{rotX:-Math.PI/2});
+  }
   function floorMedallion(z,outer=2.18){
     for(const [r,t,mat] of [
       [outer,.018,brass],
