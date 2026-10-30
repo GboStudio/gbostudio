@@ -278,3 +278,21 @@ body.walk-is-open{overflow:hidden}
 .reserve-art-preview.is-ceiling:after{right:12%}
 @media(max-width:900px){.ceiling-offers-head{grid-template-columns:1fr}.ceiling-offers-head p{max-width:640px}}
 @media(max-width:650px){.ceiling-offers{padding-top:28px;margin-top:26px}.ceiling-offers-grid{grid-template-columns:1fr}.ceiling-offers-grid button{min-height:195px;padding:19px}.ceiling-icon{font-size:23px;margin-bottom:7px}.ceiling-offers-grid strong{margin-top:14px;font-size:38px}.ceiling-offers-head h3{font-size:50px}.ceiling-offers-head p{font-size:12px}}
+
+/* Three.js real WebGL museum — architectural immersive layer */
+.walk-overlay canvas{background:#f5f4ef}
+.engine-status{position:absolute;top:82px;right:clamp(14px,3vw,42px);z-index:3;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;pointer-events:none}
+.engine-chip{display:inline-flex;align-items:center;border:1px solid rgba(197,202,182,.7);border-radius:40px;padding:9px 12px;background:rgba(255,255,251,.82);backdrop-filter:blur(12px);box-shadow:0 10px 28px rgba(29,40,30,.07);font:700 9px Arial,sans-serif;letter-spacing:.14em;color:#394b40}
+.engine-chip:first-child{color:#315a38;border-color:rgba(119,156,118,.32)}
+.engine-location{color:#626d60;font-size:8px}
+.walk-identity strong{letter-spacing:.092em}
+.walk-guide{max-width:365px;border:1px solid rgba(255,255,255,.7);background:rgba(249,248,241,.88);color:#313c33;box-shadow:0 15px 48px rgba(30,39,30,.13)}
+.walk-hint{background:rgba(250,249,243,.88);box-shadow:0 12px 34px rgba(0,0,0,.1)}
+@media(max-width:760px){
+  .engine-status{top:77px;right:14px;max-width:42%;gap:5px}
+  .engine-chip{padding:7px 9px;font-size:7px}
+  .engine-location{display:none}
+  .walk-guide{max-width:49%;font-size:9px;top:76px;left:12px;right:auto;padding:10px 11px}
+  .walk-hint{max-width:calc(100% - 36px);white-space:normal}
+}
+@media(prefers-reduced-motion:reduce){.engine-chip{transition:none}}
