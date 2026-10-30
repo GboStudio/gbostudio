@@ -1,3 +1,4 @@
+import { validateFile,saveModel,deleteModel,previewModel,stopModelPreview } from "./models3d.js";
 (() => {
   'use strict';
   const dialog=document.getElementById('floorStudio');
@@ -5,7 +6,8 @@
   const $=s=>dialog.querySelector(s);
   const buttons=[...dialog.querySelectorAll('[data-floor-type]')];
   const canvas=$('#floorPreviewCanvas'),ctx=canvas.getContext('2d');
-  const colors={photo:'#d8b68b',statue:'#d8b68b',billboard:'#d8b68b',neon:'#8fd6e8'};
+  const colors={photo:'#d8b68b',statue:'#d8b68b',billboard:'#d8b68b',neon:'#8fd6e8',model:'#d5c8b4'};
+  let modelFile=null,modelValidated=false,modelRequest=0;
   let state={slot:'S01',type:'photo',author:'',title:'',text:'',shape:'spire',tint:'#d8b68b',image:''},angle=-.25;
   const LINE_LIMIT=46;
   const colorHex=s=>/^#[0-9a-fA-F]{6}$/.test(s||'')?s:'#d8b68b';
@@ -13,6 +15,10 @@
     const slot=window.TEM.getFloorSlots().find(s=>s.id===id && !s.piece);
     if(!slot)return;
     state={slot:id,type:'photo',author:'',title:'',text:'',shape:'spire',tint:colors.photo,image:''};
+    modelFile=null;modelValidated=false;modelRequest++;stopModelPreview();
+    $('#floorModelFile').value='';
+    $('#floorModelCanvas').hidden=true;
+    $('#floorPreviewCanvas').hidden=false;
     $('#floorSlotLabel').textContent='SOL '+id+' · 1,20 × 1,20 M';
     $('#floorAuthor').value='';
     $('#floorTitle').value='';
@@ -30,8 +36,22 @@
     $('#floorTint').value=state.tint;
     buttons.forEach(b=>{const selected=b.dataset.floorType===type;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected));});
     $('#floorShapeGroup').hidden=type!=='statue';
-    $('#floorUploadGroup').hidden=type==='statue'||type==='neon';
-    $('#floorTextGroup').hidden=type==='photo';
+    $('#floorUploadGroup').hidden=type==='statue'||type==='neon'||type==='model';
+    $('#floorModelGroup').hidden=type!=='model';
+    $('#floorModelHelp').hidden=type!=='model';
+    $('#floorTextGroup').hidden=type==='photo'||type==='model';
+    $('#floorTintGroup').hidden=type==='model';
+    if(type!=='model'){
+      stopModelPreview();
+      $('#floorModelCanvas').hidden=true;
+      $('#floorPreviewCanvas').hidden=false;
+    }else{
+      $('#floorPreviewCanvas').hidden=!!modelValidated;
+      $('#floorModelCanvas').hidden=!modelValidated;
+      $('#floorPreviewCaption').textContent=modelValidated?'APERÇU 3D · GLISSEZ POUR TOURNER':'AJOUTEZ UN MODÈLE POUR VOIR L’APERÇU 3D';
+      if(modelFile&&modelValidated) previewModel(modelFile,$('#floorModelCanvas')).catch(e=>showError(e.message||'Impossible d’afficher le modèle.'));
+    }
+    if(type!=='model')$('#floorPreviewCaption').textContent='APERÇU INDICATIF';
     $('#floorTextLabel').firstChild.nodeValue=type==='neon'?'VOTRE PHRASE LUMINEUSE':type==='billboard'?'TEXTE DU PANNEAU':'PETITE INSCRIPTION (FACULTATIF)';
     $('#floorUploadLabel').textContent=type==='billboard'?'AJOUTER UNE IMAGE AU PANNEAU (FACULTATIF)':'AJOUTER VOTRE PHOTO';
     $('#floorText').maxLength=type==='neon'?30:LINE_LIMIT;
@@ -63,7 +83,38 @@
     };
     fr.readAsDataURL(f);
   });
+  $('#floorModelFile').addEventListener('change',async e=>{
+    const file=e.target.files?.[0];
+    if(!file)return;
+    modelRequest++;
+    const requestId=modelRequest;
+    modelFile=null;modelValidated=false;
+    stopModelPreview();
+    $('#floorModelCanvas').hidden=true;
+    $('#floorPreviewCanvas').hidden=false;
+    $('#floorError').textContent='Analyse du modèle 3D…';
+    try{
+      await validateFile(file);
+      if(requestId!==modelRequest || state.type!=='model')return;
+      modelFile=file;
+      await previewModel(file,$('#floorModelCanvas'));
+      if(requestId!==modelRequest || state.type!=='model')return;
+      modelValidated=true;
+      $('#floorPreviewCanvas').hidden=true;
+      $('#floorModelCanvas').hidden=false;
+      $('#floorPreviewCaption').textContent='APERÇU 3D · GLISSEZ POUR TOURNER';
+      $('#floorError').textContent=file.name+' · '+(file.size/1048576).toFixed(1)+' Mo · prêt à exposer';
+    }catch(error){
+      if(requestId!==modelRequest)return;
+      modelFile=null;modelValidated=false;
+      $('#floorModelFile').value='';
+      $('#floorPreviewCanvas').hidden=false;
+      $('#floorModelCanvas').hidden=true;
+      showError(error.message||'Ce fichier 3D est incompatible.');
+    }
+  });
   $('#floorClose').addEventListener('click',()=>dialog.close());
+  dialog.addEventListener('close',()=>{modelRequest++;stopModelPreview();});
   dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
   function showError(t){const el=$('#floorError');el.textContent=t;el.scrollIntoView({block:'center',behavior:'smooth'});}
   let currentImage=null,lastImgSrc='';
@@ -168,7 +219,7 @@
   canvas.addEventListener('pointerdown',e=>{pointer={id:e.pointerId,x:e.clientX};canvas.setPointerCapture(e.pointerId);});
   canvas.addEventListener('pointermove',e=>{if(!pointer||pointer.id!==e.pointerId)return;angle+=(e.clientX-pointer.x)*.012;pointer.x=e.clientX;preview();});
   const stop=()=>pointer=null;canvas.addEventListener('pointerup',stop);canvas.addEventListener('pointercancel',stop);
-  $('#floorPublish').addEventListener('click',()=>{
+  $('#floorPublish').addEventListener('click',async()=>{
     const s=window.TEM.getFloorSlots().find(f=>f.id===state.slot&&!f.piece);
     if(!s){showError('Cet emplacement est indisponible.');return;}
     const title=state.title.trim()||('Installation '+state.slot);
@@ -177,12 +228,33 @@
     if(state.type==='photo'&&!state.image){showError('Ajoutez une photo pour exposer ce format.');return;}
     if((state.type==='neon'||state.type==='billboard')&&!text&&!state.image){showError('Saisissez votre texte ou ajoutez une image.');return;}
     if(state.type==='neon'&&text.length>30){showError('Le message lumineux doit contenir 30 caractères maximum.');return;}
+    if(state.type==='model'&&(!modelFile||!modelValidated)){showError('Importez un GLB, glTF autonome ou STL valide avant de publier.');return;}
+    const publishButton=$('#floorPublish');
+    if(publishButton.disabled)return;
+    publishButton.disabled=true;
+    const oldLabel=publishButton.textContent;
+    publishButton.textContent='ENREGISTREMENT…';
+    let saved=null;
+    try{
+      if(state.type==='model')saved=await saveModel(modelFile);
+    }catch(error){
+      showError(error.message||'Enregistrement du modèle impossible.');
+      publishButton.disabled=false;publishButton.textContent=oldLabel;return;
+    }
     const p={slot:state.slot,size:'floor',floorType:state.type,floorColor:colorHex(state.tint),floorShape:state.shape,floorText:text,
-      category:state.type==='photo'?'image':state.type==='statue'?'3d':state.type==='neon'?'words':'design',
-      title,author,description:text||'Installation créée pour The Empty Museum.',tools:'Studio du musée',image:state.image,
+      category:state.type==='model'||state.type==='statue'?'3d':state.type==='photo'?'image':state.type==='neon'?'words':'design',
+      title,author,description:state.type==='model'?'Modèle 3D personnel exposé sur le socle '+state.slot+'.':text||'Installation créée pour The Empty Museum.',
+      tools:state.type==='model'?'Import 3D : '+saved.format.toUpperCase():'Studio du musée',
+      image:state.image,modelKey:saved?.key||null,modelName:saved?.name||null,modelFormat:saved?.format||null,
       durationMonths:1};
+    const accepted=window.TEM.publishFloor(p);
+    if(!accepted){
+      if(saved?.key)await deleteModel(saved.key);
+      showError('L’emplacement vient d’être occupé, choisissez un autre socle.');
+      publishButton.disabled=false;publishButton.textContent=oldLabel;return;
+    }
     dialog.close();
-    window.TEM.publishFloor(p);
+    publishButton.disabled=false;publishButton.textContent=oldLabel;
   });
   window.TEM.openFloor=openFloor;
   preview();
