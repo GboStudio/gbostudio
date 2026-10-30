@@ -1,14 +1,14 @@
 import * as THREE from "three";
 import {getModel,loadModel,disposeModel} from "./models3d.js";
 import {buildMuseumScenography} from "./scenography.js";
-import {createMuseumV5Navigation} from "./museum-v5.js";
+import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v6";
 
 (() => {
   "use strict";
   // V5 styling is loaded only with WebGL: the 2D fallback retains its controls.
   const cinematicStyle=document.createElement("link");
   cinematicStyle.rel="stylesheet";
-  cinematicStyle.href="./museum-v5.css?v=20261030visual5";
+  cinematicStyle.href="./museum-v5.css?v=20261030v6";
   document.head.appendChild(cinematicStyle);
   const overlay = document.getElementById("walkOverlay");
   const canvas = document.getElementById("walkCanvas");
@@ -80,25 +80,50 @@ import {createMuseumV5Navigation} from "./museum-v5.js";
     return m;
   }
 
-  // Deterministic, unique marble slabs and fine-grain limestone, generated locally.
-  function stoneTexture(){
-    const c=document.createElement("canvas");c.width=512;c.height=512;
-    const g=c.getContext("2d");
-    g.fillStyle="#eae8e3";g.fillRect(0,0,512,512);
-    for(let i=0;i<1100;i++){
-      const x=(i*239.81)%512,y=(i*143.47)%512;
-      g.fillStyle=i%3?"rgba(120,112,97,.018)":"rgba(255,255,255,.065)";
-      g.fillRect(x,y,i%7?1.5:3,1);
+  // V6 mineral limestone, procedurally generated diffuse + fine bump.
+  // Matte stone, alternating slab tone and subtle grouted joints.
+  function limestoneSurface(){
+    const size=mobile?512:768;
+    const albedo=document.createElement("canvas"),relief=document.createElement("canvas");
+    albedo.width=relief.width=size;albedo.height=relief.height=size;
+    const g=albedo.getContext("2d"),h=relief.getContext("2d");
+    const color=g.createImageData(size,size),heights=h.createImageData(size,size);
+    let seed=271828;
+    const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+    const slab=size/4;
+    for(let y=0;y<size;y++){
+      const row=Math.floor(y/slab);
+      const yEdge=(y%slab)<1.4;
+      for(let x=0;x<size;x++){
+        const sx=(x+(row%2)*slab*.5)%size,edge=yEdge||(sx%slab)<1.4;
+        const grain=Math.sin(x*.047+y*.032)*1.8+Math.sin(x*.011-y*.019)*2.7+
+          Math.cos(x*.084-y*.068)*1.2+Math.sin(x*.018+Math.sin(y*.022)*1.6)*1.4+(random()-.5)*3.2;
+        const cell=Math.floor(sx/slab)+row*4;
+        const shade=((cell*13)%7-3)*1.3;
+        const n=edge?-18:grain+shade;
+        const j=(y*size+x)*4;
+        color.data[j]=Math.round(228+n);color.data[j+1]=Math.round(225+n*.96);
+        color.data[j+2]=Math.round(217+n*.88);color.data[j+3]=255;
+        const bump=edge?100:Math.round(139+grain*1.65+(random()-.5)*14);
+        heights.data[j]=heights.data[j+1]=heights.data[j+2]=bump;
+        heights.data[j+3]=255;
+      }
     }
-    g.strokeStyle="rgba(82,78,66,.10)";g.lineWidth=1.2;
-    for(let y=0;y<=512;y+=128){g.beginPath();g.moveTo(0,y);g.lineTo(512,y);g.stroke();}
-    for(let x=0;x<=512;x+=128){g.beginPath();g.moveTo(x,0);g.lineTo(x,512);g.stroke();}
-    const t=new THREE.CanvasTexture(c);
-    t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(3,LENGTH/10);
-    t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
+    g.putImageData(color,0,0);h.putImageData(heights,0,0);
+    const map=new THREE.CanvasTexture(albedo),bump=new THREE.CanvasTexture(relief);
+    for(const t of [map,bump]){
+      t.wrapS=t.wrapT=THREE.RepeatWrapping;
+      t.repeat.set(1.55,LENGTH/7.5);
+      t.anisotropy=mobile?2:4;
+    }
+    map.colorSpace=THREE.SRGBColorSpace;
+    return {map,bump};
   }
-  const tileMat=material(0xffffff,.32);
-  tileMat.map=stoneTexture();tileMat.bumpMap=tileMat.map;tileMat.bumpScale=.024;tileMat.needsUpdate=true;
+  const limestone=limestoneSurface();
+  const tileMat=new THREE.MeshStandardMaterial({
+    map:limestone.map,bumpMap:limestone.bump,bumpScale:.009,
+    color:0xffffff,roughness:.84,metalness:0
+  });
   box(architecture,HALF*2,.28,LENGTH,tileMat,0,-.16,LENGTH/2,false,true);
   // WHITE CEILING: layered plaster vault, completely free from exhibits at launch.
   // All ceiling pieces are concealed until the wall gallery reaches capacity.
@@ -452,7 +477,11 @@ import {createMuseumV5Navigation} from "./museum-v5.js";
     unit.position.set(x,y,z);
     unit.rotation.y=rot;
     group.add(unit);
-    // Local positive Z faces the museum visitor.
+    // Floating mounting with a physical shadowed gap from the wall.
+    const contactShadow=new THREE.MeshBasicMaterial({
+      color:0x302a23,transparent:true,opacity:.17,depthWrite:false,side:THREE.DoubleSide
+    });
+    surface(unit,w+.43,h+.43,contactShadow,0,-.025,-.149);
     const glow=surface(unit,w+.86,h+.86,glowMaterial,0,0,-.18);
     glow.renderOrder=1;
     box(unit,w+.24,h+.24,.10,darkBronze,0,0,-.025,true);
@@ -501,7 +530,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js";
     return art;
   }
   function drawWallSlot(slot){
-    const i=slot.id,z=5.7+i*STEP,side=i%2?1:-1,x=side*(HALF-.25);
+    const i=slot.id,z=5.7+i*STEP,side=i%2?1:-1,x=side*(HALF-.39);
     const dims={
       mini:[1.35,1.83],portrait:[1.42,2.15],landscape:[2.36,1.6],
       tall:[1.48,2.67],wide:[2.78,1.95],panorama:[2.8,1.18],
@@ -655,6 +684,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js";
 
   let active=false,frame=0,last=0,yaw=0,pitch=0,yawTarget=0,pitchTarget=0,walkTo=null,down=null,focusBefore=null;
   let velX=0,velZ=0,rayTime=0;
+  let tourWasActive=false,tourStops=[],tourStopIndex=0,tourStage="approach",tourStageTime=0;
   const held=new Set(),keys=new Set();
   const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2();
   const view={x:0,y:1.72,z:.85};
@@ -715,46 +745,68 @@ import {createMuseumV5Navigation} from "./museum-v5.js";
     const turning=Number(pressed("ArrowRight","turn-right"))-Number(pressed("ArrowLeft","turn-left"));
     if((turning||fwd||strafe) && input.auto) v5.manual();
     if(input.auto && !blocked){
-      const phase=input.t%24;
-      if(phase<11){
-        fwd=.92;strafe=0;
-        yawTarget=.07*Math.sin(phase*.55);
-        pitchTarget=-.06-.07*Math.sin(phase*.21);
-      }else if(phase<16){
-        fwd=0;strafe=0;
-        yawTarget=-(Math.min(1,(phase-11)/2)*1.12);
-        pitchTarget=.01;
-      }else if(phase<21){
-        fwd=0;strafe=0;
-        yawTarget=-1.12+Math.min(1,(phase-16)/3)*2.24;
-        pitchTarget=.01;
-      }else{
-        fwd=.28;strafe=0;
-        yawTarget=1.12*(1-(phase-21)/3);
-        pitchTarget=-.08;
+      if(!tourWasActive){
+        tourWasActive=true;
+        tourStops=window.TEM.getSlots().filter(slot=>slot.piece&&!slot.reservedForAds)
+          .map(slot=>({slot,z:5.7+slot.id*STEP,stopZ:5.7+slot.id*STEP-2.9}))
+          .sort((a,b)=>a.z-b.z);
+        tourStopIndex=tourStops.findIndex(stop=>stop.stopZ>view.z+.2);
+        tourStage="approach";tourStageTime=0;walkTo=null;
+        if(tourStopIndex<0){
+          v5.toast("FIN DE LA GALERIE · RETOUR AU HALL");
+          v5.setTour(false,true);
+        }
       }
-      if(view.z>LENGTH-6){
-        v5.setTour(false);
-        fwd=0;
+      tourStageTime+=dt;
+      const stop=tourStops[tourStopIndex];
+      if(!stop){
+        fwd=0;strafe=0;yawTarget=0;pitchTarget=0;
+      }else if(tourStage==="approach"){
+        // Each leg remains on the central aisle and faces straight ahead.
+        fwd=Math.min(1,Math.max(.16,(stop.stopZ-view.z)*.52));
+        strafe=0;yawTarget=0;pitchTarget=-.02;
+        if(view.z>=stop.stopZ-.45){
+          tourStage="look";tourStageTime=0;fwd=0;
+          v5.toast(stop.slot.piece.title.toUpperCase());
+        }
+      }else if(tourStage==="look"){
+        fwd=0;strafe=0;
+        const side=stop.slot.id%2?1:-1;
+        const focusAngle=Math.atan2(side*(HALF-.39),Math.max(1.5,stop.z-view.z));
+        const t=Math.min(1,tourStageTime/1.3);
+        yawTarget=focusAngle*(t*t*(3-2*t));
+        pitchTarget=.015;
+        if(tourStageTime>=4.1){tourStage="recenter";tourStageTime=0;}
+      }else if(tourStage==="recenter"){
+        fwd=0;strafe=0;yawTarget=0;pitchTarget=-.02;
+        if(tourStageTime>=1.45){
+          tourStopIndex++;tourStage="approach";tourStageTime=0;
+          if(tourStopIndex>=tourStops.length){
+            v5.setTour(false,true);
+            v5.toast("FIN DE LA VISITE · EXPLOREZ LIBREMENT");
+          }
+        }
       }
     }else{
+      tourWasActive=false;
       yawTarget+=turning*dt*1.22;
       if(walkTo!==null && !fwd && !strafe){
         if(view.z<walkTo-.45)fwd=.8;
         else walkTo=null;
       }
     }
-    yaw+=(yawTarget-yaw)*Math.min(1,dt*9);
-    pitch+=(pitchTarget-pitch)*Math.min(1,dt*8);
+    yaw+=(yawTarget-yaw)*Math.min(1,dt*(input.auto?4.8:9));
+    pitch+=(pitchTarget-pitch)*Math.min(1,dt*(input.auto?4.5:8));
     if(blocked){fwd=0;strafe=0;walkTo=null;}
-    const moveSpeed=pressed("ShiftLeft","ShiftRight")?4.6:(input.auto?2.3:2.45);
+    const moveSpeed=pressed("ShiftLeft","ShiftRight")?4.6:(input.auto?3.4:2.45);
     const magnitude=Math.max(1,Math.hypot(fwd,strafe));
-    const wantX=(Math.sin(yaw)*fwd+Math.cos(yaw)*strafe)*moveSpeed/magnitude;
-    const wantZ=(Math.cos(yaw)*fwd-Math.sin(yaw)*strafe)*moveSpeed/magnitude;
-    const damping=Math.min(1,dt*(input.auto?3.1:8));
+    const wantX=input.auto?0:(Math.sin(yaw)*fwd+Math.cos(yaw)*strafe)*moveSpeed/magnitude;
+    const wantZ=input.auto?Math.max(0,fwd)*moveSpeed:(Math.cos(yaw)*fwd-Math.sin(yaw)*strafe)*moveSpeed/magnitude;
+    const damping=Math.min(1,dt*(input.auto?5.7:8));
     velX+=(wantX-velX)*damping;
     velZ+=(wantZ-velZ)*damping;
     view.x=clamp(view.x+velX*dt,-HALF+.94,HALF-.94);
+    if(input.auto)view.x+=(0-view.x)*Math.min(1,dt*3.6);
     view.z=clamp(view.z+velZ*dt,.80,LENGTH-2.8);
     const walking=Math.abs(velX)+Math.abs(velZ)>.12;
     view.y=1.72+(walking&&!input.auto?Math.sin(time*.009)*.008:0);
@@ -780,7 +832,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js";
   function open(){
     if(active)return;
     focusBefore=document.activeElement;
-    active=true;last=performance.now();view.x=0;view.z=.85;yaw=0;pitch=0;yawTarget=0;pitchTarget=0;velX=0;velZ=0;walkTo=null;
+    active=true;last=performance.now();view.x=0;view.z=.85;yaw=0;pitch=0;yawTarget=0;pitchTarget=0;velX=0;velZ=0;walkTo=null;tourWasActive=false;
     v5.enter();
     overlay.hidden=false;document.body.classList.add("walk-is-open");
     resize();orient();
