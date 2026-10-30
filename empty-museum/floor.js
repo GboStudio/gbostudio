@@ -1,4 +1,8 @@
-import { validateFile,saveModel,deleteModel,getModel,previewModel,stopModelPreview } from "./models3d.js";
+// Lazy-load 3D addons: the original photo/sculpture floor studio still works
+// when Three.js/CDN/WebGL is unavailable and the gallery uses its 2D fallback.
+let modelToolsPromise=null;
+const modelTools=()=>modelToolsPromise || (modelToolsPromise=import("./models3d.js"));
+const stopModelPreview=()=>{if(modelToolsPromise)modelToolsPromise.then(m=>m.stopModelPreview()).catch(()=>{});};
 (() => {
   'use strict';
   const dialog=document.getElementById('floorStudio');
@@ -49,7 +53,7 @@ import { validateFile,saveModel,deleteModel,getModel,previewModel,stopModelPrevi
       $('#floorPreviewCanvas').hidden=!!modelValidated;
       $('#floorModelCanvas').hidden=!modelValidated;
       $('#floorPreviewCaption').textContent=modelValidated?'APERÇU 3D · GLISSEZ POUR TOURNER':'AJOUTEZ UN MODÈLE POUR VOIR L’APERÇU 3D';
-      if(modelFile&&modelValidated) previewModel(modelFile,$('#floorModelCanvas')).catch(e=>showError(e.message||'Impossible d’afficher le modèle.'));
+      if(modelFile&&modelValidated) modelTools().then(m=>m.previewModel(modelFile,$('#floorModelCanvas'))).catch(e=>showError(e.message||'Impossible d’afficher le modèle.'));
     }
     if(type!=='model')$('#floorPreviewCaption').textContent='APERÇU INDICATIF';
     $('#floorTextLabel').firstChild.nodeValue=type==='neon'?'VOTRE PHRASE LUMINEUSE':type==='billboard'?'TEXTE DU PANNEAU':'PETITE INSCRIPTION (FACULTATIF)';
@@ -94,10 +98,11 @@ import { validateFile,saveModel,deleteModel,getModel,previewModel,stopModelPrevi
     $('#floorPreviewCanvas').hidden=false;
     $('#floorError').textContent='Analyse du modèle 3D…';
     try{
-      await validateFile(file);
+      const tools=await modelTools();
+      await tools.validateFile(file);
       if(requestId!==modelRequest || state.type!=='model')return;
       modelFile=file;
-      await previewModel(file,$('#floorModelCanvas'));
+      await tools.previewModel(file,$('#floorModelCanvas'));
       if(requestId!==modelRequest || state.type!=='model')return;
       modelValidated=true;
       $('#floorPreviewCanvas').hidden=true;
@@ -236,7 +241,7 @@ import { validateFile,saveModel,deleteModel,getModel,previewModel,stopModelPrevi
     publishButton.textContent='ENREGISTREMENT…';
     let saved=null;
     try{
-      if(state.type==='model')saved=await saveModel(modelFile);
+      if(state.type==='model')saved=await (await modelTools()).saveModel(modelFile);
     }catch(error){
       showError(error.message||'Enregistrement du modèle impossible.');
       publishButton.disabled=false;publishButton.textContent=oldLabel;return;
@@ -249,7 +254,7 @@ import { validateFile,saveModel,deleteModel,getModel,previewModel,stopModelPrevi
       durationMonths:1};
     const accepted=window.TEM.publishFloor(p);
     if(!accepted){
-      if(saved?.key)await deleteModel(saved.key);
+      if(saved?.key)await (await modelTools()).deleteModel(saved.key);
       showError('L’emplacement vient d’être occupé, choisissez un autre socle.');
       publishButton.disabled=false;publishButton.textContent=oldLabel;return;
     }
@@ -266,7 +271,14 @@ import { validateFile,saveModel,deleteModel,getModel,previewModel,stopModelPrevi
     if(!media || !dialog?.open)return;
     detailRequest++;
     const seq=detailRequest;
-    const stored=await getModel(exhibit.modelKey);
+    let tools,stored;
+    try{
+      tools=await modelTools();
+      stored=await tools.getModel(exhibit.modelKey);
+    }catch(error){
+      media.textContent='Le visualiseur 3D n’est pas disponible sur cet appareil.';
+      return;
+    }
     if(seq!==detailRequest || !dialog.open)return;
     if(!stored?.blob){
       media.textContent='Le modèle 3D ne se trouve plus sur cet appareil.';
@@ -279,7 +291,7 @@ import { validateFile,saveModel,deleteModel,getModel,previewModel,stopModelPrevi
     viewer.className='piece-model-viewer';
     viewer.setAttribute('aria-label','Modèle 3D · glissez pour tourner, pincez pour zoomer');
     media.appendChild(viewer);
-    try{await previewModel(stored.blob,viewer);}
+    try{await tools.previewModel(stored.blob,viewer);}
     catch(error){
       if(seq!==detailRequest)return;
       media.textContent='Ce modèle 3D ne peut plus être affiché sur cet appareil.';
