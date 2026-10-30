@@ -1,4 +1,4 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f1efe7"><title>The Empty Museum</title><meta name="description" content="Entrez dans un musée vivant : admirez des créations, choisissez un emplacement libre et exposez vos photos, dessins, textes ou œuvres."><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="walk.css?v=20261030engine1"><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script></head><body>
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f1efe7"><title>The Empty Museum</title><meta name="description" content="Entrez dans un musée vivant : admirez des créations, choisissez un emplacement libre et exposez vos photos, dessins, textes ou œuvres."><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="walk.css?v=20261030whiteceiling4"><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script></head><body>
 <div class="grain"></div>
 <header><a class="brand" href="#top"><b>TEM</b><span>THE EMPTY MUSEUM</span></a><nav><a href="#wall">Le mur</a><a href="#how">Comment ça marche</a><a href="#pricing">Exposer</a></nav><button class="btn dark" data-open>EXPOSER</button></header>
 <div class="demo-banner" role="status"><strong>VERSION DÉMONSTRATION</strong><span>Les œuvres d’exemple sont fictives. Les créations ajoutées restent uniquement sur votre appareil. Aucun paiement n’est effectué.</span></div>
@@ -17,13 +17,14 @@
 <button data-plan="floor"><span>EMPLACEMENT AU SOL</span><strong>499 €</strong><small>/ 1 mois</small><p>1,20 × 1,20 m : photo, sculpture, panneau ou enseigne 3D.</p><i>CHOISIR UNE PLACE ↗</i></button>
 </div>
 <div class="ceiling-offers" id="ceiling-offers">
-  <div class="ceiling-offers-head"><span class="eyebrow">LE MUSÉE S’OUVRE VERS LE HAUT</span><h3>LES PLACES<br><em>SUSPENDUES.</em></h3><p>Éditions limitées, caissons lumineux et bannières. Des pièces visibles en levant les yeux. Chaque emplacement coûte 10 € de plus que son format mural.</p></div>
+  <div class="ceiling-offers-head"><span class="eyebrow">LE PLAFOND BLANC RESTE VIDE, POUR L’INSTANT</span><h3>L’ART ARRIVERA<br><em>JUSQU’AU CIEL.</em></h3><p>Le plafond est aujourd’hui un espace blanc sculptural, éclairé par cinq oculus monumentaux. Les six emplacements suspendus sont techniquement prévus : ils seront proposés seulement après le remplissage des murs de la galerie d’origine.</p></div>
+  <p class="ceiling-unlock-state" id="ceilingUnlockText" role="status">PLAFOND RÉSERVÉ POUR LE FUTUR · OUVERTURE APRÈS REMPLISSAGE DES MURS.</p>
   <div class="ceiling-offers-grid">
     <button type="button" data-plan="ceiling-mini"><span class="ceiling-icon">▣</span><small>PLAFOND / C01</small><b>CADRE SUSPENDU</b><strong>19,90 €</strong><span>20 × 30 cm · 12 mois</span><i>CHOISIR UNE PLACE ↗</i></button>
     <button type="button" data-plan="ceiling-medium"><span class="ceiling-icon">✳</span><small>PLAFOND / C02</small><b>CAISSON LUMINEUX</b><strong>29,90 €</strong><span>60 × 40 cm · 12 mois</span><i>CHOISIR UNE PLACE ↗</i></button>
     <button type="button" data-plan="ceiling-large"><span class="ceiling-icon">▥</span><small>PLAFOND / C03</small><b>BANNIÈRE AÉRIENNE</b><strong>40 €</strong><span>90 × 60 cm · 12 mois</span><i>CHOISIR UNE PLACE ↗</i></button>
   </div>
-  <p class="ceiling-disclaimer">La V2 présente 6 emplacements plafond dans la galerie 3D. Les tarifs sont indicatifs ; aucune réservation réelle ni paiement n’est possible dans cette démo.</p>
+  <p class="ceiling-disclaimer">Les formats et tarifs du plafond sont présentés en prévision de l’agrandissement. Aucun cadre suspendu n’est actuellement visible ni réservable. Aucun paiement réel n’est possible dans cette démonstration.</p>
 </div></section>
 <section class="cats"><span class="eyebrow">PAS SEULEMENT DE L’ART IA</span><h2>TOUT CE QUE<br>VOUS AVEZ ENVIE<br>DE PARTAGER.</h2><div><article><b>MEDIA</b><p>Images, illustration, vidéo, musique.</p></article><article><b>DESIGN</b><p>Interfaces, logos, affiches, produits.</p></article><article><b>3D</b><p>Modèles, sculptures, architecture, imprimables.</p></article><article><b>BUILD</b><p>Ce que vous avez réellement fabriqué.</p></article><article><b>WORDS</b><p>Histoires, textes, poésie, concepts.</p></article><article><b>WEIRD</b><p>Tout ce qui n’aurait probablement jamais dû exister.</p></article></div></section>
 <section class="final"><span class="eyebrow">THE EMPTY MUSEUM</span><h2>LE MUR EST<br>ENCORE PETIT.</h2><p>C’est justement le moment d’y être.</p><button class="btn dark" data-open>EXPOSER MA CRÉATION</button></section>
@@ -38,10 +39,10 @@
       <button type="button" class="walk-close" data-walk-close>À PROPOS ↗</button>
     </div>
   </div>
-  <div class="walk-guide" id="walkGuide">Les deux premiers cadres de chaque côté sont réservés aux publicités. Touchez un mur, un emplacement suspendu au plafond ou un socle au sol pour exposer. Glissez vers le haut pour regarder les pièces aériennes.</div>
-  <div class="walk-hint" aria-hidden="true">CHOISISSEZ UN MUR, LE PLAFOND OU LE SOL</div>
+  <div class="walk-guide" id="walkGuide">Les deux premiers cadres de chaque côté sont réservés aux publicités. Touchez un cadre mural ou un socle pour exposer. Levez les yeux vers les oculus blancs du plafond. Les cadres aériens apparaîtront lorsque la galerie murale sera remplie.</div>
+  <div class="walk-hint" aria-hidden="true">EXPLOREZ LES MURS, LE SOL ET LE PLAFOND SCULPTÉ</div>
   <div class="walk-bottom">
-    <div class="walk-progress"><small>GALERIE 01 / LES PREMIERS MÈTRES</small><strong id="walkProgress">LE MUSÉE GRANDIT AVEC VOUS</strong><div class="walk-progress-track"><span id="walkMeter"></span></div><span class="walk-legend"><i></i> MURS, PLAFOND ET SOL DISPONIBLES</span></div>
+    <div class="walk-progress"><small>GALERIE 01 / LES PREMIERS MÈTRES</small><strong id="walkProgress">LE MUSÉE GRANDIT AVEC VOUS</strong><div class="walk-progress-track"><span id="walkMeter"></span></div><span class="walk-legend"><i></i> MURS ET SOL DISPONIBLES · PLAFOND À VENIR</span></div>
     <div class="walk-controls" aria-label="Commandes de déplacement">
       <button type="button" data-walk-hold="turn-left" aria-label="Tourner à gauche">↶</button>
       <button type="button" data-walk-hold="forward" aria-label="Avancer">↑</button>
@@ -132,4 +133,4 @@
   <p class="reserve-disclaimer"><strong>VERSION DÉMONSTRATION.</strong> Aucun paiement n’est effectué. La création reste uniquement sur cet appareil et n’est pas visible par les autres visiteurs.</p>
 </form></dialog>
 <dialog id="share"><button class="x" id="closeShare">×</button><div class="shareWrap"><span class="eyebrow">APERÇU D’EXPOSITION</span><h2>VOTRE CRÉATION<br>EST DANS LE MUSÉE.</h2><p>Démo : elle est visible seulement sur cet appareil, sans paiement.</p><canvas id="canvas" width="1080" height="1350"></canvas><div class="shareActions"><button class="btn dark" id="shareNative">PARTAGER</button><button class="btn" id="download">TÉLÉCHARGER LA CARTE</button><button class="btn" id="copy">COPIER L’ADRESSE DU MUSÉE</button></div></div></dialog>
-<script src="app.js?v=20261030models1"></script><script type="module" src="floor.js?v=20261030models1"></script><script type="module" src="engine-loader.js?v=20261030models1"></script></body></html>
+<script src="app.js?v=20261030models1"></script><script type="module" src="floor.js?v=20261030models1"></script><script type="module" src="engine-loader.js?v=20261030whiteceiling4"></script></body></html>
