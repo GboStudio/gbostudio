@@ -83,3 +83,58 @@
  .museum-v5-dock{width:47vw!important}
  .museum-v5-dock button{font-size:7px!important}
 }
+
+/* V7 · Simple one-thumb access: movement does not depend on camera heading. */
+.museum-v5-drive{display:none}
+.museum-v5-shell:not(.is-free) .museum-v5-joystick{display:none!important}
+.walk-overlay .walk-actions .walk-close{
+  display:inline-flex!important;align-items:center;justify-content:center;
+  background:#fff!important;color:#292720!important;border:2px solid #fff!important;
+  font-weight:800!important;min-height:45px!important;
+  box-shadow:0 5px 22px rgba(0,0,0,.32)!important
+}
+.walk-overlay .walk-actions .walk-close:focus-visible{
+  outline:3px solid #d7be7d;outline-offset:3px
+}
+@media(min-width:761px){.museum-v5-dock #museumFreeToggle{display:none!important}}
+@media(max-width:760px){
+ .walk-topbar{padding-right:calc(13px + env(safe-area-inset-right))!important}
+ .walk-actions .walk-close{font-size:10px!important;padding:10px 13px!important}
+ .museum-v5-drive{
+   display:flex;flex-direction:column;align-items:center;gap:7px;
+   position:absolute;z-index:13;right:calc(15px + env(safe-area-inset-right));
+   bottom:calc(26px + env(safe-area-inset-bottom));width:112px;
+   pointer-events:auto;user-select:none;-webkit-user-select:none
+ }
+ .museum-v5-drive button{
+   width:98px;height:98px;border-radius:50%;border:2px solid rgba(255,255,255,.87);
+   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+   background:rgba(252,250,239,.96);color:#252923;
+   box-shadow:0 7px 26px rgba(20,20,20,.3),inset 0 0 0 5px rgba(181,157,109,.12);
+   touch-action:manipulation;cursor:pointer
+ }
+ .museum-v5-drive button strong{font:600 35px/1 Arial,sans-serif}
+ .museum-v5-drive button span{font:800 10px/1.2 Arial,sans-serif;letter-spacing:.08em}
+ .museum-v5-drive button.is-moving{background:#c9e5a5;color:#202a1e;border-color:#e8f2db}
+ .museum-v5-drive small{font:700 8px/1.3 Arial,sans-serif;letter-spacing:.07em;color:#fff;text-shadow:0 2px 5px rgba(0,0,0,.7);text-align:center}
+ .museum-v5-shell.is-free .museum-v5-drive{display:none!important}
+ .museum-v5-shell.is-free .museum-v5-joystick{display:flex!important}
+ .museum-v5-dock{
+   left:calc(12px + env(safe-area-inset-left))!important;
+   right:auto!important;width:min(204px,52vw)!important;
+   bottom:calc(26px + env(safe-area-inset-bottom))!important;
+   gap:6px!important
+ }
+ .museum-v5-dock #museumTour{width:100%!important}
+ .museum-v5-dock #museumFull{display:none!important}
+ .museum-v5-dock button{background:rgba(23,24,22,.75)}
+ .museum-v5-dock #museumFreeToggle{background:rgba(245,243,230,.92);color:#252823}
+ .museum-v5-help{top:calc(84px + env(safe-area-inset-top))!important;max-width:70vw}
+}
+@media(max-width:390px){
+ .museum-v5-dock{width:47vw!important}
+ .museum-v5-dock button{padding:0 7px!important;font-size:8px!important}
+ .museum-v5-drive{width:100px!important;right:9px!important}
+ .museum-v5-drive button{width:88px;height:88px}
+ .walk-identity strong{font-size:13px!important}
+}
