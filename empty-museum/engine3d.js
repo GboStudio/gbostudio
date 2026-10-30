@@ -628,6 +628,7 @@ import {buildMuseumScenography} from "./scenography.js";
   const held=new Set(),keys=new Set();
   const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2();
   const view={x:0,y:1.72,z:.85};
+  let lastSpotPosition=-Infinity;
   const progress=$("#walkProgress"),meter=$("#walkMeter");
   const guide=$("#walkGuide");
   if(guide)guide.textContent="ENTREZ DANS LES GALERIES · ADMIREZ LES ŒUVRES ET LEURS CARTELS DORÉS. LES SPOTS SE CONCENTRENT SUR LES EXPOSITIONS. LE PLAFOND RESTE BLANC.";
@@ -683,7 +684,10 @@ import {buildMuseumScenography} from "./scenography.js";
     const stepBob=(fwd||strafe)?Math.sin(time*.012)*.018:0;
     view.y=1.72+stepBob;
     orient();
-    museumArtDirection.updateSpotlights(view.z,window.TEM.getSlots());
+    if(Math.abs(view.z-lastSpotPosition)>.75){
+      museumArtDirection.updateSpotlights(view.z,window.TEM.getSlots());
+      lastSpotPosition=view.z;
+    }
     renderer.render(scene,camera);
     const frees=window.TEM.getSlots().filter(s=>!s.piece&&!s.reservedForAds).length+
       window.TEM.getCeilingSlots().filter(s=>s.unlocked&&!s.piece).length+
@@ -764,7 +768,7 @@ import {buildMuseumScenography} from "./scenography.js";
     down=null;
   });
   canvas.addEventListener("pointercancel",()=>down=null);
-  window.addEventListener("tem:exhibited",()=>drawInventory());
+  window.addEventListener("tem:exhibited",()=>{lastSpotPosition=-Infinity;drawInventory();});
   canvas.addEventListener("webglcontextlost",event=>{
     event.preventDefault();
     close();
