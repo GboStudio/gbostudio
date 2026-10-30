@@ -31,7 +31,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom}) {
   const tourBtn=$("#museumTour"),cruiseBtn=$("#museumAdvance"),freeBtn=$("#museumFreeToggle");
   const reticle=$(".museum-v5-reticle"),notice=$(".museum-v5-notice"),help=$(".museum-v5-help"),guide=overlay.querySelector(".walk-guide");
   const zone=$(".joystick-ring"),knob=$(".joystick-knob"),joystick=$(".museum-v5-joystick");
-  let stick={x:0,y:0},touchId=null,auto=false,cruise=false,free=false,elapsed=0,visible=false,pausedTour=false;
+  let stick={x:0,y:0},touchId=null,auto=false,cruise=false,free=false,elapsed=0,visible=false,pausedTour=false,resumeRequested=false;
   let toastTimer=0,helpTimer=0,guideTimer=0;
   function toast(message){
     notice.textContent=message;
@@ -57,6 +57,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom}) {
   function stopCruise(){cruise=false;paintCruise();}
   function setTour(next,silent=false){
     if(next){
+      resumeRequested=pausedTour;
       if(cruise)stopCruise();
       if(free){free=false;shell.classList.remove("is-free");freeBtn.setAttribute("aria-pressed","false");freeBtn.textContent="◌  MODE LIBRE";releaseStick();}
       pausedTour=false;
@@ -67,7 +68,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom}) {
     if(!silent)toast(auto?"VISITE GUIDÉE · LE MUSÉE S'OCCUPE DU TRAJET":pausedTour?"VISITE EN PAUSE · TOUCHEZ REPRENDRE":"VISITE LIBRE");
   }
   function finishTour(){
-    auto=false;pausedTour=false;paintTour();
+    auto=false;pausedTour=false;resumeRequested=false;paintTour();
   }
   function manual(){if(auto)setTour(false,true);}
   function toggleCruise(){
@@ -135,12 +136,14 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom}) {
   });
   function update(dt){
     if(auto)elapsed+=dt;
+    const resume=auto&&resumeRequested;
+    resumeRequested=false;
     return {
       forward:mobile&&free?-stick.y:0,
       strafe:mobile&&free?stick.x:0,
       cruise:mobile&&cruise&&!free,
       simple:mobile&&!free,
-      auto,t:elapsed
+      auto,resume,t:elapsed
     };
   }
   function enter(){
