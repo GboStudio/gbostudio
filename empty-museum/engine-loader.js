@@ -23,6 +23,6 @@
     const canvas=document.getElementById("walkCanvas");
     if(!canvas)throw new Error("Museum canvas missing");
     if(!window.WebGLRenderingContext)throw new Error("WebGL not supported");
-    await import("./engine3d.js?v=20261030whiteceiling4");
+    await import("./engine3d.js?v=20261030scenography4");
   }catch(error){legacy(error);}
 })();
