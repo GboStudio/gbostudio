@@ -10,6 +10,12 @@ Ce fichier documente les URL publiques **à conserver à l’identique** lors de
 | LaTeam | https://gbostudio.fr/lateam-privacy.html | https://gbostudio.fr/lateam-privacy/ |
 | RusH | https://gbostudio.fr/rush-privacy.html | https://gbostudio.fr/rush-privacy/ |
 
+## Adresses constatées sur les fiches App Store (à ne pas casser)
+
+- **Conscience (Apple)** : `https://conscience-sigma.vercel.app/` — URL externe historique. Le site GBO Studio ne la remplace pas automatiquement ; la conserver accessible tant qu’elle est renseignée dans App Store Connect.
+- **PanneGo (Apple)** : `https://gbostudio.fr/pannego-privacy` — sans extension ni barre finale. La route `/pannego-privacy/` et son `index.html` doivent continuer de fonctionner, y compris via redirection HTTP éventuelle.
+- **Autres fiches App Store / Google Play** : vérifier les URL exactes dans les consoles avant toute migration. Ne pas présumer que toutes pointent vers les adresses canoniques ci-dessus.
+
 Les URL générales ci-dessous restent également stables :
 
 - https://gbostudio.fr/privacy.html
