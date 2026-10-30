@@ -1,14 +1,14 @@
 import * as THREE from "three";
 import {getModel,loadModel,disposeModel} from "./models3d.js";
 import {buildMuseumScenography} from "./scenography.js";
-import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v6";
+import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v7";
 
 (() => {
   "use strict";
   // V5 styling is loaded only with WebGL: the 2D fallback retains its controls.
   const cinematicStyle=document.createElement("link");
   cinematicStyle.rel="stylesheet";
-  cinematicStyle.href="./museum-v5.css?v=20261030v6";
+  cinematicStyle.href="./museum-v5.css?v=20261030v7";
   document.head.appendChild(cinematicStyle);
   const overlay = document.getElementById("walkOverlay");
   const canvas = document.getElementById("walkCanvas");
@@ -747,14 +747,30 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v6";
     if(input.auto && !blocked){
       if(!tourWasActive){
         tourWasActive=true;
-        tourStops=window.TEM.getSlots().filter(slot=>slot.piece&&!slot.reservedForAds)
+        const freshStops=window.TEM.getSlots().filter(slot=>slot.piece&&!slot.reservedForAds)
           .map(slot=>({slot,z:5.7+slot.id*STEP,stopZ:5.7+slot.id*STEP-2.9}))
           .sort((a,b)=>a.z-b.z);
-        tourStopIndex=tourStops.findIndex(stop=>stop.stopZ>view.z+.2);
-        tourStage="approach";tourStageTime=0;walkTo=null;
-        if(tourStopIndex<0){
-          v5.toast("FIN DE LA GALERIE · RETOUR AU HALL");
-          v5.setTour(false,true);
+        const canResume=input.resume && tourStops.length===freshStops.length &&
+          tourStopIndex>=0 && tourStopIndex<freshStops.length;
+        tourStops=freshStops;
+        walkTo=null;
+        if(canResume){
+          const stop=tourStops[tourStopIndex];
+          tourStage=view.z>=stop.stopZ-.45?"look":"approach";
+          tourStageTime=0;
+          v5.toast("REPRISE DE LA VISITE · ŒUVRE "+String(tourStopIndex+1));
+        }else{
+          tourStopIndex=tourStops.findIndex(stop=>stop.z>view.z+1.2);
+          if(tourStopIndex<0 && tourStops.length){
+            view.x=0;view.z=.85;velX=0;velZ=0;
+            tourStopIndex=0;
+            v5.toast("NOUVELLE VISITE · DÉPART DU HALL");
+          }
+          tourStage="approach";tourStageTime=0;
+          if(tourStopIndex<0){
+            v5.finishTour();
+            v5.toast("AUCUNE ŒUVRE À VISITER POUR LE MOMENT");
+          }
         }
       }
       tourStageTime+=dt;
@@ -772,7 +788,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v6";
       }else if(tourStage==="look"){
         fwd=0;strafe=0;
         const side=stop.slot.id%2?1:-1;
-        const focusAngle=Math.atan2(side*(HALF-.39),Math.max(1.5,stop.z-view.z));
+        const focusAngle=-Math.atan2(side*(HALF-.39),Math.max(1.5,stop.z-view.z));
         const t=Math.min(1,tourStageTime/1.3);
         yawTarget=focusAngle*(t*t*(3-2*t));
         pitchTarget=.015;
@@ -782,13 +798,13 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v6";
         if(tourStageTime>=1.45){
           tourStopIndex++;tourStage="approach";tourStageTime=0;
           if(tourStopIndex>=tourStops.length){
-            v5.setTour(false,true);
-            v5.toast("FIN DE LA VISITE · EXPLOREZ LIBREMENT");
+            v5.finishTour();
+            v5.toast("FIN DE LA VISITE · APPUYEZ POUR RECOMMENCER");
           }
         }
       }
     }else{
-      tourWasActive=false;
+      if(!input.auto)tourWasActive=false;
       yawTarget+=turning*dt*1.22;
       if(walkTo!==null && !fwd && !strafe){
         if(view.z<walkTo-.45)fwd=.8;
@@ -798,16 +814,24 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v6";
     yaw+=(yawTarget-yaw)*Math.min(1,dt*(input.auto?4.8:9));
     pitch+=(pitchTarget-pitch)*Math.min(1,dt*(input.auto?4.5:8));
     if(blocked){fwd=0;strafe=0;walkTo=null;}
-    const moveSpeed=pressed("ShiftLeft","ShiftRight")?4.6:(input.auto?3.4:2.45);
+    // One-tap advance is independent of where the visitor is looking:
+    // keep the visitor in the central aisle, not against a side wall.
+    if(input.cruise && !blocked){fwd=1;strafe=0;walkTo=null;}
+    const assisted=Boolean(input.auto || input.simple || input.cruise);
+    const moveSpeed=pressed("ShiftLeft","ShiftRight")?4.6:(input.auto?3.4:input.cruise?2.4:2.25);
     const magnitude=Math.max(1,Math.hypot(fwd,strafe));
-    const wantX=input.auto?0:(Math.sin(yaw)*fwd+Math.cos(yaw)*strafe)*moveSpeed/magnitude;
-    const wantZ=input.auto?Math.max(0,fwd)*moveSpeed:(Math.cos(yaw)*fwd-Math.sin(yaw)*strafe)*moveSpeed/magnitude;
+    const wantX=input.auto?0:(input.simple?-view.x*1.25:(Math.sin(yaw)*fwd+Math.cos(yaw)*strafe)*moveSpeed/magnitude);
+    const wantZ=assisted?fwd*moveSpeed:(Math.cos(yaw)*fwd-Math.sin(yaw)*strafe)*moveSpeed/magnitude;
     const damping=Math.min(1,dt*(input.auto?5.7:8));
     velX+=(wantX-velX)*damping;
     velZ+=(wantZ-velZ)*damping;
-    view.x=clamp(view.x+velX*dt,-HALF+.94,HALF-.94);
-    if(input.auto)view.x+=(0-view.x)*Math.min(1,dt*3.6);
+    view.x=clamp(view.x+velX*dt,-HALF+1.4,HALF-1.4);
+    if(assisted)view.x+=(0-view.x)*Math.min(1,dt*3.6);
     view.z=clamp(view.z+velZ*dt,.80,LENGTH-2.8);
+    if(input.cruise && view.z>=LENGTH-3.0){
+      v5.stopCruise();
+      v5.toast("VOUS ÊTES AU BOUT DE LA GALERIE");
+    }
     const walking=Math.abs(velX)+Math.abs(velZ)>.12;
     view.y=1.72+(walking&&!input.auto?Math.sin(time*.009)*.008:0);
     orient();
