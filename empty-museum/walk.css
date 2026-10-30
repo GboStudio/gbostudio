@@ -296,3 +296,17 @@ body.walk-is-open{overflow:hidden}
   .walk-hint{max-width:calc(100% - 36px);white-space:normal}
 }
 @media(prefers-reduced-motion:reduce){.engine-chip{transition:none}}
+
+/* Real uploaded 3D model studio — GLB, GLTF and STL. */
+.floor-types{grid-template-columns:repeat(5,minmax(0,1fr))}
+.floor-types button[data-floor-type="model"]{background:#e9ede3}
+.floor-types button[data-floor-type="model"].active{background:#d6e7d1;border-color:#578051}
+.model-file-help{color:#657563;font:400 11px/1.55 Arial,sans-serif;margin:-6px 0 14px!important;letter-spacing:0!important}
+.model-preview-shell{position:relative;width:100%;aspect-ratio:720/500;overflow:hidden;border:1px solid #dadecf;border-radius:9px;background:#f5f4ee}
+#floorPreviewCanvas,#floorModelCanvas{width:100%;height:100%;display:block;border:0!important;border-radius:0;touch-action:none}
+#floorPreviewCanvas[hidden],#floorModelCanvas[hidden]{display:none!important}
+#floorModelCanvas{cursor:grab}
+#floorModelCanvas:active{cursor:grabbing}
+.floor-model-state{color:#516d50;font:700 11px/1.5 Arial,sans-serif;letter-spacing:.02em;margin-top:8px}
+@media(max-width:720px){.floor-types{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}.floor-types button{min-height:80px;padding:7px 3px}.floor-types button strong{font-size:7px}.floor-types button small{font-size:7px}.floor-types button span{font-size:20px}}
+@media(max-width:450px){.floor-types{grid-template-columns:repeat(3,minmax(0,1fr))}}
