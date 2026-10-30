@@ -22,7 +22,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js";
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf5f4ef);
   scene.fog = new THREE.FogExp2(0xeceae5,0.0052);
-  const camera = new THREE.PerspectiveCamera(64,1,.07,240);
+  const camera = new THREE.PerspectiveCamera(mobile?69:64,1,.07,240);
   const renderer = new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:"high-performance"});
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.35:1.8));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -39,7 +39,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js";
   sun.position.set(-8,18,15);
   if (!mobile) {
     sun.castShadow=true;
-    sun.shadow.mapSize.set(1024,1024);
+    sun.shadow.mapSize.set(2048,2048);
     sun.shadow.camera.left=-15;sun.shadow.camera.right=15;
     sun.shadow.camera.top=30;sun.shadow.camera.bottom=-30;
     sun.shadow.camera.near=.5;sun.shadow.camera.far=60;
@@ -98,7 +98,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js";
     t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
   }
   const tileMat=material(0xffffff,.32);
-  tileMat.map=stoneTexture();tileMat.needsUpdate=true;
+  tileMat.map=stoneTexture();tileMat.bumpMap=tileMat.map;tileMat.bumpScale=.024;tileMat.needsUpdate=true;
   box(architecture,HALF*2,.28,LENGTH,tileMat,0,-.16,LENGTH/2,false,true);
   // WHITE CEILING: layered plaster vault, completely free from exhibits at launch.
   // All ceiling pieces are concealed until the wall gallery reaches capacity.
@@ -210,6 +210,29 @@ import {createMuseumV5Navigation} from "./museum-v5.js";
   box(architecture,8.95,HEIGHT,.19,stone,0,HEIGHT/2,LENGTH+.08);
   box(architecture,7.95,.045,.07,brass,0,2.55,LENGTH-.05);
   box(architecture,8.95,HEIGHT,.17,stoneAlt,0,HEIGHT/2,-.36);
+  // Signature architectural inscription: embedded into the very first portal,
+  // not an on-screen graphic. White stone, hairline bronze and engraved text.
+  const portalSign=new THREE.Group();
+  portalSign.position.set(0,5.00,4.18);
+  architecture.add(portalSign);
+  box(portalSign,4.12,.69,.105,plinthMat,0,0,0,true);
+  box(portalSign,4.16,.018,.125,brass,0,.35,0);
+  box(portalSign,4.16,.018,.125,brass,0,-.35,0);
+  const portalInk=canvasTexture((g,w,h)=>{
+    g.clearRect(0,0,w,h);
+    g.textAlign="center";
+    g.fillStyle="#75654b";
+    g.font="56px Georgia, serif";
+    g.letterSpacing="3px";
+    g.fillText("THE EMPTY MUSEUM",w/2,104);
+    g.fillStyle="#a69b88";
+    g.font="22px Arial, sans-serif";
+    g.letterSpacing="5px";
+    g.fillText("A PLACE FOR WHAT WE CREATE",w/2,156);
+  },1024,256);
+  const inscription=new THREE.MeshBasicMaterial({map:portalInk,transparent:true,depthWrite:false,side:THREE.DoubleSide});
+  const portalFront=surface(portalSign,3.95,.61,inscription,0,0,-.067,Math.PI);
+  portalFront.renderOrder=3;
   // Neutral architectural inset lines on the central walkway.
   for(const side of [-1,1]){
     box(architecture,.035,.015,LENGTH,brass,side*1.72,.023,LENGTH/2);
@@ -827,6 +850,20 @@ import {createMuseumV5Navigation} from "./museum-v5.js";
     down=null;
   });
   canvas.addEventListener("pointercancel",()=>down=null);
+  let pinchDistance=0;
+  canvas.addEventListener("touchmove",event=>{
+    if(!active||event.touches.length!==2)return;
+    event.preventDefault();
+    const [a,b]=event.touches;
+    const d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+    if(pinchDistance>0){
+      camera.fov=clamp(camera.fov-(d-pinchDistance)*.080,40,75);
+      camera.updateProjectionMatrix();
+    }
+    pinchDistance=d;down=null;
+  },{passive:false});
+  canvas.addEventListener("touchend",()=>pinchDistance=0,{passive:true});
+  canvas.addEventListener("touchcancel",()=>pinchDistance=0,{passive:true});
   canvas.addEventListener("wheel",event=>{
     if(!active)return;
     event.preventDefault();
