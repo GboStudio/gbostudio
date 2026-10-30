@@ -322,3 +322,29 @@ body.walk-is-open{overflow:hidden}
 .ceiling-offers-grid button:disabled i{color:#747d71}
 .ceiling-offers-grid button:disabled:hover{background:#edeee8}
 .ceiling-offers-grid button:focus-visible{outline:3px solid #76876f;outline-offset:-3px}
+
+/* V4 — restrained museum-grade overlay: limestone, aged brass and frosted glass. */
+.walk-topbar{
+  background:linear-gradient(180deg,rgba(18,19,18,.83),rgba(18,19,18,.3) 64%,rgba(18,19,18,0));
+  padding-top:clamp(14px,2.4vw,27px);
+}
+.walk-identity strong{font-family:Georgia,"Times New Roman",serif;font-weight:400;letter-spacing:.105em;text-shadow:0 2px 17px rgba(0,0,0,.2)}
+.walk-identity small{color:#e8dac0;letter-spacing:.26em}
+.walk-exhibit{background:#d9c7a1;color:#27231c;border-color:#d9c7a1}
+.walk-exhibit:hover{background:#f4e5c8;border-color:#f4e5c8}
+.walk-close{background:rgba(253,251,247,.90);border-color:rgba(240,235,223,.75);color:#333128}
+.walk-guide{max-width:340px;background:rgba(252,251,246,.88)!important;color:#525147!important;border:1px solid rgba(210,198,171,.68)!important;border-left:3px solid #bda77f!important;
+  font-family:Georgia,"Times New Roman",serif;font-size:13px;line-height:1.55;letter-spacing:.01em;box-shadow:0 16px 42px rgba(24,21,15,.13)!important}
+.walk-bottom{background:linear-gradient(0deg,rgba(24,23,20,.8),rgba(24,23,20,0))}
+.walk-progress small{color:#e6d5b8}
+.walk-progress-track span{background:linear-gradient(90deg,#b1a083,#ead9b5)}
+.walk-legend i{background:#eee8d6;border-color:#a99773}
+.walk-controls button{background:rgba(29,30,27,.69);border-color:rgba(234,225,204,.44)}
+.walk-controls button:active{background:#e1d3b2;color:#2b2720}
+.walk-hint{border-color:rgba(198,177,139,.38);background:rgba(255,254,249,.9);color:#4d493c;letter-spacing:.17em}
+.engine-status .engine-chip{color:#635e4c;border-color:rgba(192,180,153,.60);background:rgba(251,250,246,.86)}
+.engine-status .engine-chip:first-child{color:#66553a;border-color:rgba(187,163,115,.43)}
+@media(max-width:760px){
+  .walk-identity small{letter-spacing:.11em}
+  .walk-guide{font-size:10px;max-width:52%;padding:9px 11px}
+}

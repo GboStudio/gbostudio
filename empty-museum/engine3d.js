@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import {getModel,loadModel,disposeModel} from "./models3d.js";
+import {buildMuseumScenography} from "./scenography.js";
 
 (() => {
   "use strict";
@@ -20,15 +21,15 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.35:1.8));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.46;
+  renderer.toneMappingExposure = 1.30;
   renderer.shadowMap.enabled = !mobile;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.setClearColor(0xf5f4ef,1);
 
-  scene.add(new THREE.HemisphereLight(0xffffff,0xc2b6a2,2.6));
-  const ambient = new THREE.AmbientLight(0xfff5e8,.62);
+  scene.add(new THREE.HemisphereLight(0xffffff,0xd0c9bf,2.25));
+  const ambient = new THREE.AmbientLight(0xfff9f2,.48);
   scene.add(ambient);
-  const sun = new THREE.DirectionalLight(0xfff7e8,2.7);
+  const sun = new THREE.DirectionalLight(0xfffaf0,2.05);
   sun.position.set(-8,18,15);
   if (!mobile) {
     sun.castShadow=true;
@@ -194,6 +195,11 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
       box(architecture,.055,.013,.14,ceilingPlaster,side*.37,HEIGHT-.201,z);
     }
   }
+  // A genuinely varied museum with full-scale portals, fluted limestone bays,
+  // discreet visitor rests, inlaid medallions and exhibit-focused track lights.
+  const museumArtDirection=buildMuseumScenography({
+    scene,architecture,half:HALF,height:HEIGHT,length:LENGTH,mobile
+  });
   // Entrance architecture and monumental branding, integrated into the stone.
   box(architecture,8.95,HEIGHT,.19,stone,0,HEIGHT/2,LENGTH+.08);
   box(architecture,7.95,.045,.07,brass,0,2.55,LENGTH-.05);
@@ -280,6 +286,39 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
       g.fillText(subtitle,W/2,H-112,W*.86);
       g.fillStyle="#313c32";g.font="700 25px Arial";g.fillText(price,W/2,H-56);
     },900,580);
+  }
+  // An empty wall is a blank museum canvas, not a giant product listing.
+  // Availability and the rate belong on the small gold cartel beside it.
+  function futureExhibitionTexture(slot){
+    return canvasTexture((g,w,h)=>{
+      g.fillStyle="#fbfaf6";g.fillRect(0,0,w,h);
+      const shade=g.createLinearGradient(0,0,w,h);
+      shade.addColorStop(0,"rgba(255,255,255,.66)");
+      shade.addColorStop(.55,"rgba(243,241,234,.03)");
+      shade.addColorStop(1,"rgba(220,215,204,.19)");
+      g.fillStyle=shade;g.fillRect(0,0,w,h);
+      g.strokeStyle="rgba(176,169,147,.26)";g.lineWidth=2;g.strokeRect(42,42,w-84,h-84);
+      g.fillStyle="#beb8a9";g.textAlign="center";g.textBaseline="middle";
+      g.font="400 43px Georgia";
+      g.fillText("The space for the next idea.",w/2,h*.47,w*.81);
+      g.fillStyle="#a8a293";g.font="600 14px Arial";g.letterSpacing="5px";
+      g.fillText("EXHIBITION "+String(slot.id+1).padStart(3,"0"),w/2,h*.67,w*.84);
+    },1024,690);
+  }
+  function reservedExhibitionTexture(slot){
+    return canvasTexture((g,w,h)=>{
+      const grad=g.createLinearGradient(0,0,w,h);
+      grad.addColorStop(0,"#55584f");grad.addColorStop(.55,"#282d2a");
+      grad.addColorStop(1,"#43453e");
+      g.fillStyle=grad;g.fillRect(0,0,w,h);
+      g.strokeStyle="rgba(233,220,188,.45)";g.lineWidth=5;
+      g.strokeRect(45,45,w-90,h-90);
+      g.fillStyle="#f0eadc";g.textAlign="center";g.textBaseline="middle";
+      g.font="400 53px Georgia";
+      g.fillText("The Partner Collection",w/2,h*.45,w*.86);
+      g.fillStyle="#d2bea0";g.font="600 17px Arial";g.letterSpacing="3px";
+      g.fillText("CURATED SPACE · THE EMPTY MUSEUM",w/2,h*.67,w*.86);
+    },1024,690);
   }
   function pictureMaterial(piece){
     const mat=new THREE.MeshStandardMaterial({map:artworkTexture(piece),roughness:.85,side:THREE.DoubleSide});
@@ -444,10 +483,10 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
     let mat;
     if(slot.piece)mat=pictureMaterial(slot.piece);
     else if(slot.reservedForAds)mat=new THREE.MeshStandardMaterial({
-      map:canvasPanel("THE EMPTY MUSEUM","ESPACE PUBLICITAIRE","RÉSERVÉ AUX PARTENAIRES","NON DISPONIBLE","wall",true),roughness:.86,side:THREE.DoubleSide
+      map:reservedExhibitionTexture(slot),roughness:.87,side:THREE.DoubleSide
     });
     else mat=new THREE.MeshStandardMaterial({
-      map:canvasPanel("WALL / "+String(i+1).padStart(3,"0"),"AVAILABLE",slot.format?.name||"CADRE LIBRE",String(slot.price).replace(".",",")+" € / 12 MOIS","wall"),roughness:.87,side:THREE.DoubleSide
+      map:futureExhibitionTexture(slot),roughness:.92,side:THREE.DoubleSide
     });
     addFrame(interactive,w,h,x,y,z,rot,mat,slot);
   }
@@ -589,10 +628,11 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
   const held=new Set(),keys=new Set();
   const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2();
   const view={x:0,y:1.72,z:.85};
+  let lastSpotPosition=-Infinity;
   const progress=$("#walkProgress"),meter=$("#walkMeter");
   const guide=$("#walkGuide");
-  if(guide)guide.textContent="GALERIE 3D · LEVEZ LES YEUX : LE PLAFOND BLANC SCULPTÉ S’ILLUMINE. LES EXPOSITIONS SUSPENDUES ARRIVERONT QUAND LES MURS SERONT REMPLIS.";
-  $(".walk-identity small").textContent="GALERIE ARCHITECTURALE · WEBGL 3D";
+  if(guide)guide.textContent="ENTREZ DANS LES GALERIES · ADMIREZ LES ŒUVRES ET LEURS CARTELS DORÉS. LES SPOTS SE CONCENTRENT SUR LES EXPOSITIONS. LE PLAFOND RESTE BLANC.";
+  $(".walk-identity small").textContent="GALERIES MONUMENTALES · MUSÉE 3D";
   const panel=document.createElement("div");panel.className="engine-status";
   panel.innerHTML='<span class="engine-chip">● RENDERED IN 3D</span><span class="engine-chip engine-location">ORIGINAL GALLERY · 2026</span>';
   overlay.appendChild(panel);
@@ -644,6 +684,10 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
     const stepBob=(fwd||strafe)?Math.sin(time*.012)*.018:0;
     view.y=1.72+stepBob;
     orient();
+    if(Math.abs(view.z-lastSpotPosition)>.75){
+      museumArtDirection.updateSpotlights(view.z,window.TEM.getSlots());
+      lastSpotPosition=view.z;
+    }
     renderer.render(scene,camera);
     const frees=window.TEM.getSlots().filter(s=>!s.piece&&!s.reservedForAds).length+
       window.TEM.getCeilingSlots().filter(s=>s.unlocked&&!s.piece).length+
@@ -724,7 +768,7 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
     down=null;
   });
   canvas.addEventListener("pointercancel",()=>down=null);
-  window.addEventListener("tem:exhibited",()=>drawInventory());
+  window.addEventListener("tem:exhibited",()=>{lastSpotPosition=-Infinity;drawInventory();});
   canvas.addEventListener("webglcontextlost",event=>{
     event.preventDefault();
     close();
