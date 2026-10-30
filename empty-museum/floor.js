@@ -1,4 +1,4 @@
-import { validateFile,saveModel,deleteModel,previewModel,stopModelPreview } from "./models3d.js";
+import { validateFile,saveModel,deleteModel,getModel,previewModel,stopModelPreview } from "./models3d.js";
 (() => {
   'use strict';
   const dialog=document.getElementById('floorStudio');
@@ -257,5 +257,37 @@ import { validateFile,saveModel,deleteModel,previewModel,stopModelPreview } from
     publishButton.disabled=false;publishButton.textContent=oldLabel;
   });
   window.TEM.openFloor=openFloor;
+  // The same orbitable viewer is available after publishing a 3D exhibit.
+  let detailRequest=0;
+  window.addEventListener('tem:piece-open',async event=>{
+    const exhibit=event.detail?.piece;
+    if(!exhibit?.modelKey)return;
+    const media=document.getElementById('media'),dialog=document.getElementById('piece');
+    if(!media || !dialog?.open)return;
+    detailRequest++;
+    const seq=detailRequest;
+    const stored=await getModel(exhibit.modelKey);
+    if(seq!==detailRequest || !dialog.open)return;
+    if(!stored?.blob){
+      media.textContent='Le modèle 3D ne se trouve plus sur cet appareil.';
+      return;
+    }
+    media.className='media model-detail-media';
+    media.style.backgroundImage='none';
+    media.textContent='';
+    const viewer=document.createElement('canvas');
+    viewer.className='piece-model-viewer';
+    viewer.setAttribute('aria-label','Modèle 3D · glissez pour tourner, pincez pour zoomer');
+    media.appendChild(viewer);
+    try{await previewModel(stored.blob,viewer);}
+    catch(error){
+      if(seq!==detailRequest)return;
+      media.textContent='Ce modèle 3D ne peut plus être affiché sur cet appareil.';
+    }
+  });
+  document.getElementById('piece')?.addEventListener('close',()=>{
+    detailRequest++;
+    stopModelPreview();
+  });
   preview();
 })();
