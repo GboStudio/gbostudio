@@ -234,20 +234,148 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
     }
     return mat;
   }
+  // Museum-grade mounting: warm backlighting, four-sided accent strips,
+  // discreet picture lights, properly matted art, and engraved brass cartels.
+  // Local XY coordinates make the same framing work on both side walls.
+  const agedGold=material(0x9e8758,.32,.64);
+  const champagneGold=material(0xc9ac6f,.25,.64);
+  const darkBronze=material(0x3b3731,.42,.55);
+  const pictureMat=material(0xf9f6ed,.88,.03);
+  const displayLamp=new THREE.MeshStandardMaterial({
+    color:0xfff4dc,emissive:0xffd9a1,emissiveIntensity:1.75,roughness:.34
+  });
+  const softGlow=canvasTexture((g,w,h)=>{
+    g.clearRect(0,0,w,h);
+    const rad=g.createRadialGradient(w/2,h/2,w*.20,w/2,h/2,w*.56);
+    rad.addColorStop(0,"rgba(255,228,178,0)");
+    rad.addColorStop(.60,"rgba(255,224,170,.08)");
+    rad.addColorStop(.77,"rgba(255,222,164,.20)");
+    rad.addColorStop(1,"rgba(255,236,193,0)");
+    g.fillStyle=rad;g.fillRect(0,0,w,h);
+  },512,512);
+  const glowMaterial=new THREE.MeshBasicMaterial({
+    map:softGlow,transparent:true,opacity:.7,depthWrite:false,side:THREE.DoubleSide
+  });
+
+  function wrappedText(g,text,maxWidth,lineCap){
+    const words=String(text||"").split(/\s+/).filter(Boolean);
+    const lines=[];let line="";
+    for(const word of words){
+      const next=line?line+" "+word:word;
+      if(line && g.measureText(next).width>maxWidth){lines.push(line);line=word;}
+      else line=next;
+    }
+    if(line)lines.push(line);
+    if(lines.length>lineCap && lines[lineCap-1]){
+      lines[lineCap-1]=lines[lineCap-1].replace(/\s+$/,"")+"…";
+    }
+    return lines.slice(0,lineCap);
+  }
+  function museumLabel(slot){
+    const piece=slot?.piece,number=String((slot?.id??0)+1).padStart(3,"0");
+    return canvasTexture((g,w,h)=>{
+      // Lightly brushed gold instead of a cheap neon or flat UI button.
+      const bg=g.createLinearGradient(0,0,w,h);
+      bg.addColorStop(0,"#f8edcd");bg.addColorStop(.40,"#d5bb7f");
+      bg.addColorStop(.56,"#efddb1");bg.addColorStop(1,"#b59a62");
+      g.fillStyle=bg;g.fillRect(0,0,w,h);
+      for(let i=0;i<55;i++){
+        g.fillStyle="rgba(255,255,255,.035)";
+        g.fillRect(0,(i*63.7)%h,w,1);
+      }
+      g.strokeStyle="rgba(76,56,25,.6)";g.lineWidth=8;g.strokeRect(19,19,w-38,h-38);
+      g.strokeStyle="rgba(255,253,233,.48)";g.lineWidth=3;g.strokeRect(30,30,w-60,h-60);
+      g.textAlign="left";g.textBaseline="alphabetic";
+      g.fillStyle="#625437";g.font="700 20px Arial";g.letterSpacing="3px";
+      g.fillText("THE EMPTY MUSEUM",59,92,w-120);
+      g.fillStyle="#847452";g.font="600 20px Arial";
+      g.fillText("EXHIBITION "+number,59,150,w-120);
+      g.fillStyle="#342c20";
+      g.font="500 42px Georgia";
+      const title=piece?.title|| (slot?.reservedForAds?"EXPOSITION":"ESPACE LIBRE");
+      wrappedText(g,title,w-118,3).forEach((ln,i)=>g.fillText(ln,59,252+i*55,w-115));
+      g.fillStyle="#59482e";g.font="700 24px Arial";
+      const author=piece?.author|| (slot?.reservedForAds?"PARTENAIRE":"À VOTRE NOM");
+      g.fillText("PAR  "+author.toUpperCase().slice(0,33),59,468,w-118);
+      g.strokeStyle="rgba(65,47,25,.4)";g.lineWidth=2;
+      g.beginPath();g.moveTo(58,496);g.lineTo(w-58,496);g.stroke();
+      const desc=piece?.description || (slot?.reservedForAds?
+        "Espace réservé aux expositions partenaires.":
+        "Cet emplacement attend votre création. Choisissez une œuvre pour la présenter au musée.");
+      g.fillStyle="#4c402e";g.font="400 25px Georgia";g.letterSpacing="0px";
+      wrappedText(g,desc,w-116,6).forEach((ln,i)=>g.fillText(ln,59,569+i*43,w-116));
+      g.fillStyle="#7a6746";g.font="600 20px Arial";
+      g.fillText(piece?((piece.tools||"CRÉATION").toUpperCase().slice(0,37)):
+         (slot?.reservedForAds?"NON DISPONIBLE":slot?.format?.name?.toUpperCase()||"CADRE LIBRE"),
+         59,h-143,w-118);
+      g.strokeStyle="rgba(72,55,31,.37)";
+      g.beginPath();g.moveTo(58,h-113);g.lineTo(w-58,h-113);g.stroke();
+      g.font="700 22px Arial";g.fillStyle="#3f3325";
+      g.fillText(piece?"COLLECTION PERMANENTE · DÉMO":
+        slot?.reservedForAds?"ESPACE PARTENAIRE":
+        String(slot?.price??"").replace(".",",")+" € / 12 MOIS",59,h-65,w-118);
+    },640,950);
+  }
+  function sculptureScrew(group,x,y,z){
+    const screw=mesh(group,new THREE.SphereGeometry(.014,10,8),agedGold,x,y,z);
+    screw.scale.z=.5;
+  }
+  // One complete exhibition unit: a dimensional float-mount and its museum plaque.
   function addFrame(group,w,h,x,y,z,rot,frontMat,slot){
-    const frame=box(group,w+.15,h+.15,.095,brass,x,y,z,true);
-    frame.rotation.y=rot;
-    const matte=box(group,w+.085,h+.085,.104,plinthMat,x,y,z,true);
-    matte.rotation.y=rot;
-    const plane=surface(group,w,h,frontMat,x,y,z+((rot>0)?.065:-.065),rot);
-    // Position plane toward the corridor, not only toward +Z.
-    plane.position.set(x+(rot>0?.069:-.069),y,z);
-    plane.material.side=THREE.DoubleSide;
-    markInteractive(plane,slot);
-    return plane;
+    const unit=new THREE.Group();
+    unit.position.set(x,y,z);
+    unit.rotation.y=rot;
+    group.add(unit);
+    // Local positive Z faces the museum visitor.
+    const glow=surface(unit,w+.86,h+.86,glowMaterial,0,0,-.18);
+    glow.renderOrder=1;
+    box(unit,w+.24,h+.24,.10,darkBronze,0,0,-.025,true);
+    box(unit,w+.18,h+.18,.115,agedGold,0,0,.023,true);
+    box(unit,w+.12,h+.12,.128,pictureMat,0,0,.066,true);
+    // Internal gold fillet and matboard, using actual strips instead of a flat texture.
+    const strips=[
+      [w+.17,.024,0,h/2+.084],[w+.17,.024,0,-h/2-.084],
+      [.024,h+.17,w/2+.084,0],[.024,h+.17,-w/2-.084,0]
+    ];
+    for(const [sw,sh,sx,sy] of strips)box(unit,sw,sh,.025,champagneGold,sx,sy,.106);
+    const art=surface(unit,w,h,frontMat,0,0,.111);
+    art.material.side=THREE.DoubleSide;
+    if(slot && !slot.reservedForAds)markInteractive(art,slot);
+    // Warm edge-lit perimeter (all four sides, restrained museum white).
+    const edgeLight=new THREE.MeshBasicMaterial({color:0xffeac5});
+    for(const [sw,sh,sx,sy] of [
+      [w+.25,.014,0,h/2+.126],[w+.25,.014,0,-h/2-.126],
+      [.014,h+.25,w/2+.126,0],[.014,h+.25,-w/2-.126,0]
+    ]){
+      box(unit,sw,sh,.012,edgeLight,sx,sy,-.067);
+    }
+    // Two real brass picture-light luminaires over the top edge.
+    // Illumination across the art is supplied by the emissive frame and the
+    // existing gallery lights; no dozens of high-cost real-time spotlights.
+    for(const px of [-Math.min(w*.27,.45),Math.min(w*.27,.45)]){
+      const stem=box(unit,.020,.18,.020,agedGold,px,h/2+.175,.11);
+      const housing=cylinder(unit,.075,.09,.17,darkBronze,px,h/2+.29,.17,14);
+      housing.rotation.x=Math.PI/2;
+      const lens=cylinder(unit,.068,.068,.012,displayLamp,px,h/2+.255,.22,14);
+      lens.rotation.x=Math.PI/2;
+    }
+    // The cartel is next to the artwork, never covering it.
+    const plaqueW=.405,plaqueH=.60;
+    const px=w/2+.125+plaqueW/2,py=-.18;
+    box(unit,plaqueW+.034,plaqueH+.037,.060,darkBronze,px,py,.016,true);
+    box(unit,plaqueW+.021,plaqueH+.021,.071,champagneGold,px,py,.047,true);
+    const plaqueMat=new THREE.MeshStandardMaterial({
+      map:museumLabel(slot),color:0xffffff,metalness:.15,roughness:.46,side:THREE.DoubleSide
+    });
+    const label=surface(unit,plaqueW,plaqueH,plaqueMat,px,py,.092);
+    if(slot && !slot.reservedForAds)markInteractive(label,slot);
+    for(const sign of [-1,1])for(const vertical of [-1,1]){
+      sculptureScrew(unit,px+sign*(plaqueW/2-.026),py+vertical*(plaqueH/2-.026),.101);
+    }
+    return art;
   }
   function drawWallSlot(slot){
-    const i=slot.id,z=5.7+i*STEP,side=i%2?1:-1,x=side*(HALF-.27);
+    const i=slot.id,z=5.7+i*STEP,side=i%2?1:-1,x=side*(HALF-.25);
     const dims={
       mini:[1.35,1.83],portrait:[1.42,2.15],landscape:[2.36,1.6],
       tall:[1.48,2.67],wide:[2.78,1.95],panorama:[2.8,1.18],
@@ -263,10 +391,7 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
     else mat=new THREE.MeshStandardMaterial({
       map:canvasPanel("WALL / "+String(i+1).padStart(3,"0"),"AVAILABLE",slot.format?.name||"CADRE LIBRE",String(slot.price).replace(".",",")+" € / 12 MOIS","wall"),roughness:.87,side:THREE.DoubleSide
     });
-    if(slot.reservedForAds){addFrame(interactive,w,h,x,y,z,rot,mat,null);}
-    else addFrame(interactive,w,h,x,y,z,rot,mat,slot);
-    const plaque=box(interactive,.48,.06,.12,brass,x-side*.035,y-h*.5-.28,z);
-    plaque.rotation.y=rot;
+    addFrame(interactive,w,h,x,y,z,rot,mat,slot);
   }
   function drawCeilingSlot(slot){
     const isMini=slot.style==="frame",isMedium=slot.style==="lightbox";
