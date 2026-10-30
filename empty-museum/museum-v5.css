@@ -1,0 +1,71 @@
+/* THE EMPTY MUSEUM · IMMERSION V5
+   Cinema-grade, intentionally quiet visitor interface. */
+.walk-overlay {background:#171916}
+.walk-overlay::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse 90% 86% at 50% 48%,transparent 47%,rgba(18,20,17,.22) 100%);mix-blend-mode:multiply}
+.walk-overlay canvas{height:100dvh;background:#ece9e3;touch-action:none}
+.walk-topbar{z-index:8;padding:24px clamp(20px,3vw,42px);background:linear-gradient(180deg,rgba(13,14,13,.60),rgba(13,14,13,0));pointer-events:none;align-items:start}
+.walk-topbar button{pointer-events:auto}
+.walk-identity{gap:3px}.walk-identity small{font:500 9px/1.6 Arial,sans-serif;letter-spacing:.24em;color:#e7d9bd}
+.walk-identity strong{font:400 clamp(16px,1.6vw,22px)/1.15 Georgia,serif;letter-spacing:.16em;color:#f9f7f1}
+.walk-actions{gap:6px}
+.walk-actions button{background:rgba(34,31,26,.28);border:1px solid rgba(248,241,221,.34);border-radius:40px;color:#faf9f5;min-height:36px;padding:9px 15px;font:650 9px Arial,sans-serif;letter-spacing:.11em;backdrop-filter:blur(10px)}
+.walk-actions button:hover{background:rgba(255,255,255,.88);color:#25231f}
+.walk-guide{z-index:5;top:auto!important;bottom:94px;left:clamp(19px,3vw,42px);max-width:305px!important;padding:0!important;border:0!important;background:transparent!important;color:rgba(255,255,255,.83)!important;font:400 11px/1.55 Arial,sans-serif!important;box-shadow:none!important;text-shadow:0 1px 7px rgba(0,0,0,.75);transition:opacity .65s}
+.walk-guide.is-faded{opacity:0}
+.walk-hint{display:none}
+.engine-status{display:none}
+.walk-bottom{z-index:5;padding:0 clamp(18px,3vw,40px) max(24px,env(safe-area-inset-bottom));background:none;align-items:end}
+.walk-progress{max-width:310px;min-width:0;width:min(30vw,310px)}
+.walk-progress small{font:600 9px Arial,sans-serif;letter-spacing:.20em;color:#f1ede4;text-shadow:0 2px 9px rgba(0,0,0,.55)}
+.walk-progress strong{margin:6px 0 8px;font:500 10px/1.5 Arial,sans-serif;letter-spacing:.08em;color:#f5f1e8;text-shadow:0 2px 9px rgba(0,0,0,.55)}
+.walk-progress-track{height:2px;background:rgba(255,255,255,.32)}
+.walk-progress-track span{background:#e7d4ad!important}
+.walk-legend{display:none!important}
+.walk-controls{display:none!important}
+.museum-v5-reticle{z-index:3;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:26px;height:26px;pointer-events:none;opacity:.7;transition:opacity .3s}
+.museum-v5-reticle::before,.museum-v5-reticle::after{content:"";position:absolute;background:rgba(255,255,255,.9);box-shadow:0 0 5px rgba(40,38,34,.8)}
+.museum-v5-reticle::before{width:1px;height:16px;left:12px;top:5px}
+.museum-v5-reticle::after{height:1px;width:16px;left:5px;top:12px}
+.museum-v5-reticle.is-near{opacity:1;filter:drop-shadow(0 0 4px #eccb85)}
+.museum-v5-tour .museum-v5-reticle{opacity:0}
+.museum-v5-dock{position:absolute;z-index:10;right:clamp(18px,3vw,40px);bottom:max(22px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:7px}
+.museum-v5-dock button{font:600 9px/1.2 Arial,sans-serif;letter-spacing:.13em;color:#f8f5ed;background:rgba(24,24,22,.48);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.38);border-radius:30px;min-height:39px;padding:0 16px;cursor:pointer;transition:background .2s,color .2s,transform .2s}
+.museum-v5-dock button:hover,.museum-v5-dock button:focus-visible{background:#f9f4e7;color:#27231e;outline:none}
+.museum-v5-dock button:active{transform:scale(.96)}
+.museum-v5-dock button.is-playing{background:#e5d5b0;color:#29251d;border-color:#e5d5b0}
+.museum-v5-help{position:absolute;z-index:5;top:76px;left:clamp(18px,3vw,42px);pointer-events:none;display:flex;gap:9px;align-items:center;color:rgba(255,255,255,.85);font:500 10px/1.4 Arial,sans-serif;letter-spacing:.08em;text-shadow:0 2px 8px rgba(0,0,0,.65);opacity:0;transition:opacity .4s}
+.museum-v5-help.show{opacity:1}
+.museum-v5-notice{position:absolute;z-index:11;left:50%;top:24%;transform:translate(-50%,-8px);opacity:0;transition:transform .35s,opacity .35s;pointer-events:none;text-align:center;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.55);font:600 11px Arial,sans-serif;letter-spacing:.12em;max-width:85vw}
+.museum-v5-notice.show{transform:translate(-50%,0);opacity:1}
+.museum-v5-joystick{display:none}
+.walk-overlay .walk-identity-mark{opacity:.55}
+@media(max-width:760px){
+ .walk-topbar{padding:calc(env(safe-area-inset-top) + 16px) 17px 14px}
+ .walk-identity strong{font-size:15px;letter-spacing:.10em}
+ .walk-identity small{font-size:7px;letter-spacing:.16em}
+ .walk-actions button{font-size:8px;min-height:33px;padding:7px 10px}
+ .walk-actions .walk-exhibit{display:none}
+ .walk-bottom{bottom:0;padding:0 16px max(17px,env(safe-area-inset-bottom))}
+ .walk-progress{position:absolute;top:auto;bottom:calc(126px + env(safe-area-inset-bottom));left:19px;width:calc(100% - 38px);max-width:unset;pointer-events:none}
+ .walk-progress strong{display:none}
+ .walk-progress small{font-size:8px}
+ .walk-progress-track{margin-top:7px}
+ .walk-guide{top:auto!important;left:auto!important;bottom:calc(172px + env(safe-area-inset-bottom));right:18px!important;max-width:240px!important;font-size:10px!important;text-align:right}
+ .museum-v5-dock{bottom:calc(24px + env(safe-area-inset-bottom));right:14px;flex-wrap:wrap;justify-content:end;width:min(220px,60vw);gap:7px}
+ .museum-v5-dock button{min-height:40px;padding:0 12px;font-size:8px;letter-spacing:.04em}
+ .museum-v5-dock #museumTour{width:100%;background:rgba(23,24,22,.65)}
+ .museum-v5-dock #museumFull{display:none}
+ .museum-v5-help{top:calc(env(safe-area-inset-top) + 70px);left:16px;right:16px;font-size:9px}
+ .museum-v5-reticle{width:16px;height:16px}
+ .museum-v5-reticle::before{height:12px;top:2px;left:7px}
+ .museum-v5-reticle::after{width:12px;left:2px;top:7px}
+ .museum-v5-joystick{display:flex;position:absolute;z-index:12;left:18px;bottom:calc(26px + env(safe-area-inset-bottom));width:122px;align-items:center;flex-direction:column;gap:4px;touch-action:none;user-select:none;-webkit-user-select:none}
+ .museum-v5-joystick .joystick-ring{position:relative;width:104px;height:104px;border:1px solid rgba(249,248,242,.42);border-radius:50%;background:rgba(22,23,22,.25);backdrop-filter:blur(9px);box-shadow:inset 0 0 0 20px rgba(255,255,255,.025)}
+ .museum-v5-joystick .joystick-ring::before,.museum-v5-joystick .joystick-ring::after{content:"";position:absolute;background:rgba(255,255,255,.24)}
+ .museum-v5-joystick .joystick-ring::before{height:1px;width:80px;left:12px;top:51px}
+ .museum-v5-joystick .joystick-ring::after{width:1px;height:80px;top:12px;left:51px}
+ .museum-v5-joystick .joystick-knob{position:absolute;width:40px;height:40px;left:31px;top:31px;border-radius:50%;border:1px solid rgba(255,255,255,.71);background:rgba(246,243,233,.38);box-shadow:0 3px 16px rgba(0,0,0,.16);transition:transform .08s}
+ .museum-v5-joystick small{color:rgba(255,255,255,.82);text-shadow:0 2px 4px #222;font:600 8px Arial,sans-serif;letter-spacing:.16em}
+ .museum-v5-joystick.active .joystick-knob{background:rgba(241,229,197,.75)}
+}
+@media(prefers-reduced-motion:reduce){.museum-v5-reticle,.museum-v5-dock button,.museum-v5-notice{transition:none}}
