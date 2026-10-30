@@ -287,6 +287,39 @@ import {buildMuseumScenography} from "./scenography.js";
       g.fillStyle="#313c32";g.font="700 25px Arial";g.fillText(price,W/2,H-56);
     },900,580);
   }
+  // An empty wall is a blank museum canvas, not a giant product listing.
+  // Availability and the rate belong on the small gold cartel beside it.
+  function futureExhibitionTexture(slot){
+    return canvasTexture((g,w,h)=>{
+      g.fillStyle="#fbfaf6";g.fillRect(0,0,w,h);
+      const shade=g.createLinearGradient(0,0,w,h);
+      shade.addColorStop(0,"rgba(255,255,255,.66)");
+      shade.addColorStop(.55,"rgba(243,241,234,.03)");
+      shade.addColorStop(1,"rgba(220,215,204,.19)");
+      g.fillStyle=shade;g.fillRect(0,0,w,h);
+      g.strokeStyle="rgba(176,169,147,.26)";g.lineWidth=2;g.strokeRect(42,42,w-84,h-84);
+      g.fillStyle="#beb8a9";g.textAlign="center";g.textBaseline="middle";
+      g.font="400 43px Georgia";
+      g.fillText("The space for the next idea.",w/2,h*.47,w*.81);
+      g.fillStyle="#a8a293";g.font="600 14px Arial";g.letterSpacing="5px";
+      g.fillText("EXHIBITION "+String(slot.id+1).padStart(3,"0"),w/2,h*.67,w*.84);
+    },1024,690);
+  }
+  function reservedExhibitionTexture(slot){
+    return canvasTexture((g,w,h)=>{
+      const grad=g.createLinearGradient(0,0,w,h);
+      grad.addColorStop(0,"#55584f");grad.addColorStop(.55,"#282d2a");
+      grad.addColorStop(1,"#43453e");
+      g.fillStyle=grad;g.fillRect(0,0,w,h);
+      g.strokeStyle="rgba(233,220,188,.45)";g.lineWidth=5;
+      g.strokeRect(45,45,w-90,h-90);
+      g.fillStyle="#f0eadc";g.textAlign="center";g.textBaseline="middle";
+      g.font="400 53px Georgia";
+      g.fillText("The Partner Collection",w/2,h*.45,w*.86);
+      g.fillStyle="#d2bea0";g.font="600 17px Arial";g.letterSpacing="3px";
+      g.fillText("CURATED SPACE · THE EMPTY MUSEUM",w/2,h*.67,w*.86);
+    },1024,690);
+  }
   function pictureMaterial(piece){
     const mat=new THREE.MeshStandardMaterial({map:artworkTexture(piece),roughness:.85,side:THREE.DoubleSide});
     if(piece.image && piece.image.startsWith("data:image/")){
@@ -450,10 +483,10 @@ import {buildMuseumScenography} from "./scenography.js";
     let mat;
     if(slot.piece)mat=pictureMaterial(slot.piece);
     else if(slot.reservedForAds)mat=new THREE.MeshStandardMaterial({
-      map:canvasPanel("THE EMPTY MUSEUM","ESPACE PUBLICITAIRE","RÉSERVÉ AUX PARTENAIRES","NON DISPONIBLE","wall",true),roughness:.86,side:THREE.DoubleSide
+      map:reservedExhibitionTexture(slot),roughness:.87,side:THREE.DoubleSide
     });
     else mat=new THREE.MeshStandardMaterial({
-      map:canvasPanel("WALL / "+String(i+1).padStart(3,"0"),"AVAILABLE",slot.format?.name||"CADRE LIBRE",String(slot.price).replace(".",",")+" € / 12 MOIS","wall"),roughness:.87,side:THREE.DoubleSide
+      map:futureExhibitionTexture(slot),roughness:.92,side:THREE.DoubleSide
     });
     addFrame(interactive,w,h,x,y,z,rot,mat,slot);
   }
