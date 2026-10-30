@@ -3,7 +3,7 @@
 export function createMuseumV5Navigation({overlay, canvas, mobile, home, setZoom}) {
   const shell=document.createElement("div");
   shell.className="museum-v5-shell";
-  shell.innerHTML=\`
+  shell.innerHTML=`
     <div class="museum-v5-reticle" aria-hidden="true"></div>
     <div class="museum-v5-help" aria-live="polite">GLISSEZ POUR REGARDER AUTOUR DE VOUS &nbsp;·&nbsp; TOUCHEZ UNE ŒUVRE</div>
     <div class="museum-v5-notice" aria-live="polite"></div>
@@ -17,7 +17,7 @@ export function createMuseumV5Navigation({overlay, canvas, mobile, home, setZoom
       <button type="button" id="museumTour" aria-pressed="false">▶ &nbsp; VISITE CINÉMATIQUE</button>
       <button type="button" id="museumHome" aria-label="Revenir au hall d'entrée">⌖ &nbsp; ACCUEIL</button>
       <button type="button" id="museumFull" aria-label="Activer ou désactiver le plein écran">⛶ &nbsp; PLEIN ÉCRAN</button>
-    </div>\`;
+    </div>`;
   overlay.appendChild(shell);
   const $=sel=>shell.querySelector(sel);
   const tourBtn=$("#museumTour"),reticle=$(".museum-v5-reticle"),notice=$(".museum-v5-notice"),help=$(".museum-v5-help");
