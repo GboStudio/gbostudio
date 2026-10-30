@@ -5,8 +5,7 @@ import * as THREE from "three";
   const overlay = document.getElementById("walkOverlay");
   const canvas = document.getElementById("walkCanvas");
   if (!overlay || !canvas || !window.TEM) return;
-  const can3D = document.createElement("canvas");
-  if (!can3D.getContext("webgl2") && !can3D.getContext("webgl")) throw new Error("WebGL unavailable");
+  if (!window.WebGLRenderingContext) throw new Error("WebGL unavailable");
   const $ = s => document.querySelector(s);
   const clamp = (v,a,b) => Math.min(b,Math.max(a,v));
   const mobile = matchMedia("(pointer:coarse)").matches;
@@ -115,9 +114,13 @@ import * as THREE from "three";
     }
     box(architecture,HALF*2-.6,.17,.44,plinthMat,0,HEIGHT-.08,z);
     box(architecture,HALF*2-.63,.016,.48,brass,0,HEIGHT-.25,z);
-    const light=new THREE.PointLight(0xffeedc,mobile?8:13,mobile?11:15,2);
-    light.position.set(0,HEIGHT-.65,z);
-    architecture.add(light);
+    // One soft local light for every third architectural rib; strong daylight
+    // and emissive trims cover the gaps without excessive mobile GPU cost.
+    if(Math.round((z-2.4)/7.1)%3===0){
+      const light=new THREE.PointLight(0xffeedc,mobile?4:9,mobile?10:14,2);
+      light.position.set(0,HEIGHT-.65,z);
+      architecture.add(light);
+    }
   }
   // Skylight oculi and discreet bronze concentric detailing.
   for(let z=16;z<LENGTH-5;z+=28){
@@ -126,9 +129,11 @@ import * as THREE from "three";
     ring.rotation.x=-Math.PI/2;
     const inner=mesh(architecture,new THREE.RingGeometry(.84,.9,56),brass,0,HEIGHT-.2,z);
     inner.rotation.x=-Math.PI/2;
-    const halo=new THREE.PointLight(0xfff8dc,15,12,2);
-    halo.position.set(0,HEIGHT-.55,z);
-    architecture.add(halo);
+    if(!mobile){
+      const halo=new THREE.PointLight(0xfff8dc,6.5,10,2);
+      halo.position.set(0,HEIGHT-.55,z);
+      architecture.add(halo);
+    }
   }
   // Entrance architecture and monumental branding, integrated into the stone.
   box(architecture,8.95,HEIGHT,.19,stone,0,HEIGHT/2,LENGTH+.08);
@@ -334,7 +339,6 @@ import * as THREE from "three";
   let active=false,frame=0,last=0,yaw=0,pitch=0,walkTo=null,down=null,focusBefore=null;
   const held=new Set(),keys=new Set();
   const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2();
-  const clock=new THREE.Clock();
   const view={x:0,y:1.72,z:.85};
   const progress=$("#walkProgress"),meter=$("#walkMeter");
   const guide=$("#walkGuide");
@@ -472,5 +476,10 @@ import * as THREE from "three";
   });
   canvas.addEventListener("pointercancel",()=>down=null);
   window.addEventListener("tem:exhibited",()=>drawInventory());
+  canvas.addEventListener("webglcontextlost",event=>{
+    event.preventDefault();
+    close();
+    overlay.querySelector(".walk-guide").textContent="L’affichage 3D a été interrompu. Rechargez la page pour réessayer.";
+  });
   requestAnimationFrame(open);
 })();
