@@ -418,6 +418,18 @@
     }
     add([[-half, 0, length], [half, 0, length], [half, height, length], [-half, height, length]], "#e5e0d5", "#cac3b6", "end");
 
+    // White plaster oculi: lightweight approximation when WebGL isn't supported.
+    for(const z of [21,48,76,104,132]){
+      const steps=24;
+      for(let j=0;j<steps;j++){
+        const a=j*2*Math.PI/steps,b=(j+1)*2*Math.PI/steps;
+        const vertex=(radius,angle)=>[Math.cos(angle)*radius,height-.17,z+Math.sin(angle)*radius];
+        add([vertex(1.26,a),vertex(1.26,b),vertex(1.87,b),vertex(1.87,a)],
+          '#fdfdfb','#dfdfd8','ceiling-oculus');
+        add([vertex(.96,a),vertex(.96,b),vertex(1.03,b),vertex(1.03,a)],
+          '#ffffff','#ecece7','ceiling-light');
+      }
+    }
     const all = list(), allSlots = slots(), floors=floorSlots(), ceilings=ceilingSlots();
     const shapes={
       mini:[1.30,1.95],portrait:[1.65,2.45],landscape:[2.55,1.70],
@@ -430,7 +442,7 @@
       const low=(height-ph)/2,high=low+ph;
       add([[x,low,z-pw/2],[x,low,z+pw/2],[x,high,z+pw/2],[x,high,z-pw/2]],slot.reservedForAds?"#252c29":slot.piece?"#e6dfd3":"#f3f0e7",slot.reservedForAds?"#b6b09a":slot.piece?"#b8a994":"#829371",slot.reservedForAds?"ad":slot.piece?"art":"free",slot.piece,slot);
     });
-    ceilings.forEach(slot=>{
+    ceilings.filter(slot=>slot.unlocked || slot.piece).forEach(slot=>{
       const z=slot.z, style=slot.style, centerX=(Number(slot.id.slice(1))%2===0?1:-1)*.52;
       const width=style==='frame'?1.22:style==='lightbox'?2.15:2.65;
       const bottom=style==='banner'?3.04:style==='lightbox'?3.30:3.45;
@@ -515,7 +527,7 @@
     ctx.fillRect(W / 2, H / 2 - 9, 1, 18);
     drawPerson(performance.now()/1000);
     document.getElementById("walkProgress").textContent =
-      Math.floor(view.z) + " / " + Math.floor(length) + " M  ·  " + all.length + " CRÉATIONS  ·  " + (allSlots.filter(s=>!s.piece&&!s.reservedForAds).length+ceilings.filter(s=>!s.piece).length+floors.filter(s=>!s.piece).length) + " PLACES LIBRES";
+      Math.floor(view.z) + " / " + Math.floor(length) + " M  ·  " + all.length + " CRÉATIONS  ·  " + (allSlots.filter(s=>!s.piece&&!s.reservedForAds).length+ceilings.filter(s=>s.unlocked&&!s.piece).length+floors.filter(s=>!s.piece).length) + " PLACES LIBRES";
     document.getElementById("walkMeter").style.width = (100 * view.z / length) + "%";
   }
   function tick(time) {
@@ -545,6 +557,7 @@
     resize(); lastTime = 0;
     raf = requestAnimationFrame(tick);
     overlay.querySelector(".walk-close").focus();
+    const guide=document.getElementById("walkGuide");if(guide)guide.textContent="PLAFOND BLANC SCULPTÉ · EXPLORER LES OCULI LUMINEUX ; LES CADRES SUSPENDUS VIENDRONT LORSQUE LES MURS SERONT REMPLIS.";
   }
   function close() {
     if (!active) return;
