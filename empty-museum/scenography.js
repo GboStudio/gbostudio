@@ -4,15 +4,15 @@ import * as THREE from "three";
 // A white limestone sequence of portals and quieter exhibition bays. No
 // artwork, commerce, or future ceiling mounts are created by this module.
 export function buildMuseumScenography({scene,architecture,half,height,length,mobile}){
-  const plaster=new THREE.MeshStandardMaterial({color:0xfaf9f6,roughness:.78});
-  const porcelain=new THREE.MeshStandardMaterial({color:0xfffefa,roughness:.39});
-  const limestone=new THREE.MeshStandardMaterial({color:0xe9e7e1,roughness:.76});
-  const plasterShadow=new THREE.MeshStandardMaterial({color:0xe4e3dc,roughness:.94});
-  const brass=new THREE.MeshStandardMaterial({color:0xb2a17f,roughness:.29,metalness:.62});
-  const brushedBronze=new THREE.MeshStandardMaterial({color:0x766950,roughness:.36,metalness:.58});
-  const matteGlass=new THREE.MeshStandardMaterial({color:0xfffdf4,roughness:.18,metalness:.02,transparent:true,opacity:.87});
+  const plaster=new THREE.MeshStandardMaterial({color:0xfafaf8,roughness:.92});
+  const porcelain=new THREE.MeshStandardMaterial({color:0xfdfdfa,roughness:.72});
+  const limestone=new THREE.MeshStandardMaterial({color:0xeeefeb,roughness:.81});
+  const plasterShadow=new THREE.MeshStandardMaterial({color:0xecece8,roughness:.97});
+  const brass=new THREE.MeshStandardMaterial({color:0xa99a7d,roughness:.49,metalness:.49});
+  const brushedBronze=new THREE.MeshStandardMaterial({color:0x9d978c,roughness:.57,metalness:.27});
+  const matteGlass=new THREE.MeshPhysicalMaterial({color:0xfdfdfb,roughness:.26,metalness:0,transparent:true,opacity:.86,transmission:.04,thickness:.04});
   const whiteLight=new THREE.MeshBasicMaterial({color:0xffffff});
-  const ivoryLight=new THREE.MeshBasicMaterial({color:0xfff5df});
+  const ivoryLight=new THREE.MeshBasicMaterial({color:0xfdfbf4});
   const dynamicLights=[];
   let lastFocus=-1;
 
@@ -29,9 +29,9 @@ export function buildMuseumScenography({scene,architecture,half,height,length,mo
     return place(p,new THREE.BoxGeometry(w,h,d),mat,x,y,z,opts);
   }
   function column(p,x,z,scale=1){
-    const main=place(p,new THREE.CylinderGeometry(.24*scale,.28*scale,3.18*scale,28),plaster,
+    const main=place(p,new THREE.CylinderGeometry(.21*scale,.24*scale,3.18*scale,32),plaster,
       x,1.82*scale,z,{shadow:true});
-    const fluteCount=mobile?8:16;
+    const fluteCount=mobile?8:12;
     for(let j=0;j<fluteCount;j++){
       const a=j*Math.PI*2/fluteCount,rad=.245*scale;
       place(p,new THREE.CylinderGeometry(.022*scale,.025*scale,3.0*scale,7),porcelain,
@@ -78,7 +78,7 @@ export function buildMuseumScenography({scene,architecture,half,height,length,mo
     const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;return t;
   })();
   const daylightPool=new THREE.MeshBasicMaterial({
-    map:daylightPoolTexture,transparent:true,opacity:.62,depthWrite:false,
+    map:daylightPoolTexture,transparent:true,opacity:.23,depthWrite:false,
     polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,
     side:THREE.DoubleSide
   });
@@ -88,21 +88,13 @@ export function buildMuseumScenography({scene,architecture,half,height,length,mo
   }
   function floorMedallion(z,outer=2.18){
     for(const [r,t,mat] of [
-      [outer,.018,brass],
-      [outer-.17,.04,porcelain],
-      [outer-.46,.018,brass],
-      [outer-.82,.015,limestone],
+      [outer,.012,limestone],
+      [outer-.18,.012,porcelain],
     ]){
       place(architecture,new THREE.TorusGeometry(r,t,8,96),mat,
         0,.035,z,{rotX:-Math.PI/2});
     }
-    // A quiet inset of eight thin radial marks.
-    for(let i=0;i<8;i++){
-      const a=i*Math.PI/4;
-      const r=outer-.65;
-      const m=box(architecture,.019,.018,.42,brass,Math.cos(a)*r,.038,z+Math.sin(a)*r);
-      m.rotation.y=-a;
-    }
+    // Fine pale stone inlay, not ornamental floor graphics.
   }
   function whiteBench(x,z){
     box(architecture,.78,.13,1.7,plaster,x,.55,z,{shadow:true});
@@ -148,6 +140,21 @@ export function buildMuseumScenography({scene,architecture,half,height,length,mo
     const side=i%2?1:-1;
     flutedBay(side,z,i);
   }
+  // Subtle soft contact shadows beneath furniture, even on mobile.
+  const shadeCanvas=document.createElement("canvas");shadeCanvas.width=128;shadeCanvas.height=128;
+  const shadeCtx=shadeCanvas.getContext("2d");
+  const shadeGrad=shadeCtx.createRadialGradient(64,64,4,64,64,63);
+  shadeGrad.addColorStop(0,"rgba(32,31,26,.24)");
+  shadeGrad.addColorStop(.55,"rgba(32,31,26,.09)");
+  shadeGrad.addColorStop(1,"rgba(32,31,26,0)");
+  shadeCtx.fillStyle=shadeGrad;shadeCtx.fillRect(0,0,128,128);
+  const shadeTexture=new THREE.CanvasTexture(shadeCanvas);
+  const shadowMaterial=new THREE.MeshBasicMaterial({map:shadeTexture,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
+  for(const [i,z] of [29.3,68.9,110.8].entries()){
+    const shadow=place(architecture,new THREE.PlaneGeometry(1.5,2.0),shadowMaterial,
+      (i%2?1:-1)*2.80,.041,z,{rotX:-Math.PI/2});
+    shadow.renderOrder=2;
+  }
   // Minimal rest plinths and small tree-like sculptural lights; no pretend artworks.
   for(const [i,z] of [29.3,68.9,110.8].entries()){
     const side=i%2?1:-1;
@@ -163,16 +170,16 @@ export function buildMuseumScenography({scene,architecture,half,height,length,mo
   // The lighting rig tracks nearby artworks rather than creating 38 costly
   // realtime spotlights; fixtures are visible on the roof throughout.
   const spots=[];
-  for(let i=0;i<(mobile?2:4);i++){
-    const light=new THREE.SpotLight(0xfff5e0,mobile?26:42,7.8,.52,.68,1.4);
+  for(let i=0;i<(mobile?3:6);i++){
+    const light=new THREE.SpotLight(0xfffbf3,mobile?16:24,8.5,.45,.85,1.4);
     light.castShadow=false;
     light.visible=false;
     scene.add(light,light.target);
     spots.push(light);
   }
-  const trackMaterial=new THREE.MeshStandardMaterial({color:0xeae9e4,roughness:.45,metalness:.27});
-  const fixture=new THREE.MeshStandardMaterial({color:0xf7f6f0,roughness:.38,metalness:.13});
-  const lensMat=new THREE.MeshBasicMaterial({color:0xfff7e6});
+  const trackMaterial=new THREE.MeshStandardMaterial({color:0xecece8,roughness:.65,metalness:.13});
+  const fixture=new THREE.MeshStandardMaterial({color:0xf8f8f6,roughness:.59,metalness:.08});
+  const lensMat=new THREE.MeshBasicMaterial({color:0xfffcf7});
   // Lighting rails along both walls, tiny physical spots at regular intervals.
   for(const side of [-1,1]){
     const x=side*(half-1.0);
