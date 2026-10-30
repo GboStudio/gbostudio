@@ -137,7 +137,7 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
   // Five monumental white-on-white sculpted oculi.
   // Light grazing the nested reliefs guides the eye upward while the ceiling
   // remains white, uncluttered and technically ready for later exhibitions.
-  const ceilingOculi=[21,48,76,104,132];
+  const ceilingOculi=[21,48,76,104,138];
   const oculusGroups=[];
   const reliefRings=[1.15,1.53,1.91];
   for(const [index,z] of ceilingOculi.entries()){
