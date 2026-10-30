@@ -93,11 +93,21 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
   const tileMat=material(0xffffff,.32);
   tileMat.map=stoneTexture();tileMat.needsUpdate=true;
   box(architecture,HALF*2,.28,LENGTH,tileMat,0,-.16,LENGTH/2,false,true);
-  box(architecture,HALF*2,.34,LENGTH,stoneAlt,0,HEIGHT+.19,LENGTH/2);
-  // Tall luminous central skylight: the roof stays architecturally open and light-filled.
-  box(architecture,2.76,.07,LENGTH,glass,0,HEIGHT+.005,LENGTH/2);
-  box(architecture,2.84,.045,LENGTH,lightTrim,0,HEIGHT-.052,LENGTH/2);
-  box(architecture,2.68,.032,LENGTH,new THREE.MeshBasicMaterial({color:0xf3fff6}),0,HEIGHT-.088,LENGTH/2);
+  // WHITE CEILING: layered plaster vault, completely free from exhibits at launch.
+  // All ceiling pieces are concealed until the wall gallery reaches capacity.
+  const ceilingPlaster=material(0xffffff,.81);
+  const ceilingRelief=material(0xfafaf8,.75);
+  const ceilingShadow=material(0xe8e8e3,.92);
+  const ceilingLED=new THREE.MeshBasicMaterial({color:0xfafffb,side:THREE.DoubleSide});
+  box(architecture,HALF*2,.34,LENGTH,ceilingPlaster,0,HEIGHT+.19,LENGTH/2);
+  // Recessed white skylight: no dark glass, colored fixtures or hanging frames.
+  box(architecture,2.90,.10,LENGTH,ceilingRelief,0,HEIGHT-.012,LENGTH/2);
+  box(architecture,2.67,.029,LENGTH,ceilingLED,0,HEIGHT-.077,LENGTH/2);
+  for(const side of [-1,1]){
+    // A quiet plaster reveal gives depth to the apparently seamless white ceiling.
+    box(architecture,.070,.09,LENGTH,ceilingShadow,side*1.48,HEIGHT-.105,LENGTH/2);
+    box(architecture,.044,.031,LENGTH,ceilingLED,side*1.39,HEIGHT-.148,LENGTH/2);
+  }
   for(const side of [-1,1]){
     box(architecture,.22,HEIGHT,LENGTH,side<0?stone:stoneAlt,side*(HALF+.03),HEIGHT/2,LENGTH/2);
     box(architecture,.22,.34,LENGTH,plinthMat,side*(HALF-.02),.17,LENGTH/2);
@@ -113,8 +123,9 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
       box(architecture,.06,HEIGHT-.65,.07,lightTrim,side*(HALF-.57),(HEIGHT-.45)/2,z);
       box(architecture,1.1,.12,.58,stone,side*(HALF-.33),HEIGHT-.15,z);
     }
-    box(architecture,HALF*2-.6,.17,.44,plinthMat,0,HEIGHT-.08,z);
-    box(architecture,HALF*2-.63,.016,.48,brass,0,HEIGHT-.25,z);
+    // White plaster transverse beams replace the old bronze roof bands.
+    box(architecture,HALF*2-.6,.19,.44,ceilingRelief,0,HEIGHT-.08,z);
+    box(architecture,HALF*2-.63,.017,.47,ceilingLED,0,HEIGHT-.25,z);
     // One soft local light for every third architectural rib; strong daylight
     // and emissive trims cover the gaps without excessive mobile GPU cost.
     if(Math.round((z-2.4)/7.1)%3===0){
@@ -123,17 +134,64 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
       architecture.add(light);
     }
   }
-  // Skylight oculi and discreet bronze concentric detailing.
-  for(let z=16;z<LENGTH-5;z+=28){
-    const geometry=new THREE.TorusGeometry(1.08,.095,12,50);
-    const ring=mesh(architecture,geometry,plinthMat,0,HEIGHT-.13,z);
-    ring.rotation.x=-Math.PI/2;
-    const inner=mesh(architecture,new THREE.RingGeometry(.84,.9,56),brass,0,HEIGHT-.2,z);
-    inner.rotation.x=-Math.PI/2;
-    if(!mobile){
-      const halo=new THREE.PointLight(0xfff8dc,6.5,10,2);
-      halo.position.set(0,HEIGHT-.55,z);
-      architecture.add(halo);
+  // Five monumental white-on-white sculpted oculi.
+  // Light grazing the nested reliefs guides the eye upward while the ceiling
+  // remains white, uncluttered and technically ready for later exhibitions.
+  const ceilingOculi=[21,48,76,104,132];
+  const oculusGroups=[];
+  const reliefRings=[1.15,1.53,1.91];
+  for(const [index,z] of ceilingOculi.entries()){
+    const gallery=new THREE.Group();
+    gallery.position.set(0,HEIGHT-.25,z);
+    architecture.add(gallery);
+    oculusGroups.push(gallery);
+    const backplate=new THREE.Mesh(
+      new THREE.CylinderGeometry(2.13,2.13,.085,64),ceilingShadow);
+    backplate.position.y=.045;gallery.add(backplate);
+    const whiteLens=new THREE.Mesh(
+      new THREE.CylinderGeometry(1.07,1.07,.078,64),
+      new THREE.MeshStandardMaterial({
+        color:0xfdfefa,roughness:.58,metalness:0,
+        emissive:0xf5faf2,emissiveIntensity:.15
+      })
+    );
+    whiteLens.position.y=-.007;gallery.add(whiteLens);
+    for(const [i,radius] of reliefRings.entries()){
+      const relief=new THREE.Mesh(
+        new THREE.TorusGeometry(radius,i===0?.080:.058,12,72),
+        i===1?ceilingPlaster:ceilingRelief
+      );
+      relief.rotation.x=Math.PI/2;
+      relief.position.y=-.071-(i*.016);
+      gallery.add(relief);
+    }
+    const innerGlow=new THREE.Mesh(
+      new THREE.RingGeometry(.97,1.01,64),
+      ceilingLED
+    );
+    innerGlow.rotation.x=Math.PI/2;
+    innerGlow.position.y=-.116;
+    gallery.add(innerGlow);
+    // Recessed radial relief accents echo fine museum plasterwork.
+    for(let j=0;j<12;j++){
+      const a=j*Math.PI/6;
+      const rad=1.74;
+      const relief=box(gallery,.035,.046,.27,ceilingRelief,
+        Math.cos(a)*rad,-.084,Math.sin(a)*rad);
+      relief.rotation.y=-a;
+    }
+    if(!mobile && index%2===0){
+      const softLight=new THREE.PointLight(0xffffff,2.3,11,2);
+      softLight.position.set(0,HEIGHT-1.35,z);
+      architecture.add(softLight);
+    }
+  }
+  // White flush-integrated mounting rails: prepared for six future ceiling slots.
+  // These barely visible plates never look like empty picture frames.
+  for(const z of [18,40,62,85,109,132]){
+    box(architecture,.96,.019,.075,ceilingRelief,0,HEIGHT-.18,z);
+    for(const side of [-1,1]){
+      box(architecture,.055,.013,.14,ceilingPlaster,side*.37,HEIGHT-.201,z);
     }
   }
   // Entrance architecture and monumental branding, integrated into the stone.
@@ -502,7 +560,9 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
     }
     clickable.length=0;
     window.TEM.getSlots().forEach(drawWallSlot);
-    window.TEM.getCeilingSlots().forEach(drawCeilingSlot);
+    // The pristine ceiling stays free of objects until all original wall
+    // exhibitions are occupied. Structure and six future mounts already exist.
+    window.TEM.getCeilingSlots().filter(slot=>slot.unlocked || slot.piece).forEach(drawCeilingSlot);
     window.TEM.getFloorSlots().forEach(platform);
   }
   drawInventory();
@@ -513,7 +573,7 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
   const view={x:0,y:1.72,z:.85};
   const progress=$("#walkProgress"),meter=$("#walkMeter");
   const guide=$("#walkGuide");
-  if(guide)guide.textContent="VRAIE GALERIE 3D · AVANCEZ, REGARDEZ AUTOUR DE VOUS ET TOUCHEZ LES CADRES, PLAFONDS OU SOCLES LIBRES.";
+  if(guide)guide.textContent="GALERIE 3D · LEVEZ LES YEUX : LE PLAFOND BLANC SCULPTÉ S’ILLUMINE. LES EXPOSITIONS SUSPENDUES ARRIVERONT QUAND LES MURS SERONT REMPLIS.";
   $(".walk-identity small").textContent="GALERIE ARCHITECTURALE · WEBGL 3D";
   const panel=document.createElement("div");panel.className="engine-status";
   panel.innerHTML='<span class="engine-chip">● RENDERED IN 3D</span><span class="engine-chip engine-location">ORIGINAL GALLERY · 2026</span>';
@@ -568,7 +628,7 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
     orient();
     renderer.render(scene,camera);
     const frees=window.TEM.getSlots().filter(s=>!s.piece&&!s.reservedForAds).length+
-      window.TEM.getCeilingSlots().filter(s=>!s.piece).length+
+      window.TEM.getCeilingSlots().filter(s=>s.unlocked&&!s.piece).length+
       window.TEM.getFloorSlots().filter(s=>!s.piece).length;
     if(progress) progress.textContent=Math.floor(view.z)+" / "+Math.floor(LENGTH)+" M · "+window.TEM.getPieces().length+" CRÉATIONS · "+frees+" PLACES LIBRES";
     if(meter)meter.style.width=(100*view.z/LENGTH)+"%";
