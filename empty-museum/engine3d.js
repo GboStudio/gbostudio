@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import {getModel,loadModel,disposeModel} from "./models3d.js";
 import {buildMuseumScenography} from "./scenography.js";
+import {createMuseumV5Navigation} from "./museum-v5.js";
 
 (() => {
   "use strict";
@@ -15,21 +16,21 @@ import {buildMuseumScenography} from "./scenography.js";
   const WARM = 0xf6f4ee, WHITE = 0xf9f8f5;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf5f4ef);
-  scene.fog = new THREE.FogExp2(0xf5f4ef,0.0065);
-  const camera = new THREE.PerspectiveCamera(mobile?77:69,1,.07,240);
+  scene.fog = new THREE.FogExp2(0xeceae5,0.0052);
+  const camera = new THREE.PerspectiveCamera(64,1,.07,240);
   const renderer = new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:"high-performance"});
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.35:1.8));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.30;
+  renderer.toneMappingExposure = 1.16;
   renderer.shadowMap.enabled = !mobile;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.setClearColor(0xf5f4ef,1);
 
-  scene.add(new THREE.HemisphereLight(0xffffff,0xd0c9bf,2.25));
-  const ambient = new THREE.AmbientLight(0xfff9f2,.48);
+  scene.add(new THREE.HemisphereLight(0xfffcf4,0xc8c1b7,1.45));
+  const ambient = new THREE.AmbientLight(0xfff9f0,.32);
   scene.add(ambient);
-  const sun = new THREE.DirectionalLight(0xfffaf0,2.05);
+  const sun = new THREE.DirectionalLight(0xfffaf0,1.75);
   sun.position.set(-8,18,15);
   if (!mobile) {
     sun.castShadow=true;
@@ -43,7 +44,7 @@ import {buildMuseumScenography} from "./scenography.js";
 
   const material=(color,roughness=.82,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
   const stone=material(0xf1eee7,.68), stoneAlt=material(0xece9e2,.78);
-  const floorMat=material(0xdedcd4,.31), grout=material(0xc7c5bd,.94);
+  const floorMat=material(0xdedcd4,.43), grout=material(0xc7c5bd,.94);
   const plinthMat=material(0xf9f8f3,.49), inlay=material(0xc5bba9,.43,.35);
   const brass=material(0xab9c83,.3,.63), lightTrim=new THREE.MeshBasicMaterial({color:0xffefcf});
   const glass=material(0xe8f2e7,.16,.15);
@@ -624,7 +625,8 @@ import {buildMuseumScenography} from "./scenography.js";
   }
   drawInventory();
 
-  let active=false,frame=0,last=0,yaw=0,pitch=0,walkTo=null,down=null,focusBefore=null;
+  let active=false,frame=0,last=0,yaw=0,pitch=0,yawTarget=0,pitchTarget=0,walkTo=null,down=null,focusBefore=null;
+  let velX=0,velZ=0,rayTime=0;
   const held=new Set(),keys=new Set();
   const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2();
   const view={x:0,y:1.72,z:.85};
@@ -636,6 +638,14 @@ import {buildMuseumScenography} from "./scenography.js";
   const panel=document.createElement("div");panel.className="engine-status";
   panel.innerHTML='<span class="engine-chip">● RENDERED IN 3D</span><span class="engine-chip engine-location">ORIGINAL GALLERY · 2026</span>';
   overlay.appendChild(panel);
+  const v5=createMuseumV5Navigation({
+    overlay,canvas,mobile,
+    home:()=>{
+      view.x=0;view.z=.85;view.y=1.72;
+      yawTarget=0;pitchTarget=0;walkTo=null;velX=0;velZ=0;
+    },
+    setZoom:(fov)=>{camera.fov=fov;camera.updateProjectionMatrix();}
+  });
   function resize(){
     const r=canvas.getBoundingClientRect();
     if(!r.width || !r.height)return;
@@ -668,31 +678,72 @@ import {buildMuseumScenography} from "./scenography.js";
     if(!active)return;
     const dt=clamp((time-last)/1000 || .016,0,.045);
     last=time;
+    const blocked=[...document.querySelectorAll("dialog")].some(d=>d.open);
     const pressed=(...names)=>names.some(n=>keys.has(n)||held.has(n));
+    const input=v5.update(dt);
+    let fwd=(pressed("ArrowUp","KeyW","KeyZ","forward")?1:0)
+      -(pressed("ArrowDown","KeyS","back")?1:0)+input.forward;
+    let strafe=(pressed("KeyD")?1:0)-(pressed("KeyQ","KeyA")?1:0)+input.strafe;
     const turning=Number(pressed("ArrowRight","turn-right"))-Number(pressed("ArrowLeft","turn-left"));
-    let fwd=Number(pressed("ArrowUp","KeyW","KeyZ","forward"))-Number(pressed("ArrowDown","KeyS","back"));
-    const strafe=Number(pressed("KeyD"))-Number(pressed("KeyQ","KeyA"));
-    if(walkTo!==null && !fwd && !strafe){
-      if(view.z<walkTo-.5)fwd=1;else walkTo=null;
+    if((turning||fwd||strafe) && input.auto) v5.manual();
+    if(input.auto && !blocked){
+      const phase=input.t%24;
+      if(phase<11){
+        fwd=.92;strafe=0;
+        yawTarget=.07*Math.sin(phase*.55);
+        pitchTarget=-.06-.07*Math.sin(phase*.21);
+      }else if(phase<16){
+        fwd=0;strafe=0;
+        yawTarget=-(Math.min(1,(phase-11)/2)*1.12);
+        pitchTarget=.01;
+      }else if(phase<21){
+        fwd=0;strafe=0;
+        yawTarget=-1.12+Math.min(1,(phase-16)/3)*2.24;
+        pitchTarget=.01;
+      }else{
+        fwd=.28;strafe=0;
+        yawTarget=1.12*(1-(phase-21)/3);
+        pitchTarget=-.08;
+      }
+      if(view.z>LENGTH-6){
+        v5.setTour(false);
+        fwd=0;
+      }
+    }else{
+      yawTarget+=turning*dt*1.22;
+      if(walkTo!==null && !fwd && !strafe){
+        if(view.z<walkTo-.45)fwd=.8;
+        else walkTo=null;
+      }
     }
-    yaw+=turning*dt*1.32;
-    const speed=(pressed("ShiftLeft","ShiftRight")?11.5:6.1)*dt;
-    view.x+=Math.sin(yaw)*fwd*speed+Math.cos(yaw)*strafe*speed;
-    view.z+=Math.cos(yaw)*fwd*speed-Math.sin(yaw)*strafe*speed;
-    view.x=clamp(view.x,-HALF+.93,HALF-.93);
-    view.z=clamp(view.z,.8,LENGTH-2.8);
-    const stepBob=(fwd||strafe)?Math.sin(time*.012)*.018:0;
-    view.y=1.72+stepBob;
+    yaw+=(yawTarget-yaw)*Math.min(1,dt*9);
+    pitch+=(pitchTarget-pitch)*Math.min(1,dt*8);
+    if(blocked){fwd=0;strafe=0;walkTo=null;}
+    const moveSpeed=pressed("ShiftLeft","ShiftRight")?4.6:(input.auto?2.3:2.45);
+    const magnitude=Math.max(1,Math.hypot(fwd,strafe));
+    const wantX=(Math.sin(yaw)*fwd+Math.cos(yaw)*strafe)*moveSpeed/magnitude;
+    const wantZ=(Math.cos(yaw)*fwd-Math.sin(yaw)*strafe)*moveSpeed/magnitude;
+    const damping=Math.min(1,dt*(input.auto?3.1:8));
+    velX+=(wantX-velX)*damping;
+    velZ+=(wantZ-velZ)*damping;
+    view.x=clamp(view.x+velX*dt,-HALF+.94,HALF-.94);
+    view.z=clamp(view.z+velZ*dt,.80,LENGTH-2.8);
+    const walking=Math.abs(velX)+Math.abs(velZ)>.12;
+    view.y=1.72+(walking&&!input.auto?Math.sin(time*.009)*.008:0);
     orient();
-    if(Math.abs(view.z-lastSpotPosition)>.75){
+    if(Math.abs(view.z-lastSpotPosition)>.65){
       museumArtDirection.updateSpotlights(view.z,window.TEM.getSlots());
       lastSpotPosition=view.z;
+    }
+    if(time-rayTime>180){
+      rayTime=time;
+      v5.setNear(!input.auto&&Boolean(interactions(0,0)));
     }
     renderer.render(scene,camera);
     const frees=window.TEM.getSlots().filter(s=>!s.piece&&!s.reservedForAds).length+
       window.TEM.getCeilingSlots().filter(s=>s.unlocked&&!s.piece).length+
       window.TEM.getFloorSlots().filter(s=>!s.piece).length;
-    if(progress) progress.textContent=Math.floor(view.z)+" / "+Math.floor(LENGTH)+" M · "+window.TEM.getPieces().length+" CRÉATIONS · "+frees+" PLACES LIBRES";
+    if(progress)progress.textContent=Math.floor(view.z)+" / "+Math.floor(LENGTH)+" M · "+window.TEM.getPieces().length+" CRÉATIONS · "+frees+" PLACES LIBRES";
     if(meter)meter.style.width=(100*view.z/LENGTH)+"%";
     const loc=panel.querySelector(".engine-location");
     if(loc)loc.textContent=view.z<46?"ORIGINAL GALLERY · 2026":view.z<95?"THE EXPANSION · 02":"THE LONG HALL · 03";
@@ -701,7 +752,8 @@ import {buildMuseumScenography} from "./scenography.js";
   function open(){
     if(active)return;
     focusBefore=document.activeElement;
-    active=true;last=performance.now();view.x=0;view.z=.85;yaw=0;pitch=0;walkTo=null;
+    active=true;last=performance.now();view.x=0;view.z=.85;yaw=0;pitch=0;yawTarget=0;pitchTarget=0;velX=0;velZ=0;walkTo=null;
+    v5.enter();
     overlay.hidden=false;document.body.classList.add("walk-is-open");
     resize();orient();
     frame=requestAnimationFrame(tick);
@@ -710,6 +762,7 @@ import {buildMuseumScenography} from "./scenography.js";
   function close(){
     if(!active)return;
     active=false;cancelAnimationFrame(frame);
+    v5.leave();
     held.clear();keys.clear();walkTo=null;down=null;
     overlay.hidden=true;document.body.classList.remove("walk-is-open");
     focusBefore?.focus?.({preventScroll:true});
@@ -740,6 +793,7 @@ import {buildMuseumScenography} from "./scenography.js";
   canvas.addEventListener("pointerdown",e=>{
     if(!active)return;
     down={id:e.pointerId,x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,drag:false};
+    if(v5.isTour())v5.manual();
     canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener("pointermove",e=>{
@@ -752,7 +806,7 @@ import {buildMuseumScenography} from "./scenography.js";
     if(down.id!==e.pointerId)return;
     const dx=e.clientX-down.x,dy=e.clientY-down.y;
     if(Math.abs(e.clientX-down.sx)>7||Math.abs(e.clientY-down.sy)>7)down.drag=true;
-    if(down.drag){yaw+=dx*.0042;pitch=clamp(pitch-dy*.0033,-.7,.73);walkTo=null;}
+    if(down.drag){yawTarget+=dx*(mobile?.0052:.0039);pitchTarget=clamp(pitchTarget-dy*.0037,-.98,.98);walkTo=null;}
     down.x=e.clientX;down.y=e.clientY;
   });
   canvas.addEventListener("pointerup",e=>{
@@ -768,6 +822,12 @@ import {buildMuseumScenography} from "./scenography.js";
     down=null;
   });
   canvas.addEventListener("pointercancel",()=>down=null);
+  canvas.addEventListener("wheel",event=>{
+    if(!active)return;
+    event.preventDefault();
+    camera.fov=clamp(camera.fov+Math.sign(event.deltaY)*2.3,42,72);
+    camera.updateProjectionMatrix();
+  },{passive:false});
   window.addEventListener("tem:exhibited",()=>{lastSpotPosition=-Infinity;drawInventory();});
   canvas.addEventListener("webglcontextlost",event=>{
     event.preventDefault();
