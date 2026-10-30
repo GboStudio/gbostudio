@@ -5,7 +5,7 @@ export function createMuseumV5Navigation({overlay, canvas, mobile, home, setZoom
   shell.className="museum-v5-shell";
   shell.innerHTML=`
     <div class="museum-v5-reticle" aria-hidden="true"></div>
-    <div class="museum-v5-help" aria-live="polite">GLISSEZ POUR REGARDER AUTOUR DE VOUS &nbsp;·&nbsp; TOUCHEZ UNE ŒUVRE</div>
+    <div class="museum-v5-help" aria-live="polite">GLISSEZ POUR REGARDER &nbsp;·&nbsp; JOYSTICK À DROITE POUR AVANCER</div>
     <div class="museum-v5-notice" aria-live="polite"></div>
     <div class="museum-v5-joystick" aria-label="Joystick virtuel de déplacement">
       <div class="joystick-ring" role="group" aria-label="Faire glisser pour avancer, reculer ou se déplacer latéralement">
@@ -14,7 +14,7 @@ export function createMuseumV5Navigation({overlay, canvas, mobile, home, setZoom
       <small>SE DÉPLACER</small>
     </div>
     <div class="museum-v5-dock">
-      <button type="button" id="museumTour" aria-pressed="false">▶ &nbsp; VISITE CINÉMATIQUE</button>
+      <button type="button" id="museumTour" aria-pressed="false">▶ &nbsp; VISITE GUIDÉE</button>
       <button type="button" id="museumHome" aria-label="Revenir au hall d'entrée">⌖ &nbsp; ACCUEIL</button>
       <button type="button" id="museumFull" aria-label="Activer ou désactiver le plein écran">⛶ &nbsp; PLEIN ÉCRAN</button>
     </div>`;
@@ -35,9 +35,9 @@ export function createMuseumV5Navigation({overlay, canvas, mobile, home, setZoom
     elapsed=0;
     tourBtn.setAttribute("aria-pressed",String(auto));
     tourBtn.classList.toggle("is-playing",auto);
-    tourBtn.textContent=auto?"Ⅱ  ·  PAUSE VISITE":"▶  ·  VISITE CINÉMATIQUE";
+    tourBtn.textContent=auto?"Ⅱ  ·  PAUSE VISITE":"▶  ·  VISITE GUIDÉE";
     overlay.classList.toggle("museum-v5-tour",auto);
-    if(!silent)toast(auto?"VISITE GUIDÉE · LAISSEZ-VOUS PORTER":"VISITE LIBRE · À VOUS D’EXPLORER");
+    if(!silent)toast(auto?"VISITE GUIDÉE · AXE CENTRAL, PAUSE DEVANT LES ŒUVRES":"VISITE LIBRE · À VOUS D’EXPLORER");
   }
   tourBtn.addEventListener("click",()=>setTour(!auto));
   $("#museumHome").addEventListener("click",()=>{
