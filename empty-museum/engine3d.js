@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import {getModel,loadModel,disposeModel} from "./models3d.js";
+import {buildMuseumScenography} from "./scenography.js";
 
 (() => {
   "use strict";
@@ -20,15 +21,15 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.35:1.8));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.46;
+  renderer.toneMappingExposure = 1.30;
   renderer.shadowMap.enabled = !mobile;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.setClearColor(0xf5f4ef,1);
 
-  scene.add(new THREE.HemisphereLight(0xffffff,0xc2b6a2,2.6));
-  const ambient = new THREE.AmbientLight(0xfff5e8,.62);
+  scene.add(new THREE.HemisphereLight(0xffffff,0xd0c9bf,2.25));
+  const ambient = new THREE.AmbientLight(0xfff9f2,.48);
   scene.add(ambient);
-  const sun = new THREE.DirectionalLight(0xfff7e8,2.7);
+  const sun = new THREE.DirectionalLight(0xfffaf0,2.05);
   sun.position.set(-8,18,15);
   if (!mobile) {
     sun.castShadow=true;
@@ -194,6 +195,11 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
       box(architecture,.055,.013,.14,ceilingPlaster,side*.37,HEIGHT-.201,z);
     }
   }
+  // A genuinely varied museum with full-scale portals, fluted limestone bays,
+  // discreet visitor rests, inlaid medallions and exhibit-focused track lights.
+  const museumArtDirection=buildMuseumScenography({
+    scene,architecture,half:HALF,height:HEIGHT,length:LENGTH,mobile
+  });
   // Entrance architecture and monumental branding, integrated into the stone.
   box(architecture,8.95,HEIGHT,.19,stone,0,HEIGHT/2,LENGTH+.08);
   box(architecture,7.95,.045,.07,brass,0,2.55,LENGTH-.05);
@@ -591,8 +597,8 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
   const view={x:0,y:1.72,z:.85};
   const progress=$("#walkProgress"),meter=$("#walkMeter");
   const guide=$("#walkGuide");
-  if(guide)guide.textContent="GALERIE 3D · LEVEZ LES YEUX : LE PLAFOND BLANC SCULPTÉ S’ILLUMINE. LES EXPOSITIONS SUSPENDUES ARRIVERONT QUAND LES MURS SERONT REMPLIS.";
-  $(".walk-identity small").textContent="GALERIE ARCHITECTURALE · WEBGL 3D";
+  if(guide)guide.textContent="ENTREZ DANS LES GALERIES · ADMIREZ LES ŒUVRES ET LEURS CARTELS DORÉS. LES SPOTS SE CONCENTRENT SUR LES EXPOSITIONS. LE PLAFOND RESTE BLANC.";
+  $(".walk-identity small").textContent="GALERIES MONUMENTALES · MUSÉE 3D";
   const panel=document.createElement("div");panel.className="engine-status";
   panel.innerHTML='<span class="engine-chip">● RENDERED IN 3D</span><span class="engine-chip engine-location">ORIGINAL GALLERY · 2026</span>';
   overlay.appendChild(panel);
@@ -644,6 +650,7 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
     const stepBob=(fwd||strafe)?Math.sin(time*.012)*.018:0;
     view.y=1.72+stepBob;
     orient();
+    museumArtDirection.updateSpotlights(view.z,window.TEM.getSlots());
     renderer.render(scene,camera);
     const frees=window.TEM.getSlots().filter(s=>!s.piece&&!s.reservedForAds).length+
       window.TEM.getCeilingSlots().filter(s=>s.unlocked&&!s.piece).length+
