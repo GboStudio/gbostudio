@@ -467,6 +467,24 @@ import {getModel,loadModel,disposeModel} from "./models3d.js";
     markInteractive(front,slot);
     const back=surface(interactive,w,h,mat,x,y,z+.073,0);
     markInteractive(back,slot);
+    // Once unlocked, each aerial exhibit becomes a softly luminous signature piece.
+    // White perimeter lighting on BOTH faces draws the gaze without turning the
+    // architecture into a shopping centre or covering the pure-white ceiling.
+    const lineMat=new THREE.MeshBasicMaterial({color:0xfff9e9});
+    for(const face of [-1,1]){
+      const frontZ=z+face*.082;
+      box(interactive,w+.13,.018,.018,lineMat,x,y+h/2+.070,frontZ);
+      box(interactive,w+.13,.018,.018,lineMat,x,y-h/2-.070,frontZ);
+      box(interactive,.018,h+.13,.018,lineMat,x-w/2-.070,y,frontZ);
+      box(interactive,.018,h+.13,.018,lineMat,x+w/2+.070,y,frontZ);
+    }
+    // Discreet light pool on the stone floor directs the visitor upward.
+    const spotMaterial=new THREE.MeshBasicMaterial({
+      color:0xfffdf1,transparent:true,opacity:.25,depthWrite:false,
+      side:THREE.DoubleSide
+    });
+    const beamSpot=mesh(interactive,new THREE.CircleGeometry(.55,48),spotMaterial,x,.032,z);
+    beamSpot.rotation.x=-Math.PI/2;
     if(isMedium){
       const glow=box(interactive,w+.26,.048,.27,lightTrim,x,y+h/2+.078,z);
       glow.material=new THREE.MeshBasicMaterial({color:0xf7ffe6});
