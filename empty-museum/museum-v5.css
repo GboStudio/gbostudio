@@ -69,3 +69,17 @@
  .museum-v5-joystick.active .joystick-knob{background:rgba(241,229,197,.75)}
 }
 @media(prefers-reduced-motion:reduce){.museum-v5-reticle,.museum-v5-dock button,.museum-v5-notice{transition:none}}
+/* V6: right-hand movement joystick, navigation controls on the left. */
+@media(max-width:760px){
+ .museum-v5-joystick{left:auto!important;right:calc(13px + env(safe-area-inset-right))!important;bottom:calc(27px + env(safe-area-inset-bottom))!important}
+ .museum-v5-dock{right:auto!important;left:calc(12px + env(safe-area-inset-left))!important;width:min(205px,52vw)!important;justify-content:flex-start!important;bottom:calc(30px + env(safe-area-inset-bottom))!important}
+ .museum-v5-dock button{min-height:37px!important;padding:0 9px!important}
+ .museum-v5-dock #museumTour{width:100%!important}
+ .walk-progress{left:16px!important;width:calc(100% - 32px)!important}
+ .walk-guide{left:16px!important;right:auto!important;text-align:left!important;bottom:calc(170px + env(safe-area-inset-bottom))!important}
+}
+@media(max-width:380px){
+ .museum-v5-joystick{transform:scale(.88);transform-origin:bottom right}
+ .museum-v5-dock{width:47vw!important}
+ .museum-v5-dock button{font-size:7px!important}
+}
