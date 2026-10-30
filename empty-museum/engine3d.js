@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import {getModel,loadModel,disposeModel} from "./models3d.js";
 
 (() => {
   "use strict";
@@ -288,6 +289,38 @@ import * as THREE from "three";
       glow.material=new THREE.MeshBasicMaterial({color:0xf7ffe6});
     }
   }
+  let galleryRevision=0;
+  const activeImported=new Set();
+  async function mount3DModel(slot,root,revision){
+    try{
+      const saved=await getModel(slot.piece?.modelKey);
+      if(!saved?.blob)throw Error("fichier local introuvable");
+      const model=await loadModel(saved.blob,saved.format);
+      if(revision!==galleryRevision){
+        disposeModel(model);return;
+      }
+      model.position.set(0,.25,0);
+      root.add(model);
+      activeImported.add(model);
+      model.traverse(obj=>{
+        if(obj.isMesh){
+          markInteractive(obj,slot);
+          obj.castShadow=!mobile;
+          obj.receiveShadow=!mobile;
+        }
+      });
+      // Remove the descriptive placeholder when the real model is ready.
+      for(const child of [...root.children]){
+        if(child.userData.isModelPlaceholder){
+          root.remove(child);
+          child.traverse(o=>o.geometry?.dispose?.());
+        }
+      }
+    }catch(error){
+      console.warn("[The Empty Museum] Unable to display locally stored model",slot.id,error);
+      // The placeholder stays visible; the exhibit remains selectable.
+    }
+  }
   function platform(slot){
     const x=slot.x,z=slot.z;
     const base=box(interactive,1.25,.2,1.25,plinthMat,x,.12,z,true,true);
@@ -303,7 +336,17 @@ import * as THREE from "three";
     const piece=slot.piece, tint=new THREE.Color(/^#[0-9a-f]{6}$/i.test(piece.floorColor||"")?piece.floorColor:0xb6a893);
     const sculpture=material(tint,.34,.24);
     let top;
-    if(piece.floorType==="statue"){
+    if(piece.floorType==="model" && piece.modelKey){
+      const holder=new THREE.Group();
+      holder.position.set(x,0,z);
+      interactive.add(holder);
+      // Accessible, clickable plinth while local model is being retrieved.
+      const placeholder=mesh(holder,new THREE.DodecahedronGeometry(.34,1),
+        material(0xc4c2b6,.44,.15),0,.65,0,true);
+      placeholder.userData.isModelPlaceholder=true;
+      markInteractive(placeholder,slot);
+      mount3DModel(slot,holder,galleryRevision);
+    }else if(piece.floorType==="statue"){
       const shape=piece.floorShape||"spire";
       if(shape==="orb")top=mesh(interactive,new THREE.SphereGeometry(.48,28,20),sculpture,x,1.16,z,true);
       else if(shape==="rings"){
@@ -326,6 +369,9 @@ import * as THREE from "three";
     markInteractive(base,slot);
   }
   function drawInventory(){
+    galleryRevision++;
+    for(const imported of activeImported)disposeModel(imported);
+    activeImported.clear();
     for(const child of [...interactive.children]){interactive.remove(child);
       child.traverse(o=>{if(o.geometry)o.geometry.dispose();});
     }
