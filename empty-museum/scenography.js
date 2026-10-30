@@ -31,8 +31,9 @@ export function buildMuseumScenography({scene,architecture,half,height,length,mo
   function column(p,x,z,scale=1){
     const main=place(p,new THREE.CylinderGeometry(.24*scale,.28*scale,3.18*scale,28),plaster,
       x,1.82*scale,z,{shadow:true});
-    for(let j=0;j<16;j++){
-      const a=j*Math.PI*2/16,rad=.245*scale;
+    const fluteCount=mobile?8:16;
+    for(let j=0;j<fluteCount;j++){
+      const a=j*Math.PI*2/fluteCount,rad=.245*scale;
       place(p,new THREE.CylinderGeometry(.022*scale,.025*scale,3.0*scale,7),porcelain,
         x+Math.cos(a)*rad,1.82*scale,z+Math.sin(a)*rad);
     }
