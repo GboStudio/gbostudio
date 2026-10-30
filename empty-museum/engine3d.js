@@ -788,7 +788,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v7";
       }else if(tourStage==="look"){
         fwd=0;strafe=0;
         const side=stop.slot.id%2?1:-1;
-        const focusAngle=-Math.atan2(side*(HALF-.39),Math.max(1.5,stop.z-view.z));
+        const focusAngle=Math.atan2(side*(HALF-.39),Math.max(1.5,stop.z-view.z));
         const t=Math.min(1,tourStageTime/1.3);
         yawTarget=focusAngle*(t*t*(3-2*t));
         pitchTarget=.015;
