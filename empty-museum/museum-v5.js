@@ -20,10 +20,10 @@ export function createMuseumV5Navigation({overlay, canvas, mobile, home, setZoom
     </div>`;
   overlay.appendChild(shell);
   const $=sel=>shell.querySelector(sel);
-  const tourBtn=$("#museumTour"),reticle=$(".museum-v5-reticle"),notice=$(".museum-v5-notice"),help=$(".museum-v5-help");
+  const tourBtn=$("#museumTour"),reticle=$(".museum-v5-reticle"),notice=$(".museum-v5-notice"),help=$(".museum-v5-help"),guide=overlay.querySelector(".walk-guide");
   const zone=$(".joystick-ring"),knob=$(".joystick-knob"),joystick=$(".museum-v5-joystick");
   let stick={x:0,y:0},touchId=null,auto=false,elapsed=0,visible=false;
-  let toastTimer=0,helpTimer=0;
+  let toastTimer=0,helpTimer=0,guideTimer=0;
   function toast(message){
     notice.textContent=message;
     notice.classList.add("show");
@@ -93,12 +93,15 @@ export function createMuseumV5Navigation({overlay, canvas, mobile, home, setZoom
   function enter(){
     visible=true;
     setTour(false,true);
-    setZoom?.(64);
+    setZoom?.(mobile?69:64);
+    guide?.classList.remove("is-faded");
+    clearTimeout(guideTimer);
+    guideTimer=setTimeout(()=>guide?.classList.add("is-faded"),mobile?5500:6500);
     help.classList.add("show");
     clearTimeout(helpTimer);
     helpTimer=setTimeout(()=>help.classList.remove("show"),mobile?7500:5300);
   }
-  function leave(){visible=false;setTour(false,true);releaseStick();help.classList.remove("show");}
+  function leave(){visible=false;setTour(false,true);releaseStick();help.classList.remove("show");clearTimeout(guideTimer);}
   function setNear(flag){reticle.classList.toggle("is-near",!!flag);}
   return {update,enter,leave,setTour,setNear,toast,isTour:()=>auto,manual:()=>{if(auto)setTour(false,true);}};
 }
