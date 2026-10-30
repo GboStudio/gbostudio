@@ -310,3 +310,8 @@ body.walk-is-open{overflow:hidden}
 .floor-model-state{color:#516d50;font:700 11px/1.5 Arial,sans-serif;letter-spacing:.02em;margin-top:8px}
 @media(max-width:720px){.floor-types{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}.floor-types button{min-height:80px;padding:7px 3px}.floor-types button strong{font-size:7px}.floor-types button small{font-size:7px}.floor-types button span{font-size:20px}}
 @media(max-width:450px){.floor-types{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* Interactive viewer when opening an exhibited 3D model. */
+.model-detail-media{display:block!important;position:relative;overflow:hidden;background:#f4f3ee!important}
+.model-detail-media .piece-model-viewer{width:100%;height:100%;min-height:350px;display:block;touch-action:none;cursor:grab}
+.model-detail-media .piece-model-viewer:active{cursor:grabbing}
