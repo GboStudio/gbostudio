@@ -15,7 +15,7 @@
       oldCanvas.replaceWith(fresh);
     }
     const script=document.createElement("script");
-    script.src="walk.js?v=20261030fallback1";
+    script.src="walk.js?v=20261030whiteceiling4";
     script.onerror=()=>console.error("[The Empty Museum] Canvas fallback could not be loaded.");
     document.body.appendChild(script);
   }
@@ -23,6 +23,6 @@
     const canvas=document.getElementById("walkCanvas");
     if(!canvas)throw new Error("Museum canvas missing");
     if(!window.WebGLRenderingContext)throw new Error("WebGL not supported");
-    await import("./engine3d.js?v=20261030engine1");
+    await import("./engine3d.js?v=20261030whiteceiling4");
   }catch(error){legacy(error);}
 })();
