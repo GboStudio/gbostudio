@@ -35,6 +35,11 @@ const FORMATS={
 };
 // Deux premiers cadres à gauche (0, 2) et à droite (1, 3) : espaces publicitaires hors vente.
 const AD_RESERVED_SLOTS=new Set([0,1,2,3]);
+// La galerie historique dispose de 38 emplacements, dont 4 réservés aux partenaires.
+// Tant que ses 34 places commercialisables ne sont pas toutes prises, le plafond
+// reste blanc, architectural et sans cadres suspendus.
+const FIRST_GALLERY_BAYS=38;
+const FIRST_GALLERY_SELLABLE=FIRST_GALLERY_BAYS-AD_RESERVED_SLOTS.size;
 const SLOT_SIZES=['landscape','portrait','mini','wide','portrait','landscape','panorama','tall','mini','wide','portrait','landscape','panorama','tall','portrait','wide','mini','landscape','wide','portrait','panorama','landscape','tall'];
 // La galerie V2 occupe toute la longueur : 3 stations au départ, 2 dans l'extension.
 const FLOOR_POSITIONS=[{id:'S01',z:12,x:1.45},{id:'S02',z:32,x:-1.45},{id:'S03',z:58,x:1.45},{id:'S04',z:96,x:-1.45},{id:'S05',z:123,x:1.45}];
@@ -66,13 +71,31 @@ function getSlots(){
 function getFloorSlots(){
   return FLOOR_POSITIONS.map(s=>({...s,size:'floor',price:499,format:FORMATS.floor,piece:pieces.find(p=>p.slot===s.id)||null}));
 }
+function getCeilingStatus(){
+  const occupied=getSlots().filter(s=>s.id<FIRST_GALLERY_BAYS && !s.reservedForAds && !!s.piece).length;
+  return {occupied,required:FIRST_GALLERY_SELLABLE,unlocked:occupied>=FIRST_GALLERY_SELLABLE};
+}
 function getCeilingSlots(){
-  return CEILING_POSITIONS.map(s=>({...s,price:FORMATS[s.size].price,format:FORMATS[s.size],piece:pieces.find(p=>p.slot===s.id)||null}));
+  const {unlocked}=getCeilingStatus();
+  return CEILING_POSITIONS.map(s=>({...s,price:FORMATS[s.size].price,format:FORMATS[s.size],
+    piece:pieces.find(p=>p.slot===s.id)||null,unlocked}));
+}
+function refreshCeilingOffers(){
+  const state=getCeilingStatus();
+  document.querySelectorAll('.ceiling-offers-grid [data-plan]').forEach(b=>{
+    b.disabled=!state.unlocked;
+    b.setAttribute('aria-disabled',String(!state.unlocked));
+    b.title=state.unlocked?'Choisir cet emplacement plafond':'Ouverture après remplissage de la galerie murale';
+  });
+  const status=document.getElementById('ceilingUnlockText');
+  if(status)status.textContent=state.unlocked
+    ? 'LA GALERIE ORIGINELLE EST REMPLIE · LES 6 PLACES AU PLAFOND SONT MAINTENANT ACCESSIBLES.'
+    : 'PLAFOND RÉSERVÉ POUR LE FUTUR · '+state.occupied+' / '+state.required+' PLACES MURALES OCCUPÉES AVANT OUVERTURE.';
 }
 const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 function bg(p){if(p.image?.startsWith('data:'))return `url("${p.image}")`;return p.image||'linear-gradient(145deg,#ddd8cd,#f8f6f0)'}
 function render(){grid.innerHTML='';const arr=filter==='all'?pieces:pieces.filter(p=>p.category===filter);arr.forEach(p=>{const el=document.createElement('article');el.className=`tile ${p.size.startsWith('ceiling-')?({'ceiling-mini':'mini','ceiling-medium':'landscape','ceiling-large':'wide'}[p.size]):p.size} ${p.size.startsWith('ceiling-')?'ceiling-tile':''} ${p.category==='words'?'words':''} ${p.category==='3d'?'threed':''}`;el.dataset.id=p.id;if(p.category==='words'){el.innerHTML=`<div class="wordsArt">${esc(p.words||p.title)}</div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}else if(p.category==='3d'){el.innerHTML=`<div class="img"></div><div class="shape"></div><div class="shade"></div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}else{el.innerHTML=`<div class="img"></div><div class="shade"></div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}if(p.category!=='words'&&p.category!=='3d')el.querySelector('.img').style.backgroundImage=bg(p);el.querySelector('button').onclick=()=>openPiece(p);grid.appendChild(el)});stats()}
-function stats(){ $('#liveCount').textContent=pieces.length;$('#countHero').textContent=String(pieces.length).padStart(3,'0');const m=4.8+pieces.reduce((a,p)=>a+({mini:.22,standard:.42,large:.72,xl:1.12}[p.size]||.42),0);$('#metersHero').textContent=m.toFixed(1).replace('.',',')+' M'}
+function stats(){ refreshCeilingOffers(); $('#liveCount').textContent=pieces.length;$('#countHero').textContent=String(pieces.length).padStart(3,'0');const m=4.8+pieces.reduce((a,p)=>a+({mini:.22,standard:.42,large:.72,xl:1.12}[p.size]||.42),0);$('#metersHero').textContent=m.toFixed(1).replace('.',',')+' M'}
 $$('[data-filter]').forEach(b=>b.onclick=()=>{$$('[data-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;render();viewport.scrollTo({left:0,behavior:'smooth'})});
 $('#reset').onclick=()=>viewport.scrollTo({left:0,behavior:'smooth'});$('#random').onclick=()=>{const a=filter==='all'?pieces:pieces.filter(p=>p.category===filter);if(!a.length)return;const p=a[Math.floor(Math.random()*a.length)],el=grid.querySelector(`[data-id="${p.id}"]`);if(el){viewport.scrollTo({left:Math.max(0,el.offsetLeft-viewport.clientWidth/2),behavior:'smooth'});el.animate([{transform:'translateY(0)'},{transform:'translateY(-12px)'},{transform:'translateY(0)'}],{duration:700});setTimeout(()=>openPiece(p),600)}};
 let down=false,sx=0,sl=0;viewport.onmousedown=e=>{down=true;sx=e.pageX-viewport.offsetLeft;sl=viewport.scrollLeft};window.onmouseup=()=>down=false;viewport.onmouseleave=()=>down=false;viewport.onmousemove=e=>{if(!down)return;e.preventDefault();viewport.scrollLeft=sl-(e.pageX-viewport.offsetLeft-sx)*1.35};
@@ -85,7 +108,7 @@ function setReserveStage(n){
 }
 function openExhibit(size='landscape',price=null,slot=null){
   if(typeof slot==='string' && slot.startsWith('S')){window.TEM?.openFloor?.(slot);return;}
-  if(typeof slot==='string' && slot.startsWith('P') && !getCeilingSlots().some(s=>s.id===slot&&!s.piece))return;
+  if(typeof slot==='string' && slot.startsWith('P') && !getCeilingSlots().some(s=>s.id===slot&&!s.piece&&s.unlocked))return;
   if(Number.isInteger(slot)&&AD_RESERVED_SLOTS.has(slot))return;
   const chosen=FORMATS[size]||FORMATS.landscape;
   plan={size,price:price===null?chosen.price:Number(price)};
@@ -111,7 +134,7 @@ function openExhibit(size='landscape',price=null,slot=null){
   $('#exhibit').showModal();
 }
 function firstVacantWall(size=null){return getSlots().find(s=>!s.piece&&!s.reservedForAds&&(!size||s.size===size))||getSlots().find(s=>!s.piece&&!s.reservedForAds);}
-function firstVacantCeiling(size=null){return getCeilingSlots().find(s=>!s.piece&&(!size||s.size===size));}
+function firstVacantCeiling(size=null){return getCeilingSlots().find(s=>s.unlocked&&!s.piece&&(!size||s.size===size));}
 $$('[data-open]').forEach(b=>b.onclick=()=>{const s=firstVacantWall();if(s)openExhibit(s.size,s.price,s.id);});
 $$('[data-plan]').forEach(b=>b.onclick=()=>{
   const size=b.dataset.plan;
@@ -173,4 +196,4 @@ function publishFloor(spec){
   return true;
 }
 // Browser-local demo bridge for the immersive gallery and floor studio.
-window.TEM = { getPieces: () => pieces, getSlots, getFloorSlots, getCeilingSlots, openPiece, openExhibit, publishFloor };
+window.TEM = { getPieces: () => pieces, getSlots, getFloorSlots, getCeilingSlots, getCeilingStatus, openPiece, openExhibit, publishFloor };
