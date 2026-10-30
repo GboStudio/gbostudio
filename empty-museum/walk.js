@@ -419,7 +419,7 @@
     add([[-half, 0, length], [half, 0, length], [half, height, length], [-half, height, length]], "#e5e0d5", "#cac3b6", "end");
 
     // White plaster oculi: lightweight approximation when WebGL isn't supported.
-    for(const z of [21,48,76,104,132]){
+    for(const z of [21,48,76,104,138]){
       const steps=24;
       for(let j=0;j<steps;j++){
         const a=j*2*Math.PI/steps,b=(j+1)*2*Math.PI/steps;
