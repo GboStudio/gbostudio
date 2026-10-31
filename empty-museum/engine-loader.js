@@ -23,6 +23,6 @@
     const canvas=document.getElementById("walkCanvas");
     if(!canvas)throw new Error("Museum canvas missing");
     if(!window.WebGLRenderingContext)throw new Error("WebGL not supported");
-    await import("./engine3d.js?v=20261031realism9");
+    await import("./engine3d.js?v=20261031realism9b");
   }catch(error){legacy(error);}
 })();
