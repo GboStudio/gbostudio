@@ -67,7 +67,7 @@ export function makeWhiteLuxuryMaterials({mobile,length}) {
         const vein=(Math.sin(x*.031+y*.024+Math.sin(y*.008)*2.0)> .986)?-3.2:0;
         const grain=swirl+crystalline+tileBias+vein;
         const p=(y*size+x)*4;
-        const value=joint?210:234+grain;
+        const value=joint?204:229+grain;
         a.data[p]=Math.round(value+.6);
         a.data[p+1]=Math.round(value-.1);
         a.data[p+2]=Math.round(value-2.4);
@@ -102,15 +102,15 @@ export function makeWhiteLuxuryMaterials({mobile,length}) {
   const plaster=plasterPair(),stone=mineralStone();
   const wall=new THREE.MeshStandardMaterial({
     map:plaster.map,bumpMap:plaster.bump,bumpScale:.0024,
-    color:0xffffff,roughness:.93,metalness:0
+    color:0xf8f7f4,roughness:.93,metalness:0
   });
   const wallAlt=new THREE.MeshStandardMaterial({
     map:plaster.map,bumpMap:plaster.bump,bumpScale:.0024,
-    color:0xf7f7f5,roughness:.93,metalness:0
+    color:0xf4f3ef,roughness:.93,metalness:0
   });
   const floor=new THREE.MeshPhysicalMaterial({
     map:stone.map,bumpMap:stone.bump,bumpScale:.005,
-    color:0xffffff,roughness:.52,metalness:0,
+    color:0xeeeae3,roughness:.56,metalness:0,
     clearcoat:.13,clearcoatRoughness:.48
   });
   const whiteStone=new THREE.MeshStandardMaterial({
