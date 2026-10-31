@@ -151,7 +151,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom}) {
     shell.classList.remove("is-free");
     freeBtn.setAttribute("aria-pressed","false");
     freeBtn.textContent="◌  MODE LIBRE";
-    setZoom?.(mobile?69:64);
+    setZoom?.(mobile?56:59);
     guide?.classList.remove("is-faded");
     clearTimeout(guideTimer);
     guideTimer=setTimeout(()=>guide?.classList.add("is-faded"),mobile?8000:6500);
