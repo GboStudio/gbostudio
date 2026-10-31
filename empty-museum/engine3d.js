@@ -22,14 +22,14 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v7";
   const HALF = 4.6, HEIGHT = 6.4, STEP = 3.5, LENGTH = 9 + window.TEM.getSlots().length*STEP;
   const WARM = 0xf6f4ee, WHITE = 0xf9f8f5;
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf5f4ef);
-  scene.fog = new THREE.FogExp2(0xeceae5,0.0052);
+  scene.background = new THREE.Color(0xf0efeb);
+  scene.fog = new THREE.FogExp2(0xeceae5,0.0016);
   const camera = new THREE.PerspectiveCamera(mobile?64:59,1,.07,240);
   const renderer = new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:"high-performance"});
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.35:1.8));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = .83;
   renderer.shadowMap.enabled = !mobile;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0xf7f6f3,1);
@@ -40,13 +40,13 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v7";
     const room=new RoomEnvironment();
     scene.environment=pmrem.fromScene(room,.025).texture;
     room.dispose();pmrem.dispose();
-    scene.environmentIntensity=mobile?.42:.54;
+    scene.environmentIntensity=mobile?.26:.36;
   } catch(error){console.warn("[TEM] Reflected ambience unavailable",error);}
 
-  scene.add(new THREE.HemisphereLight(0xfcfdff,0xd6d2c9,.94));
-  const ambient = new THREE.AmbientLight(0xfffdfa,.24);
+  scene.add(new THREE.HemisphereLight(0xfcfdff,0xd1cdc5,.77));
+  const ambient = new THREE.AmbientLight(0xfffdfa,.15);
   scene.add(ambient);
-  const sun = new THREE.DirectionalLight(0xfffaf1,1.50);
+  const sun = new THREE.DirectionalLight(0xfffaf1,1.14);
   sun.position.set(-8,18,15);
   if (!mobile) {
     sun.castShadow=true;
@@ -101,11 +101,11 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v7";
   const ceilingPlaster=material(0xffffff,.93);
   const ceilingRelief=material(0xfafaf8,.89);
   const ceilingShadow=material(0xe8e9e7,.96);
-  const ceilingLED=new THREE.MeshBasicMaterial({color:0xfafbf8,side:THREE.DoubleSide});
+  const ceilingLED=new THREE.MeshBasicMaterial({color:0xf4f5f0,side:THREE.DoubleSide});
   box(architecture,HALF*2,.34,LENGTH,ceilingPlaster,0,HEIGHT+.19,LENGTH/2);
   // Recessed white skylight: no dark glass, colored fixtures or hanging frames.
   box(architecture,2.90,.10,LENGTH,ceilingRelief,0,HEIGHT-.012,LENGTH/2);
-  box(architecture,2.67,.029,LENGTH,ceilingLED,0,HEIGHT-.077,LENGTH/2);
+  box(architecture,2.67,.029,LENGTH,ceilingRelief,0,HEIGHT-.077,LENGTH/2);
   for(const side of [-1,1]){
     // A quiet plaster reveal gives depth to the apparently seamless white ceiling.
     box(architecture,.070,.09,LENGTH,ceilingShadow,side*1.48,HEIGHT-.105,LENGTH/2);
@@ -118,24 +118,11 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v7";
     box(architecture,.045,.07,LENGTH,lightTrim,side*(HALF-.22),HEIGHT-.26,LENGTH/2);
     box(architecture,.09,.14,LENGTH,plinthMat,side*(HALF-.22),HEIGHT-.17,LENGTH/2);
   }
-  // Pacing: recurring pale stone ribs make a 142 m journey feel like a real museum.
-  for(let z=2.4;z<LENGTH-1;z+=7.1){
-    for(const side of [-1,1]){
-      box(architecture,.35,HEIGHT-.19,.48,stoneAlt,side*(HALF-.19),(HEIGHT-.19)/2,z,true);
-      box(architecture,.18,HEIGHT-.3,.22,plinthMat,side*(HALF-.46),(HEIGHT-.3)/2,z);
-      box(architecture,.06,HEIGHT-.65,.07,lightTrim,side*(HALF-.57),(HEIGHT-.45)/2,z);
-      box(architecture,1.1,.12,.58,stone,side*(HALF-.33),HEIGHT-.15,z);
-    }
-    // White plaster transverse beams replace the old bronze roof bands.
-    box(architecture,HALF*2-.6,.19,.44,ceilingRelief,0,HEIGHT-.08,z);
-    box(architecture,HALF*2-.63,.017,.47,ceilingLED,0,HEIGHT-.25,z);
-    // One soft local light for every third architectural rib; strong daylight
-    // and emissive trims cover the gaps without excessive mobile GPU cost.
-    if(Math.round((z-2.4)/7.1)%3===0){
-      const light=new THREE.PointLight(0xfff9ee,mobile?2.0:3.8,mobile?8:11,2);
-      light.position.set(0,HEIGHT-.65,z);
-      architecture.add(light);
-    }
+  // V9: abandon the identical sculpted columns every seven metres.
+  // In a real white-cube gallery, long unbroken wall planes are the luxury.
+  // Quiet ceiling joints articulate 20m galleries without CGI repetition.
+  for(let z=19.8;z<LENGTH-1;z+=20){
+    box(architecture,HALF*2-.12,.024,.038,ceilingShadow,0,HEIGHT-.18,z);
   }
   // Five monumental white-on-white sculpted oculi.
   // Light grazing the nested reliefs guides the eye upward while the ceiling
@@ -229,13 +216,8 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v7";
   const inscription=new THREE.MeshBasicMaterial({map:portalInk,transparent:true,depthWrite:false,side:THREE.DoubleSide});
   const portalFront=surface(portalSign,3.95,.61,inscription,0,0,-.067,Math.PI);
   portalFront.renderOrder=3;
-  // Neutral architectural inset lines on the central walkway.
-  for(const side of [-1,1]){
-    box(architecture,.035,.015,LENGTH,brass,side*1.72,.023,LENGTH/2);
-  }
-  for(let z=3;z<LENGTH;z+=7){
-    box(architecture,HALF*2,.012,.022,grout,0,.027,z);
-  }
+  // No gold stripes or decorative circles cutting through the real stone floor.
+  // The actual large-format stone joints provide the entire floor rhythm.
   function canvasTexture(painter,w=768,h=512){
     const c=document.createElement("canvas");c.width=w;c.height=h;
     const g=c.getContext("2d");painter(g,w,h);
@@ -360,7 +342,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v7";
   const darkBronze=material(0x55524c,.62,.32);
   const pictureMat=material(0xfdfdfa,.94,0);
   const displayLamp=new THREE.MeshStandardMaterial({
-    color:0xfffbf5,emissive:0xfffbf3,emissiveIntensity:.27,roughness:.63
+    color:0xfffbf5,emissive:0xfffbf3,emissiveIntensity:.17,roughness:.71
   });
   const softGlow=canvasTexture((g,w,h)=>{
     g.clearRect(0,0,w,h);
@@ -477,7 +459,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v7";
       standard:[2.36,1.6],large:[2.78,1.95],xl:[2.8,1.18]
     };
     const [w,h]=dims[slot.size]||dims.landscape;
-    const y=2.75,rot=side<0?Math.PI/2:-Math.PI/2;
+    const y=2.10,rot=side<0?Math.PI/2:-Math.PI/2;
     let mat;
     if(slot.piece)mat=pictureMaterial(slot.piece);
     else if(slot.reservedForAds)mat=new THREE.MeshStandardMaterial({
@@ -559,18 +541,37 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v7";
       // The placeholder stays visible; the exhibit remains selectable.
     }
   }
+
   function platform(slot){
     const x=slot.x,z=slot.z;
-    const base=box(interactive,1.25,.2,1.25,plinthMat,x,.12,z,true,true);
-    box(interactive,1.31,.035,1.31,brass,x,.225,z);
     if(!slot.piece){
-      const surfaceMat=new THREE.MeshStandardMaterial({map:canvasPanel("FLOOR / "+slot.id,"AVAILABLE","1,20 × 1,20 M","499 € / 1 MOIS","floor"),roughness:.75});
-      const cap=box(interactive,1.2,.016,1.2,surfaceMat,x,.243,z);
-      markInteractive(cap,slot);
-      const outline=box(interactive,1.32,.015,1.32,glass,x,.203,z);
-      markInteractive(outline,slot);
+      // Empty floor lots are flush inlaid squares, never floating slabs.
+      const inset=new THREE.MeshBasicMaterial({
+        color:0xb5ad9d,transparent:true,opacity:.075,depthWrite:false,side:THREE.DoubleSide
+      });
+      const floorLot=mesh(interactive,new THREE.PlaneGeometry(1.18,1.18),inset,x,.045,z);
+      floorLot.rotation.x=-Math.PI/2;
+      markInteractive(floorLot,slot);
+      const trace=material(0xb0a38d,.58,.24);
+      const corner=.25,edge=.018;
+      for(const sx of [-1,1])for(const sz of [-1,1]){
+        const px=x+sx*.59,pz=z+sz*.59;
+        box(interactive,corner,edge,.014,trace,px-sx*corner/2,.049,pz);
+        box(interactive,.014,edge,corner,trace,px,.049,pz-sz*corner/2);
+      }
+      const tileLabel=canvasTexture((g,w,h)=>{
+        g.clearRect(0,0,w,h);g.textAlign="center";g.textBaseline="middle";
+        g.fillStyle="#898277";g.font="600 36px Arial";
+        g.letterSpacing="5px";g.fillText("PLACE "+slot.id,w/2,h*.53);
+      },500,120);
+      const label=new THREE.MeshBasicMaterial({map:tileLabel,transparent:true,depthWrite:false,side:THREE.DoubleSide});
+      const m=mesh(interactive,new THREE.PlaneGeometry(.54,.13),label,x,.053,z+.41);
+      m.rotation.x=-Math.PI/2;
       return;
     }
+    // Occupied installation gets a real freestanding stone plinth.
+    const base=box(interactive,1.25,.20,1.25,plinthMat,x,.12,z,true,true);
+    box(interactive,1.27,.014,1.27,brass,x,.227,z);
     const piece=slot.piece, tint=new THREE.Color(/^#[0-9a-f]{6}$/i.test(piece.floorColor||"")?piece.floorColor:0xb6a893);
     const sculpture=material(tint,.34,.24);
     let top;
