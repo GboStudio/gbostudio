@@ -138,3 +138,23 @@
  .museum-v5-drive button{width:88px;height:88px}
  .walk-identity strong{font-size:13px!important}
 }
+
+/* V9 · Museum-first mobile controls: architecture remains the hero, not the UI. */
+@media(max-width:760px){
+ .museum-v5-drive{width:88px!important;right:calc(13px + env(safe-area-inset-right))!important;bottom:calc(20px + env(safe-area-inset-bottom))!important;gap:2px!important}
+ .museum-v5-drive button,.museum-v5-drive button.is-moving{
+   width:78px!important;height:78px!important;border:1px solid rgba(255,255,255,.45)!important;
+   background:rgba(40,40,37,.54)!important;color:#fff!important;
+   box-shadow:0 5px 24px rgba(0,0,0,.22)!important;
+   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+ }
+ .museum-v5-drive button strong{font-size:28px!important;line-height:1!important}
+ .museum-v5-drive button span{font-size:9px!important;font-weight:650!important}
+ .museum-v5-drive small{display:none!important}
+ .museum-v5-dock{bottom:calc(22px + env(safe-area-inset-bottom))!important}
+ .museum-v5-dock button{background:rgba(36,36,34,.51)!important;border:1px solid rgba(255,255,255,.28)!important;backdrop-filter:blur(12px);box-shadow:0 3px 14px rgba(0,0,0,.10)}
+ .museum-v5-dock #museumFreeToggle{background:rgba(246,244,238,.83)!important;color:#302d27!important}
+ .walk-progress{bottom:calc(112px + env(safe-area-inset-bottom))!important}
+ .walk-progress small{display:inline-block;padding:5px 9px;border-radius:4px;background:rgba(35,35,32,.25);text-shadow:0 1px 3px rgba(0,0,0,.55)}
+ .walk-guide{bottom:calc(145px + env(safe-area-inset-bottom))!important}
+}
