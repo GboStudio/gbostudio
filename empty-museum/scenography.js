@@ -20,8 +20,8 @@ export function buildMuseumScenography({scene,architecture,half,height,length,mo
     const obj=new THREE.Mesh(geo,mat);
     obj.position.set(x,y,z);
     obj.rotation.set(rotX,rotY,rotZ);
-    obj.castShadow=shadow&&!mobile;
-    obj.receiveShadow=!mobile;
+    obj.castShadow=Boolean(shadow);
+    obj.receiveShadow=true;
     parent.add(obj);
     return obj;
   }
