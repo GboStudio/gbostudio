@@ -28,41 +28,21 @@ export function buildMuseumScenography({scene,architecture,half,height,length,mo
   function box(p,w,h,d,mat,x,y,z,opts={}){
     return place(p,new THREE.BoxGeometry(w,h,d),mat,x,y,z,opts);
   }
-  function column(p,x,z,scale=1){
-    const main=place(p,new THREE.CylinderGeometry(.21*scale,.24*scale,3.18*scale,32),plaster,
-      x,1.82*scale,z,{shadow:true});
-    const fluteCount=mobile?8:12;
-    for(let j=0;j<fluteCount;j++){
-      const a=j*Math.PI*2/fluteCount,rad=.245*scale;
-      place(p,new THREE.CylinderGeometry(.022*scale,.025*scale,3.0*scale,7),porcelain,
-        x+Math.cos(a)*rad,1.82*scale,z+Math.sin(a)*rad);
-    }
-    box(p,.69*scale,.17*scale,.69*scale,limestone,x,.17*scale,z);
-    box(p,.57*scale,.12*scale,.57*scale,porcelain,x,3.45*scale,z);
-    box(p,.72*scale,.14*scale,.72*scale,plaster,x,3.62*scale,z);
-    return main;
-  }
-  function arch(p,z,ringRadius=3.08){
-    const centerY=3.02;
-    const archMaterial=plaster;
-    // Two white concentric scallops add real depth and natural grazing shadows.
-    for(const [r,t,depth,mat] of [
-      [ringRadius,.155,.12,plaster],
-      [ringRadius-.21,.048,.20,limestone],
-      [ringRadius-.29,.020,.23,porcelain]
-    ]){
-      const ring=place(p,new THREE.TorusGeometry(r,t,12,64,Math.PI),mat,
-        0,centerY,z+depth);
-      ring.rotation.z=0;
-    }
+  // Architectural white-cube thresholds rather than decorative stone arches.
+  // Continuous straight reveals, a shadow line and natural human-scale opening.
+  function arch(p,z){
+    const wall=half-.23;
+    const returnMat=new THREE.MeshStandardMaterial({color:0xf5f4f0,roughness:.91});
+    const reveal=new THREE.MeshStandardMaterial({color:0xdad8d2,roughness:.94});
     for(const side of [-1,1]){
-      column(p,side*ringRadius,z,.91);
-      // Slim bronze vertical reveals — architectural ornament, not gold walls.
-      box(p,.026,2.25,.08,brushedBronze,side*(ringRadius-.18),1.42,z+.18);
-      box(p,.64,.08,.65,brass,side*ringRadius,3.37,z);
+      box(p,.31,4.85,.23,plaster,side*wall,2.425,z,{shadow:true});
+      box(p,.025,4.36,.035,reveal,side*(wall-.18),2.54,z+.095);
+      box(p,.17,.25,.39,returnMat,side*(wall-.02),5.0,z);
     }
-    const keystone=box(p,.33,.28,.29,porcelain,0,centerY+ringRadius-.07,z+.12);
-    keystone.rotation.z=Math.PI/4;
+    // The lintel must feel structural without shrinking the aisle.
+    box(p,half*2-.16,.43,.34,returnMat,0,5.16,z,{shadow:true});
+    box(p,half*2-.32,.023,.035,reveal,0,4.94,z+.17);
+    box(p,half*2-.36,.08,.31,plaster,0,5.41,z);
   }
   // Pool of diffused daylight under each ceiling oculus. Texture opacity falls
   // off continuously; a gentle focal cue rather than a spotlight decal.
@@ -86,16 +66,7 @@ export function buildMuseumScenography({scene,architecture,half,height,length,mo
     place(architecture,new THREE.PlaneGeometry(5.4,5.4),daylightPool,
       0,.046,z,{rotX:-Math.PI/2});
   }
-  function floorMedallion(z,outer=2.18){
-    for(const [r,t,mat] of [
-      [outer,.012,limestone],
-      [outer-.18,.012,porcelain],
-    ]){
-      place(architecture,new THREE.TorusGeometry(r,t,8,96),mat,
-        0,.035,z,{rotX:-Math.PI/2});
-    }
-    // Fine pale stone inlay, not ornamental floor graphics.
-  }
+  // Remove ornamental floor targets; the limestone slabs read as real architecture.
   function whiteBench(x,z){
     box(architecture,.78,.13,1.7,plaster,x,.55,z,{shadow:true});
     for(const d of [-.59,.59]){
@@ -104,25 +75,20 @@ export function buildMuseumScenography({scene,architecture,half,height,length,mo
     box(architecture,.52,.013,1.42,porcelain,x,.625,z);
   }
   function flutedBay(side,z,number){
+    // Quiet, dimensional museum wall, with an almost invisible plaster reveal.
     const x=side*(half-.27);
-    // A linen-white stone panel gives each work breathing space.
-    box(architecture,.075,3.55,3.13,plaster,x,2.73,z);
+    box(architecture,.052,3.28,3.16,number%5===0?porcelain:plaster,x,2.40,z);
     for(const s of [-1,1]){
-      box(architecture,.042,3.70,.10,limestone,x-side*.067,2.72,z+s*1.54);
-      box(architecture,.022,3.27,.06,brass,x-side*.10,2.73,z+s*1.60);
+      const border=new THREE.MeshStandardMaterial({color:0xe0dfda,roughness:.96});
+      box(architecture,.016,3.27,.014,border,x-side*.036,2.40,z+s*1.575);
     }
-    // A slim art shelf/lip and hidden grazing fixture below the display.
-    box(architecture,.12,.024,3.08,porcelain,x-side*.11,.91,z);
-    box(architecture,.03,.022,2.94,whiteLight,x-side*.15,.89,z);
-    if(number%7===0){
-      box(architecture,.22,.12,3.18,plasterShadow,x-side*.15,4.60,z);
-      box(architecture,.025,.02,2.87,ivoryLight,x-side*.16,4.52,z);
-    }
+    // The painting creates the visual interest, not a golden wall frame.
+    box(architecture,.045,.045,3.06,limestone,x-side*.031,.79,z);
   }
 
   // Major experiences: a monumental vestibule and three gallery portals.
   const portals=[{z:4.45,r:3.07},{z:38.6,r:3.01},{z:79.4,r:3.01},{z:121.6,r:3.07}];
-  for(const p of portals){arch(architecture,p.z,p.r);floorMedallion(p.z+2.65);}
+  for(const p of portals)arch(architecture,p.z);
   // Smaller white-on-white ceiling cornices signal transitions between exhibits.
   for(const z of [18.8,58.5,99.5,135]){
     const g=new THREE.Group();g.position.set(0,0,z);architecture.add(g);
