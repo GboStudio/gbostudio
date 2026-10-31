@@ -20,5 +20,5 @@
 <div class="credits"><span>PBR MATERIALS <a href="https://polyhaven.com/" rel="noopener noreferrer" target="_blank">POLY HAVEN CC0 ↗</a></span><span id="graphicsLabel">REAL-TIME 3D / STATIC LIGHTMAP</span></div>
 <div class="no-webgl" id="fallback" hidden><h2>La galerie 3D ne peut pas démarrer ici.</h2><p>Votre navigateur bloque WebGL ou le chargement du moteur. Vous pouvez explorer les œuvres dans la galerie 2D.</p><a href="/empty-museum/#wall">VISITER LE MUR 2D ↗</a></div>
 </div>
-<script type="module" src="./gallery.js"></script>
+<script type="module">import("./gallery.js").catch(error=>{console.error("Museum module unavailable",error);document.querySelector("#loader")?.classList.add("hidden");const f=document.querySelector("#fallback");if(f)f.hidden=false;});</script>
 </body></html>
