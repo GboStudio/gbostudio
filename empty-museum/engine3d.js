@@ -2,6 +2,7 @@ import * as THREE from "three";
 import {getModel,loadModel,disposeModel} from "./models3d.js";
 import {buildMuseumScenography} from "./scenography.js?v=20261031realism9";
 import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261031realism9";
+import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261031pbr1";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
 import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
 
@@ -63,6 +64,9 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
   // V8 WHITE LUXURY: honed limestone / physical plaster / quiet metal.
   const material=(color,roughness=.82,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
   const luxury=makeWhiteLuxuryMaterials({mobile,length:LENGTH});
+  // Upgrade the existing materials in place; never block gallery navigation.
+  // If the scanned maps fail, the original high-quality procedural surfaces remain.
+  enhanceScannedPBR(luxury,{mobile,length:LENGTH}).catch(e=>console.warn("[TEM] Scanned PBR unavailable, retaining originals",e));
   const stone=luxury.wall,stoneAlt=luxury.wallAlt;
   const floorMat=luxury.floor,grout=material(0xd4d1cb,.96);
   const plinthMat=luxury.whiteStone,inlay=material(0xc5bfb1,.67,.19);
