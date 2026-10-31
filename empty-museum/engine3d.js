@@ -23,14 +23,14 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
   const WARM = 0xf6f4ee, WHITE = 0xf9f8f5;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf0efeb);
-  scene.fog = new THREE.FogExp2(0xeceae5,0.0016);
+  scene.fog = new THREE.FogExp2(0xeceae5,0.0011);
   const camera = new THREE.PerspectiveCamera(mobile?64:59,1,.07,240);
   const renderer = new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:"high-performance"});
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.35:1.8));
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.66:1.8));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = .83;
-  renderer.shadowMap.enabled = !mobile;
+  renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0xf7f6f3,1);
   // A neutral, physically-based indoor reflection environment: brushed metals
@@ -48,16 +48,16 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
   scene.add(ambient);
   const sun = new THREE.DirectionalLight(0xfffaf1,1.14);
   sun.position.set(-8,18,15);
-  if (!mobile) {
-    sun.castShadow=true;
-    sun.shadow.mapSize.set(2048,2048);
-    sun.shadow.camera.left=-15;sun.shadow.camera.right=15;
-    sun.shadow.camera.top=30;sun.shadow.camera.bottom=-30;
-    sun.shadow.camera.near=.5;sun.shadow.camera.far=60;
-    sun.shadow.bias=-.00025;
-    sun.shadow.normalBias=.012;
-    sun.shadow.radius=2.5;
-  }
+  // V9: true contact and frame shadows on iPhone too; constrained shadow
+  // volume follows the visitor so the 140m gallery needs only one light map.
+  sun.castShadow=true;
+  sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);
+  sun.shadow.camera.left=-12;sun.shadow.camera.right=12;
+  sun.shadow.camera.top=20;sun.shadow.camera.bottom=-20;
+  sun.shadow.camera.near=.5;sun.shadow.camera.far=55;
+  sun.shadow.bias=-.00025;
+  sun.shadow.normalBias=.012;
+  sun.shadow.radius=mobile?1.5:2.5;
   scene.add(sun);
 
   // V8 WHITE LUXURY: honed limestone / physical plaster / quiet metal.
@@ -76,7 +76,9 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
   const metalLines=[];
   function mesh(parent,geometry,mat,x=0,y=0,z=0,cast=false,receive=false){
     const m=new THREE.Mesh(geometry,mat);
-    m.position.set(x,y,z);m.castShadow=cast&&!mobile;m.receiveShadow=receive&&!mobile;
+    m.position.set(x,y,z);
+    m.castShadow=Boolean(cast);
+    m.receiveShadow=Boolean(receive||mat===stone||mat===stoneAlt||mat===floorMat||mat===plinthMat);
     parent.add(m);return m;
   }
   function box(parent,w,h,d,mat,x,y,z,cast=false,receive=false){
