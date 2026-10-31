@@ -10,7 +10,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
   // V5 styling is loaded only with WebGL: the 2D fallback retains its controls.
   const cinematicStyle=document.createElement("link");
   cinematicStyle.rel="stylesheet";
-  cinematicStyle.href="./museum-v5.css?v=20261030v7";
+  cinematicStyle.href="./museum-v5.css?v=20261031realism9b";
   document.head.appendChild(cinematicStyle);
   const overlay = document.getElementById("walkOverlay");
   const canvas = document.getElementById("walkCanvas");
