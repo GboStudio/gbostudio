@@ -50,7 +50,7 @@ function box(w,h,d,mat,x,y,z,shadows=false){const o=new THREE.Mesh(new THREE.Box
 function createRoom(){
 const lightWall=bakedLightmap('wall'),lightFloor=bakedLightmap('floor');
 const wallmat=pbrMaterial('white_plaster_02',14,2,.96,.86,lightWall);
-const floormat=pbrMaterial('terrazzo_tiles',9,4,0xffffff,.4,lightFloor);
+const floormat=pbrMaterial('marble_01',9,4,0xffffff,.4,lightFloor);
 const ceilmat=new THREE.MeshStandardMaterial({color:0xf3f1e9,roughness:.94});
 const wall= new THREE.Mesh(withUv2(new THREE.PlaneGeometry(W,H)),wallmat);wall.position.set(0,H/2,far);wall.receiveShadow=true;scene.add(wall);
 const floor=new THREE.Mesh(withUv2(new THREE.PlaneGeometry(W,26)),floormat);floor.rotation.x=-Math.PI/2;floor.position.set(0,-.016,-3.6);floor.receiveShadow=true;scene.add(floor);
