@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import {getModel,loadModel,disposeModel} from "./models3d.js";
-import {buildMuseumScenography} from "./scenography.js";
-import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261030v8";
+import {buildMuseumScenography} from "./scenography.js?v=20261031realism9";
+import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261031realism9";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
-import {createMuseumV5Navigation} from "./museum-v5.js?v=20261030v7";
+import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
 
 (() => {
   "use strict";
