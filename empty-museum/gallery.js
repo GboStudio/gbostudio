@@ -1,4 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js';
+// A slower third-party CDN must not override the fully working local fallback.
+if (window.__TEM_GALLERY_FALLBACK_STARTED) throw new Error('Local museum gallery already running');
 const $=s=>document.querySelector(s);
 const works=[
 {title:'AFTER THE RAIN',author:'Maya · Démo',kind:'ART / IMAGE',tools:'ChatGPT + génération d’image',desc:'Le souvenir d’une ville après la pluie, retravaillé jusqu’à retrouver exactement la lumière imaginée.',theme:0,ratio:1.22},
@@ -137,4 +139,4 @@ $('#random').addEventListener('click',()=>{closeDetails();dismissIntro();select(
 $('#closeDetail').addEventListener('click',closeDetails);
 $('#share').addEventListener('click',async()=>{const link=location.origin+location.pathname+'#'+(state.selected+1);try{await navigator.clipboard.writeText(link);$('#share').textContent='LIEN COPIÉ ✓';setTimeout(()=>$('#share').textContent='COPIER LE LIEN DE CETTE ŒUVRE ↗',1800)}catch(e){prompt('Copier ce lien',link)}});
 function ready(){loadbar.style.width='100%';marker.textContent='GALERIE PRÊTE';$('#enter').hidden=false;$('#enter').addEventListener('click',()=>loader.classList.add('hidden'));setTimeout(()=>loader.classList.add('hidden'),1100)}
-try{loadbar.style.width='32%';init();loadbar.style.width='79%';ready()}catch(e){console.error('Three.js gallery error:',e);loader.classList.add('hidden');$('#fallback').hidden=false}
+try{loadbar.style.width='32%';init();loadbar.style.width='79%';ready()}catch(e){console.error('Three.js gallery error:',e);window.TEMStartFallback?.(e);if(!window.TEMStartFallback){loader.classList.add('hidden');$('#fallback').hidden=false}}
