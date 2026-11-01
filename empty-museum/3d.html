@@ -30,6 +30,7 @@
   function fallback(reason) {
     if (started || resolved) return;
     started=true;
+    window.__TEM_GALLERY_FALLBACK_REQUESTED=true;
     if (loadTimer) clearTimeout(loadTimer);
     console.warn("[TEM] Starting self-contained gallery fallback:", reason);
     var script=document.createElement("script");
