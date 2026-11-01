@@ -50,6 +50,7 @@
     left:auto!important;
     display:flex!important;
   }
+  #walkOverlay .museum-v5-shell.is-free .museum-v5-drive{display:none!important}
   #walkOverlay .museum-v5-dock{
     position:fixed!important;
     z-index:25!important;
