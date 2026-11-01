@@ -37,3 +37,28 @@
 }
 @media(max-width:380px){.tem-tour-story{width:min(275px,calc(100vw - 26px));bottom:calc(125px + env(safe-area-inset-bottom))}}
 @media(prefers-reduced-motion:reduce){.tem-tour-story{transition:none}}
+
+/* Keep primary controls attached to the visible viewport, not document height.
+ * Prevents Safari/iOS and emulated mobile browsers from placing NEXT below the fold. */
+@media(max-width:760px){
+  #walkOverlay .museum-v5-drive{
+    position:fixed!important;
+    z-index:25!important;
+    right:calc(14px + env(safe-area-inset-right))!important;
+    bottom:calc(22px + env(safe-area-inset-bottom))!important;
+    top:auto!important;
+    left:auto!important;
+    display:flex!important;
+  }
+  #walkOverlay .museum-v5-dock{
+    position:fixed!important;
+    z-index:25!important;
+    bottom:calc(24px + env(safe-area-inset-bottom))!important;
+  }
+  #walkOverlay .tem-tour-story{
+    position:fixed!important;
+    z-index:24!important;
+    bottom:calc(129px + env(safe-area-inset-bottom))!important;
+  }
+  #walkOverlay .tem-tour-arrival{position:fixed!important;}
+}
