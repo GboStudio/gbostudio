@@ -6,6 +6,7 @@ on:
     paths:
       - 'empty-museum/**'
       - '.github/workflows/tem-smoke.yml'
+      - '.github/scripts/tem-e2e.mjs'
   workflow_dispatch:
 
 permissions:
@@ -16,6 +17,16 @@ jobs:
     name: Public page / asset smoke test
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install browser test tooling
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install chromium --with-deps
+
+      - name: Test gallery interactions on desktop and mobile viewports
+        run: node .github/scripts/tem-e2e.mjs
       - name: Test public HTTP availability
         shell: bash
         run: |
