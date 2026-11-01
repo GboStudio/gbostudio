@@ -55,9 +55,14 @@ for(const mode of modes) {
       const el=document.querySelector(sel),b=el?.getBoundingClientRect(),cs=el?getComputedStyle(el):null;
       return {exists:!!el,display:cs?.display,visibility:cs?.visibility,
         box:b?{x:b.x,y:b.y,w:b.width,h:b.height}:null,
-        underPointer:b?document.elementFromPoint(b.x+b.width/2,b.y+b.height/2)?.id:null};
+        viewportHeight:window.innerHeight,viewportWidth:window.innerWidth,
+        overlayBox:document.querySelector('#walkOverlay')?.getBoundingClientRect()?.toJSON(),
+        hitIsButton:b?el.contains(document.elementFromPoint(b.x+b.width/2,b.y+b.height/2)):false};
     },button);
     console.log('GUIDE BUTTON',mode.name,JSON.stringify(buttonInfo));
+    if(buttonInfo.box && (buttonInfo.box.y<0 || buttonInfo.box.y+buttonInfo.box.h > buttonInfo.viewportHeight+3))
+      throw new Error('Next-artwork button is outside the visible viewport');
+    if(!buttonInfo.hitIsButton)throw new Error('Next-artwork button is covered by another layer');
     // Synthetic event avoids false click timeouts when the CI GPU renders at 1 FPS.
     await page.evaluate(sel=>document.querySelector(sel).click(),button);
     await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourStop==='1',null,{timeout:24000});
