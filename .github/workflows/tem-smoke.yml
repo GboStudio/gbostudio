@@ -1,0 +1,47 @@
+name: The Empty Museum - public availability
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'empty-museum/**'
+      - '.github/workflows/tem-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Public page / asset smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test public HTTP availability
+        shell: bash
+        run: |
+          set -euo pipefail
+          urls=(
+            "https://gbostudio.fr/empty-museum/"
+            "https://gbostudio.fr/empty-museum/3d.html"
+            "https://gbostudio.fr/empty-museum/gallery-fallback.js"
+            "https://gbostudio.fr/empty-museum/gallery.js"
+            "https://gbostudio.fr/empty-museum/gallery.css"
+          )
+          for url in "${urls[@]}"; do
+            echo "Checking ${url}"
+            ok=0
+            for attempt in {1..10}; do
+              if curl --location --silent --show-error --fail --connect-timeout 12 --max-time 20 --retry 1 "${url}" -o /tmp/tem-response; then
+                bytes=$(wc -c </tmp/tem-response)
+                echo "OK: ${url} (${bytes} bytes)"
+                if [ "${bytes}" -gt 100 ]; then ok=1; break; fi
+              fi
+              echo "Not ready: attempt ${attempt}/10"
+              sleep 12
+            done
+            if [ "${ok}" != 1 ]; then
+              echo "::error::Public museum asset unavailable: ${url}"
+              exit 1
+            fi
+          done
+          echo "Verified all museum public URLs"
