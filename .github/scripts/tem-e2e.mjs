@@ -23,7 +23,7 @@ for(const mode of modes) {
   try {
     await page.goto(base+'3d.html', { waitUntil:'domcontentloaded', timeout:40000 });
     await page.waitForFunction(()=>document.querySelector('#loader')?.classList.contains('hidden'),null,{timeout:20000});
-    await page.waitForFunction(()=>/\\d+ \\/ 09/.test(document.querySelector('#navIndex')?.textContent||''),null,{timeout:20000});
+    await page.waitForFunction(()=>document.querySelector('#navIndex')?.textContent?.includes('/ 09'),null,{timeout:20000});
     const initial=(await page.locator('#navIndex').textContent()).trim();
     await page.locator('#next').click();
     const next=(await page.locator('#navIndex').textContent()).trim();
