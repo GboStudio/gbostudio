@@ -1,6 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js';
 // A slower third-party CDN must not override the fully working local fallback.
-if (window.__TEM_GALLERY_FALLBACK_STARTED) throw new Error('Local museum gallery already running');
+if (window.__TEM_GALLERY_FALLBACK_STARTED || window.__TEM_GALLERY_FALLBACK_REQUESTED) throw new Error('Local museum gallery already requested');
 const $=s=>document.querySelector(s);
 const works=[
 {title:'AFTER THE RAIN',author:'Maya · Démo',kind:'ART / IMAGE',tools:'ChatGPT + génération d’image',desc:'Le souvenir d’une ville après la pluie, retravaillé jusqu’à retrouver exactement la lumière imaginée.',theme:0,ratio:1.22},
