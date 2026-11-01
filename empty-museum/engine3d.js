@@ -692,7 +692,7 @@ import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./
     tourState.motion={
       fromX:view.x,fromZ:view.z,fromYaw:yaw,fromPitch:pitch,
       x:stop.cameraX,z:stop.cameraZ,yaw:destYaw,pitch:targetPitch,
-      elapsed:0,duration:approachDuration(distance,matchMedia("(prefers-reduced-motion: reduce)").matches)
+      elapsed:0,startedAt:performance.now(),duration:approachDuration(distance,matchMedia("(prefers-reduced-motion: reduce)").matches)
     };
     arrival.textContent="DIRECTION : "+(stop.piece.title||"ŒUVRE");
     arrival.hidden=false;
@@ -811,7 +811,8 @@ import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./
     // This overrides empty-corridor cruise while preserving keyboard free roam.
     if(tourState.motion && !blocked){
       const m=tourState.motion;
-      m.elapsed+=dt;
+      // Use real elapsed time: software WebGL and lower-end phones may render slowly.
+      m.elapsed=Math.max(0,(time-m.startedAt)/1000);
       const t=smoothstep(m.elapsed/m.duration);
       view.x=m.fromX+(m.x-m.fromX)*t;
       view.z=m.fromZ+(m.z-m.fromZ)*t;
