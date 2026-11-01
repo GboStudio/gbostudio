@@ -1,5 +1,9 @@
 name: The Empty Museum - public availability
 
+concurrency:
+  group: empty-museum-safety-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]
