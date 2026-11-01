@@ -106,7 +106,7 @@ works.forEach((w,i)=>{
 $('#totalPieces').textContent=String(works.length).padStart(2,'0')}
 function init(){
  scene=new THREE.Scene();scene.background=new THREE.Color(0xe7e5df);scene.fog=new THREE.Fog(0xe6e4dd,15,49);
- camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.08,110);camera.position.set(0,2.2,10.5);camera.lookAt(0,3.05,far);
+ camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.08,110);camera.position.set(0,2.2,-3.4);camera.lookAt(0,3.05,far);
  renderer=new THREE.WebGLRenderer({canvas:$('#scene'),antialias:!(innerWidth<720),alpha:false,powerPreference:innerWidth<720?'low-power':'high-performance'});
  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,innerWidth<720?1.45:1.75));renderer.setSize(innerWidth,innerHeight,false);
  renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.48;
@@ -126,7 +126,7 @@ function init(){
 function render(){requestAnimationFrame(render);if(document.hidden)return;
  const dt=Math.min(clock.getDelta(),.05),smooth=1-Math.exp(-dt*3.3);
  state.currentX+=(state.targetX-state.currentX)*smooth;
- camera.position.x=state.currentX;camera.position.z=innerWidth<600?11.7:10.5;camera.position.y=innerWidth<600?2.1:2.28;
+ camera.position.x=state.currentX;camera.position.z=innerWidth<600?-3.7:-3.4;camera.position.y=innerWidth<600?2.1:2.28;
  camera.lookAt(state.currentX*.85,3.05,far);renderer.render(scene,camera)}
 function select(i,open){state.selected=(i+works.length)%works.length;const w=works[state.selected];state.targetX=THREE.MathUtils.clamp(-13.15+state.selected*3.28,-12.2,12.2);$('#navIndex').textContent=String(state.selected+1).padStart(2,'0')+' / '+String(works.length).padStart(2,'0');$('#zoneTitle').textContent=w.title+' — TEM / '+String(state.selected+1).padStart(3,'0');if(open)showDetails(w,state.selected)}
 function showDetails(w,i){$('#detailNumber').textContent='COLLECTION / '+String(i+1).padStart(3,'0');$('#detailCategory').textContent=w.kind;$('#detailTitle').textContent=w.title;$('#detailDescription').textContent=w.desc;$('#detailAuthor').textContent=w.author;$('#detailTools').textContent=w.tools;$('#detailThumb').style.backgroundImage='url('+w.image+')';$('#detail').classList.add('open');$('#detail').setAttribute('aria-hidden','false');history.replaceState(null,'',location.pathname+'#'+(i+1))}
