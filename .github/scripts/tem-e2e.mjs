@@ -47,6 +47,24 @@ for(const mode of modes) {
     const link=await page.locator('a[href="./3d.html"]').count();
     if(!link)throw new Error('No 3D gallery link on museum home');
     console.log('PASS',mode.name,'main museum and 3D navigation link');
+    // The real museum on the homepage must now visit actual art instead of cruising.
+    await page.waitForFunction(()=>document.querySelector('#museumTour') && document.querySelector('#walkOverlay'),null,{timeout:25000});
+    await page.waitForFunction(()=>document.querySelector('#walkOverlay').hidden===false,null,{timeout:15000});
+    const button=mode.hasTouch?'#museumAdvance':'#museumNextStop';
+    await page.locator(button).click({timeout:12000});
+    await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourStop==='1',null,{timeout:16000});
+    const firstArt=(await page.locator('#temTourTitle').textContent()).trim();
+    const firstDescription=(await page.locator('#temTourDescription').textContent()).trim();
+    if (!firstArt || !firstDescription)throw new Error('Guided stop missing title or description');
+    await page.locator(button).click({timeout:12000});
+    await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourStop==='2',null,{timeout:16000});
+    const secondArt=(await page.locator('#temTourTitle').textContent()).trim();
+    if(firstArt===secondArt)throw new Error('Next artwork still shows the same piece');
+    if(await page.locator('#temTourStory').isHidden())throw new Error('Artwork story panel hidden');
+    console.log('PASS',mode.name,'guided visits actual artwork:',firstArt,'→',secondArt);
+    // Verify actual UI controls do not start endless cruise.
+    const cruising=await page.locator('#museumAdvance').getAttribute('aria-pressed');
+    if(cruising==='true')throw new Error('Old endless cruise mode still active');
   }catch(err){
     errorCount++;
     console.error('FAIL',mode.name,String(err));
