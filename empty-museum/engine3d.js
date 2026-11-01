@@ -5,6 +5,7 @@ import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261031realism9";
 import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261031pbr1";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
 import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
+import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261101tour10";
 
 (() => {
   "use strict";
@@ -13,6 +14,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
   cinematicStyle.rel="stylesheet";
   cinematicStyle.href="./museum-v5.css?v=20261031realism9b";
   document.head.appendChild(cinematicStyle);
+  const tourStyle=document.createElement("link");tourStyle.rel="stylesheet";tourStyle.href="./tour-v10.css?v=20261101tour10";document.head.appendChild(tourStyle);
   const overlay = document.getElementById("walkOverlay");
   const canvas = document.getElementById("walkCanvas");
   if (!overlay || !canvas || !window.TEM) return;
@@ -631,7 +633,79 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
 
   let active=false,frame=0,last=0,yaw=0,pitch=0,yawTarget=0,pitchTarget=0,walkTo=null,down=null,focusBefore=null;
   let velX=0,velZ=0,rayTime=0;
-  let tourWasActive=false,tourStops=[],tourStopIndex=0,tourStage="approach",tourStageTime=0;
+  // Museum V10: guided journey uses ONLY occupied exhibits, not anonymous wall bays.
+  const tourState={stops:[],index:-1,motion:null,dwell:0};
+  const story=document.createElement("aside");
+  story.className="tem-tour-story";
+  story.id="temTourStory";story.hidden=true;
+  story.setAttribute("aria-live","polite");
+  story.innerHTML='<div class="tem-tour-top"><span id="temTourNumber">GALERIE · COLLECTION</span><button type="button" class="tem-tour-close" id="temTourClose" aria-label="Masquer la présentation">×</button></div><h3 id="temTourTitle"></h3><p id="temTourDescription"></p><div class="tem-tour-meta" id="temTourMeta"></div><div class="tem-tour-actions"><button type="button" class="tem-tour-view" id="temTourView">DÉCOUVRIR LA PIÈCE ↗</button><button type="button" id="temTourNext">ŒUVRE SUIVANTE →</button></div><div class="tem-tour-progress" id="temTourProgress"></div>';
+  overlay.appendChild(story);
+  const arrival=document.createElement("div");arrival.className="tem-tour-arrival";
+  arrival.id="temTourArrival";arrival.hidden=true;arrival.setAttribute("aria-live","polite");overlay.appendChild(arrival);
+  let arrivalTimer=0;
+  function hideTourStory(){story.hidden=true;arrival.hidden=true;clearTimeout(arrivalTimer);}
+  function resetTourState(){
+    tourState.index=-1;tourState.motion=null;tourState.dwell=0;
+    tourState.stops=[];overlay.dataset.tourStop="0";hideTourStory();
+  }
+  function showTourStory(){
+    const stop=tourState.stops[tourState.index];if(!stop)return;
+    const total=tourState.stops.length;
+    story.querySelector("#temTourNumber").textContent=String(tourState.index+1).padStart(2,"0")+" / "+String(total).padStart(2,"0")+"   ·   "+stop.label+" "+stop.side;
+    story.querySelector("#temTourTitle").textContent=stop.piece.title||"Sans titre";
+    story.querySelector("#temTourDescription").textContent=stop.piece.description||"Une création à découvrir dans le musée.";
+    story.querySelector("#temTourMeta").textContent=(stop.piece.author||"Créateur") +"   ·   "+(stop.piece.tools||"Création assistée");
+    const progress=story.querySelector("#temTourProgress");progress.textContent="";
+    for(let i=0;i<total;i++){const marker=document.createElement("i");if(i<=tourState.index)marker.className="done";progress.appendChild(marker);}
+    story.querySelector("#temTourNext").textContent=tourState.index===total-1?"RECOMMENCER LA VISITE ↺":"ŒUVRE SUIVANTE →";
+    story.hidden=false;
+    overlay.dataset.tourStop=String(tourState.index+1);
+    arrival.textContent=(tourState.index+1)+" / "+total+"  ·  "+stop.piece.title;
+    arrival.hidden=false;clearTimeout(arrivalTimer);arrivalTimer=setTimeout(()=>arrival.hidden=true,2400);
+    tourState.dwell=0;
+  }
+  function goToNextArtwork(){
+    const stops=planExhibitionStops(window.TEM.getSlots(),{
+      step:STEP,half:HALF,start:5.7,
+      floorSlots:window.TEM.getFloorSlots(),ceilingSlots:window.TEM.getCeilingSlots()
+    });
+    if(!stops.length){v5.toast("LE MUSÉE N’A PAS ENCORE D’ŒUVRE À PRÉSENTER");v5.finishTour();return false;}
+    const prevId=tourState.stops[tourState.index]?.id;
+    const mapped=prevId?stops.findIndex(st=>st.id===prevId):-1;
+    let next=routeNextIndex(stops,mapped,view.z);
+    // Beginning a new guided tour should always start at the ORIGINAL WALL.
+    if(mapped===stops.length-1 && next===0){
+      view.x=0;view.z=.85;view.y=1.72;velX=0;velZ=0;
+      yaw=0;yawTarget=0;pitch=0;pitchTarget=0;
+    }
+    const stop=stops[next];
+    tourState.stops=stops;tourState.index=next;tourState.dwell=0;
+    hideTourStory();
+    const dx=stop.focusX-stop.cameraX,dz=stop.focusZ-stop.cameraZ;
+    let destYaw=Math.atan2(dx,dz);
+    // Avoid 350° spins when alternating between the left and right walls.
+    while(destYaw-yaw>Math.PI)destYaw-=Math.PI*2;
+    while(destYaw-yaw< -Math.PI)destYaw+=Math.PI*2;
+    const targetPitch=Math.atan2(stop.focusY-1.72,Math.hypot(dx,dz));
+    const distance=Math.hypot(stop.cameraX-view.x,stop.cameraZ-view.z);
+    tourState.motion={
+      fromX:view.x,fromZ:view.z,fromYaw:yaw,fromPitch:pitch,
+      x:stop.cameraX,z:stop.cameraZ,yaw:destYaw,pitch:targetPitch,
+      elapsed:0,duration:approachDuration(distance,matchMedia("(prefers-reduced-motion: reduce)").matches)
+    };
+    arrival.textContent="DIRECTION : "+(stop.piece.title||"ŒUVRE");
+    arrival.hidden=false;
+    arrivalTimer=setTimeout(()=>arrival.hidden=true,1900);
+    return true;
+  }
+  story.querySelector("#temTourNext").addEventListener("click",()=>{
+    v5.manual();goToNextArtwork();
+  });
+  story.querySelector("#temTourView").addEventListener("click",()=>{
+    const stop=tourState.stops[tourState.index];if(stop)selected(stop.slot);
+  });
+  story.querySelector("#temTourClose").addEventListener("click",()=>story.hidden=true);
   const held=new Set(),keys=new Set();
   const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2();
   const view={x:0,y:1.72,z:.85};
@@ -646,10 +720,11 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
   const v5=createMuseumV5Navigation({
     overlay,canvas,mobile,
     home:()=>{
-      view.x=0;view.z=.85;view.y=1.72;
-      yawTarget=0;pitchTarget=0;walkTo=null;velX=0;velZ=0;
+      resetTourState();view.x=0;view.z=.85;view.y=1.72;
+      yaw=0;pitch=0;yawTarget=0;pitchTarget=0;walkTo=null;velX=0;velZ=0;
     },
-    setZoom:(fov)=>{camera.fov=fov;camera.updateProjectionMatrix();}
+    setZoom:(fov)=>{camera.fov=fov;camera.updateProjectionMatrix();},
+    nextStop:goToNextArtwork
   });
   function resize(){
     const r=canvas.getBoundingClientRect();
@@ -691,67 +766,24 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
     let strafe=(pressed("KeyD")?1:0)-(pressed("KeyQ","KeyA")?1:0)+input.strafe;
     const turning=Number(pressed("ArrowRight","turn-right"))-Number(pressed("ArrowLeft","turn-left"));
     if((turning||fwd||strafe) && input.auto) v5.manual();
+    if((turning||fwd||strafe)&&tourState.motion){tourState.motion=null;hideTourStory();}
     if(input.auto && !blocked){
-      if(!tourWasActive){
-        tourWasActive=true;
-        const freshStops=window.TEM.getSlots().filter(slot=>slot.piece&&!slot.reservedForAds)
-          .map(slot=>({slot,z:5.7+slot.id*STEP,stopZ:5.7+slot.id*STEP-2.9}))
-          .sort((a,b)=>a.z-b.z);
-        const canResume=input.resume && tourStops.length===freshStops.length &&
-          tourStopIndex>=0 && tourStopIndex<freshStops.length;
-        tourStops=freshStops;
-        walkTo=null;
-        if(canResume){
-          const stop=tourStops[tourStopIndex];
-          tourStage=view.z>=stop.stopZ-.45?"look":"approach";
-          tourStageTime=0;
-          v5.toast("REPRISE DE LA VISITE · ŒUVRE "+String(tourStopIndex+1));
-        }else{
-          tourStopIndex=tourStops.findIndex(stop=>stop.z>view.z+1.2);
-          if(tourStopIndex<0 && tourStops.length){
-            view.x=0;view.z=.85;velX=0;velZ=0;
-            tourStopIndex=0;
-            v5.toast("NOUVELLE VISITE · DÉPART DU HALL");
-          }
-          tourStage="approach";tourStageTime=0;
-          if(tourStopIndex<0){
-            v5.finishTour();
-            v5.toast("AUCUNE ŒUVRE À VISITER POUR LE MOMENT");
+      // Auto-tour follows the same real-artwork journey as the mobile Next button.
+      if(!tourState.motion){
+        const onStory=!story.hidden && tourState.index>=0;
+        if(!onStory)goToNextArtwork();
+        else {
+          tourState.dwell+=dt;
+          if(tourState.dwell>=7.8){
+            if(tourState.index===tourState.stops.length-1){
+              v5.finishTour();
+              v5.toast("FIN DE LA VISITE · REPRENEZ À VOTRE RYTHME");
+            }else goToNextArtwork();
           }
         }
       }
-      tourStageTime+=dt;
-      const stop=tourStops[tourStopIndex];
-      if(!stop){
-        fwd=0;strafe=0;yawTarget=0;pitchTarget=0;
-      }else if(tourStage==="approach"){
-        // Each leg remains on the central aisle and faces straight ahead.
-        fwd=Math.min(1,Math.max(.16,(stop.stopZ-view.z)*.52));
-        strafe=0;yawTarget=0;pitchTarget=-.02;
-        if(view.z>=stop.stopZ-.45){
-          tourStage="look";tourStageTime=0;fwd=0;
-          v5.toast(stop.slot.piece.title.toUpperCase());
-        }
-      }else if(tourStage==="look"){
-        fwd=0;strafe=0;
-        const side=stop.slot.id%2?1:-1;
-        const focusAngle=Math.atan2(side*(HALF-.39),Math.max(1.5,stop.z-view.z));
-        const t=Math.min(1,tourStageTime/1.3);
-        yawTarget=focusAngle*(t*t*(3-2*t));
-        pitchTarget=.015;
-        if(tourStageTime>=4.1){tourStage="recenter";tourStageTime=0;}
-      }else if(tourStage==="recenter"){
-        fwd=0;strafe=0;yawTarget=0;pitchTarget=-.02;
-        if(tourStageTime>=1.45){
-          tourStopIndex++;tourStage="approach";tourStageTime=0;
-          if(tourStopIndex>=tourStops.length){
-            v5.finishTour();
-            v5.toast("FIN DE LA VISITE · APPUYEZ POUR RECOMMENCER");
-          }
-        }
-      }
+      fwd=0;strafe=0;
     }else{
-      if(!input.auto)tourWasActive=false;
       yawTarget+=turning*dt*1.22;
       if(walkTo!==null && !fwd && !strafe){
         if(view.z<walkTo-.45)fwd=.8;
@@ -775,6 +807,23 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
     view.x=clamp(view.x+velX*dt,-HALF+1.4,HALF-1.4);
     if(assisted)view.x+=(0-view.x)*Math.min(1,dt*3.6);
     view.z=clamp(view.z+velZ*dt,.80,LENGTH-2.8);
+    // Cinematic approach: shift toward the actual piece, then turn to face it.
+    // This overrides empty-corridor cruise while preserving keyboard free roam.
+    if(tourState.motion && !blocked){
+      const m=tourState.motion;
+      m.elapsed+=dt;
+      const t=smoothstep(m.elapsed/m.duration);
+      view.x=m.fromX+(m.x-m.fromX)*t;
+      view.z=m.fromZ+(m.z-m.fromZ)*t;
+      yaw=m.fromYaw+(m.yaw-m.fromYaw)*t;
+      pitch=m.fromPitch+(m.pitch-m.fromPitch)*t;
+      yawTarget=yaw;pitchTarget=pitch;
+      velX=0;velZ=0;
+      if(t>=1){
+        tourState.motion=null;
+        showTourStory();
+      }
+    }
     if(input.cruise && view.z>=LENGTH-3.0){
       v5.stopCruise();
       v5.toast("VOUS ÊTES AU BOUT DE LA GALERIE");
@@ -809,7 +858,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
   function open(){
     if(active)return;
     focusBefore=document.activeElement;
-    active=true;last=performance.now();view.x=0;view.z=.85;yaw=0;pitch=0;yawTarget=0;pitchTarget=0;velX=0;velZ=0;walkTo=null;tourWasActive=false;
+    active=true;last=performance.now();view.x=0;view.z=.85;yaw=0;pitch=0;yawTarget=0;pitchTarget=0;velX=0;velZ=0;walkTo=null;resetTourState();
     v5.enter();
     overlay.hidden=false;document.body.classList.add("walk-is-open");
     resize();orient();
@@ -819,7 +868,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
   function close(){
     if(!active)return;
     active=false;cancelAnimationFrame(frame);
-    v5.leave();
+    v5.leave();resetTourState();
     held.clear();keys.clear();walkTo=null;down=null;
     overlay.hidden=true;document.body.classList.remove("walk-is-open");
     focusBefore?.focus?.({preventScroll:true});
@@ -863,7 +912,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
     if(down.id!==e.pointerId)return;
     const dx=e.clientX-down.x,dy=e.clientY-down.y;
     if(Math.abs(e.clientX-down.sx)>7||Math.abs(e.clientY-down.sy)>7)down.drag=true;
-    if(down.drag){yawTarget+=dx*(mobile?.0052:.0039);pitchTarget=clamp(pitchTarget-dy*.0037,-.98,.98);walkTo=null;}
+    if(down.drag){if(tourState.motion){tourState.motion=null;hideTourStory();}yawTarget+=dx*(mobile?.0052:.0039);pitchTarget=clamp(pitchTarget-dy*.0037,-.98,.98);walkTo=null;}
     down.x=e.clientX;down.y=e.clientY;
   });
   canvas.addEventListener("pointerup",e=>{
@@ -899,7 +948,7 @@ import {createMuseumV5Navigation} from "./museum-v5.js?v=20261031realism9";
     camera.fov=clamp(camera.fov+Math.sign(event.deltaY)*2.3,42,72);
     camera.updateProjectionMatrix();
   },{passive:false});
-  window.addEventListener("tem:exhibited",()=>{lastSpotPosition=-Infinity;drawInventory();});
+  window.addEventListener("tem:exhibited",()=>{lastSpotPosition=-Infinity;drawInventory();tourState.stops=[];tourState.index=-1;tourState.motion=null;hideTourStory();});
   canvas.addEventListener("webglcontextlost",event=>{
     event.preventDefault();
     close();
