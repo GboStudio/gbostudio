@@ -1,18 +1,18 @@
 // The Empty Museum · V7 — simplified mobile gallery navigation.
 // The renderer remains responsible for all camera physics.
 // Visitors can look freely while moving safely down the central aisle.
-export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom}) {
+export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nextStop}) {
   const shell=document.createElement("div");
   shell.className="museum-v5-shell";
   shell.innerHTML=`
     <div class="museum-v5-reticle" aria-hidden="true"></div>
-    <div class="museum-v5-help" aria-live="polite">GLISSEZ POUR REGARDER · TOUCHEZ « AVANCER » POUR MARCHER</div>
+    <div class="museum-v5-help" aria-live="polite">GLISSEZ POUR REGARDER · TOUCHEZ « ŒUVRE SUIVANTE » POUR DÉCOUVRIR</div>
     <div class="museum-v5-notice" aria-live="polite"></div>
     <div class="museum-v5-drive" aria-label="Déplacement assisté">
-      <button type="button" id="museumAdvance" aria-pressed="false" aria-label="Commencer à avancer dans l'allée">
-        <strong aria-hidden="true">↑</strong><span>AVANCER</span>
+      <button type="button" id="museumAdvance" aria-pressed="false" aria-label="Découvrir l’œuvre suivante de l’exposition">
+        <strong aria-hidden="true">↗</strong><span>ŒUVRE SUIVANTE</span>
       </button>
-      <small>UN APPUI POUR AVANCER</small>
+      <small>UNE ŒUVRE À CHAQUE APPUI</small>
     </div>
     <div class="museum-v5-joystick" aria-label="Déplacement libre">
       <div class="joystick-ring" role="group" aria-label="Joystick de déplacement : haut, bas, gauche et droite">
@@ -22,13 +22,14 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom}) {
     </div>
     <div class="museum-v5-dock">
       <button type="button" id="museumTour" aria-pressed="false">▶ &nbsp; VISITE GUIDÉE</button>
+      <button type="button" id="museumNextStop" aria-label="Découvrir la prochaine œuvre">→ &nbsp; ŒUVRE SUIVANTE</button>
       <button type="button" id="museumHome" aria-label="Revenir au début du musée">⌖ &nbsp; DÉBUT</button>
       <button type="button" id="museumFreeToggle" aria-pressed="false">◌ &nbsp; MODE LIBRE</button>
       <button type="button" id="museumFull" aria-label="Passer en plein écran">⛶ &nbsp; PLEIN ÉCRAN</button>
     </div>`;
   overlay.appendChild(shell);
   const $=sel=>shell.querySelector(sel);
-  const tourBtn=$("#museumTour"),cruiseBtn=$("#museumAdvance"),freeBtn=$("#museumFreeToggle");
+  const tourBtn=$("#museumTour"),cruiseBtn=$("#museumAdvance"),freeBtn=$("#museumFreeToggle"),nextBtn=$("#museumNextStop");
   const reticle=$(".museum-v5-reticle"),notice=$(".museum-v5-notice"),help=$(".museum-v5-help"),guide=overlay.querySelector(".walk-guide");
   const zone=$(".joystick-ring"),knob=$(".joystick-knob"),joystick=$(".museum-v5-joystick");
   let stick={x:0,y:0},touchId=null,auto=false,cruise=false,free=false,elapsed=0,visible=false,pausedTour=false,resumeRequested=false;
@@ -45,14 +46,17 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom}) {
     tourBtn.textContent=auto?"Ⅱ  ·  PAUSE VISITE":pausedTour?"▶  ·  REPRENDRE LA VISITE":"▶  ·  VISITE GUIDÉE";
     overlay.classList.toggle("museum-v5-tour",auto);
   }
+  // The former cruise button walked straight down an empty corridor.
+  // Every press now brings the visitor directly to the next occupied exhibit.
   function paintCruise(){
-    cruiseBtn.setAttribute("aria-pressed",String(cruise));
-    cruiseBtn.setAttribute("aria-label",cruise?"Arrêter d'avancer":"Avancer automatiquement dans l'allée");
-    cruiseBtn.classList.toggle("is-moving",cruise);
-    cruiseBtn.querySelector("strong").textContent=cruise?"Ⅱ":"↑";
-    cruiseBtn.querySelector("span").textContent=cruise?"STOP":"AVANCER";
+    cruise=false;
+    cruiseBtn.setAttribute("aria-pressed","false");
+    cruiseBtn.setAttribute("aria-label","Découvrir l’œuvre suivante");
+    cruiseBtn.classList.remove("is-moving");
+    cruiseBtn.querySelector("strong").textContent="↗";
+    cruiseBtn.querySelector("span").textContent="ŒUVRE SUIVANTE";
     const label=$(".museum-v5-drive small");
-    if(label)label.textContent=cruise?"TOUCHEZ POUR VOUS ARRÊTER":"UN APPUI POUR AVANCER";
+    if(label)label.textContent="UNE ŒUVRE À CHAQUE APPUI";
   }
   function stopCruise(){cruise=false;paintCruise();}
   function setTour(next,silent=false){
@@ -74,11 +78,10 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom}) {
   function toggleCruise(){
     if(!visible)return;
     if(auto)manual();
-    cruise=!cruise;
-    paintCruise();
-    if(cruise)toast("VOUS AVANCEZ AU CENTRE · GLISSEZ POUR REGARDER");
+    nextStop?.();
   }
   cruiseBtn.addEventListener("click",toggleCruise);
+  nextBtn.addEventListener("click",toggleCruise);
   tourBtn.addEventListener("click",()=>setTour(!auto));
   $("#museumHome").addEventListener("click",()=>{
     finishTour();stopCruise();home();
@@ -141,7 +144,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom}) {
     return {
       forward:mobile&&free?-stick.y:0,
       strafe:mobile&&free?stick.x:0,
-      cruise:mobile&&cruise&&!free,
+      cruise:false,
       simple:mobile&&!free,
       auto,resume,t:elapsed
     };
