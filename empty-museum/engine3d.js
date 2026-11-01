@@ -14,7 +14,7 @@ import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./
   cinematicStyle.rel="stylesheet";
   cinematicStyle.href="./museum-v5.css?v=20261031realism9b";
   document.head.appendChild(cinematicStyle);
-  const tourStyle=document.createElement("link");tourStyle.rel="stylesheet";tourStyle.href="./tour-v10.css?v=20261101tour10";document.head.appendChild(tourStyle);
+  const tourStyle=document.createElement("link");tourStyle.rel="stylesheet";tourStyle.href="./tour-v10.css?v=20261101tour12";document.head.appendChild(tourStyle);
   const overlay = document.getElementById("walkOverlay");
   const canvas = document.getElementById("walkCanvas");
   if (!overlay || !canvas || !window.TEM) return;
