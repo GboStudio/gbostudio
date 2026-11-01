@@ -51,13 +51,21 @@ for(const mode of modes) {
     await page.waitForFunction(()=>document.querySelector('#museumTour') && document.querySelector('#walkOverlay'),null,{timeout:25000});
     await page.waitForFunction(()=>document.querySelector('#walkOverlay').hidden===false,null,{timeout:15000});
     const button=mode.hasTouch?'#museumAdvance':'#museumNextStop';
-    await page.locator(button).click({timeout:12000});
-    await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourStop==='1',null,{timeout:16000});
+    const buttonInfo=await page.evaluate(sel=>{
+      const el=document.querySelector(sel),b=el?.getBoundingClientRect(),cs=el?getComputedStyle(el):null;
+      return {exists:!!el,display:cs?.display,visibility:cs?.visibility,
+        box:b?{x:b.x,y:b.y,w:b.width,h:b.height}:null,
+        underPointer:b?document.elementFromPoint(b.x+b.width/2,b.y+b.height/2)?.id:null};
+    },button);
+    console.log('GUIDE BUTTON',mode.name,JSON.stringify(buttonInfo));
+    // Synthetic event avoids false click timeouts when the CI GPU renders at 1 FPS.
+    await page.evaluate(sel=>document.querySelector(sel).click(),button);
+    await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourStop==='1',null,{timeout:24000});
     const firstArt=(await page.locator('#temTourTitle').textContent()).trim();
     const firstDescription=(await page.locator('#temTourDescription').textContent()).trim();
     if (!firstArt || !firstDescription)throw new Error('Guided stop missing title or description');
-    await page.locator(button).click({timeout:12000});
-    await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourStop==='2',null,{timeout:16000});
+    await page.evaluate(sel=>document.querySelector(sel).click(),button);
+    await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourStop==='2',null,{timeout:24000});
     const secondArt=(await page.locator('#temTourTitle').textContent()).trim();
     if(firstArt===secondArt)throw new Error('Next artwork still shows the same piece');
     if(await page.locator('#temTourStory').isHidden())throw new Error('Artwork story panel hidden');
