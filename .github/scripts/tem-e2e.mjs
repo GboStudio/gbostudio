@@ -25,6 +25,13 @@ for(const mode of modes) {
     await page.waitForFunction(()=>document.querySelector('#loader')?.classList.contains('hidden'),null,{timeout:20000});
     await page.waitForFunction(()=>document.querySelector('#navIndex')?.textContent?.includes('/ 09'),null,{timeout:20000});
     const initial=(await page.locator('#navIndex').textContent()).trim();
+    const renderInfo=await page.evaluate(()=>({
+      mode:window.__TEM_GALLERY_FALLBACK_STARTED?'CANVAS FALLBACK':'WEBGL 3D',
+      canvasWidth:document.querySelector('#scene')?.width,
+      canvasHeight:document.querySelector('#scene')?.height,
+      marker:document.querySelector('#graphicsLabel')?.textContent
+    }));
+    console.log('RENDER',mode.name,JSON.stringify(renderInfo));
     await page.locator('#next').click();
     const next=(await page.locator('#navIndex').textContent()).trim();
     if(initial===next)throw new Error('Next artwork does not change counter');
