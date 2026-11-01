@@ -1,0 +1,39 @@
+/* Guided V10 — every tap discovers a real work, never an empty corridor. */
+.tem-tour-story{position:absolute;z-index:17;left:clamp(18px,3.4vw,48px);
+  bottom:clamp(116px,15vh,160px);width:min(354px,calc(100vw - 36px));
+  padding:19px 21px 17px;color:#29291f;
+  background:linear-gradient(138deg,rgba(251,250,245,.985),rgba(236,233,223,.96));
+  border:1px solid rgba(147,123,75,.35);border-left:3px solid #a79065;
+  box-shadow:0 15px 50px rgba(16,19,19,.19);border-radius:4px;
+  font-family:Arial,sans-serif;transition:opacity .3s,transform .3s;
+  pointer-events:auto}
+.tem-tour-story[hidden]{display:none!important}
+.tem-tour-top{display:flex;align-items:center;justify-content:space-between;gap:14px;color:#856e46;font-size:9px;letter-spacing:.17em;font-weight:800}
+.tem-tour-close{color:#3c3a31;border:0;background:transparent;font-size:21px;padding:1px 3px;line-height:1}
+.tem-tour-story h3{font:700 clamp(21px,2.4vw,31px)/1.06 Georgia,serif;letter-spacing:-.035em;margin:9px 0 9px;text-wrap:balance;color:#27251d}
+.tem-tour-story p{font-size:12px;line-height:1.55;color:#545348;margin:0 0 14px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tem-tour-meta{font-size:9px;line-height:1.5;color:#756c5e;font-weight:700;letter-spacing:.02em;border-top:1px solid #d3cbbb;padding-top:10px;max-width:100%;overflow-wrap:anywhere}
+.tem-tour-actions{display:flex;gap:8px;margin-top:13px;align-items:center}
+.tem-tour-actions button{padding:11px 12px;font-size:9px;letter-spacing:.05em;font-weight:800;border:1px solid #38362f;background:#272721;color:#fff;border-radius:2px;min-height:38px}
+.tem-tour-actions .tem-tour-view{background:transparent;color:#2a2a25}
+.tem-tour-progress{display:flex;gap:4px;margin-top:15px}
+.tem-tour-progress i{display:block;flex:1;height:3px;background:#d6d1c4;border-radius:5px}
+.tem-tour-progress i.done{background:#af9466}
+.tem-tour-arrival{font-size:10px;font-weight:750;letter-spacing:.13em;color:#fff;background:#36362e;position:absolute;z-index:16;top:calc(88px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  padding:11px 16px;border-radius:30px;box-shadow:0 7px 24px #0002;pointer-events:none;white-space:nowrap;max-width:calc(100vw - 40px);overflow:hidden;text-overflow:ellipsis}
+.tem-tour-arrival[hidden]{display:none!important}
+.museum-v5-dock #museumNextStop{border-color:#bdaa84;background:rgba(237,227,201,.95);color:#302d26}
+@media(max-width:760px){
+  .museum-v5-dock #museumNextStop{display:none!important}
+  .tem-tour-story{left:13px;bottom:calc(137px + env(safe-area-inset-bottom));width:min(312px,calc(100vw - 26px));padding:13px 15px 12px}
+  .tem-tour-story h3{font-size:22px;margin:7px 0}
+  .tem-tour-story p{-webkit-line-clamp:2;font-size:11px;margin-bottom:9px}
+  .tem-tour-meta{padding-top:8px;font-size:8px}
+  .tem-tour-actions{margin-top:9px}
+  .tem-tour-actions button{font-size:8px;padding:9px 10px;min-height:34px}
+  .tem-tour-progress{margin-top:10px}
+  .tem-tour-arrival{top:calc(93px + env(safe-area-inset-top));font-size:8px}
+  .museum-v5-drive button span{font-size:8px!important}
+}
+@media(max-width:380px){.tem-tour-story{width:min(275px,calc(100vw - 26px));bottom:calc(125px + env(safe-area-inset-bottom))}}
+@media(prefers-reduced-motion:reduce){.tem-tour-story{transition:none}}
