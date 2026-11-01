@@ -121,7 +121,7 @@ function init(){
  canvas.addEventListener('wheel',e=>{e.preventDefault();state.targetX=THREE.MathUtils.clamp(state.targetX+e.deltaY*.013,-12.2,12.2)},{passive:false});
  window.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')navigate(-1);if(e.key==='ArrowRight')navigate(1);if(e.key==='Escape')closeDetails()});
  window.addEventListener('resize',()=>{const w=innerWidth,h=innerHeight;camera.aspect=w/h;camera.fov=w<720?69:55;camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(devicePixelRatio||1,w<720?1.45:1.75));renderer.setSize(w,h,false)});
- const hash=parseInt(location.hash.slice(1),10);if(hash>0&&hash<=works.length)select(hash-1,true);
+ const hash=parseInt(location.hash.slice(1),10);if(hash>0&&hash<=works.length)select(hash-1,true);else select(state.selected,false);
  render()}
 function render(){requestAnimationFrame(render);if(document.hidden)return;
  const dt=Math.min(clock.getDelta(),.05),smooth=1-Math.exp(-dt*3.3);
