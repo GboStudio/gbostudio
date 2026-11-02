@@ -83,11 +83,15 @@ for(const mode of modes) {
       document.querySelector('#museumTour').click();
     },button);
     await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourPaused==='true',null,{timeout:12000});
-    const atPause=await page.evaluate(()=>Number(document.querySelector('#walkOverlay').dataset.tourCameraZ));
+    const coords=()=>page.evaluate(()=>{
+      const d=document.querySelector('#walkOverlay').dataset;
+      return {x:Number(d.tourCameraX),z:Number(d.tourCameraZ)};
+    });
+    const atPause=await coords();
     await page.waitForTimeout(700);
-    const stillPaused=await page.evaluate(()=>Number(document.querySelector('#walkOverlay').dataset.tourCameraZ));
-    if(Math.abs(atPause-stillPaused)>0.04)
-      throw new Error('Camera continued walking after guided-tour pause: '+atPause+' → '+stillPaused);
+    const stillPaused=await coords();
+    if(Math.abs(atPause.z-stillPaused.z)>0.04||Math.abs(atPause.x-stillPaused.x)>0.04)
+      throw new Error('Camera drifted after guided-tour pause: '+JSON.stringify(atPause)+' → '+JSON.stringify(stillPaused));
     await page.evaluate(()=>document.querySelector('#museumTour').click());
     await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourPlaying==='true',null,{timeout:12000});
     await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourStop==='3',null,{timeout:35000});
