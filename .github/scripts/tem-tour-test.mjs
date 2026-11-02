@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from '../../empty-museum/tour-journey.js';
+import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from '../../empty-museum/tour-journey.js';
 const slots=[
 {id:0,piece:{title:'Partner'},reservedForAds:true},
 {id:2,piece:null,reservedForAds:false},
@@ -15,9 +15,15 @@ assert.equal(stops[1].side,'DROITE');
 assert.equal(routeNextIndex(stops,-1,0),0);
 assert.equal(routeNextIndex(stops,0,0),1);
 assert.equal(routeNextIndex(stops,stops.length-1,100),0);
+assert.equal(routeResumeIndex(stops,0),0,'Start a new tour from the entrance');
+assert.equal(routeResumeIndex(stops,stops[1].cameraZ),1,'Resuming at an artwork keeps that exact artwork');
+assert.equal(routeResumeIndex(stops,stops[1].cameraZ+2.2),2,'Moving past a work selects the following work');
+assert.equal(routeResumeIndex(stops,stops.at(-1).cameraZ+15),0,'Past the last gallery stop, wrap to the beginning');
+assert.equal(routeResumeIndex([],50),-1,'A museum without works has no valid stop');
+
 assert.ok(stops.every(s=>Math.abs(s.cameraX)<3.5));
 assert.ok(stops[0].cameraZ<stops[0].z);
 assert.ok(approachDuration(100,false)<=3.15);
 assert.equal(smoothstep(0),0);
 assert.equal(smoothstep(1),1);
-console.log('PASS museum guide: occupied pieces, no empty bays, left/right wall, floor, wrap and camera targets');
+console.log('PASS museum guide: occupied pieces, no empty bays, left/right wall, floor, wrap, position-based resume and camera targets');
