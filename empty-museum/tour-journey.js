@@ -36,6 +36,19 @@ export function routeNextIndex(stops,currentIndex,currentZ) {
   const next=stops.findIndex(s=>s.z>currentZ+1);
   return next<0?0:next;
 }
+/**
+ * Resume from the visitor's physical location, not an old sequence index.
+ * If the visitor is at an exhibit, resume at that exhibit. Otherwise, continue
+ * with the next exhibit in the current direction of the gallery.
+ */
+export function routeResumeIndex(stops,currentZ,{tolerance=1.4}={}){
+  if(!stops?.length)return -1;
+  const z=Number.isFinite(currentZ)?currentZ:0;
+  const nearby=stops.findIndex(stop=>Math.abs(stop.cameraZ-z)<=tolerance);
+  if(nearby>=0)return nearby;
+  const ahead=stops.findIndex(stop=>stop.cameraZ>z);
+  return ahead>=0?ahead:0;
+}
 export function approachDuration(distance,reducedMotion=false){
   if(reducedMotion)return .14;
   return Math.max(1.6,Math.min(3.15,1.3+distance/15));
