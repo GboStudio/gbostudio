@@ -5,7 +5,7 @@ import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261031realism9";
 import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261031pbr1";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
 import {createMuseumV5Navigation} from "./museum-v5.js?v=20261101tour10";
-import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261101tour10";
+import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261102resume";
 
 (() => {
   "use strict";
@@ -634,7 +634,7 @@ import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./
   let active=false,frame=0,last=0,yaw=0,pitch=0,yawTarget=0,pitchTarget=0,walkTo=null,down=null,focusBefore=null;
   let velX=0,velZ=0,rayTime=0;
   // Museum V10: guided journey uses ONLY occupied exhibits, not anonymous wall bays.
-  const tourState={stops:[],index:-1,motion:null,dwell:0};
+  const tourState={stops:[],index:-1,motion:null,dwell:0,userMoved:false};
   const story=document.createElement("aside");
   story.className="tem-tour-story";
   story.id="temTourStory";story.hidden=true;
@@ -646,7 +646,7 @@ import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./
   let arrivalTimer=0;
   function hideTourStory(){story.hidden=true;arrival.hidden=true;clearTimeout(arrivalTimer);}
   function resetTourState(){
-    tourState.index=-1;tourState.motion=null;tourState.dwell=0;
+    tourState.index=-1;tourState.motion=null;tourState.dwell=0;tourState.userMoved=false;
     tourState.stops=[];overlay.dataset.tourStop="0";hideTourStory();
   }
   function showTourStory(){
@@ -665,7 +665,7 @@ import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./
     arrival.hidden=false;clearTimeout(arrivalTimer);arrivalTimer=setTimeout(()=>arrival.hidden=true,2400);
     tourState.dwell=0;
   }
-  function goToNextArtwork(){
+  function goToNextArtwork({fromCurrent=false}={}){
     const stops=planExhibitionStops(window.TEM.getSlots(),{
       step:STEP,half:HALF,start:5.7,
       floorSlots:window.TEM.getFloorSlots(),ceilingSlots:window.TEM.getCeilingSlots()
@@ -673,14 +673,14 @@ import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./
     if(!stops.length){v5.toast("LE MUSÉE N’A PAS ENCORE D’ŒUVRE À PRÉSENTER");v5.finishTour();return false;}
     const prevId=tourState.stops[tourState.index]?.id;
     const mapped=prevId?stops.findIndex(st=>st.id===prevId):-1;
-    let next=routeNextIndex(stops,mapped,view.z);
+    let next=fromCurrent?routeResumeIndex(stops,view.z):routeNextIndex(stops,mapped,view.z);
     // Beginning a new guided tour should always start at the ORIGINAL WALL.
-    if(mapped===stops.length-1 && next===0){
+    if(!fromCurrent && mapped===stops.length-1 && next===0){
       view.x=0;view.z=.85;view.y=1.72;velX=0;velZ=0;
       yaw=0;yawTarget=0;pitch=0;pitchTarget=0;
     }
     const stop=stops[next];
-    tourState.stops=stops;tourState.index=next;tourState.dwell=0;
+    tourState.stops=stops;tourState.index=next;tourState.dwell=0;tourState.userMoved=false;
     hideTourStory();
     const dx=stop.focusX-stop.cameraX,dz=stop.focusZ-stop.cameraZ;
     let destYaw=Math.atan2(dx,dz);
@@ -717,6 +717,38 @@ import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./
   const panel=document.createElement("div");panel.className="engine-status";
   panel.innerHTML='<span class="engine-chip">● RENDERED IN 3D</span><span class="engine-chip engine-location">ORIGINAL GALLERY · 2026</span>';
   overlay.appendChild(panel);
+  function onGuidedTourChange({playing,paused}){
+    const motion=tourState.motion;
+    if(!playing && paused && motion && !motion.pausedAt){
+      // Pause the actual camera trajectory, not just the button label.
+      motion.pausedAt=performance.now();
+    }
+    if(playing && motion?.pausedAt){
+      // Keep elapsed movement constant for the whole pause duration.
+      motion.startedAt+=performance.now()-motion.pausedAt;
+      delete motion.pausedAt;
+    }
+    if(playing && tourState.userMoved){
+      // A visitor may walk/turn in free mode before resuming:
+      // use their new gallery position rather than a stale tour index.
+      tourState.index=-1;
+      tourState.motion=null;
+      hideTourStory();
+      goToNextArtwork({fromCurrent:true});
+    }else if(playing && !tourState.motion && story.hidden && tourState.index>=0){
+      const at=tourState.stops[tourState.index];
+      if(at && Math.abs(view.z-at.cameraZ)<1.5){
+        showTourStory();
+      }else{
+        goToNextArtwork({fromCurrent:true});
+      }
+    }
+  }
+  function movedByVisitor(){
+    tourState.userMoved=true;
+    tourState.motion=null;
+    hideTourStory();
+  }
   const v5=createMuseumV5Navigation({
     overlay,canvas,mobile,
     home:()=>{
@@ -724,7 +756,8 @@ import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./
       yaw=0;pitch=0;yawTarget=0;pitchTarget=0;walkTo=null;velX=0;velZ=0;
     },
     setZoom:(fov)=>{camera.fov=fov;camera.updateProjectionMatrix();},
-    nextStop:goToNextArtwork
+    nextStop:()=>goToNextArtwork(),
+    onTourChange:onGuidedTourChange
   });
   function resize(){
     const r=canvas.getBoundingClientRect();
@@ -766,12 +799,12 @@ import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./
     let strafe=(pressed("KeyD")?1:0)-(pressed("KeyQ","KeyA")?1:0)+input.strafe;
     const turning=Number(pressed("ArrowRight","turn-right"))-Number(pressed("ArrowLeft","turn-left"));
     if((turning||fwd||strafe) && input.auto) v5.manual();
-    if((turning||fwd||strafe)&&tourState.motion){tourState.motion=null;hideTourStory();}
+    if(turning||fwd||strafe)movedByVisitor();
     if(input.auto && !blocked){
       // Auto-tour follows the same real-artwork journey as the mobile Next button.
       if(!tourState.motion){
         const onStory=!story.hidden && tourState.index>=0;
-        if(!onStory)goToNextArtwork();
+        if(!onStory)goToNextArtwork({fromCurrent:tourState.index<0});
         else {
           tourState.dwell+=dt;
           if(tourState.dwell>=7.8){
@@ -809,7 +842,7 @@ import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./
     view.z=clamp(view.z+velZ*dt,.80,LENGTH-2.8);
     // Cinematic approach: shift toward the actual piece, then turn to face it.
     // This overrides empty-corridor cruise while preserving keyboard free roam.
-    if(tourState.motion && !blocked){
+    if(tourState.motion && !tourState.motion.pausedAt && !blocked){
       const m=tourState.motion;
       // Use real elapsed time: software WebGL and lower-end phones may render slowly.
       m.elapsed=Math.max(0,(time-m.startedAt)/1000);
@@ -913,7 +946,7 @@ import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./
     if(down.id!==e.pointerId)return;
     const dx=e.clientX-down.x,dy=e.clientY-down.y;
     if(Math.abs(e.clientX-down.sx)>7||Math.abs(e.clientY-down.sy)>7)down.drag=true;
-    if(down.drag){if(tourState.motion){tourState.motion=null;hideTourStory();}yawTarget+=dx*(mobile?.0052:.0039);pitchTarget=clamp(pitchTarget-dy*.0037,-.98,.98);walkTo=null;}
+    if(down.drag){movedByVisitor();yawTarget+=dx*(mobile?.0052:.0039);pitchTarget=clamp(pitchTarget-dy*.0037,-.98,.98);walkTo=null;}
     down.x=e.clientX;down.y=e.clientY;
   });
   canvas.addEventListener("pointerup",e=>{
@@ -924,7 +957,7 @@ import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./
       const ny=-((e.clientY-rect.top)/rect.height*2-1);
       const hit=interactions(nx,ny);
       if(hit){walkTo=null;selected(hit);}
-      else if(ny<-.12&&Math.cos(yaw)>.25)walkTo=Math.min(LENGTH-3,view.z+12);
+      else if(ny<-.12&&Math.cos(yaw)>.25){movedByVisitor();walkTo=Math.min(LENGTH-3,view.z+12);}
     }
     down=null;
   });
@@ -949,7 +982,7 @@ import {planExhibitionStops,routeNextIndex,approachDuration,smoothstep} from "./
     camera.fov=clamp(camera.fov+Math.sign(event.deltaY)*2.3,42,72);
     camera.updateProjectionMatrix();
   },{passive:false});
-  window.addEventListener("tem:exhibited",()=>{lastSpotPosition=-Infinity;drawInventory();tourState.stops=[];tourState.index=-1;tourState.motion=null;hideTourStory();});
+  window.addEventListener("tem:exhibited",()=>{lastSpotPosition=-Infinity;drawInventory();tourState.stops=[];tourState.index=-1;tourState.motion=null;tourState.userMoved=false;hideTourStory();});
   canvas.addEventListener("webglcontextlost",event=>{
     event.preventDefault();
     close();
