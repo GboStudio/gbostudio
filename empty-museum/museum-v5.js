@@ -1,7 +1,7 @@
 // The Empty Museum · V7 — simplified mobile gallery navigation.
 // The renderer remains responsible for all camera physics.
 // Visitors can look freely while moving safely down the central aisle.
-export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nextStop}) {
+export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nextStop,onTourChange}) {
   const shell=document.createElement("div");
   shell.className="museum-v5-shell";
   shell.innerHTML=`
@@ -68,6 +68,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     }else if(auto){pausedTour=true;}
     auto=Boolean(next);
     elapsed=0;
+    onTourChange?.({playing:auto,paused:!auto&&pausedTour,resume:resumeRequested});
     paintTour();
     if(!silent)toast(auto?"VISITE GUIDÉE · LE MUSÉE S'OCCUPE DU TRAJET":pausedTour?"VISITE EN PAUSE · TOUCHEZ REPRENDRE":"VISITE LIBRE");
   }
