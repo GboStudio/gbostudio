@@ -724,6 +724,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     if(!playing && paused && motion && !motion.pausedAt){
       // Pause the actual camera trajectory, not just the button label.
       motion.pausedAt=performance.now();
+      velX=0;velZ=0;
     }
     if(playing && motion?.pausedAt){
       // Keep elapsed movement constant for the whole pause duration.
@@ -834,13 +835,13 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     const assisted=Boolean(input.auto || input.simple || input.cruise);
     const moveSpeed=pressed("ShiftLeft","ShiftRight")?4.6:(input.auto?3.4:input.cruise?2.4:2.25);
     const magnitude=Math.max(1,Math.hypot(fwd,strafe));
-    const wantX=input.auto?0:(input.simple?-view.x*1.25:(Math.sin(yaw)*fwd+Math.cos(yaw)*strafe)*moveSpeed/magnitude);
+    const wantX=input.auto?0:(input.simple && Math.abs(fwd)>.01?-view.x*1.25:(Math.sin(yaw)*fwd+Math.cos(yaw)*strafe)*moveSpeed/magnitude);
     const wantZ=assisted?fwd*moveSpeed:(Math.cos(yaw)*fwd-Math.sin(yaw)*strafe)*moveSpeed/magnitude;
     const damping=Math.min(1,dt*(input.auto?5.7:8));
     velX+=(wantX-velX)*damping;
     velZ+=(wantZ-velZ)*damping;
     view.x=clamp(view.x+velX*dt,-HALF+1.4,HALF-1.4);
-    if(assisted)view.x+=(0-view.x)*Math.min(1,dt*3.6);
+    if(assisted && (Math.abs(fwd)>.01||Math.abs(strafe)>.01))view.x+=(0-view.x)*Math.min(1,dt*3.6);
     view.z=clamp(view.z+velZ*dt,.80,LENGTH-2.8);
     // Cinematic approach: shift toward the actual piece, then turn to face it.
     // This overrides empty-corridor cruise while preserving keyboard free roam.
