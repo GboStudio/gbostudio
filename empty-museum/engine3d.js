@@ -718,6 +718,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   panel.innerHTML='<span class="engine-chip">● RENDERED IN 3D</span><span class="engine-chip engine-location">ORIGINAL GALLERY · 2026</span>';
   overlay.appendChild(panel);
   function onGuidedTourChange({playing,paused}){
+    overlay.dataset.tourPlaying=String(playing);
+    overlay.dataset.tourPaused=String(paused);
     const motion=tourState.motion;
     if(!playing && paused && motion && !motion.pausedAt){
       // Pause the actual camera trajectory, not just the button label.
@@ -865,6 +867,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     const walking=Math.abs(velX)+Math.abs(velZ)>.12;
     view.y=1.72+(walking&&!input.auto?Math.sin(time*.008)*.003:0);
     orient();
+    overlay.dataset.tourCameraZ=view.z.toFixed(3);
+    overlay.dataset.tourCameraX=view.x.toFixed(3);
     if(!mobile&&Math.abs(view.z-lastShadowPosition)>4){
       sun.position.set(-7,15,view.z+12);
       sun.target.position.set(0,0,view.z+12);
