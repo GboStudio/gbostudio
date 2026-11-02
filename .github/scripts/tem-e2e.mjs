@@ -75,6 +75,26 @@ for(const mode of modes) {
     if(firstArt===secondArt)throw new Error('Next artwork still shows the same piece');
     if(await page.locator('#temTourStory').isHidden())throw new Error('Artwork story panel hidden');
     console.log('PASS',mode.name,'guided visits actual artwork:',firstArt,'→',secondArt);
+    // Pause immediately after requesting the next stop; camera must stay put
+    // and then resume the same movement, not skip ahead or restart the hall.
+    await page.evaluate(sel=>{
+      document.querySelector(sel).click();
+      document.querySelector('#museumTour').click();
+      document.querySelector('#museumTour').click();
+    },button);
+    await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourPaused==='true',null,{timeout:12000});
+    const atPause=await page.evaluate(()=>Number(document.querySelector('#walkOverlay').dataset.tourCameraZ));
+    await page.waitForTimeout(700);
+    const stillPaused=await page.evaluate(()=>Number(document.querySelector('#walkOverlay').dataset.tourCameraZ));
+    if(Math.abs(atPause-stillPaused)>0.04)
+      throw new Error('Camera continued walking after guided-tour pause: '+atPause+' → '+stillPaused);
+    await page.evaluate(()=>document.querySelector('#museumTour').click());
+    await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourPlaying==='true',null,{timeout:12000});
+    await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourStop==='3',null,{timeout:35000});
+    const resumedArt=(await page.locator('#temTourTitle').textContent()).trim();
+    if(resumedArt===secondArt)throw new Error('Guided tour did not advance after resume');
+    console.log('PASS',mode.name,'pause and resume in-place:',secondArt,'→',resumedArt);
+
     // Verify actual UI controls do not start endless cruise.
     const cruising=await page.locator('#museumAdvance').getAttribute('aria-pressed');
     if(cruising==='true')throw new Error('Old endless cruise mode still active');
