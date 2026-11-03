@@ -155,7 +155,7 @@ function wallInstallations(){
     mount.rotation.y=side<0?Math.PI/2:-Math.PI/2;
     scene.add(mount);
     const label=new THREE.Mesh(new THREE.PlaneGeometry(1.16,.3),
-      new THREE.MeshBasicMaterial({map:labelTexture('MUR TOTAL','ESPACE DISPONIBLE'),side:THREE.DoubleSide}));
+      new THREE.MeshBasicMaterial({map:labelTexture('MUR TOTAL','APERÇU · DÉMONSTRATION'),side:THREE.DoubleSide}));
     label.position.z=.09;
     mount.add(label);
     const pickArea=new THREE.Mesh(new THREE.PlaneGeometry(2.1,.68),
@@ -173,9 +173,9 @@ function showWall(section){
   lookCam.position.copy(desired);lookCam.lookAt(section.side*(HALF-.15),2.20,z);
   desiredRotation.copy(lookCam.quaternion);sync();
   $('#detailNumber').textContent='MUR PRIVATIF / '+String(section.base/6+1).padStart(2,'0');
-  $('#detailCategory').textContent='ESPACE EXCLUSIF · PROJET';
+  $('#detailCategory').textContent='EXPOSITION EXCLUSIVE · PROJET';
   $('#detailTitle').textContent='LE MUR TOTAL. VOTRE UNIVERS.';
-  $('#detailDescription').textContent='Un pan entier de galerie regroupant trois emplacements du même côté, sur un module architectural d’environ 21 mètres de long. Idéal pour une fresque, un triptyque ou un univers immersif. Offre à l’étude : aucune réservation et aucun paiement ici.';
+  $('#detailDescription').textContent='Un pan entier de galerie regroupant trois emplacements du même côté, sur un module architectural d’environ 21 mètres de long. Idéal pour une fresque, un triptyque ou un univers immersif. Disponibilité indicative dans cette démonstration ; les réservations, la modération et les paiements seront centralisés avant toute commercialisation.';
   $('#detailAuthor').textContent='EXCLUSIVITÉ TEMPORAIRE';
   $('#detailTools').textContent='FRESQUE · PANORAMA · COLLECTION';
   $('#detailThumb').style.backgroundImage='none';
@@ -186,9 +186,9 @@ function showWall(section){
 }
 function describeWalls(){
   if(!wholeWalls.length){
-    $('#temWall').disabled=true;$('#temWall').textContent='MURS COMPLETS';return;
+    $('#temWall').disabled=true;$('#temWall').textContent='MUR TOTAL · À VENIR';return;
   }
-  $('#temWall').textContent='MUR TOTAL · '+wholeWalls.length;
+  $('#temWall').textContent='MURS TOTAUX · '+wholeWalls.length;
 }
 function sculpturalStudy(seed,m){
  const group=new THREE.Group();
