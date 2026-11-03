@@ -4,7 +4,7 @@ import {buildMuseumScenography} from "./scenography.js?v=20261031realism9";
 import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261031realism9";
 import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261031pbr1";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
-import {createMuseumV5Navigation} from "./museum-v5.js?v=20261102resume";
+import {createMuseumV5Navigation} from "./museum-v5.js?v=20261103guided4";
 import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261102resume";
 
 (() => {
@@ -14,7 +14,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   cinematicStyle.rel="stylesheet";
   cinematicStyle.href="./museum-v5.css?v=20261031realism9b";
   document.head.appendChild(cinematicStyle);
-  const tourStyle=document.createElement("link");tourStyle.rel="stylesheet";tourStyle.href="./tour-v10.css?v=20261101tour12";document.head.appendChild(tourStyle);
+  const tourStyle=document.createElement("link");tourStyle.rel="stylesheet";tourStyle.href="./tour-v10.css?v=20261103guided4";document.head.appendChild(tourStyle);
   const overlay = document.getElementById("walkOverlay");
   const canvas = document.getElementById("walkCanvas");
   if (!overlay || !canvas || !window.TEM) return;
