@@ -185,7 +185,7 @@
       ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.fillStyle='#b9c6b7';
       ctx.font='700 '+Math.max(8,Math.min(13,w*.058))+'px Arial';
-      ctx.fillText('THE EMPTY MUSEUM',x+w*.5,y+h*.23,w*.84);
+      ctx.fillText('THE UNREAL MUSEUM',x+w*.5,y+h*.23,w*.84);
       ctx.fillStyle='#f3ead5';
       ctx.font='700 '+Math.max(12,Math.min(26,w*.14))+'px Arial';
       ctx.fillText('PUBLICITÉ',x+w*.5,y+h*.49,w*.88);
