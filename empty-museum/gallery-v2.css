@@ -1,0 +1,31 @@
+/* THE EMPTY MUSEUM — Immersive gallery v2 interaction layer */
+.tem-bar{position:absolute;z-index:7;left:50%;top:76px;transform:translateX(-50%);display:flex;gap:9px;align-items:center;justify-content:center;flex-wrap:wrap;width:max-content;max-width:calc(100vw - 26px);padding:7px;border:1px solid rgba(40,39,35,.13);border-radius:13px;background:rgba(247,245,239,.87);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:0 12px 40px rgba(36,35,31,.075);font-family:Arial,sans-serif}
+.tem-switch{display:flex;align-items:center;gap:2px;padding:2px;border:1px solid rgba(38,38,35,.13);border-radius:9px;background:rgba(255,255,255,.25)}
+.tem-switch button{border:0;border-radius:7px;background:transparent;color:#343830;font:700 10px/1.15 Arial,sans-serif;padding:11px 13px;letter-spacing:.045em;min-height:36px;white-space:nowrap;transition:background .2s,color .2s}
+.tem-switch button:hover,.tem-switch button:focus-visible{background:#ebe6d7}
+.tem-switch button.active{background:#252824;color:#fff;box-shadow:0 3px 9px rgba(10,10,10,.11)}
+.tem-switch button:disabled{opacity:.38;cursor:default}
+.tem-load{display:flex;flex-direction:column;gap:5px;padding:3px 10px;min-width:78px;color:#3d423c;font:700 9px Arial,sans-serif;letter-spacing:.09em}
+.tem-load>i{display:block;width:100%;height:3px;background:#d4d1c7;border-radius:3px;overflow:hidden}
+.tem-load>i>b{display:block;width:11%;height:100%;background:#9c8351;transition:width .25s}
+.tem-steps{display:none;position:absolute;z-index:7;right:26px;bottom:129px;gap:9px}
+.tem-steps.visible{display:flex}
+.tem-steps button{width:54px;height:54px;border:1px solid #ffffff75;border-radius:50%;background:#232622ca;color:#fff;font:700 25px Arial,sans-serif;box-shadow:0 5px 24px rgba(0,0,0,.14);touch-action:none;user-select:none;-webkit-user-select:none}
+.tem-steps button:active{background:#8b754d}
+.tem-entered .mobile-tip{display:none}
+.stage canvas{touch-action:none}
+@media(max-width:1000px){.tem-bar{top:72px}.hud-top{display:none}}
+@media(max-width:760px){.tem-bar{top:75px;width:calc(100% - 22px);padding:6px;gap:5px;border-radius:10px}
+.tem-switch{flex:1 1 auto;justify-content:center}
+.tem-switch button{font-size:9px;padding:10px 8px;min-height:37px;flex:1}
+.tem-load{flex:1 1 100%;flex-direction:row;align-items:center;gap:10px;padding:3px 7px;min-width:0}
+.tem-load i{flex:1}
+.tem-steps{right:17px;bottom:95px}
+.tem-steps button{width:50px;height:50px}
+.intro-overlay{top:48%}
+.hud-left{bottom:126px}
+.hud-bottom{bottom:18px}
+}
+@media(max-width:420px){.tem-bar{top:66px}.tem-switch button{font-size:8px;padding:8px 5px}.tem-steps{bottom:85px}
+.intro-overlay{top:48%}.intro-overlay h1{font-size:clamp(39px,11vw,58px)}.hud-left{bottom:107px}}
+@media(prefers-reduced-motion:reduce){.tem-switch button,.tem-load>i>b{transition:none}}
