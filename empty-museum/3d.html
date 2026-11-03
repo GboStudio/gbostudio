@@ -2,7 +2,7 @@
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>The Empty Museum — Galerie 3D</title><meta name="description" content="Entrez dans The Empty Museum : un musée immersif des créations humaines réalisées avec l'intelligence artificielle.">
 <meta name="theme-color" content="#f2f0eb"><link rel="canonical" href="https://gbostudio.fr/empty-museum/3d.html">
-<link rel="stylesheet" href="./gallery.css"></head>
+<link rel="stylesheet" href="./gallery.css"><link rel="stylesheet" href="./gallery-v2.css?v=20261103b"></head>
 <body>
 <div class="loader" id="loader"><div class="loader-inner"><span class="tiny">GBO STUDIO PRESENTS — 2026</span><h1>THE EMPTY<br><em>MUSEUM.</em></h1><div class="loadline"><span id="loadbar"></span></div><small id="loadstate">CONSTRUCTION DE LA GALERIE…</small><button id="enter" hidden>ENTRER DANS LE MUSÉE <span>↗</span></button></div><span class="loadfoot">A MUSEUM OF WHAT HUMANS MAKE WITH AI</span></div>
 <div class="shell" id="shell">
@@ -46,8 +46,8 @@
     fallback("WebGL not supported");
     return;
   }
-  loadTimer=setTimeout(function(){fallback("3D loading timeout");},6000);
-  import("./gallery.js?v=20261101a").then(function(){
+  loadTimer=setTimeout(function(){fallback("3D loading timeout");},14000);
+  import("./gallery-v2.js?v=20261103b").then(function(){
     if (!started){resolved=true;clearTimeout(loadTimer);}
   }).catch(function(error){fallback(error);});
 })();
