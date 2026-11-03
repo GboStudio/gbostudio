@@ -798,6 +798,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   function onGuidedTourChange({playing,paused}){
     overlay.dataset.tourPlaying=String(playing);
     overlay.dataset.tourPaused=String(paused);
+    if(playing)tourState.started=true;
     const motion=tourState.motion;
     if(!playing && paused && motion && !motion.pausedAt){
       // Pause the actual camera trajectory, not just the button label.
@@ -809,9 +810,20 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       motion.startedAt+=performance.now()-motion.pausedAt;
       delete motion.pausedAt;
     }
-    if(playing && tourState.userMoved){
-      // A visitor may walk/turn in free mode before resuming:
-      // use their new gallery position rather than a stale tour index.
+    if(playing && tourState.restored){
+      tourState.restored=false;
+      const stop=tourState.stops[tourState.index];
+      const shot=stop?framingFor(stop,v5.getViewMode()):null;
+      if(tourState.userMoved){
+        tourState.index=-1;tourState.motion=null;hideTourStory();
+        goToNextArtwork({fromCurrent:true});
+      }else if(shot&&Math.hypot(view.x-shot.x,view.z-shot.z)>0.75){
+        goToArtworkIndex(tourState.index,tourState.stops);
+      }else if(tourState.index>=0 && story.hidden){
+        showTourStory();
+      }
+    }else if(playing && tourState.userMoved){
+      // A visitor who walked in free mode resumes from the new location.
       tourState.index=-1;
       tourState.motion=null;
       hideTourStory();
@@ -824,6 +836,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
         goToNextArtwork({fromCurrent:true});
       }
     }
+    if(!playing&&paused)saveTourSession();
   }
   function movedByVisitor(){
     tourState.userMoved=true;
@@ -833,12 +846,21 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   const v5=createMuseumV5Navigation({
     overlay,canvas,mobile,
     home:()=>{
-      resetTourState();view.x=0;view.z=.85;view.y=1.72;
+      resetTourState(true);view.x=0;view.z=.85;view.y=1.72;
       yaw=0;pitch=0;yawTarget=0;pitchTarget=0;walkTo=null;velX=0;velZ=0;
     },
     setZoom:(fov)=>{camera.fov=fov;camera.updateProjectionMatrix();},
     nextStop:()=>goToNextArtwork(),
-    onTourChange:onGuidedTourChange
+    onTourChange:onGuidedTourChange,
+    onViewChange:(mode)=>{
+      const stop=tourState.stops[tourState.index];
+      if(stop && active){
+        goToArtworkIndex(tourState.index,tourState.stops);
+      }else{
+        camera.fov=mode==="room"?64:mobile?56:59;camera.updateProjectionMatrix();
+      }
+      saveTourSession();
+    }
   });
   function resize(){
     const r=canvas.getBoundingClientRect();
@@ -891,6 +913,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
           if(tourState.dwell>=7.8){
             if(tourState.index===tourState.stops.length-1){
               v5.finishTour();
+              tourState.started=false;clearTourSession();
               v5.toast("FIN DE LA VISITE · REPRENEZ À VOTRE RYTHME");
             }else goToNextArtwork();
           }
@@ -948,6 +971,9 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     orient();
     overlay.dataset.tourCameraZ=view.z.toFixed(3);
     overlay.dataset.tourCameraX=view.x.toFixed(3);
+    if(tourState.started && time-lastTourSnapshot>1750){
+      lastTourSnapshot=time;saveTourSession();
+    }
     if(!mobile&&Math.abs(view.z-lastShadowPosition)>4){
       sun.position.set(-7,15,view.z+12);
       sun.target.position.set(0,0,view.z+12);
@@ -977,6 +1003,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     focusBefore=document.activeElement;
     active=true;last=performance.now();view.x=0;view.z=.85;yaw=0;pitch=0;yawTarget=0;pitchTarget=0;velX=0;velZ=0;walkTo=null;resetTourState();
     v5.enter();
+    restoreTourSession();
     overlay.hidden=false;document.body.classList.add("walk-is-open");
     resize();orient();
     frame=requestAnimationFrame(tick);
@@ -984,6 +1011,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   }
   function close(){
     if(!active)return;
+    saveTourSession();
     active=false;cancelAnimationFrame(frame);
     v5.leave();resetTourState();
     held.clear();keys.clear();walkTo=null;down=null;
@@ -1011,7 +1039,9 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     }
   });
   window.addEventListener("keyup",e=>keys.delete(e.code));
-  window.addEventListener("blur",()=>{held.clear();keys.clear()});
+  window.addEventListener("blur",()=>{held.clear();keys.clear();saveTourSession();});
+  window.addEventListener("pagehide",saveTourSession);
+  document.addEventListener("visibilitychange",()=>{if(document.hidden)saveTourSession();});
   window.addEventListener("resize",()=>{if(active)resize()});
   canvas.addEventListener("pointerdown",e=>{
     if(!active)return;
@@ -1065,7 +1095,9 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     camera.fov=clamp(camera.fov+Math.sign(event.deltaY)*2.3,42,72);
     camera.updateProjectionMatrix();
   },{passive:false});
-  window.addEventListener("tem:exhibited",()=>{lastSpotPosition=-Infinity;drawInventory();tourState.stops=[];tourState.index=-1;tourState.motion=null;tourState.userMoved=false;hideTourStory();});
+  window.addEventListener("tem:exhibited",()=>{
+    lastSpotPosition=-Infinity;drawInventory();resetTourState(true);v5.setResumeAvailable(false);
+  });
   canvas.addEventListener("webglcontextlost",event=>{
     event.preventDefault();
     close();
