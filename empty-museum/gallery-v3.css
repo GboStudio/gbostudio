@@ -1,0 +1,36 @@
+/* TEM Gallery V3 — elegant responsive controls, no unnecessary heavy visual effects. */
+.tem-v3-hud{position:absolute;z-index:8;left:50%;top:77px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 26px);display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;border:1px solid rgba(54,53,47,.16);border-radius:13px;background:rgba(246,244,238,.9);padding:7px;box-shadow:0 12px 48px rgba(17,18,17,.11);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);font-family:Arial,Helvetica,sans-serif}
+.tem-v3-switch{display:flex;gap:3px;align-items:center;padding:3px;border:1px solid #171a171c;background:#ffffff50;border-radius:9px}
+.tem-v3-switch button{min-height:36px;border:0;border-radius:7px;background:transparent;padding:10px 13px;color:#323830;font:700 9px/1.1 Arial,sans-serif;letter-spacing:.06em;white-space:nowrap}
+.tem-v3-switch button:hover,.tem-v3-switch button:focus-visible{background:#e7e1d6}
+.tem-v3-switch button.active{background:#222822;color:#faf8f3;box-shadow:0 3px 12px #15171322}
+.tem-v3-switch button:disabled{opacity:.42;cursor:default}
+.tem-v3-progress{min-width:100px;display:grid;gap:5px;align-items:center;padding:2px 7px;font:700 9px Arial,sans-serif;letter-spacing:.08em;color:#484e45}
+.tem-v3-progress i{display:block;width:100%;height:3px;overflow:hidden;border-radius:8px;background:#d5d1c7}
+.tem-v3-progress i>b{display:block;width:2%;height:100%;background:#99845f;transition:width .25s}
+#temPosition{font-size:8px;color:#7e786e}
+.tem-v3-directions{position:absolute;z-index:8;right:26px;bottom:108px;display:none;grid-template-columns:repeat(3,45px);grid-template-rows:repeat(2,45px);gap:6px}
+.tem-v3-directions.visible{display:grid}
+.tem-v3-directions button{width:45px;height:45px;border:1px solid #ffffff71;background:#2e322deb;color:#fff;border-radius:50%;font:700 22px Arial,sans-serif;box-shadow:0 8px 21px #0003;touch-action:none;user-select:none;-webkit-user-select:none}
+.tem-v3-directions button:active{background:#9b835f}
+#temUp{grid-column:2;grid-row:1}#temLeft{grid-column:1;grid-row:2}#temDown{grid-column:2;grid-row:2}#temRight{grid-column:3;grid-row:2}
+.tem-entered .mobile-tip{display:none}
+.stage canvas{touch-action:none}
+@media(max-width:900px){.tem-v3-hud{top:74px}.hud-top{display:none}}
+@media(max-width:760px){.tem-v3-hud{top:71px;left:12px;right:12px;transform:none;width:auto;max-width:none;border-radius:12px;padding:6px;gap:5px}
+.tem-v3-switch{flex:1 1 auto;justify-content:center;gap:2px}
+.tem-v3-switch button{flex:1;padding:9px 6px;font-size:8px;min-height:35px;letter-spacing:.02em}
+.tem-v3-progress{width:100%;display:flex;min-width:0;padding:4px 7px;gap:9px}
+.tem-v3-progress i{flex:1;min-width:24px}
+#temPosition{white-space:nowrap}
+.tem-v3-directions{right:15px;bottom:91px;gap:4px;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,44px)}
+.tem-v3-directions button{width:44px;height:44px}
+.intro-overlay{top:51%}
+.intro-overlay h1{font-size:clamp(43px,11vw,68px)}
+.hud-left{bottom:110px}
+.hud-bottom{bottom:18px}
+}
+@media(max-width:420px){.tem-v3-hud{top:62px}.tem-v3-switch button{font-size:7.7px;padding:8px 4px}
+.tem-v3-directions{bottom:78px}.intro-overlay{top:51%}.hud-left{bottom:96px}
+}
+@media(prefers-reduced-motion:reduce){.tem-v3-progress i>b{transition:none}}
