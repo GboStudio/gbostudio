@@ -63,3 +63,34 @@
   }
   #walkOverlay .tem-tour-arrival{position:fixed!important;}
 }
+
+/* V11 — two cinematic framings and a visible mobile framing switch. */
+.museum-v5-dock #museumView{
+  border-color:rgba(222,201,157,.9);
+  background:rgba(244,236,214,.87);
+  color:#2a2823;
+}
+.museum-v5-dock #museumView[aria-pressed="true"]{
+  background:rgba(33,35,31,.77);
+  color:#f6f0dd;
+}
+@media(max-width:760px){
+  #walkOverlay .museum-v5-dock #museumView{
+    position:fixed!important;
+    z-index:28!important;
+    top:calc(96px + env(safe-area-inset-top))!important;
+    right:calc(14px + env(safe-area-inset-right))!important;
+    left:auto!important;
+    bottom:auto!important;
+    width:auto!important;
+    padding:0 13px!important;
+    min-height:36px!important;
+    background:rgba(248,245,235,.94)!important;
+    color:#292723!important;
+    border:1px solid rgba(152,128,81,.6)!important;
+    box-shadow:0 5px 20px rgba(20,20,20,.15)!important;
+  }
+  #walkOverlay .museum-v5-dock #museumView[aria-pressed="true"]{
+    background:rgba(41,41,36,.84)!important;color:#fff!important;
+  }
+}
