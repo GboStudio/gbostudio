@@ -1,4 +1,4 @@
-/* THE EMPTY MUSEUM — offline-first canvas navigation.
+/* THE UNREAL MUSEUM — offline-first canvas navigation.
  * This fallback has no CDN, no WebGL, no font dependency and no external assets.
  */
 (() => {
@@ -70,7 +70,7 @@ function draw(){
  }
  // Architectural sign and subtly vignetted interior.
  ctx.textAlign="center";ctx.fillStyle="#998a69";ctx.font="bold "+Math.max(10,Math.min(15,W*.016))+"px Arial";ctx.letterSpacing="3px";
- ctx.fillText("THE EMPTY MUSEUM  /  ORIGINAL WALL 2026",W/2,Math.max(82,hz-52));
+ ctx.fillText("THE UNREAL MUSEUM  /  ORIGINAL WALL 2026",W/2,Math.max(82,hz-52));
  const v=ctx.createRadialGradient(W/2,H/2,W*.1,W/2,H/2,W*.85);v.addColorStop(0,"#0000");v.addColorStop(1,"#625e5324");rect(0,0,W,H,v);
 }
 function focus(i,details=false){selected=(i+works.length)%works.length;target=selected-4;$("#navIndex").textContent=String(selected+1).padStart(2,"0")+" / 09";$("#zoneTitle").textContent=works[selected][0]+" — TEM / "+String(selected+1).padStart(3,"0");if(details)show(selected)}
