@@ -38,7 +38,7 @@ const st={i:Math.min(C-1,Math.max(0,Number(saved.i)||0)),mode:saved.mode==='free
   pitch:Number(saved.pitch)||0,drag:null,move:false,time:0,lastSave:0};
 let scene,camera,renderer,clock,raycaster,texRay,animation;
 const art=[],frames=[],keys=new Set();
-const desired=new THREE.Vector3(0,1.73,4.5),quat=new THREE.Quaternion(),orient=new THREE.Object3D();
+const desired=new THREE.Vector3(0,1.73,4.5),quat=new THREE.Quaternion(),orient=new THREE.PerspectiveCamera();
 const clamp=THREE.MathUtils.clamp,canvas=$('#scene');
 const palettes=[
 ['#253f46','#e5bfb1','#f3e2ca'],['#cfc3b1','#64594e','#e9d8b8'],
@@ -136,7 +136,7 @@ function focus(i){
  st.i=(i+C)%C;st.time=0;
  if(st.mode==='guided'){
   const p=frames[st.i];
-  desired.set(p.side*1.35,1.73,clamp(p.z+1.45,MINZ+1.7,MAXZ));
+  desired.set(p.side*2.9,1.73,clamp(p.z+1.55,MINZ+1.7,MAXZ));
   orient.position.copy(desired);orient.lookAt(p.x,p.y,p.z);quat.copy(orient.quaternion);
  }
  sync();save(true);
