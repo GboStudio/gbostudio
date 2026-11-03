@@ -634,7 +634,53 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   let active=false,frame=0,last=0,yaw=0,pitch=0,yawTarget=0,pitchTarget=0,walkTo=null,down=null,focusBefore=null;
   let velX=0,velZ=0,rayTime=0;
   // Museum V10: guided journey uses ONLY occupied exhibits, not anonymous wall bays.
-  const tourState={stops:[],index:-1,motion:null,dwell:0,userMoved:false};
+  const TOUR_SESSION_KEY="tem-guided-tour-session-v1";
+  const TOUR_SESSION_LIFETIME=30*24*60*60*1000;
+  const tourState={stops:[],index:-1,motion:null,dwell:0,userMoved:false,started:false,restored:false};
+  let lastTourSnapshot=0;
+  function clearTourSession(){
+    try{localStorage.removeItem(TOUR_SESSION_KEY);}catch{}
+  }
+  function readTourSession(){
+    try{
+      const data=JSON.parse(localStorage.getItem(TOUR_SESSION_KEY)||"null");
+      if(!data||data.v!==1||!data.id||!Number.isFinite(data.z)||!Number.isFinite(data.x)||
+        !Number.isFinite(data.ts)||Date.now()-data.ts>TOUR_SESSION_LIFETIME)return null;
+      return data;
+    }catch{return null;}
+  }
+  function plannedStops(){
+    return planExhibitionStops(window.TEM.getSlots(),{
+      step:STEP,half:HALF,start:5.7,
+      floorSlots:window.TEM.getFloorSlots(),ceilingSlots:window.TEM.getCeilingSlots()
+    });
+  }
+  function framingFor(stop,mode){
+    const wide=mode==="room";
+    if(!wide)return {x:stop.cameraX,z:stop.cameraZ,
+      fx:stop.focusX,fy:stop.focusY,fz:stop.focusZ,fov:mobile?56:51};
+    if(stop.kind==="floor"){
+      return {x:clamp(stop.slot.x*.22,-1.2,1.2),z:stop.z-4.1,
+        fx:stop.focusX,fy:stop.focusY,fz:stop.focusZ,fov:mobile?67:63};
+    }
+    if(stop.kind==="ceiling"){
+      return {x:.7,z:stop.z-3.1,
+        fx:stop.focusX,fy:stop.focusY,fz:stop.focusZ,fov:mobile?68:64};
+    }
+    return {x:stop.cameraX>0?.28:-.28,z:stop.z-3.0,
+      fx:stop.focusX,fy:stop.focusY,fz:stop.focusZ,fov:mobile?68:64};
+  }
+  function saveTourSession(){
+    if(!active||!tourState.started||tourState.index<0)return;
+    const stop=tourState.stops[tourState.index];if(!stop)return;
+    const snapshot={
+      v:1,ts:Date.now(),id:stop.id,x:view.x,z:view.z,
+      yaw,pitch,mode:v5.getViewMode(),
+      phase:tourState.motion?"approach":story.hidden?"between":"viewing",
+      dwell:tourState.dwell,userMoved:tourState.userMoved
+    };
+    try{localStorage.setItem(TOUR_SESSION_KEY,JSON.stringify(snapshot));}catch{}
+  }
   const story=document.createElement("aside");
   story.className="tem-tour-story";
   story.id="temTourStory";story.hidden=true;
@@ -645,9 +691,11 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   arrival.id="temTourArrival";arrival.hidden=true;arrival.setAttribute("aria-live","polite");overlay.appendChild(arrival);
   let arrivalTimer=0;
   function hideTourStory(){story.hidden=true;arrival.hidden=true;clearTimeout(arrivalTimer);}
-  function resetTourState(){
+  function resetTourState(clearSaved=false){
     tourState.index=-1;tourState.motion=null;tourState.dwell=0;tourState.userMoved=false;
-    tourState.stops=[];overlay.dataset.tourStop="0";hideTourStory();
+    tourState.stops=[];tourState.started=false;tourState.restored=false;
+    overlay.dataset.tourStop="0";hideTourStory();
+    if(clearSaved)clearTourSession();
   }
   function showTourStory(){
     const stop=tourState.stops[tourState.index];if(!stop)return;
@@ -664,39 +712,69 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     arrival.textContent=(tourState.index+1)+" / "+total+"  ·  "+stop.piece.title;
     arrival.hidden=false;clearTimeout(arrivalTimer);arrivalTimer=setTimeout(()=>arrival.hidden=true,2400);
     tourState.dwell=0;
+    saveTourSession();
+  }
+  function goToArtworkIndex(index,stops=plannedStops()){
+    const stop=stops[index];if(!stop)return false;
+    tourState.stops=stops;tourState.index=index;tourState.dwell=0;
+    tourState.userMoved=false;tourState.restored=false;
+    hideTourStory();
+    const shot=framingFor(stop,v5.getViewMode());
+    const dx=shot.fx-shot.x,dz=shot.fz-shot.z;
+    let destYaw=Math.atan2(dx,dz);
+    while(destYaw-yaw>Math.PI)destYaw-=Math.PI*2;
+    while(destYaw-yaw< -Math.PI)destYaw+=Math.PI*2;
+    const targetPitch=Math.atan2(shot.fy-1.72,Math.hypot(dx,dz));
+    const distance=Math.hypot(shot.x-view.x,shot.z-view.z);
+    camera.fov=shot.fov;camera.updateProjectionMatrix();
+    tourState.motion={
+      fromX:view.x,fromZ:view.z,fromYaw:yaw,fromPitch:pitch,
+      x:shot.x,z:shot.z,yaw:destYaw,pitch:targetPitch,
+      elapsed:0,startedAt:performance.now(),
+      duration:approachDuration(distance,matchMedia("(prefers-reduced-motion: reduce)").matches)
+    };
+    arrival.textContent="DIRECTION : "+(stop.piece.title||"ŒUVRE");
+    arrival.hidden=false;clearTimeout(arrivalTimer);
+    arrivalTimer=setTimeout(()=>arrival.hidden=true,1900);
+    saveTourSession();
+    return true;
   }
   function goToNextArtwork({fromCurrent=false}={}){
-    const stops=planExhibitionStops(window.TEM.getSlots(),{
-      step:STEP,half:HALF,start:5.7,
-      floorSlots:window.TEM.getFloorSlots(),ceilingSlots:window.TEM.getCeilingSlots()
-    });
-    if(!stops.length){v5.toast("LE MUSÉE N’A PAS ENCORE D’ŒUVRE À PRÉSENTER");v5.finishTour();return false;}
+    const stops=plannedStops();
+    if(!stops.length){v5.toast("LE MUSÉE N’A PAS ENCORE D’ŒUVRE À PRÉSENTER");v5.finishTour();clearTourSession();return false;}
     const prevId=tourState.stops[tourState.index]?.id;
     const mapped=prevId?stops.findIndex(st=>st.id===prevId):-1;
-    let next=fromCurrent?routeResumeIndex(stops,view.z):routeNextIndex(stops,mapped,view.z);
-    // Beginning a new guided tour should always start at the ORIGINAL WALL.
-    if(!fromCurrent && mapped===stops.length-1 && next===0){
+    const next=fromCurrent?routeResumeIndex(stops,view.z):routeNextIndex(stops,mapped,view.z);
+    if(!fromCurrent&&mapped===stops.length-1&&next===0){
       view.x=0;view.z=.85;view.y=1.72;velX=0;velZ=0;
       yaw=0;yawTarget=0;pitch=0;pitchTarget=0;
     }
-    const stop=stops[next];
-    tourState.stops=stops;tourState.index=next;tourState.dwell=0;tourState.userMoved=false;
-    hideTourStory();
-    const dx=stop.focusX-stop.cameraX,dz=stop.focusZ-stop.cameraZ;
-    let destYaw=Math.atan2(dx,dz);
-    // Avoid 350° spins when alternating between the left and right walls.
-    while(destYaw-yaw>Math.PI)destYaw-=Math.PI*2;
-    while(destYaw-yaw< -Math.PI)destYaw+=Math.PI*2;
-    const targetPitch=Math.atan2(stop.focusY-1.72,Math.hypot(dx,dz));
-    const distance=Math.hypot(stop.cameraX-view.x,stop.cameraZ-view.z);
-    tourState.motion={
-      fromX:view.x,fromZ:view.z,fromYaw:yaw,fromPitch:pitch,
-      x:stop.cameraX,z:stop.cameraZ,yaw:destYaw,pitch:targetPitch,
-      elapsed:0,startedAt:performance.now(),duration:approachDuration(distance,matchMedia("(prefers-reduced-motion: reduce)").matches)
-    };
-    arrival.textContent="DIRECTION : "+(stop.piece.title||"ŒUVRE");
-    arrival.hidden=false;
-    arrivalTimer=setTimeout(()=>arrival.hidden=true,1900);
+    return goToArtworkIndex(next,stops);
+  }
+  function restoreTourSession(){
+    const data=readTourSession();if(!data)return false;
+    const stops=plannedStops(),index=stops.findIndex(stop=>stop.id===data.id);
+    if(index<0){clearTourSession();return false;}
+    tourState.stops=stops;tourState.index=index;tourState.motion=null;
+    tourState.started=true;tourState.restored=true;
+    tourState.userMoved=Boolean(data.userMoved);
+    tourState.dwell=clamp(data.dwell||0,0,7);
+    v5.setViewMode(data.mode==="room"?"room":"art",true);
+    const shot=framingFor(stops[index],v5.getViewMode());
+    camera.fov=shot.fov;camera.updateProjectionMatrix();
+    view.x=clamp(data.x,-HALF+1.4,HALF-1.4);
+    view.z=clamp(data.z,.80,LENGTH-2.8);
+    yaw=Number.isFinite(data.yaw)?data.yaw:0;
+    pitch=Number.isFinite(data.pitch)?clamp(data.pitch,-.98,.98):0;
+    yawTarget=yaw;pitchTarget=pitch;velX=0;velZ=0;
+    const distance=Math.hypot(shot.x-view.x,shot.z-view.z);
+    if(data.phase==="viewing"&&distance<1){
+      showTourStory();
+      tourState.dwell=clamp(data.dwell||0,0,7);
+    }else hideTourStory();
+    overlay.dataset.tourStop=String(index+1);
+    v5.setResumeAvailable(true);
+    v5.toast("VISITE SAUVEGARDÉE · REPRENEZ OÙ VOUS ÉTIEZ");
     return true;
   }
   story.querySelector("#temTourNext").addEventListener("click",()=>{
