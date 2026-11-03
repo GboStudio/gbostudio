@@ -1,4 +1,4 @@
-/* THE EMPTY MUSEUM · V3 — museum-first immersive visitor.
+/* THE UNREAL MUSEUM · V3 — museum-first immersive visitor.
    The gallery mirrors the local demo's 38 initial wall bays, five floor stations
    and ceiling-unlock rule. It remains a LOCAL DEMONSTRATION, not a public backend. */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js';
@@ -24,7 +24,7 @@ try{
     if(!p||!Number.isFinite(Number(p.id)))continue;
     const w={id:Number(p.id),title:String(p.title||'Sans titre').slice(0,100),author:String(p.author||'Anonyme').slice(0,80),
       category:String(p.category||'image').slice(0,30),tools:String(p.tools||'Création personnelle').slice(0,100),
-      description:String(p.description||p.words||'Une création exposée dans The Empty Museum.').slice(0,650),
+      description:String(p.description||p.words||'Une création exposée dans The Unreal Museum.').slice(0,650),
       image:/^data:image\/(?:png|jpeg|jpg|webp);base64,/i.test(p.image||'')?p.image:null,
       words:String(p.words||'').slice(0,300),theme:Number(p.id)%8,demo:false,slot:p.slot};
     if(typeof p.slot==='string'&&/^S\d+$/i.test(p.slot))floorWorks.push(w);
@@ -111,7 +111,7 @@ function architecture(){const walls=material(0xf1efeb,.98),plaster=material(0xe8
    const z=-(6+section*6*3.5);
    for(const side of [-1,1]){box(scene,.36,HEIGHT-.28,.62,plaster,side*(HALF-.31),2.1,z);box(scene,.055,HEIGHT-.2,.65,trim,side*(HALF-.55),2.1,z);}
    box(scene,HALF*2-.7,.26,.64,plaster,0,HEIGHT-.25,z);
-   const placard=new THREE.Mesh(new THREE.PlaneGeometry(1.45,.36),new THREE.MeshBasicMaterial({map:labelTexture('GALERIE '+String(section+1).padStart(2,'0'),'THE EMPTY MUSEUM')}));
+   const placard=new THREE.Mesh(new THREE.PlaneGeometry(1.45,.36),new THREE.MeshBasicMaterial({map:labelTexture('GALERIE '+String(section+1).padStart(2,'0'),'THE UNREAL MUSEUM')}));
    placard.position.set(0,HEIGHT-.53,z+.35);scene.add(placard);
  }
  // Luminous recessed ceiling panels; unlit meshes avoid an expensive spotlight per bay.
@@ -126,7 +126,7 @@ function architecture(){const walls=material(0xf1efeb,.98),plaster=material(0xe8
    box(scene,1.7,.09,.45,wood,0,.57,z);
    for(const x of [-.67,.67])box(scene,.055,.57,.39,leg,x,.285,z);
  }
- const last=new THREE.Mesh(new THREE.PlaneGeometry(3.6,.9),new THREE.MeshBasicMaterial({map:labelTexture('THE EMPTY MUSEUM','THE WALL CONTINUES'),side:THREE.DoubleSide}));last.position.set(0,2.75,END+.15);scene.add(last);
+ const last=new THREE.Mesh(new THREE.PlaneGeometry(3.6,.9),new THREE.MeshBasicMaterial({map:labelTexture('THE UNREAL MUSEUM','THE WALL CONTINUES'),side:THREE.DoubleSide}));last.position.set(0,2.75,END+.15);scene.add(last);
 }
 function picture(side,z,w,slot){const mount=new THREE.Group();mount.position.set(side*(HALF-.15),2.42,z);mount.rotation.y=side===-1?Math.PI/2:-Math.PI/2;scene.add(mount);
  const wSize=w?({mini:1.3,portrait:1.5,landscape:2.2,wide:2.7,tall:1.85,panorama:2.8}[w.size]||2.12):2.1;
@@ -155,7 +155,7 @@ function wallInstallations(){
     mount.rotation.y=side<0?Math.PI/2:-Math.PI/2;
     scene.add(mount);
     const label=new THREE.Mesh(new THREE.PlaneGeometry(1.16,.3),
-      new THREE.MeshBasicMaterial({map:labelTexture('MUR PRIVATIF','ESPACE DISPONIBLE'),side:THREE.DoubleSide}));
+      new THREE.MeshBasicMaterial({map:labelTexture('MUR TOTAL','ESPACE DISPONIBLE'),side:THREE.DoubleSide}));
     label.position.z=.09;
     mount.add(label);
     const pickArea=new THREE.Mesh(new THREE.PlaneGeometry(2.1,.68),
@@ -167,11 +167,15 @@ function wallInstallations(){
 }
 function showWall(section){
   hideIntro();closeDetails();
-  activeWall=section;currentReserve=null;st.playing=false;st.detail=true;
+  activeWall=section;currentReserve=null;st.playing=false;st.detail=true;st.mode='guided';
+  const z=-(5.7+(section.base+2)*3.5);
+  desired.set(section.side*1.6,1.72,clamp(z+2.5,END+2,MAXZ));
+  lookCam.position.copy(desired);lookCam.lookAt(section.side*(HALF-.15),2.20,z);
+  desiredRotation.copy(lookCam.quaternion);sync();
   $('#detailNumber').textContent='MUR PRIVATIF / '+String(section.base/6+1).padStart(2,'0');
   $('#detailCategory').textContent='ESPACE EXCLUSIF · PROJET';
-  $('#detailTitle').textContent='UN MUR ENTIER. VOTRE UNIVERS.';
-  $('#detailDescription').textContent='Une surface d’exposition complète regroupant trois emplacements sur le même côté de la galerie. Idéal pour une fresque, un triptyque ou un univers immersif. Offre en préparation : aucune réservation ni aucun paiement ici.';
+  $('#detailTitle').textContent='LE MUR TOTAL. VOTRE UNIVERS.';
+  $('#detailDescription').textContent='Un pan entier de galerie regroupant trois emplacements du même côté, sur un module architectural d’environ 21 mètres de long. Idéal pour une fresque, un triptyque ou un univers immersif. Offre à l’étude : aucune réservation et aucun paiement ici.';
   $('#detailAuthor').textContent='EXCLUSIVITÉ TEMPORAIRE';
   $('#detailTools').textContent='FRESQUE · PANORAMA · COLLECTION';
   $('#detailThumb').style.backgroundImage='none';
@@ -184,7 +188,7 @@ function describeWalls(){
   if(!wholeWalls.length){
     $('#temWall').disabled=true;$('#temWall').textContent='MURS COMPLETS';return;
   }
-  $('#temWall').textContent='MUR PRIVATIF · '+wholeWalls.length;
+  $('#temWall').textContent='MUR TOTAL · '+wholeWalls.length;
 }
 function sculpturalStudy(seed,m){
  const group=new THREE.Group();
@@ -415,5 +419,5 @@ function init(){if(!window.WebGLRenderingContext)throw Error('WebGL not supporte
  $('#loadbar').style.width='100%';$('#loadstate').textContent='LE MUSÉE EST PRÊT';$('#enter').hidden=false;
  $('#loader').classList.add('hidden');raf=requestAnimationFrame(animate);
 }
-try{init();}catch(e){console.error('[TEM] Museum v3 cannot start',e);if(raf)cancelAnimationFrame(raf);window.TEMStartFallback?.(e);
+try{init();}catch(e){console.error('[TEM] Museum v4 cannot start',e);if(raf)cancelAnimationFrame(raf);window.TEMStartFallback?.(e);
  if(!window.TEMStartFallback){$('#loader')?.classList.add('hidden');$('#fallback').hidden=false;}}
