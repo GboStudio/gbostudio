@@ -248,7 +248,7 @@ const stopModelPreview=()=>{if(modelToolsPromise)modelToolsPromise.then(m=>m.sto
     }
     const p={slot:state.slot,size:'floor',floorType:state.type,floorColor:colorHex(state.tint),floorShape:state.shape,floorText:text,
       category:state.type==='model'||state.type==='statue'?'3d':state.type==='photo'?'image':state.type==='neon'?'words':'design',
-      title,author,description:state.type==='model'?'Modèle 3D personnel exposé sur le socle '+state.slot+'.':text||'Installation créée pour The Empty Museum.',
+      title,author,description:state.type==='model'?'Modèle 3D personnel exposé sur le socle '+state.slot+'.':text||'Installation créée pour The Unreal Museum.',
       tools:state.type==='model'?'Import 3D : '+saved.format.toUpperCase():'Studio du musée',
       image:state.image,modelKey:saved?.key||null,modelName:saved?.name||null,modelFormat:saved?.format||null,
       durationMonths:1};
