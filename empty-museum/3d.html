@@ -1,26 +1,26 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>The Empty Museum — Galerie 3D</title><meta name="description" content="Entrez dans The Empty Museum : un musée immersif des créations humaines réalisées avec l'intelligence artificielle.">
+<title>The Unreal Museum — Galerie 3D</title><meta name="description" content="Entrez dans The Unreal Museum : un musée immersif des créations humaines réalisées avec l'intelligence artificielle.">
 <meta name="theme-color" content="#f2f0eb"><link rel="canonical" href="https://gbostudio.fr/empty-museum/3d.html">
 <link rel="stylesheet" href="./gallery.css"><link rel="stylesheet" href="./gallery-v3.css?v=20261103d"></head>
 <body>
-<div class="loader" id="loader"><div class="loader-inner"><span class="tiny">GBO STUDIO PRESENTS — 2026</span><h1>THE EMPTY<br><em>MUSEUM.</em></h1><div class="loadline"><span id="loadbar"></span></div><small id="loadstate">CONSTRUCTION DE LA GALERIE…</small><button id="enter" hidden>ENTRER DANS LE MUSÉE <span>↗</span></button></div><span class="loadfoot">A MUSEUM OF WHAT HUMANS MAKE WITH AI</span></div>
+<div class="loader" id="loader"><div class="loader-inner"><span class="tiny">GBO STUDIO PRESENTS — 2026</span><h1>THE UNREAL<br><em>MUSEUM.</em></h1><div class="loadline"><span id="loadbar"></span></div><small id="loadstate">CONSTRUCTION DE LA GALERIE…</small><button id="enter" hidden>ENTRER DANS LE MUSÉE <span>↗</span></button></div><span class="loadfoot">A MUSEUM OF WHAT HUMANS MAKE WITH AI</span></div>
 <div class="shell" id="shell">
-<header class="header"><a href="/empty-museum/" class="brand" aria-label="The Empty Museum accueil"><span class="monogram">E.</span><span>THE EMPTY<br>MUSEUM</span></a>
+<header class="header"><a href="/empty-museum/" class="brand" aria-label="The Unreal Museum accueil"><span class="monogram">U.</span><span>THE UNREAL<br>MUSEUM</span></a>
 <span class="header-center">GALERIE 001 <span class="sep">/</span> LE MUR ORIGINAL 2026</span>
-<nav><a class="ghost-link" href="/empty-museum/">LE MUSÉE</a><a class="ghost-link" href="/applications.html">GBO STUDIO</a><a class="outline" href="/empty-museum/#pricing">EXPOSER UNE ŒUVRE ↗</a></nav></header>
+<nav><a class="ghost-link" href="/empty-museum/">LE MUSÉE</a><a class="ghost-link" href="/empty-museum/#mur-total">MUR TOTAL</a><a class="ghost-link" href="/applications.html">GBO STUDIO</a><a class="outline" href="/empty-museum/#pricing">EXPOSER UNE ŒUVRE ↗</a></nav></header>
 <div class="stage"><canvas id="scene" aria-label="Galerie de musée en 3D à explorer" tabindex="0"></canvas><div class="grain" aria-hidden="true"></div><div class="edge-fade" aria-hidden="true"></div></div>
-<div class="intro-overlay" id="intro"><div class="kicker"><span class="led"></span> GALERIE EXPÉRIMENTALE — DÉMONSTRATION</div><h1>THE EMPTY<br><i>MUSEUM.</i></h1><p>Un mur blanc. Des créations humaines assistées par l'IA. Un musée qui s'agrandit avec chaque nouvelle œuvre.</p><button id="explore" class="intro-cta">EXPLORER LE MUR <span>↗</span></button></div>
+<div class="intro-overlay" id="intro"><div class="kicker"><span class="led"></span> GALERIE EXPÉRIMENTALE — DÉMONSTRATION</div><h1>THE UNREAL<br><i>MUSEUM.</i></h1><p>Un mur blanc. Des créations humaines assistées par l'IA. Un musée qui s'agrandit avec chaque nouvelle œuvre.</p><button id="explore" class="intro-cta">EXPLORER LE MUR <span>↗</span></button></div>
 <div class="hud-left"><span>ORIGINAL WALL</span><strong>2026<span class="dot">.</span></strong><small><span id="totalPieces">06</span> ŒUVRES DE DÉMONSTRATION</small></div>
 <div class="hud-top"><span class="dotline"></span><span id="zoneTitle">HALL 01 — WHITE ROOM</span><span class="dotline"></span></div>
 <div class="hud-bottom"><div class="instructions"><b>EXPLORATION</b><span>VISITE GUIDÉE OU EXPLORATION LIBRE <span class="line">/</span> CLIQUER UNE ŒUVRE</span></div>
-<div class="controls"><button id="prev" aria-label="Œuvre précédente">←</button><span id="navIndex">01 / 09</span><button id="next" aria-label="Œuvre suivante">→</button></div><button id="random" class="random">EMMENEZ-MOI AILLEURS <span>↗</span></button></div>
+<div class="controls"><button id="prev" aria-label="Œuvre précédente">←</button><span id="navIndex">01 / 06</span><button id="next" aria-label="Œuvre suivante">→</button></div><button id="random" class="random">EMMENEZ-MOI AILLEURS <span>↗</span></button></div>
 <div class="mobile-tip">GLISSEZ POUR EXPLORER &nbsp; ↔</div>
 <aside class="detail" id="detail" aria-hidden="true"><button class="detail-close" id="closeDetail" aria-label="Fermer">×</button><span class="tiny" id="detailNumber">COLLECTION / 001</span><div class="detail-thumbnail" id="detailThumb"></div><span class="detail-category" id="detailCategory">ART & IMAGE</span><h2 id="detailTitle">FORM STUDY</h2><div class="detail-rule"></div><p id="detailDescription"></p><div class="detail-meta"><div><small>ARTISTE</small><b id="detailAuthor"></b></div><div><small>CRÉÉ AVEC</small><b id="detailTools"></b></div><div><small>EXPOSITION</small><b>12 MOIS · DÉMO</b></div></div><button id="share" class="share">COPIER LE LIEN DE CETTE ŒUVRE ↗</button><small class="demo-note">Les œuvres et artistes présentés sont fictifs. Cette galerie est une démonstration technique.</small></aside>
 <div class="credits"><span>PBR MATERIALS <a href="https://polyhaven.com/" rel="noopener noreferrer" target="_blank">POLY HAVEN CC0 ↗</a></span><span id="graphicsLabel">REAL-TIME 3D / STATIC LIGHTMAP</span></div>
 <div class="no-webgl" id="fallback" hidden><h2>La galerie 3D ne peut pas démarrer ici.</h2><p>Votre navigateur bloque WebGL ou le chargement du moteur. Vous pouvez explorer les œuvres dans la galerie 2D.</p><a href="/empty-museum/#wall">VISITER LE MUR 2D ↗</a></div>
 </div>
-<script>
+<script src="./cloud-config.js?v=20261104a"></script><script>
 /* Reliable progressive loader: actual WebGL when available, local canvas fallback otherwise.
    Time limit and late-import guard prevent endless splash screens on Safari and slow CDNs. */
 (function () {
@@ -47,7 +47,7 @@
     return;
   }
   loadTimer=setTimeout(function(){fallback("3D loading timeout");},14000);
-  import("./gallery-v3.js?v=20261103d").then(function(){
+  import("./gallery-v4.js?v=20261104a").then(function(){
     if (!started){resolved=true;clearTimeout(loadTimer);}
   }).catch(function(error){fallback(error);});
 })();
