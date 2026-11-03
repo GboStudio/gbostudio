@@ -1,7 +1,7 @@
 // The Empty Museum · V7 — simplified mobile gallery navigation.
 // The renderer remains responsible for all camera physics.
 // Visitors can look freely while moving safely down the central aisle.
-export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nextStop,onTourChange}) {
+export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nextStop,onTourChange,onViewChange}) {
   const shell=document.createElement("div");
   shell.className="museum-v5-shell";
   shell.innerHTML=`
@@ -23,16 +23,17 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     <div class="museum-v5-dock">
       <button type="button" id="museumTour" aria-pressed="false">▶ &nbsp; VISITE GUIDÉE</button>
       <button type="button" id="museumNextStop" aria-label="Découvrir la prochaine œuvre">→ &nbsp; ŒUVRE SUIVANTE</button>
+      <button type="button" id="museumView" aria-label="Changer le cadrage de la visite" aria-pressed="false">▣ &nbsp; VUE ŒUVRE</button>
       <button type="button" id="museumHome" aria-label="Revenir au début du musée">⌖ &nbsp; DÉBUT</button>
       <button type="button" id="museumFreeToggle" aria-pressed="false">◌ &nbsp; MODE LIBRE</button>
       <button type="button" id="museumFull" aria-label="Passer en plein écran">⛶ &nbsp; PLEIN ÉCRAN</button>
     </div>`;
   overlay.appendChild(shell);
   const $=sel=>shell.querySelector(sel);
-  const tourBtn=$("#museumTour"),cruiseBtn=$("#museumAdvance"),freeBtn=$("#museumFreeToggle"),nextBtn=$("#museumNextStop");
+  const tourBtn=$("#museumTour"),cruiseBtn=$("#museumAdvance"),freeBtn=$("#museumFreeToggle"),nextBtn=$("#museumNextStop"),viewBtn=$("#museumView");
   const reticle=$(".museum-v5-reticle"),notice=$(".museum-v5-notice"),help=$(".museum-v5-help"),guide=overlay.querySelector(".walk-guide");
   const zone=$(".joystick-ring"),knob=$(".joystick-knob"),joystick=$(".museum-v5-joystick");
-  let stick={x:0,y:0},touchId=null,auto=false,cruise=false,free=false,elapsed=0,visible=false,pausedTour=false,resumeRequested=false;
+  let stick={x:0,y:0},touchId=null,auto=false,cruise=false,free=false,elapsed=0,visible=false,pausedTour=false,resumeRequested=false,resumeAvailable=false,viewMode="art";
   let toastTimer=0,helpTimer=0,guideTimer=0;
   function toast(message){
     notice.textContent=message;
@@ -43,9 +44,18 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
   function paintTour(){
     tourBtn.setAttribute("aria-pressed",String(auto));
     tourBtn.classList.toggle("is-playing",auto);
-    tourBtn.textContent=auto?"Ⅱ  ·  PAUSE VISITE":pausedTour?"▶  ·  REPRENDRE LA VISITE":"▶  ·  VISITE GUIDÉE";
+    tourBtn.textContent=auto?"Ⅱ  ·  PAUSE VISITE":(pausedTour||resumeAvailable)?"▶  ·  REPRENDRE LA VISITE":"▶  ·  VISITE GUIDÉE";
     overlay.classList.toggle("museum-v5-tour",auto);
   }
+  function setResumeAvailable(flag){resumeAvailable=Boolean(flag);paintTour();}
+  function setViewMode(mode,silent=false){
+    viewMode=mode==="room"?"room":"art";
+    viewBtn.setAttribute("aria-pressed",String(viewMode==="room"));
+    viewBtn.textContent=viewMode==="room"?"◫  VUE SALLE":"▣  VUE ŒUVRE";
+    viewBtn.setAttribute("aria-label",viewMode==="room"?"Passer en cadrage rapproché sur l’œuvre":"Voir l’œuvre et la salle en plan large");
+    if(!silent)onViewChange?.(viewMode);
+  }
+  viewBtn.addEventListener("click",()=>setViewMode(viewMode==="art"?"room":"art"));
   // The former cruise button walked straight down an empty corridor.
   // Every press now brings the visitor directly to the next occupied exhibit.
   function paintCruise(){
@@ -61,7 +71,8 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
   function stopCruise(){cruise=false;paintCruise();}
   function setTour(next,silent=false){
     if(next){
-      resumeRequested=pausedTour;
+      resumeRequested=pausedTour||resumeAvailable;
+      resumeAvailable=false;
       if(cruise)stopCruise();
       if(free){free=false;shell.classList.remove("is-free");freeBtn.setAttribute("aria-pressed","false");freeBtn.textContent="◌  MODE LIBRE";releaseStick();}
       pausedTour=false;
@@ -73,7 +84,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     if(!silent)toast(auto?"VISITE GUIDÉE · LE MUSÉE S'OCCUPE DU TRAJET":pausedTour?"VISITE EN PAUSE · TOUCHEZ REPRENDRE":"VISITE LIBRE");
   }
   function finishTour(){
-    auto=false;pausedTour=false;resumeRequested=false;paintTour();
+    auto=false;pausedTour=false;resumeRequested=false;resumeAvailable=false;paintTour();
   }
   function manual(){if(auto)setTour(false,true);}
   function toggleCruise(){
@@ -136,6 +147,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     if(!visible||document.querySelector("dialog[open]"))return;
     if(event.code==="KeyR"){finishTour();stopCruise();home();}
     if(event.code==="KeyG")setTour(!auto);
+    if(event.code==="KeyV"){event.preventDefault();setViewMode(viewMode==="art"?"room":"art");}
     if(event.code==="Space" && mobile){event.preventDefault();toggleCruise();}
   });
   function update(dt){
@@ -169,6 +181,6 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     clearTimeout(guideTimer);
   }
   function setNear(flag){reticle.classList.toggle("is-near",Boolean(flag));}
-  return {update,enter,leave,setTour,finishTour,setNear,toast,isTour:()=>auto,
+  return {update,enter,leave,setTour,finishTour,setNear,toast,setResumeAvailable,setViewMode,getViewMode:()=>viewMode,isTour:()=>auto,
     manual,stopCruise,isCruising:()=>cruise};
 }
