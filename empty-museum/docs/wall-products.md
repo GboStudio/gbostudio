@@ -5,7 +5,7 @@
 ## Three complementary products
 
 - **Cadre individuel** — one existing wall slot; existing demo's formats 20×30 to 100×40 cm; baseline durations 12 months.
-- **Mur privatif** — exclusive use of **three adjacent bays on the same side** of a six-bay gallery segment (approx. 10.5 linear metres, excluding architectural margins); annual license to an exhibition surface. Creator may display 1 panoramic composition or a curated triptych. Do not advertise this as freehold property or a permanent right.
+- **Mur Total (pan de galerie)** — exclusive use of **three bays on the same side** of a six-bay gallery module (about **21 metres of gallery length**; the three artwork centres are 7m apart); annual license to an exhibition surface. Creator may display 1 panoramic composition or a curated triptych. Do not advertise this as freehold property or a permanent right.
 - **Installation 3D au sol / suspendue** — distinct, scarce placements; conditions and expiry dates specific to these media.
 
 ## Inventory contract
@@ -29,7 +29,7 @@ If the agreement includes content moderation, acceptable file formats, copyright
 
 ## Price design (hypotheses, not active offers)
 
-Selling a wall just because it contains three bays does not justify a huge multiple over three frames. First establish visitor traffic and conversion. A limited pilot may test a wall package around **€99–€249 for 12 months**, compared with actual current slot prices and expected demand. This is exploratory and must not be displayed as a payment offer or guaranteed return.
+Do not set a price until the exact surface rights, creative treatment and expected exposure are defined. Test **€149 / €299 / €499 per 12 months** as *pricing hypotheses*, not displayed transaction prices, and compare with revenue from three independent frames. A whole-side premium may be justified by curatorial exclusivity but not by geometry alone. Review demand and moderation workload before launch.
 
 ## Admin UI / lifecycle
 
@@ -39,7 +39,7 @@ Required: proof of rights, metadata/content moderation, image/GLB security, rene
 
 ## Prototype constraints
 
-V4 marks eligible three-bay surfaces. Selecting one opens information about exclusivity. **No checkout or payment** is implemented. It must remain transparent that this is a demonstration.
+V4 shows *potential* three-bay surfaces based on the local demonstration and, if configured, a read-only published artwork list. This is **not authoritative availability** until a transactional server inventory is deployed. Selecting a surface opens an explanation of the exclusive format. **No checkout, confirmed reservation or payment** is implemented. It must remain transparent that this is a demonstration.
 
 ## Editorial / brand
 
