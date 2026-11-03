@@ -2,3 +2,25 @@
 
 /* Public demo disclosure */
 .demo-banner{position:relative;z-index:4;display:flex;align-items:center;justify-content:center;gap:14px;padding:13px 22px;text-align:center;background:#191a19;color:#f5f3ec;font:500 12px/1.55 Arial,sans-serif;letter-spacing:.015em}.demo-banner strong{white-space:nowrap;color:#c9e089;font-size:10px;letter-spacing:.12em}@media(max-width:700px){.demo-banner{flex-direction:column;gap:3px;padding:11px 16px;font-size:11px}}
+
+
+/* V4 – Mur Total, a high-end exhibition surface rather than a checkout. */
+.walk-cta a{display:inline-flex;align-items:center;justify-content:center;background:#d8e8b8;color:#182017;border:0;padding:14px 19px;font-size:11px;font-weight:800;letter-spacing:.065em;white-space:nowrap}
+.walk-cta a:hover{background:#e9f4d5}
+.total-wall-offer{margin-top:32px;padding:clamp(25px,4vw,66px);background:#171a18;color:#f6f4ee;border:1px solid #2f332c;position:relative;overflow:hidden;isolation:isolate}
+.total-wall-offer:before{content:"";position:absolute;right:-6%;top:-40%;width:44%;height:150%;background:radial-gradient(ellipse,#b8a1791b,transparent 72%);pointer-events:none}
+.total-wall-eyebrow{font:800 10px/1.4 Arial,sans-serif;letter-spacing:.19em;color:#c7af80;border-bottom:1px solid #ffffff2b;padding-bottom:18px;margin-bottom:25px}
+.total-wall-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(220px,.7fr);align-items:end;gap:6vw}
+.total-wall-offer .eyebrow{color:#b4a58e}
+.total-wall-offer h3{margin:10px 0 17px;font:700 clamp(40px,6vw,96px)/.95 Arial,sans-serif;letter-spacing:-.065em}
+.total-wall-offer h3 em{font:italic 400 .98em Georgia,serif;color:#c8b187}
+.total-wall-offer p{max-width:670px;font:400 15px/1.7 Arial,sans-serif;color:#e4dfd5}
+.total-wall-offer .wall-conditions{font:600 10px/1.7 Arial,sans-serif;letter-spacing:.025em;color:#aea99e;margin-top:23px}
+.total-wall-actions{display:flex;flex-direction:column;gap:10px;max-width:350px}
+.total-wall-actions a{display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:14px 17px;font:800 10px Arial,sans-serif;letter-spacing:.07em}
+.total-wall-actions .total-wall-visit{background:#e6d6b3;color:#262520}
+.total-wall-actions .total-wall-contact{border:1px solid #8b8579;color:#f7f4ed}
+.total-wall-actions a:hover{filter:brightness(1.12)}
+.total-wall-actions small{color:#b0aba2;font:400 10px/1.5 Arial,sans-serif;margin-top:8px}
+@media(max-width:750px){.total-wall-layout{grid-template-columns:1fr;gap:20px}.total-wall-offer{margin-top:26px;padding:25px 22px}.total-wall-offer p{font-size:13px}.total-wall-actions{max-width:none}.walk-cta a{width:100%;min-height:45px;font-size:10px}}
+@media(max-width:400px){.total-wall-offer h3{font-size:42px}}
