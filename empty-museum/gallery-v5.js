@@ -276,25 +276,69 @@ function sculpturalStudy(seed,m){
  }
  return group;
 }
-async function mountApprovedGlb(src,standIn,pedestal){
- const u=new URL(src);
- if(u.protocol!=='https:'||!u.pathname.toLowerCase().endsWith('.glb'))return;
- // Only load public assets from the museum host or configured cloud storage.
- const allowed=[location.hostname];
- try{if(window.TEM_MUSEUM_CONFIG?.supabaseUrl)allowed.push(new URL(window.TEM_MUSEUM_CONFIG.supabaseUrl).hostname);}catch(e){}
- if(!allowed.includes(u.hostname))return;
- if(!gltfLoaderModule)gltfLoaderModule=import('https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/loaders/GLTFLoader.js');
- const {GLTFLoader}=await gltfLoaderModule;
- const loader=new GLTFLoader();
- loader.load(u.href,gltf=>{
-   const object=gltf.scene;
-   const bounds=new THREE.Box3().setFromObject(object),size=bounds.getSize(new THREE.Vector3());
-   if(!Number.isFinite(size.length())||size.length()<.001)return;
-   const scale=Math.min(1.28/Math.max(.1,size.x),1.40/Math.max(.1,size.y),1.28/Math.max(.1,size.z));
+/* A model reference is NOT a trusted upload. Enforce size, resource origin,
+   triangle/vertex budget and geometry bounds on the visitor as well. */
+async function mountApprovedGlb(src,standIn){
+ const url=new URL(src);
+ if(url.protocol!=='https:'||!url.pathname.toLowerCase().endsWith('.glb'))return;
+ const allowed=new Set([location.hostname]);
+ try{if(window.TEM_MUSEUM_CONFIG?.supabaseUrl)allowed.add(new URL(window.TEM_MUSEUM_CONFIG.supabaseUrl).hostname);}catch(e){}
+ if(!allowed.has(url.hostname))return;
+ const limit=mobile?8*1024*1024:15*1024*1024;
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),14000);
+ try{
+   const response=await fetch(url.href,{mode:'cors',signal:controller.signal,credentials:'omit'});
+   if(!response.ok)throw Error('HTTP '+response.status);
+   const known=Number(response.headers.get('content-length')||0);
+   if(known>limit)throw Error('GLB exceeds download limit');
+   let buffer;
+   if(response.body?.getReader){
+     const reader=response.body.getReader(),chunks=[];let bytes=0;
+     while(true){
+       const next=await reader.read();if(next.done)break;
+       const part=next.value;bytes+=part.byteLength;
+       if(bytes>limit){await reader.cancel();throw Error('GLB exceeds download limit');}
+       chunks.push(part);
+     }
+     buffer=new Uint8Array(bytes);let off=0;
+     for(const chunk of chunks){buffer.set(chunk,off);off+=chunk.byteLength;}
+     buffer=buffer.buffer;
+   }else{
+     buffer=await response.arrayBuffer();
+     if(buffer.byteLength>limit)throw Error('GLB exceeds download limit');
+   }
+   const magic=new DataView(buffer).getUint32(0,true);
+   if(buffer.byteLength<20||magic!==0x46546c67)throw Error('Invalid binary GLB');
+   if(!gltfLoaderModule)gltfLoaderModule=import('https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/loaders/GLTFLoader.js');
+   const {GLTFLoader}=await gltfLoaderModule;
+   const manager=new THREE.LoadingManager();
+   manager.setURLModifier(asset=>{
+     // Embedded resources (data and blob URLs) are permitted; remote dependent
+     // textures and scripts are never fetched by the viewer.
+     if(/^(blob:|data:)/.test(asset))return asset;
+     throw Error('External GLB asset blocked');
+   });
+   const loader=new GLTFLoader(manager);
+   const gltf=await new Promise((resolve,reject)=>loader.parse(buffer,url.href,resolve,reject));
+   const root=gltf.scene;
+   let vertices=0,meshes=0;
+   root.traverse(item=>{
+     if(!item.isMesh)return;
+     meshes++;
+     vertices+=item.geometry?.attributes?.position?.count||0;
+   });
+   if(vertices>220000||meshes>90||meshes===0)throw Error('GLB scene too complex');
+   const bounds=new THREE.Box3().setFromObject(root),size=bounds.getSize(new THREE.Vector3());
+   if(!Number.isFinite(size.length())||size.length()<.001||size.length()>1e7)throw Error('Invalid model bounds');
+   const scale=Math.min(1.25/Math.max(.01,size.x),1.35/Math.max(.01,size.y),1.25/Math.max(.01,size.z));
    const center=bounds.getCenter(new THREE.Vector3());
-   object.scale.setScalar(scale);object.position.set(-center.x*scale,-bounds.min.y*scale,-center.z*scale);
-   standIn.clear();standIn.add(object);
- },undefined,e=>console.warn('[TEM] GLB loading failed',e));
+   root.scale.setScalar(scale);
+   root.position.set(-center.x*scale,-bounds.min.y*scale,-center.z*scale);
+   standIn.clear();
+   standIn.add(root);
+ }catch(e){console.warn('[TUM] GLB non affiché, sculpture générique conservée :',e.message||e);}
+ finally{clearTimeout(timeout);}
 }
 function floorStations(){const stations=[12,32,58,96,123];const marker=material(0xafa48f,.66,.3);
  for(let i=0;i<stations.length;i++){
