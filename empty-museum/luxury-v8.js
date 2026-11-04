@@ -33,12 +33,12 @@ export function makeWhiteLuxuryMaterials({mobile,length}) {
       const p=(y*N+x)*4;
       const long=Math.sin(x*.028+y*.011)*.82+Math.sin(y*.046-x*.020)*.53;
       const grain=(rand()-.5)*2.1+long;
-      const v=248+grain*.72;
+      const v=246+grain*.95;
       a.data[p]=Math.round(v);
       a.data[p+1]=Math.round(v-.4);
       a.data[p+2]=Math.round(v-1.2);
       a.data[p+3]=255;
-      const n=Math.round(132+grain*3.0);
+      const n=Math.round(132+grain*3.5);
       b.data[p]=n;b.data[p+1]=n;b.data[p+2]=n;b.data[p+3]=255;
     }
     g.putImageData(a,0,0);h.putImageData(b,0,0);
@@ -67,7 +67,7 @@ export function makeWhiteLuxuryMaterials({mobile,length}) {
         const vein=(Math.sin(x*.031+y*.024+Math.sin(y*.008)*2.0)> .986)?-3.2:0;
         const grain=swirl+crystalline+tileBias+vein;
         const p=(y*size+x)*4;
-        const value=joint?204:229+grain;
+        const value=joint?216:229+grain;
         a.data[p]=Math.round(value+.6);
         a.data[p+1]=Math.round(value-.1);
         a.data[p+2]=Math.round(value-2.4);
@@ -110,14 +110,14 @@ export function makeWhiteLuxuryMaterials({mobile,length}) {
   });
   const floor=new THREE.MeshPhysicalMaterial({
     map:stone.map,bumpMap:stone.bump,bumpScale:.005,
-    color:0xeeeae3,roughness:.56,metalness:0,
-    clearcoat:.13,clearcoatRoughness:.48
+    color:0xeeeae3,roughness:.65,metalness:0,
+    clearcoat:.08,clearcoatRoughness:.62
   });
   const whiteStone=new THREE.MeshStandardMaterial({
     color:0xf8f8f5,roughness:.63,metalness:0
   });
   const matteGold=new THREE.MeshStandardMaterial({
-    color:0x9e8e6f,roughness:.44,metalness:.64
+    color:0x9e8e6f,roughness:.48,metalness:.60
   });
   return {floor,wall,wallAlt,whiteStone,matteGold};
 }
