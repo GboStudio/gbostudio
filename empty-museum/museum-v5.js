@@ -1,4 +1,4 @@
-// The Empty Museum · V7 — simplified mobile gallery navigation.
+// The Unreal Museum · V7 — simplified mobile gallery navigation.
 // The renderer remains responsible for all camera physics.
 // Visitors can look freely while moving safely down the central aisle.
 export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nextStop,onTourChange,onViewChange}) {
@@ -6,7 +6,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
   shell.className="museum-v5-shell";
   shell.innerHTML=`
     <div class="museum-v5-reticle" aria-hidden="true"></div>
-    <div class="museum-v5-help" aria-live="polite">GLISSEZ À DROITE POUR REGARDER · JOYSTICK À GAUCHE POUR AVANCER</div>
+    <div class="museum-v5-help" aria-live="polite">GLISSEZ À DROITE POUR REGARDER · JOYSTICK À DROITE POUR AVANCER</div>
     <div class="museum-v5-notice" aria-live="polite"></div>
     <div class="museum-v5-drive" aria-label="Déplacement assisté">
       <button type="button" id="museumAdvance" aria-pressed="false" aria-label="Découvrir l’œuvre suivante de l’exposition">
@@ -105,7 +105,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     freeBtn.setAttribute("aria-pressed",String(free));
     freeBtn.textContent=free?"✓  MODE LIBRE":"◌  MODE LIBRE";
     releaseStick();
-    toast(free?"MODE LIBRE · DÉPLACEZ LE JOYSTICK À GAUCHE":"MODE GUIDÉ · ŒUVRE SUIVANTE");
+    toast(free?"MODE LIBRE · DÉPLACEZ LE JOYSTICK À DROITE":"MODE GUIDÉ · ŒUVRE SUIVANTE");
   });
   $("#museumFull").addEventListener("click",async()=>{
     try{
