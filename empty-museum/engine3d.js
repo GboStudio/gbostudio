@@ -4,7 +4,7 @@ import {buildMuseumScenography} from "./scenography.js?v=20261031realism9";
 import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261031realism9";
 import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261031pbr1";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
-import {createMuseumV5Navigation} from "./museum-v5.js?v=20261103guided4";
+import {createMuseumV5Navigation} from "./museum-v5.js?v=20261104v12";
 import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261102resume";
 
 (() => {
