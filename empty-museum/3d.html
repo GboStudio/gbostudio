@@ -2,7 +2,7 @@
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>The Unreal Museum — Galerie 3D</title><meta name="description" content="Entrez dans The Unreal Museum : un musée immersif des créations humaines réalisées avec l'intelligence artificielle.">
 <meta name="theme-color" content="#f2f0eb"><link rel="canonical" href="https://gbostudio.fr/empty-museum/3d.html">
-<link rel="stylesheet" href="./gallery.css"><link rel="stylesheet" href="./gallery-v3.css?v=20261103d">
+<link rel="stylesheet" href="./gallery.css"><link rel="stylesheet" href="./gallery-v3.css?v=20261104e">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/"}}</script></head>
 <body>
 <div class="loader" id="loader"><div class="loader-inner"><span class="tiny">GBO STUDIO PRESENTS — 2026</span><h1>THE UNREAL<br><em>MUSEUM.</em></h1><div class="loadline"><span id="loadbar"></span></div><small id="loadstate">CONSTRUCTION DE LA GALERIE…</small><button id="enter" hidden>ENTRER DANS LE MUSÉE <span>↗</span></button></div><span class="loadfoot">A MUSEUM OF WHAT HUMANS MAKE WITH AI</span></div>
@@ -11,7 +11,7 @@
 <span class="header-center">GALERIE 001 <span class="sep">/</span> LE MUR ORIGINAL 2026</span>
 <nav><a class="ghost-link" href="/empty-museum/">LE MUSÉE</a><a class="ghost-link" href="/empty-museum/#mur-total">MUR TOTAL</a><a class="ghost-link" href="/applications.html">GBO STUDIO</a><a class="outline" href="/empty-museum/#pricing">EXPOSER UNE ŒUVRE ↗</a></nav></header>
 <div class="stage"><canvas id="scene" aria-label="Galerie de musée en 3D à explorer" tabindex="0"></canvas><div class="grain" aria-hidden="true"></div><div class="edge-fade" aria-hidden="true"></div></div>
-<div class="intro-overlay" id="intro"><div class="kicker"><span class="led"></span> GALERIE EXPÉRIMENTALE — DÉMONSTRATION</div><h1>THE UNREAL<br><i>MUSEUM.</i></h1><p>Un mur blanc. Des créations humaines assistées par l'IA. Un musée qui s'agrandit avec chaque nouvelle œuvre.</p><button id="explore" class="intro-cta">EXPLORER LE MUR <span>↗</span></button></div>
+<div class="intro-overlay" id="intro"><div class="kicker"><span class="led"></span> GALERIE EXPÉRIMENTALE — DÉMONSTRATION</div><h1>THE UNREAL<br><i>MUSEUM.</i></h1><p>Un mur blanc. Des créations humaines assistées par l'IA. Un musée qui s'agrandit avec chaque nouvelle œuvre.</p><button id="explore" class="intro-cta">ENTRER DANS LE MUSÉE <span>↗</span></button></div>
 <div class="hud-left"><span>ORIGINAL WALL</span><strong>2026<span class="dot">.</span></strong><small><span id="totalPieces">06</span> ŒUVRES DE DÉMONSTRATION</small></div>
 <div class="hud-top"><span class="dotline"></span><span id="zoneTitle">HALL 01 — WHITE ROOM</span><span class="dotline"></span></div>
 <div class="hud-bottom"><div class="instructions"><b>EXPLORATION</b><span>VISITE GUIDÉE OU EXPLORATION LIBRE <span class="line">/</span> CLIQUER UNE ŒUVRE</span></div>
@@ -34,6 +34,20 @@
     window.__TEM_GALLERY_FALLBACK_REQUESTED=true;
     if (loadTimer) clearTimeout(loadTimer);
     console.warn("[TEM] Starting self-contained gallery fallback:", reason);
+    window.__TEM_GALLERY_ERROR_REASON=String(reason?.message||reason||'Erreur de chargement');
+    var note=document.createElement("aside");
+    note.className="gallery-fallback-notice";note.setAttribute("role","status");
+    var label=document.createElement("span");
+    label.textContent="MODE DE VISITE SIMPLIFIÉ — LA 3D N'A PAS DÉMARRÉ";
+    var retry=document.createElement("button");retry.type="button";
+    retry.textContent="RÉESSAYER LA VISITE 3D ↗";
+    retry.onclick=function(){
+      var link=new URL(window.location.href);
+      link.searchParams.set("retry3d",String(Date.now()));
+      window.location.assign(link.href);
+    };
+    note.appendChild(label);note.appendChild(retry);
+    document.getElementById("shell")?.appendChild(note);
     var script=document.createElement("script");
     script.src="./gallery-fallback.js?v=20261101a";
     script.onerror=function () {
@@ -48,7 +62,11 @@
     return;
   }
   loadTimer=setTimeout(function(){fallback("3D loading timeout");},22000);
-  import("./gallery-v5.js?v=20261104c").then(function(){
+  var engineUrl="./gallery-v5.js?v=20261104e";
+  if(new URLSearchParams(location.search).has("retry3d")){
+    engineUrl+="&reload="+encodeURIComponent(new URLSearchParams(location.search).get("retry3d")||Date.now());
+  }
+  import(engineUrl).then(function(){
     if (!started){resolved=true;clearTimeout(loadTimer);}
   }).catch(function(error){fallback(error);});
 })();
