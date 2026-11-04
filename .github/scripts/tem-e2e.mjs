@@ -1,119 +1,99 @@
-import { chromium } from 'playwright';
+import {chromium} from 'playwright';
 
-/*
- * Public museum browser smoke test.
- * Verify the current 3D engine and UX, not an obsolete hardcoded number
- * of demo works or legacy tour controls that no longer exist.
- */
+/* THE UNREAL MUSEUM — browser acceptance test for the SINGLE PBR viewer.
+   Covers actual exploration, not the abandoned frame-by-frame V5 gallery. */
 const base='https://gbostudio.fr/empty-museum/';
-const modes=[
-  {name:'desktop',viewport:{width:1440,height:900},hasTouch:false},
-  {name:'mobile',viewport:{width:390,height:844},hasTouch:true}
+const browsers=[
+  {name:'desktop',viewport:{width:1380,height:850},mobile:false},
+  {name:'mobile',viewport:{width:390,height:844},mobile:true}
 ];
 const browser=await chromium.launch({
   headless:true,
   args:['--no-sandbox','--disable-dev-shm-usage','--enable-unsafe-swiftshader','--use-angle=swiftshader']
 });
 let failures=0;
-for(const mode of modes){
+for(const mode of browsers){
   const context=await browser.newContext({
     viewport:mode.viewport,
-    hasTouch:mode.hasTouch,
-    isMobile:mode.hasTouch,
-    deviceScaleFactor:mode.hasTouch?2:1
+    isMobile:mode.mobile,
+    hasTouch:mode.mobile,
+    deviceScaleFactor:mode.mobile?2:1
   });
-  const page=await context.newPage(),errors=[],consoleWarnings=[],failedRequests=[];
-  page.on('pageerror',e=>errors.push(String(e)));
-  page.on('console',msg=>{if(msg.type()==='error')consoleWarnings.push(msg.text())});
-  page.on('requestfailed',req=>failedRequests.push(req.url()+' :: '+req.failure()?.errorText));
+  const page=await context.newPage();
+  const pageErrors=[],consoleErrors=[],requests=[];
+  page.on('pageerror',e=>pageErrors.push(e.stack||String(e)));
+  page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text())});
+  page.on('requestfailed',r=>requests.push(r.url()+' => '+r.failure()?.errorText));
   try{
-    const response=await page.goto(base+'3d.html',{waitUntil:'domcontentloaded',timeout:40000});
-    if(!response?.ok())throw Error('Museum 3D HTTP status '+(response?.status()??'unknown'));
-    await page.waitForFunction(
-      ()=>document.querySelector('#loader')?.classList.contains('hidden')
-        || window.__TEM_GALLERY_FALLBACK_STARTED===true,
-      null,{timeout:35000}
-    );
+    const response=await page.goto(base+'?visit=immersive',{waitUntil:'domcontentloaded',timeout:45000});
+    if(!response?.ok())throw Error('The Unreal Museum homepage HTTP '+response?.status());
+    await page.locator('#walkOverlay').waitFor({state:'attached',timeout:12000});
     await page.waitForFunction(()=>{
-      const str=document.querySelector('#navIndex')?.textContent||'';
-      return /^\s*\d+\s*\/\s*\d+\s*$/.test(str)&&Number(str.split('/')[1])>0;
-    },null,{timeout:20000});
-    const start=await page.locator('#navIndex').textContent();
-    const info=await page.evaluate(()=>({
-      ready:window.__TEM_V4_READY===true,
-      fallback:window.__TEM_GALLERY_FALLBACK_STARTED===true,
-      nav:document.querySelector('#navIndex')?.textContent,
-      works:document.querySelector('#totalPieces')?.textContent,
-      canvasWidth:document.querySelector('#scene')?.width,
-      canvasHeight:document.querySelector('#scene')?.height,
-      marker:document.querySelector('#graphicsLabel')?.textContent,
-      webglSupported:(()=>{
-        try{const canvas=document.createElement('canvas');const gl=canvas.getContext('webgl')||canvas.getContext('experimental-webgl');const ok=!!gl;gl?.getExtension('WEBGL_lose_context')?.loseContext();return ok;}
-        catch(e){return false;}
-      })()
-    }));
-    console.log('RENDER',mode.name,JSON.stringify(info));
-    if(!info.ready&&!info.fallback)throw Error('Neither museum WebGL nor canvas fallback initialized');
-    if(info.fallback&&info.webglSupported)throw Error('Unexpected 2D fallback even though browser WebGL is available; investigate module/CDN failure');
-    if(info.fallback)console.warn('EXPECTED FALLBACK',mode.name,'this Chromium environment has no usable WebGL context');
-    if(!info.canvasWidth||!info.canvasHeight)throw Error('Museum canvas has zero dimensions');
-    const total=Number(String(start).split('/')[1].trim());
-    if(total!==Number(info.works))throw Error('Work counter mismatch '+total+' != '+info.works);
-
-    await page.locator('#explore').click({timeout:8000});
-    await page.waitForFunction(()=>document.querySelector('#intro')?.classList.contains('dismissed'),null,{timeout:8000});
-    if(info.ready){
-      const state=await page.evaluate(()=>({
-        free:document.querySelector('#temFree')?.classList.contains('active')||false,
-        directions:document.querySelector('#temDirections')?.classList.contains('visible')||false,
-        display:getComputedStyle(document.querySelector('#temDirections')).display
-      }));
-      console.log('FREE ROAM ENTRY',mode.name,JSON.stringify(state));
-      if(!state.free||!state.directions||state.display==='none')
-        throw Error('Free-roam exploration controls missing after entering the 3D museum');
+      return window.__TUM_PREMIUM_READY===true ||
+        (document.querySelector('#walkOverlay')?.hidden===false
+          &&!document.querySelector('.museum-v5-shell'));
+    },null,{timeout:50000});
+    const state=await page.evaluate(()=>{
+      const overlay=document.querySelector('#walkOverlay');
+      const stick=document.querySelector('.museum-v5-joystick');
+      const c=document.querySelector('#walkCanvas');
+      let available=false;
+      try{const test=document.createElement('canvas');available=!!(test.getContext('webgl')||test.getContext('experimental-webgl'));}catch(e){}
+      return {
+        premium:window.__TUM_PREMIUM_READY===true,
+        visible:overlay?.hidden===false,
+        free:document.querySelector('#museumFreeToggle')?.getAttribute('aria-pressed'),
+        isFree:document.querySelector('.museum-v5-shell')?.classList.contains('is-free'),
+        stickDisplay:stick?getComputedStyle(stick).display:'missing',
+        canvasWidth:c?.width||0,canvasHeight:c?.height||0,
+        webgl:available,
+        progress:document.querySelector('#walkProgress')?.textContent||''
+      };
+    });
+    console.log('MUSEUM STATE',mode.name,JSON.stringify(state));
+    if(!state.visible)throw Error('Museum walkthrough overlay is hidden');
+    if(state.webgl&&!state.premium)throw Error('Premium immersive engine failed despite WebGL support');
+    if(state.premium){
+      if(state.free!=='true'||!state.isFree)throw Error('Museum did not start in free exploration');
+      if(state.canvasWidth<=0||state.canvasHeight<=0)throw Error('3D canvas was not resized');
+      if(mode.mobile){
+        if(state.stickDisplay==='none'||state.stickDisplay==='missing')throw Error('Mobile joystick is not visible');
+        const bounds=await page.locator('.joystick-ring').boundingBox();
+        if(!bounds)throw Error('No interactive joystick zone');
+        const x=bounds.x+bounds.width/2,y=bounds.y+bounds.height/2-30;
+        await page.mouse.move(x,y);await page.mouse.down();
+        await page.waitForTimeout(2500);
+        await page.mouse.up();
+      }else{
+        await page.keyboard.down('w');
+        await page.waitForTimeout(2000);
+        await page.keyboard.up('w');
+      }
+      const after=await page.locator('#walkProgress').textContent();
+      const oldMetres=Number((state.progress||'').match(/^\d+/)?.[0]||'0');
+      const newMetres=Number((after||'').match(/^\d+/)?.[0]||'0');
+      console.log('WALK METRES',mode.name,oldMetres,'→',newMetres);
+      if(!(newMetres>oldMetres))throw Error('Visitor did not move forward in the premium museum');
+      await page.locator('#museumTour').click({timeout:9000});
+      if(await page.locator('#museumTour').getAttribute('aria-pressed')!=='true')
+        throw Error('Guided tour cannot be activated');
+      await page.locator('#museumTour').click({timeout:9000});
+      console.log('PASS',mode.name,'PBR gallery, default free roam, movement, guided mode');
+    }else{
+      console.log('WebGL not available in this environment; accessible fallback shown:',mode.name);
     }
-    await page.locator('#next').click({timeout:8000});
-    const next=await page.locator('#navIndex').textContent();
-    if(start===next)throw Error('Next artwork does not change gallery index');
-    await page.locator('#random').click({timeout:8000});
-    await page.waitForFunction(()=>document.querySelector('#detail')?.classList.contains('open'),null,{timeout:8000});
-    const art=(await page.locator('#detailTitle').textContent())?.trim();
-    if(!art)throw Error('Artwork detail has no title');
-    await page.locator('#closeDetail').click({timeout:8000});
-    await page.waitForFunction(()=>!document.querySelector('#detail')?.classList.contains('open'),null,{timeout:8000});
-
-    // Free/guided controls apply only to immersive 3D; fallback has its own navigation.
-    if(info.ready){
-      await page.locator('#temFree').click({timeout:8000});
-      if(!await page.locator('#temFree').evaluate(el=>el.classList.contains('active')))
-        throw Error('Free navigation mode cannot be activated');
-      if(!await page.locator('#temDirections').evaluate(el=>el.classList.contains('visible')))
-        throw Error('Navigation directions do not appear in free mode');
-      await page.locator('#temGuide').click({timeout:8000});
-      if(!await page.locator('#temGuide').evaluate(el=>el.classList.contains('active')))
-        throw Error('Guided navigation mode cannot be activated');
+    if(mode.mobile){
+      const host=await page.locator('.walk-close').count();
+      if(!host)throw Error('No visible way to leave the immersive museum');
     }
-    console.log('PASS',mode.name,info.ready?'V5 WebGL navigation and guided/free controls':'2D accessible fallback navigation',start,'→',next,'art:',art);
-
-    const home=await page.goto(base,{waitUntil:'domcontentloaded',timeout:30000});
-    if(!home?.ok())throw Error('Museum homepage HTTP status '+(home?.status()??'unknown'));
-    await page.locator('#wall').waitFor({timeout:12000});
-    if(await page.locator('a[href="./3d.html"]').count()===0)
-      throw Error('Main museum page has no 3D entrance');
-    if(await page.locator('#mur-total').count()===0)
-      throw Error('Mur Total offer not present on the main page');
-    if(await page.locator('a[href="./3d.html"].btn.dark').count()===0)
-      throw Error('The primary visit CTA is not the new 3D museum');
-    console.log('PASS',mode.name,'homepage main 3D entrance and Mur Total');
-
   }catch(e){
     failures++;
     console.error('FAIL',mode.name,e?.stack||String(e));
-    console.error('PAGE ERRORS',JSON.stringify(errors.slice(0,12)));
-    console.error('CONSOLE ERRORS',JSON.stringify(consoleWarnings.slice(0,12)));
-    console.error('FAILED REQUESTS',JSON.stringify(failedRequests.slice(0,12)));
+    console.error('BROWSER PAGE ERRORS',JSON.stringify(pageErrors.slice(0,10)));
+    console.error('BROWSER CONSOLE ERRORS',JSON.stringify(consoleErrors.slice(0,10)));
+    console.error('FAILED REQUESTS',JSON.stringify(requests.slice(0,12)));
     await page.screenshot({path:'/tmp/tem-'+mode.name+'-failure.png',fullPage:true}).catch(()=>{});
   }finally{await context.close();}
 }
 await browser.close();
-if(failures)process.exit(1);
+if(failures>0)process.exit(1);
