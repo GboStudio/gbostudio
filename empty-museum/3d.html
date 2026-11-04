@@ -18,7 +18,7 @@
 <div class="controls"><button id="prev" aria-label="Œuvre précédente">←</button><span id="navIndex">01 / 06</span><button id="next" aria-label="Œuvre suivante">→</button></div><button id="random" class="random">EMMENEZ-MOI AILLEURS <span>↗</span></button></div>
 <div class="mobile-tip">GLISSEZ POUR EXPLORER &nbsp; ↔</div>
 <aside class="detail" id="detail" aria-hidden="true"><button class="detail-close" id="closeDetail" aria-label="Fermer">×</button><span class="tiny" id="detailNumber">COLLECTION / 001</span><div class="detail-thumbnail" id="detailThumb"></div><span class="detail-category" id="detailCategory">ART & IMAGE</span><h2 id="detailTitle">FORM STUDY</h2><div class="detail-rule"></div><p id="detailDescription"></p><div class="detail-meta"><div><small>ARTISTE</small><b id="detailAuthor"></b></div><div><small>CRÉÉ AVEC</small><b id="detailTools"></b></div><div><small>EXPOSITION</small><b>12 MOIS · DÉMO</b></div></div><button id="share" class="share">COPIER LE LIEN DE CETTE ŒUVRE ↗</button><small class="demo-note">Les œuvres et artistes présentés sont fictifs. Cette galerie est une démonstration technique.</small></aside>
-<div class="credits"><span>PBR MATERIALS <a href="https://polyhaven.com/" rel="noopener noreferrer" target="_blank">POLY HAVEN CC0 ↗</a></span><span id="graphicsLabel">REAL-TIME 3D / STATIC LIGHTMAP</span></div>
+<div class="credits"><span>MATÉRIAUX ET ÉCLAIRAGES PROCÉDURAUX</span><span id="graphicsLabel">REAL-TIME 3D / PROCÉDURAL MATERIALS</span></div>
 <div class="no-webgl" id="fallback" hidden><h2>La galerie 3D ne peut pas démarrer ici.</h2><p>Votre navigateur bloque WebGL ou le chargement du moteur. Vous pouvez explorer les œuvres dans la galerie 2D.</p><a href="/empty-museum/#wall">VISITER LE MUR 2D ↗</a></div>
 </div>
 <script src="./cloud-config.js?v=20261104a"></script><script>
@@ -47,8 +47,8 @@
     fallback("WebGL not supported");
     return;
   }
-  loadTimer=setTimeout(function(){fallback("3D loading timeout");},14000);
-  import("./gallery-v4.js?v=20261104a").then(function(){
+  loadTimer=setTimeout(function(){fallback("3D loading timeout");},22000);
+  import("./gallery-v5.js?v=20261104c").then(function(){
     if (!started){resolved=true;clearTimeout(loadTimer);}
   }).catch(function(error){fallback(error);});
 })();
