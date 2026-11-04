@@ -43,15 +43,15 @@ export async function enhanceScannedPBR(luxury,{mobile=false,length=28}={}) {
     fetchMap(loader,"white_plaster_02","nor_gl",wallRepeatX,2),
     mobile?Promise.resolve(null):fetchMap(loader,"white_plaster_02","rough",wallRepeatX,2)
   ]);
-  const wallUpgraded=apply(luxury.wall,...wallMaps,{tint:0xfaf9f6,normalScale:.18});
-  if(wallUpgraded)apply(luxury.wallAlt,...wallMaps,{tint:0xf6f5f0,normalScale:.18});
+  const wallUpgraded=apply(luxury.wall,...wallMaps,{tint:0xfaf9f6,normalScale:.13});
+  if(wallUpgraded)apply(luxury.wallAlt,...wallMaps,{tint:0xf6f5f0,normalScale:.13});
   const floorMaps=await Promise.all([
     fetchMap(loader,"marble_01","diff",3,floorRepeatY,true),
     fetchMap(loader,"marble_01","nor_gl",3,floorRepeatY),
     mobile?Promise.resolve(null):fetchMap(loader,"marble_01","rough",3,floorRepeatY)
   ]);
-  const floorUpgraded=apply(luxury.floor,...floorMaps,{tint:0xf4f2ee,normalScale:.20});
-  if(floorUpgraded){luxury.floor.roughness=.46;luxury.floor.clearcoat=.12;}
+  const floorUpgraded=apply(luxury.floor,...floorMaps,{tint:0xf4f2ee,normalScale:.15});
+  if(floorUpgraded){luxury.floor.roughness=.60;luxury.floor.clearcoat=.08;}
   document.documentElement.dataset.temScannedPbr=(wallUpgraded||floorUpgraded)?"active":"fallback";
   return {wall:wallUpgraded,floor:floorUpgraded};
 }
