@@ -523,10 +523,10 @@ function animate(){raf=requestAnimationFrame(animate);if(document.hidden)return;
    // Keep travel at walking pace instead of flying through the gallery.
    // Route around the sculptural foyer on first entry.
    let waypoint=desired;
-   if(camera.position.z>2.35&&desired.z<1.0)
-     waypoint=new THREE.Vector3(-1.85,1.72,2.0);
-   else if(camera.position.z>-1.6&&desired.z<-1.6)
-     waypoint=new THREE.Vector3(-1.85,1.72,-2.15);
+   if(camera.position.z>1.85&&desired.z<1.0)
+     waypoint=new THREE.Vector3(-2.1,1.72,1.8);
+   else if(camera.position.z>-2.0&&desired.z<-2.0)
+     waypoint=new THREE.Vector3(-2.1,1.72,-2.3);
    const vector=waypoint.clone().sub(camera.position),length=vector.length();
    if(length>.001)camera.position.addScaledVector(vector,Math.min(1,5.2*dt/length));
  }else camera.position.lerp(desired,s);
