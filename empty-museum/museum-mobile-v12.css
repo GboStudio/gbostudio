@@ -1,0 +1,125 @@
+/* THE UNREAL MUSEUM · V12 / mobile visitor ergonomics
+   This stylesheet intentionally loads after the old V5 and tour styles.
+   Controls stay at the edges: exhibit and architecture take the centre. */
+@media(max-width:760px){
+  #walkOverlay .walk-topbar{
+    padding:calc(env(safe-area-inset-top) + 16px) 15px 12px!important;
+    background:linear-gradient(180deg,rgba(24,25,23,.52),transparent 95%)!important;
+  }
+  #walkOverlay .walk-identity strong{font-size:15px!important;letter-spacing:.10em}
+  #walkOverlay .walk-guide{display:none!important}
+  #walkOverlay .museum-v5-reticle{opacity:.38}
+  #walkOverlay .museum-v5-shell .museum-v5-joystick{
+    position:fixed!important;
+    display:flex!important;
+    z-index:28!important;
+    left:calc(14px + env(safe-area-inset-left))!important;
+    right:auto!important;
+    bottom:calc(20px + env(safe-area-inset-bottom))!important;
+    width:110px!important;
+    height:123px!important;
+    align-items:center!important;
+    justify-content:end!important;
+    gap:4px!important;
+    pointer-events:auto!important;
+    touch-action:none!important;
+  }
+  #walkOverlay .museum-v5-joystick .joystick-ring{
+    width:98px!important;height:98px!important;
+    border:1px solid rgba(246,241,230,.55)!important;
+    border-radius:50%!important;
+    background:rgba(34,35,33,.34)!important;
+    box-shadow:0 9px 30px rgba(0,0,0,.16),inset 0 0 0 17px rgba(255,255,255,.03)!important;
+    backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  }
+  #walkOverlay .museum-v5-joystick small{
+    color:#f7f3e9!important;
+    font:700 9px/1.15 Arial,sans-serif!important;
+    letter-spacing:.11em!important;
+    text-shadow:0 2px 9px #272a25;
+  }
+  #walkOverlay .museum-v5-shell .museum-v5-dock{
+    position:fixed!important;
+    z-index:29!important;
+    left:auto!important;
+    right:calc(13px + env(safe-area-inset-right))!important;
+    bottom:calc(24px + env(safe-area-inset-bottom))!important;
+    top:auto!important;
+    width:142px!important;
+    max-width:42vw!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    flex-wrap:nowrap!important;
+    justify-content:end!important;
+    gap:7px!important;
+  }
+  #walkOverlay .museum-v5-dock #museumNextStop,
+  #walkOverlay .museum-v5-dock #museumView,
+  #walkOverlay .museum-v5-dock #museumHome,
+  #walkOverlay .museum-v5-dock #museumFull{display:none!important}
+  #walkOverlay .museum-v5-dock #museumTour,
+  #walkOverlay .museum-v5-dock #museumFreeToggle{
+    display:block!important;
+    position:static!important;
+    width:100%!important;
+    min-height:41px!important;
+    padding:9px 9px!important;
+    margin:0!important;
+    background:rgba(27,29,27,.7)!important;
+    border:1px solid rgba(253,249,238,.5)!important;
+    color:#fff!important;
+    border-radius:11px!important;
+    box-shadow:0 5px 21px rgba(0,0,0,.13)!important;
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    font:700 9px/1.35 Arial,sans-serif!important;
+    letter-spacing:.04em!important;
+  }
+  #walkOverlay .museum-v5-dock #museumFreeToggle[aria-pressed="true"]{
+    border-color:rgba(245,236,209,.82)!important;
+    background:rgba(239,232,216,.92)!important;
+    color:#2c302e!important;
+  }
+  #walkOverlay .museum-v5-shell.is-free .museum-v5-drive{display:none!important}
+  #walkOverlay .museum-v5-help{
+    position:fixed!important;
+    z-index:25!important;
+    top:calc(91px + env(safe-area-inset-top))!important;
+    left:17px!important;right:17px!important;bottom:auto!important;
+    max-width:none!important;width:auto!important;
+    text-align:center!important;justify-content:center!important;
+    font:650 9px/1.5 Arial,sans-serif!important;
+    letter-spacing:.045em!important;
+    text-shadow:0 2px 8px rgba(0,0,0,.8)!important;
+  }
+  #walkOverlay .walk-progress{
+    position:fixed!important;
+    left:16px!important;
+    bottom:calc(166px + env(safe-area-inset-bottom))!important;
+    width:min(212px,58vw)!important;
+    max-width:212px!important;
+  }
+  #walkOverlay .walk-progress small{
+    font-size:8px!important;
+    background:rgba(34,36,35,.28)!important;
+    padding:6px 8px!important;
+    border-radius:6px!important;
+  }
+  #walkOverlay .tem-tour-story{
+    position:fixed!important;
+    left:12px!important;right:12px!important;
+    bottom:calc(181px + env(safe-area-inset-bottom))!important;
+    width:auto!important;max-width:none!important;
+  }
+  #walkOverlay .museum-v5-notice{top:23%!important}
+}
+@media(max-width:370px){
+  #walkOverlay .museum-v5-shell .museum-v5-joystick{left:8px!important;width:94px!important}
+  #walkOverlay .museum-v5-joystick .joystick-ring{height:90px!important;width:90px!important}
+  #walkOverlay .museum-v5-shell .museum-v5-dock{width:128px!important;right:9px!important}
+  #walkOverlay .museum-v5-dock #museumTour,
+  #walkOverlay .museum-v5-dock #museumFreeToggle{font-size:8px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  #walkOverlay .museum-v5-dock button{transition:none!important}
+}
