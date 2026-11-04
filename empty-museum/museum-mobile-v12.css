@@ -13,8 +13,8 @@
     position:fixed!important;
     display:flex!important;
     z-index:28!important;
-    left:calc(14px + env(safe-area-inset-left))!important;
-    right:auto!important;
+    left:auto!important;
+    right:calc(14px + env(safe-area-inset-right))!important;
     bottom:calc(20px + env(safe-area-inset-bottom))!important;
     width:110px!important;
     height:123px!important;
@@ -41,8 +41,8 @@
   #walkOverlay .museum-v5-shell .museum-v5-dock{
     position:fixed!important;
     z-index:29!important;
-    left:auto!important;
-    right:calc(13px + env(safe-area-inset-right))!important;
+    left:calc(13px + env(safe-area-inset-left))!important;
+    right:auto!important;
     bottom:calc(24px + env(safe-area-inset-bottom))!important;
     top:auto!important;
     width:142px!important;
@@ -114,9 +114,9 @@
   #walkOverlay .museum-v5-notice{top:23%!important}
 }
 @media(max-width:370px){
-  #walkOverlay .museum-v5-shell .museum-v5-joystick{left:8px!important;width:94px!important}
+  #walkOverlay .museum-v5-shell .museum-v5-joystick{right:8px!important;left:auto!important;width:94px!important}
   #walkOverlay .museum-v5-joystick .joystick-ring{height:90px!important;width:90px!important}
-  #walkOverlay .museum-v5-shell .museum-v5-dock{width:128px!important;right:9px!important}
+  #walkOverlay .museum-v5-shell .museum-v5-dock{width:128px!important;left:9px!important;right:auto!important}
   #walkOverlay .museum-v5-dock #museumTour,
   #walkOverlay .museum-v5-dock #museumFreeToggle{font-size:8px!important}
 }
