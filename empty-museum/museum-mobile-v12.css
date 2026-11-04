@@ -24,6 +24,7 @@
     pointer-events:auto!important;
     touch-action:none!important;
   }
+  #walkOverlay .museum-v5-shell:not(.is-free) .museum-v5-joystick{display:none!important}
   #walkOverlay .museum-v5-joystick .joystick-ring{
     width:98px!important;height:98px!important;
     border:1px solid rgba(246,241,230,.55)!important;
