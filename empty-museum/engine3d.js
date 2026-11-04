@@ -19,6 +19,9 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   const mobileStyle=document.createElement("link");
   mobileStyle.rel="stylesheet";mobileStyle.href="./museum-mobile-v12.css?v=20261104c";
   document.head.appendChild(mobileStyle);
+  const mobileCompactStyle=document.createElement("link");
+  mobileCompactStyle.rel="stylesheet";mobileCompactStyle.href="./museum-mobile-v13.css?v=20261105hud1";
+  document.head.appendChild(mobileCompactStyle);
   const overlay = document.getElementById("walkOverlay");
   const canvas = document.getElementById("walkCanvas");
   if (!overlay || !canvas || !window.TEM) return;
@@ -110,9 +113,9 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   box(architecture,HALF*2,.28,LENGTH,floorMat,0,-.16,LENGTH/2,false,true);
   // WHITE CEILING: layered plaster vault, completely free from exhibits at launch.
   // All ceiling pieces are concealed until the wall gallery reaches capacity.
-  const ceilingPlaster=material(0xffffff,.93);
-  const ceilingRelief=material(0xfafaf8,.89);
-  const ceilingShadow=material(0xe8e9e7,.96);
+  const ceilingPlaster=material(0xf9f8f4,.95);
+  const ceilingRelief=material(0xf7f5ef,.91);
+  const ceilingShadow=material(0xe1e1db,.96);
   const ceilingLED=new THREE.MeshBasicMaterial({color:0xf4f5f0,side:THREE.DoubleSide});
   box(architecture,HALF*2,.34,LENGTH,ceilingPlaster,0,HEIGHT+.19,LENGTH/2);
   // Recessed white skylight: no dark glass, colored fixtures or hanging frames.
