@@ -566,8 +566,11 @@ function init(){if(!window.WebGLRenderingContext)throw Error('WebGL not supporte
   lookCam.rotation.order='YXZ';lookCam.rotation.set(st.pitch,st.yaw,0);desiredRotation.copy(lookCam.quaternion);camera.quaternion.copy(desiredRotation);
  }
  const hash=location.hash.match(/^#art-([\w-]+)$/);if(hash){const found=works.findIndex(r=>String(r.w.id)===hash[1]);if(found>=0)st.index=found;}
- if(st.mode==='guided'){camera.lookAt(0,1.72,-10);desiredRotation.copy(camera.quaternion);}
- else {camera.lookAt(0,1.72,-10);desiredRotation.copy(camera.quaternion);}
+ if(st.mode==='guided'){
+   camera.lookAt(0,1.72,-10);desiredRotation.copy(camera.quaternion);
+ }else if(!(Array.isArray(saved.position)&&saved.position.length===3)){
+   camera.lookAt(0,1.72,-10);desiredRotation.copy(camera.quaternion);
+ }
  resize();applyMood();sync();
  window.__TEM_V5_READY=true;
  window.__TEM_V4_READY=true; // retained for older smoke checks
