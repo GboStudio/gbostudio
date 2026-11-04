@@ -62,6 +62,16 @@ for(const mode of modes){
 
     await page.locator('#explore').click({timeout:8000});
     await page.waitForFunction(()=>document.querySelector('#intro')?.classList.contains('dismissed'),null,{timeout:8000});
+    if(info.ready){
+      const state=await page.evaluate(()=>({
+        free:document.querySelector('#temFree')?.classList.contains('active')||false,
+        directions:document.querySelector('#temDirections')?.classList.contains('visible')||false,
+        display:getComputedStyle(document.querySelector('#temDirections')).display
+      }));
+      console.log('FREE ROAM ENTRY',mode.name,JSON.stringify(state));
+      if(!state.free||!state.directions||state.display==='none')
+        throw Error('Free-roam exploration controls missing after entering the 3D museum');
+    }
     await page.locator('#next').click({timeout:8000});
     const next=await page.locator('#navIndex').textContent();
     if(start===next)throw Error('Next artwork does not change gallery index');
