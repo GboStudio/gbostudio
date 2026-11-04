@@ -1,4 +1,4 @@
-/* THE UNREAL MUSEUM · V3 — museum-first immersive visitor.
+/* THE UNREAL MUSEUM · V5 — immersive visitor with free-roam entry.
    The gallery mirrors the local demo's 38 initial wall bays, five floor stations
    and ceiling-unlock rule. It remains a LOCAL DEMONSTRATION, not a public backend. */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js';
@@ -61,7 +61,7 @@ const LENGTH=9+COUNT*3.5, END=-LENGTH, MAXZ=6.1, HALF=4.6, HEIGHT=4.5;
 const initialOccupied=Array.from(wallWorks.keys()).filter(n=>n<38&&n>=4).length,ceilingUnlocked=initialOccupied>=34;
 const savedKey='tem-v4-visit';let saved={};try{saved=JSON.parse(localStorage.getItem(savedKey)||'{}')||{}}catch(e){}
 const mobile=matchMedia('(max-width: 760px)').matches,reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const st={index:Math.max(0,Number(saved.index)||0),mode:saved.mode==='free'?'free':'guided',quality:saved.quality==='eco'?'eco':'hd',
+const st={index:Math.max(0,Number(saved.index)||0),mode:saved.mode==='guided'?'guided':'free',quality:saved.quality==='eco'?'eco':'hd',
   mood:saved.mood==='evening'?'evening':'day',playing:false,detail:false,entered:false,timer:0,
   yaw:Number(saved.yaw)||0,pitch:Number(saved.pitch)||0,drag:null,moved:false,lastSaved:0};
 let scene,renderer,camera,clock,raycaster,raypoint,ambient,sun,fillLight,roofMaterial,floorMat,raf;
@@ -375,7 +375,7 @@ function sync(){if(!works.length)return;
  $('#zoneTitle').textContent=String(r.w.title).toUpperCase()+' / '+String(r.slot);
  $('#temGuide').classList.toggle('active',st.mode==='guided');$('#temFree').classList.toggle('active',st.mode==='free');
  $('#temPlay').disabled=st.mode!=='guided';$('#temPlay').textContent=st.playing?'Ⅱ PAUSE':'▶ VISITE AUTO';
- $('#temDirections').classList.toggle('visible',st.mode==='free');
+ $('#temDirections').classList.toggle('visible',st.mode==='free'&&st.entered);
  $('#temCount').textContent=String(st.index+1).padStart(2,'0')+' / '+String(works.length).padStart(2,'0')+' ŒUVRES';
  $('#temProgress').style.width=(100*(st.index+1)/works.length)+'%';
  $('#temQuality').textContent=st.quality==='eco'?'QUALITÉ · ÉCO':'QUALITÉ · HD';
@@ -415,7 +415,7 @@ function showEmpty(slot){st.playing=false;st.detail=true;currentReserve=slot;act
 function hideIntro(){
  const first=!st.entered;$('#intro').classList.add('dismissed');st.entered=true;
  $('#shell').classList.add('tem-entered');if(first&&st.mode==='guided')focus(st.index);
- canvas.focus({preventScroll:true});
+ sync();canvas.focus({preventScroll:true});
 }
 function mode(next){if(next==='free'&&st.mode!=='free'){
  desired.copy(camera.position);const d=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
@@ -566,10 +566,13 @@ function init(){if(!window.WebGLRenderingContext)throw Error('WebGL not supporte
   lookCam.rotation.order='YXZ';lookCam.rotation.set(st.pitch,st.yaw,0);desiredRotation.copy(lookCam.quaternion);camera.quaternion.copy(desiredRotation);
  }
  const hash=location.hash.match(/^#art-([\w-]+)$/);if(hash){const found=works.findIndex(r=>String(r.w.id)===hash[1]);if(found>=0)st.index=found;}
- if(st.mode==='guided'){camera.lookAt(0,1.72,-10);desiredRotation.copy(camera.quaternion);}resize();applyMood();sync();
- window.__TEM_V4_READY=true;
+ if(st.mode==='guided'){camera.lookAt(0,1.72,-10);desiredRotation.copy(camera.quaternion);}
+ else {camera.lookAt(0,1.72,-10);desiredRotation.copy(camera.quaternion);}
+ resize();applyMood();sync();
+ window.__TEM_V5_READY=true;
+ window.__TEM_V4_READY=true; // retained for older smoke checks
  $('#loadbar').style.width='100%';$('#loadstate').textContent='LE MUSÉE EST PRÊT';$('#enter').hidden=false;
  $('#loader').classList.add('hidden');raf=requestAnimationFrame(animate);
 }
-try{init();}catch(e){console.error('[TEM] Museum v4 cannot start',e);if(raf)cancelAnimationFrame(raf);window.TEMStartFallback?.(e);
+try{init();}catch(e){console.error('[TUM] V5 start failed:',e?.stack||String(e));if(raf)cancelAnimationFrame(raf);window.TEMStartFallback?.(e);
  if(!window.TEMStartFallback){$('#loader')?.classList.add('hidden');$('#fallback').hidden=false;}}
