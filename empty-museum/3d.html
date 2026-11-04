@@ -48,6 +48,8 @@
     };
     note.appendChild(label);note.appendChild(retry);
     document.getElementById("shell")?.appendChild(note);
+    var entry=document.getElementById("explore");
+    if(entry)entry.textContent="EXPLORER LA GALERIE 2D ↗";
     var script=document.createElement("script");
     script.src="./gallery-fallback.js?v=20261101a";
     script.onerror=function () {
