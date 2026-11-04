@@ -62,6 +62,7 @@ const st={index:Math.max(0,Number(saved.index)||0),mode:saved.mode==='free'?'fre
   mood:saved.mood==='evening'?'evening':'day',playing:false,detail:false,entered:false,timer:0,
   yaw:Number(saved.yaw)||0,pitch:Number(saved.pitch)||0,drag:null,moved:false,lastSaved:0};
 let scene,renderer,camera,clock,raycaster,raypoint,ambient,sun,fillLight,roofMaterial,floorMat,raf;
+let renderedFrames=0,performanceTime=0,qualityAutoChanged=false;
 const works=[],clickables=[],keyset=new Set(),wholeWalls=[],obstacles=[];
 let wallWashTexture=null,shadowTexture=null;
 const wallSectionCandidates=[];
@@ -381,10 +382,13 @@ function mode(next){if(next==='free'&&st.mode!=='free'){
  }st.mode=next;st.playing=false;st.timer=0;if(next==='guided')focus(st.index);sync();save(true);}
 function next(delta){hideIntro();closeDetails();if(st.mode==='free')mode('guided');st.playing=false;focus(st.index+delta);}
 function pick(e){const r=canvas.getBoundingClientRect();raypoint.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
- raycaster.setFromCamera(raypoint,camera);const h=raycaster.intersectObjects(clickables,false)[0];if(!h)return;
- const section=h.object.userData.privateWall;if(section){showWall(section);return;}
- const rcd=h.object.userData.record;if(rcd){hideIntro();if(st.mode!=='guided')mode('guided');focus(works.indexOf(rcd));showRecord(rcd);}
- else if(Number.isInteger(h.object.userData.emptySlot))showEmpty(h.object.userData.emptySlot);
+ raycaster.setFromCamera(raypoint,camera);const h=raycaster.intersectObjects(clickables,true)[0];if(!h)return;
+ let hitObject=h.object;
+ while(hitObject&&!hitObject.userData.record&&!hitObject.userData.privateWall&&!Number.isInteger(hitObject.userData.emptySlot))hitObject=hitObject.parent;
+ if(!hitObject)return;
+ const section=hitObject.userData.privateWall;if(section){showWall(section);return;}
+ const rcd=hitObject.userData.record;if(rcd){hideIntro();if(st.mode!=='guided')mode('guided');focus(works.indexOf(rcd));showRecord(rcd);}
+ else if(Number.isInteger(hitObject.userData.emptySlot))showEmpty(hitObject.userData.emptySlot);
 }
 function resize(){const r=canvas.getBoundingClientRect(),w=Math.max(1,r.width),h=Math.max(1,r.height);
  camera.aspect=w/h;camera.fov=w<760?71:63;camera.updateProjectionMatrix();
@@ -475,7 +479,15 @@ function animate(){raf=requestAnimationFrame(animate);if(document.hidden)return;
   if(best!==st.index){st.index=best;sync();}
  }
  if($('#temPosition'))$('#temPosition').textContent=Math.max(0,Math.round(-camera.position.z))+' / '+Math.round(LENGTH)+' M';
- renderer.render(scene,camera);save();
+ renderer.render(scene,camera);
+ // Once per 4s, lower pixel density for unusually slow phone GPUs.
+ renderedFrames++;performanceTime+=dt;
+ if(mobile&&st.quality==='hd'&&!qualityAutoChanged&&st.entered&&performanceTime>=4){
+   const fps=renderedFrames/Math.max(.1,performanceTime);
+   if(fps<25){qualityAutoChanged=true;st.quality='eco';resize();sync();}
+   renderedFrames=0;performanceTime=0;
+ }else if(performanceTime>=4){renderedFrames=0;performanceTime=0;}
+ save();
 }
 function init(){if(!window.WebGLRenderingContext)throw Error('WebGL not supported');
  renderer=new THREE.WebGLRenderer({canvas:$('#scene'),antialias:!mobile,alpha:false,powerPreference:mobile?'low-power':'high-performance'});
@@ -483,6 +495,12 @@ function init(){if(!window.WebGLRenderingContext)throw Error('WebGL not supporte
  scene=new THREE.Scene();scene.background=new THREE.Color(0xe9e7e1);scene.fog=new THREE.Fog(0xe9e7e1,17,58);
  camera=new THREE.PerspectiveCamera(63,1,.08,250);camera.position.set(0,1.72,3.8);
  raycaster=new THREE.Raycaster();raypoint=new THREE.Vector2();clock=new THREE.Clock();
+ canvas.addEventListener('webglcontextlost',event=>{
+   event.preventDefault();
+   if(raf)cancelAnimationFrame(raf);
+   const panel=$('#fallback');
+   if(panel){panel.hidden=false;panel.querySelector('h2').textContent='La visite 3D a été interrompue.';}
+ });
  architecture();
  for(let i=0;i<COUNT;i++)picture(i%2?1:-1,-(5.7+i*3.5),wallWorks.get(i),i);
  floorStations();ceilingStations();wallInstallations();
