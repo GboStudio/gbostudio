@@ -5,6 +5,7 @@ import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261031realism9";
 import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261031pbr1";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
 import {createMuseumV5Navigation} from "./museum-v5.js?v=20261104v13";
+import {museumCameraMotion} from "./movement3d.js?v=20261105motion1";
 import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261102resume";
 
 (() => {
@@ -35,7 +36,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.45:1.8));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = .83;
+  renderer.toneMappingExposure = .79;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0xf7f6f3,1);
@@ -49,10 +50,10 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     scene.environmentIntensity=mobile?.26:.36;
   } catch(error){console.warn("[TEM] Reflected ambience unavailable",error);}
 
-  scene.add(new THREE.HemisphereLight(0xfcfdff,0xd1cdc5,.77));
-  const ambient = new THREE.AmbientLight(0xfffdfa,.15);
+  scene.add(new THREE.HemisphereLight(0xfff7ed,0xb5afa5,.62));
+  const ambient = new THREE.AmbientLight(0xfff8ed,.12);
   scene.add(ambient);
-  const sun = new THREE.DirectionalLight(0xfffaf1,1.14);
+  const sun = new THREE.DirectionalLight(0xfff3e5,.95);
   sun.position.set(-8,18,15);
   // V9: true contact and frame shadows on iPhone too; constrained shadow
   // volume follows the visitor so the 140m gallery needs only one light map.
@@ -63,7 +64,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   sun.shadow.camera.near=.5;sun.shadow.camera.far=55;
   sun.shadow.bias=-.00025;
   sun.shadow.normalBias=.012;
-  sun.shadow.radius=mobile?1.5:2.5;
+  sun.shadow.radius=mobile?2:2.8;
   scene.add(sun);
 
   // V8 WHITE LUXURY: honed limestone / physical plaster / quiet metal.
@@ -348,8 +349,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   // Museum-grade mounting: warm backlighting, four-sided accent strips,
   // discreet picture lights, properly matted art, and engraved brass cartels.
   // Local XY coordinates make the same framing work on both side walls.
-  const agedGold=material(0x95836a,.46,.51);
-  const champagneGold=material(0xbaa88a,.42,.54);
+  const agedGold=material(0x9b8664,.48,.56);
+  const champagneGold=material(0xb5a07c,.46,.57);
   const darkBronze=material(0x55524c,.62,.32);
   const pictureMat=material(0xfdfdfa,.94,0);
   const displayLamp=new THREE.MeshStandardMaterial({
@@ -453,7 +454,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     box(unit,plaqueW+.012,plaqueH+.014,.037,darkBronze,px,py,.020,true);
     box(unit,plaqueW+.005,plaqueH+.005,.039,champagneGold,px,py,.044,true);
     const plaqueMat=new THREE.MeshStandardMaterial({
-      map:museumLabel(slot),color:0xffffff,metalness:.09,roughness:.54,side:THREE.DoubleSide
+      map:museumLabel(slot),color:0xffffff,metalness:.17,roughness:.49,side:THREE.DoubleSide
     });
     const label=surface(unit,plaqueW,plaqueH,plaqueMat,px,py,.068);
     if(slot&&!slot.reservedForAds)markInteractive(label,slot);
@@ -939,8 +940,11 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     const assisted=Boolean(input.auto || input.simple || input.cruise);
     const moveSpeed=pressed("ShiftLeft","ShiftRight")?4.6:(input.auto?3.4:input.cruise?2.4:2.25);
     const magnitude=Math.max(1,Math.hypot(fwd,strafe));
-    const wantX=input.auto?0:(input.simple && Math.abs(fwd)>.01?-view.x*1.25:(Math.sin(yaw)*fwd+Math.cos(yaw)*strafe)*moveSpeed/magnitude);
-    const wantZ=assisted?fwd*moveSpeed:(Math.cos(yaw)*fwd-Math.sin(yaw)*strafe)*moveSpeed/magnitude;
+    // Camera is rotated by PI + yaw: its on-screen right is -X at the entrance.
+    // Both keyboard (D/Q) and touch joystick use the same camera-relative basis.
+    const motion=museumCameraMotion(yaw,fwd,strafe);
+    const wantX=input.auto?0:(input.simple && Math.abs(fwd)>.01?-view.x*1.25:motion.x*moveSpeed/magnitude);
+    const wantZ=assisted?fwd*moveSpeed:motion.z*moveSpeed/magnitude;
     const damping=Math.min(1,dt*(input.auto?5.7:8));
     velX+=(wantX-velX)*damping;
     velZ+=(wantZ-velZ)*damping;
@@ -977,7 +981,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     if(tourState.started && time-lastTourSnapshot>1750){
       lastTourSnapshot=time;saveTourSession();
     }
-    if(!mobile&&Math.abs(view.z-lastShadowPosition)>4){
+    // Move the constrained sun shadow cascade with the visitor, including iPhone.
+    if(Math.abs(view.z-lastShadowPosition)>(mobile?7:4)){
       sun.position.set(-7,15,view.z+12);
       sun.target.position.set(0,0,view.z+12);
       sun.target.updateMatrixWorld();
