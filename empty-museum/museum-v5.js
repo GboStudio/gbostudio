@@ -6,7 +6,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
   shell.className="museum-v5-shell";
   shell.innerHTML=`
     <div class="museum-v5-reticle" aria-hidden="true"></div>
-    <div class="museum-v5-help" aria-live="polite">GLISSEZ POUR REGARDER · TOUCHEZ « ŒUVRE SUIVANTE » POUR DÉCOUVRIR</div>
+    <div class="museum-v5-help" aria-live="polite">GLISSEZ À DROITE POUR REGARDER · JOYSTICK À GAUCHE POUR AVANCER</div>
     <div class="museum-v5-notice" aria-live="polite"></div>
     <div class="museum-v5-drive" aria-label="Déplacement assisté">
       <button type="button" id="museumAdvance" aria-pressed="false" aria-label="Découvrir l’œuvre suivante de l’exposition">
@@ -103,9 +103,9 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     manual();stopCruise();free=!free;
     shell.classList.toggle("is-free",free);
     freeBtn.setAttribute("aria-pressed",String(free));
-    freeBtn.textContent=free?"✓  MODE SIMPLE":"◌  MODE LIBRE";
+    freeBtn.textContent=free?"✓  MODE LIBRE":"◌  MODE LIBRE";
     releaseStick();
-    toast(free?"MODE LIBRE · DÉPLACEZ LE JOYSTICK À DROITE":"MODE SIMPLE · AVANCEZ SANS DIRIGER");
+    toast(free?"MODE LIBRE · DÉPLACEZ LE JOYSTICK À GAUCHE":"MODE GUIDÉ · ŒUVRE SUIVANTE");
   });
   $("#museumFull").addEventListener("click",async()=>{
     try{
@@ -163,11 +163,12 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     };
   }
   function enter(){
-    visible=true;finishTour();stopCruise();free=false;
-    shell.classList.remove("is-free");
-    freeBtn.setAttribute("aria-pressed","false");
-    freeBtn.textContent="◌  MODE LIBRE";
-    setZoom?.(mobile?56:59);
+    visible=true;finishTour();stopCruise();free=true;
+    shell.classList.add("is-free");
+    freeBtn.setAttribute("aria-pressed","true");
+    freeBtn.textContent="✓  MODE LIBRE";
+    releaseStick();
+    setZoom?.(mobile?60:59);
     guide?.classList.remove("is-faded");
     clearTimeout(guideTimer);
     guideTimer=setTimeout(()=>guide?.classList.add("is-faded"),mobile?8000:6500);
