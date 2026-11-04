@@ -1,0 +1,25 @@
+name: Museum 3D checks
+on:
+  push:
+    paths:
+      - 'empty-museum/**'
+      - '.github/workflows/museum-3d-checks.yml'
+  pull_request:
+    paths:
+      - 'empty-museum/**'
+permissions:
+  contents: read
+jobs:
+  validation:
+    name: Node inventory and module checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run museum smoke tests
+        run: node --test empty-museum/tests/museum.test.mjs
