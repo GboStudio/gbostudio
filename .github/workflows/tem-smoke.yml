@@ -1,16 +1,21 @@
-name: The Empty Museum - public availability
+name: The Unreal Museum - site health
 
 concurrency:
-  group: empty-museum-safety-${{ github.ref }}
+  group: unreal-museum-public-${{ github.ref }}
   cancel-in-progress: true
 
 on:
   push:
     branches: [main]
     paths:
-      - 'empty-museum/**'
+      - 'empty-museum/*.html'
+      - 'empty-museum/*.js'
+      - 'empty-museum/*.mjs'
+      - 'empty-museum/*.css'
+      - 'empty-museum/assets/**'
       - '.github/workflows/tem-smoke.yml'
       - '.github/scripts/tem-e2e.mjs'
+      - '.github/scripts/tem-tour-test.mjs'
   workflow_dispatch:
 
 permissions:
@@ -18,22 +23,16 @@ permissions:
 
 jobs:
   smoke:
-    name: Public page / asset smoke test
+    name: Museum - public pages and visitor journey
     runs-on: ubuntu-24.04
+    timeout-minutes: 12
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install browser test tooling
-        run: |
-          npm install --no-save playwright@1.55.0
-          npx playwright install chromium --with-deps
-
       - name: Test guided route logic
         run: node .github/scripts/tem-tour-test.mjs
 
-      - name: Test gallery interactions on desktop and mobile viewports
-        run: node .github/scripts/tem-e2e.mjs
       - name: Test public HTTP availability
         shell: bash
         run: |
@@ -41,25 +40,42 @@ jobs:
           urls=(
             "https://gbostudio.fr/empty-museum/"
             "https://gbostudio.fr/empty-museum/3d.html"
+            "https://gbostudio.fr/empty-museum/gallery-v5.js"
+            "https://gbostudio.fr/empty-museum/museum-cloud.js"
+            "https://gbostudio.fr/empty-museum/museum-inventory.mjs"
             "https://gbostudio.fr/empty-museum/gallery-fallback.js"
-            "https://gbostudio.fr/empty-museum/gallery.js"
-            "https://gbostudio.fr/empty-museum/gallery.css"
           )
           for url in "${urls[@]}"; do
-            echo "Checking ${url}"
+            echo "::group::Checking ${url}"
             ok=0
-            for attempt in {1..10}; do
-              if curl --location --silent --show-error --fail --connect-timeout 12 --max-time 20 --retry 1 "${url}" -o /tmp/tem-response; then
-                bytes=$(wc -c </tmp/tem-response)
-                echo "OK: ${url} (${bytes} bytes)"
-                if [ "${bytes}" -gt 100 ]; then ok=1; break; fi
-              fi
-              echo "Not ready: attempt ${attempt}/10"
-              sleep 12
+            for attempt in {1..8}; do
+              code=$(curl -L -sS --connect-timeout 10 --max-time 25                 -w '%{http_code}' -o /tmp/tem-response "${url}" || true)
+              bytes=$(wc -c </tmp/tem-response 2>/dev/null || echo 0)
+              echo "Attempt ${attempt}/8 HTTP ${code} bytes ${bytes}"
+              if [[ "${code}" == "200" && "${bytes}" -gt 100 ]]; then ok=1; break; fi
+              sleep 10
             done
-            if [ "${ok}" != 1 ]; then
-              echo "::error::Public museum asset unavailable: ${url}"
+            if [[ "${ok}" -ne 1 ]]; then
+              echo "::error::Museum deployment unavailable: ${url} returned HTTP ${code}, bytes ${bytes}"
               exit 1
             fi
+            echo "::endgroup::"
           done
-          echo "Verified all museum public URLs"
+          echo "Public museum routes and essential assets are reachable."
+
+      - name: Install browser test tooling
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install chromium --with-deps
+
+      - name: Test visitor journeys on desktop and mobile
+        run: node .github/scripts/tem-e2e.mjs
+
+      - name: Upload failed browser screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: museum-browser-diagnostics
+          path: /tmp/tem-*-failure.png
+          if-no-files-found: ignore
+          retention-days: 7
