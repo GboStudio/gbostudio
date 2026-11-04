@@ -6,6 +6,8 @@ import {getPublishedArtworks} from './museum-cloud.js?v=20261103';
 import {availableWholeWalls} from './museum-inventory.mjs';
 if(window.__TEM_GALLERY_FALLBACK_STARTED||window.__TEM_GALLERY_FALLBACK_REQUESTED) throw Error('Gallery fallback already requested');
 const $=s=>document.querySelector(s), clamp=THREE.MathUtils.clamp;
+const canvas=document.querySelector('#scene');
+if(!canvas)throw new Error('Museum WebGL canvas missing');
 const presets=[
   ['After the Rain','Maya','image','ChatGPT + génération d’image','Une image gardée parce qu’elle ressemble à un souvenir.',0,4],
   ['Chair 04','Niko','3d','ChatGPT + Blender','Une chaise née de contraintes d’impression 3D et de bois cintré.',1,5],
