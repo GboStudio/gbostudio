@@ -470,10 +470,23 @@ function animate(){raf=requestAnimationFrame(animate);if(document.hidden)return;
   }
   lookCam.rotation.order='YXZ';lookCam.rotation.set(st.pitch,st.yaw,0);desiredRotation.copy(lookCam.quaternion);
  }
- if(st.entered&&!st.detail&&st.mode==='guided'&&st.playing){st.timer+=dt;
-  if(st.timer>=9){if(st.index===works.length-1){st.playing=false;sync();}else focus(st.index+1);}
+ if(st.entered&&!st.detail&&st.mode==='guided'&&st.playing){
+  // The 8s exhibition timer begins only once the visitor is in front of the artwork.
+  if(camera.position.distanceTo(desired)<.35)st.timer+=dt;
+  if(st.timer>=8){if(st.index===works.length-1){st.playing=false;sync();}else focus(st.index+1);}
  }
- camera.position.lerp(desired,s);camera.quaternion.slerp(desiredRotation,s);
+ if(st.mode==='guided'&&st.entered){
+   // Keep travel at walking pace instead of flying through the gallery.
+   // Route around the sculptural foyer on first entry.
+   let waypoint=desired;
+   if(camera.position.z>2.35&&desired.z<1.0)
+     waypoint=new THREE.Vector3(-1.85,1.72,2.0);
+   else if(camera.position.z>-1.6&&desired.z<-1.6)
+     waypoint=new THREE.Vector3(-1.85,1.72,-2.15);
+   const vector=waypoint.clone().sub(camera.position),length=vector.length();
+   if(length>.001)camera.position.addScaledVector(vector,Math.min(1,5.2*dt/length));
+ }else camera.position.lerp(desired,s);
+ camera.quaternion.slerp(desiredRotation,s);
  if(st.mode==='free'&&Math.round(performance.now()/300)%3===0){let best=st.index,dist=Infinity;
   for(let i=0;i<works.length;i++){const d=Math.abs(works[i].z-camera.position.z);if(d<dist){dist=d;best=i;}}
   if(best!==st.index){st.index=best;sync();}
