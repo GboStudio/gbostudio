@@ -34,3 +34,15 @@
 .tem-v3-directions{bottom:78px}.intro-overlay{top:51%}.hud-left{bottom:96px}
 }
 @media(prefers-reduced-motion:reduce){.tem-v3-progress i>b{transition:none}}
+
+/* Clear fallback status and premium mobile entrance contrast. */
+.gallery-fallback-notice{position:absolute;z-index:10;right:22px;top:117px;max-width:350px;display:flex;flex-direction:column;gap:11px;padding:15px 16px;background:rgba(246,244,236,.96);border:1px solid rgba(37,39,34,.19);box-shadow:0 14px 42px #24241e20;font:700 10px/1.5 Arial,sans-serif;letter-spacing:.035em;color:#30362e;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.gallery-fallback-notice button{border:1px solid #2e342d;background:#272d27;color:#fff;padding:11px 13px;font:700 10px Arial,sans-serif;letter-spacing:.05em;cursor:pointer;min-height:40px}
+.gallery-fallback-notice button:hover{background:#535d4e}
+@media(max-width:760px){
+ .intro-overlay:not(.dismissed){left:18px;top:53%;width:calc(100% - 36px);padding:22px 19px 24px;border-radius:13px;background:rgba(248,247,242,.88);box-shadow:0 16px 50px rgba(35,34,29,.15);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+ .intro-overlay:not(.dismissed) h1{font-size:clamp(38px,10.4vw,62px);margin:15px 0;line-height:.99}
+ .intro-overlay:not(.dismissed) p{max-width:300px;color:#414740;font-size:12px}
+ .gallery-fallback-notice{top:115px;left:18px;right:18px;max-width:none;padding:11px 13px;gap:7px}
+ .gallery-fallback-notice button{min-height:34px;padding:8px;font-size:9px}
+}
