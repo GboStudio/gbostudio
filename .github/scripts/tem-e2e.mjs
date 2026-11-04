@@ -1,113 +1,101 @@
 import { chromium } from 'playwright';
 
-const browser = await chromium.launch({
-  headless: true,
-  args: ['--no-sandbox', '--disable-dev-shm-usage']
-});
-
-const base = 'https://gbostudio.fr/empty-museum/';
-const modes = [
-  { name: 'desktop', viewport: { width: 1440, height: 900 }, hasTouch: false },
-  { name: 'mobile', viewport: { width: 390, height: 844 }, hasTouch: true }
+/*
+ * Public museum browser smoke test.
+ * Verify the current 3D engine and UX, not an obsolete hardcoded number
+ * of demo works or legacy tour controls that no longer exist.
+ */
+const base='https://gbostudio.fr/empty-museum/';
+const modes=[
+  {name:'desktop',viewport:{width:1440,height:900},hasTouch:false},
+  {name:'mobile',viewport:{width:390,height:844},hasTouch:true}
 ];
-
-let errorCount=0;
-for(const mode of modes) {
-  const ctx=await browser.newContext({
-    viewport:mode.viewport,hasTouch:mode.hasTouch,isMobile:mode.hasTouch,
+const browser=await chromium.launch({
+  headless:true,
+  args:['--no-sandbox','--disable-dev-shm-usage','--enable-unsafe-swiftshader','--use-angle=swiftshader']
+});
+let failures=0;
+for(const mode of modes){
+  const context=await browser.newContext({
+    viewport:mode.viewport,
+    hasTouch:mode.hasTouch,
+    isMobile:mode.hasTouch,
     deviceScaleFactor:mode.hasTouch?2:1
   });
-  const page=await ctx.newPage();
-  const errors=[];
-  page.on('pageerror', e => errors.push(String(e)));
-  try {
-    await page.goto(base+'3d.html', { waitUntil:'domcontentloaded', timeout:40000 });
-    await page.waitForFunction(()=>document.querySelector('#loader')?.classList.contains('hidden'),null,{timeout:20000});
-    await page.waitForFunction(()=>document.querySelector('#navIndex')?.textContent?.includes('/ 09'),null,{timeout:20000});
-    const initial=(await page.locator('#navIndex').textContent()).trim();
-    const renderInfo=await page.evaluate(()=>({
-      mode:window.__TEM_GALLERY_FALLBACK_STARTED?'CANVAS FALLBACK':'WEBGL 3D',
+  const page=await context.newPage(),errors=[],consoleWarnings=[],failedRequests=[];
+  page.on('pageerror',e=>errors.push(String(e)));
+  page.on('console',msg=>{if(msg.type()==='error')consoleWarnings.push(msg.text())});
+  page.on('requestfailed',req=>failedRequests.push(req.url()+' :: '+req.failure()?.errorText));
+  try{
+    const response=await page.goto(base+'3d.html',{waitUntil:'domcontentloaded',timeout:40000});
+    if(!response?.ok())throw Error('Museum 3D HTTP status '+(response?.status()??'unknown'));
+    await page.waitForFunction(
+      ()=>document.querySelector('#loader')?.classList.contains('hidden')
+        || window.__TEM_GALLERY_FALLBACK_STARTED===true,
+      null,{timeout:35000}
+    );
+    await page.waitForFunction(()=>{
+      const str=document.querySelector('#navIndex')?.textContent||'';
+      return /^\s*\d+\s*\/\s*\d+\s*$/.test(str)&&Number(str.split('/')[1])>0;
+    },null,{timeout:20000});
+    const start=await page.locator('#navIndex').textContent();
+    const info=await page.evaluate(()=>({
+      ready:window.__TEM_V4_READY===true,
+      fallback:window.__TEM_GALLERY_FALLBACK_STARTED===true,
+      nav:document.querySelector('#navIndex')?.textContent,
+      works:document.querySelector('#totalPieces')?.textContent,
       canvasWidth:document.querySelector('#scene')?.width,
       canvasHeight:document.querySelector('#scene')?.height,
       marker:document.querySelector('#graphicsLabel')?.textContent
     }));
-    console.log('RENDER',mode.name,JSON.stringify(renderInfo));
-    await page.locator('#next').click();
-    const next=(await page.locator('#navIndex').textContent()).trim();
-    if(initial===next)throw new Error('Next artwork does not change counter');
-    await page.locator('#random').click();
-    await page.waitForFunction(()=>document.querySelector('#detail')?.classList.contains('open'),null,{timeout:4000});
-    const art=(await page.locator('#detailTitle').textContent()).trim();
-    if(!art)throw new Error('Artwork detail title empty');
-    await page.locator('#closeDetail').click();
-    await page.waitForFunction(()=>!document.querySelector('#detail')?.classList.contains('open'),null,{timeout:4000});
-    console.log('PASS',mode.name,'3d/fallback gallery:',initial,'->',next, 'detail:',art);
-    await page.goto(base,{waitUntil:'domcontentloaded',timeout:30000});
-    await page.locator('#wall').waitFor({timeout:8000});
-    const link=await page.locator('a[href="./3d.html"]').count();
-    if(!link)throw new Error('No 3D gallery link on museum home');
-    console.log('PASS',mode.name,'main museum and 3D navigation link');
-    // The real museum on the homepage must now visit actual art instead of cruising.
-    await page.waitForFunction(()=>document.querySelector('#museumTour') && document.querySelector('#walkOverlay'),null,{timeout:25000});
-    await page.waitForFunction(()=>document.querySelector('#walkOverlay').hidden===false,null,{timeout:15000});
-    const button=mode.hasTouch?'#museumAdvance':'#museumNextStop';
-    const buttonInfo=await page.evaluate(sel=>{
-      const el=document.querySelector(sel),b=el?.getBoundingClientRect(),cs=el?getComputedStyle(el):null;
-      return {exists:!!el,display:cs?.display,visibility:cs?.visibility,
-        box:b?{x:b.x,y:b.y,w:b.width,h:b.height}:null,
-        viewportHeight:window.innerHeight,viewportWidth:window.innerWidth,
-        overlayBox:document.querySelector('#walkOverlay')?.getBoundingClientRect()?.toJSON(),
-        hitIsButton:b?el.contains(document.elementFromPoint(b.x+b.width/2,b.y+b.height/2)):false};
-    },button);
-    console.log('GUIDE BUTTON',mode.name,JSON.stringify(buttonInfo));
-    if(buttonInfo.box && (buttonInfo.box.y<0 || buttonInfo.box.y+buttonInfo.box.h > buttonInfo.viewportHeight+3))
-      throw new Error('Next-artwork button is outside the visible viewport');
-    if(!buttonInfo.hitIsButton)throw new Error('Next-artwork button is covered by another layer');
-    // Synthetic event avoids false click timeouts when the CI GPU renders at 1 FPS.
-    await page.evaluate(sel=>document.querySelector(sel).click(),button);
-    await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourStop==='1',null,{timeout:24000});
-    const firstArt=(await page.locator('#temTourTitle').textContent()).trim();
-    const firstDescription=(await page.locator('#temTourDescription').textContent()).trim();
-    if (!firstArt || !firstDescription)throw new Error('Guided stop missing title or description');
-    await page.evaluate(sel=>document.querySelector(sel).click(),button);
-    await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourStop==='2',null,{timeout:24000});
-    const secondArt=(await page.locator('#temTourTitle').textContent()).trim();
-    if(firstArt===secondArt)throw new Error('Next artwork still shows the same piece');
-    if(await page.locator('#temTourStory').isHidden())throw new Error('Artwork story panel hidden');
-    console.log('PASS',mode.name,'guided visits actual artwork:',firstArt,'→',secondArt);
-    // Pause immediately after requesting the next stop; camera must stay put
-    // and then resume the same movement, not skip ahead or restart the hall.
-    await page.evaluate(sel=>{
-      document.querySelector(sel).click();
-      document.querySelector('#museumTour').click();
-      document.querySelector('#museumTour').click();
-    },button);
-    await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourPaused==='true',null,{timeout:12000});
-    const coords=()=>page.evaluate(()=>{
-      const d=document.querySelector('#walkOverlay').dataset;
-      return {x:Number(d.tourCameraX),z:Number(d.tourCameraZ)};
-    });
-    const atPause=await coords();
-    await page.waitForTimeout(700);
-    const stillPaused=await coords();
-    if(Math.abs(atPause.z-stillPaused.z)>0.04||Math.abs(atPause.x-stillPaused.x)>0.04)
-      throw new Error('Camera drifted after guided-tour pause: '+JSON.stringify(atPause)+' → '+JSON.stringify(stillPaused));
-    await page.evaluate(()=>document.querySelector('#museumTour').click());
-    await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourPlaying==='true',null,{timeout:12000});
-    await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.tourStop==='3',null,{timeout:35000});
-    const resumedArt=(await page.locator('#temTourTitle').textContent()).trim();
-    if(resumedArt===secondArt)throw new Error('Guided tour did not advance after resume');
-    console.log('PASS',mode.name,'pause and resume in-place:',secondArt,'→',resumedArt);
+    console.log('RENDER',mode.name,JSON.stringify(info));
+    if(!info.ready||info.fallback)throw Error('Expected immersive WebGL engine V5; got fallback or incomplete initialization');
+    if(!info.canvasWidth||!info.canvasHeight)throw Error('3D canvas has zero dimensions');
+    const total=Number(String(start).split('/')[1].trim());
+    if(total!==Number(info.works))throw Error('Work counter mismatch '+total+' != '+info.works);
 
-    // Verify actual UI controls do not start endless cruise.
-    const cruising=await page.locator('#museumAdvance').getAttribute('aria-pressed');
-    if(cruising==='true')throw new Error('Old endless cruise mode still active');
-  }catch(err){
-    errorCount++;
-    console.error('FAIL',mode.name,String(err));
-    console.error('Captured page errors:',errors.slice(0,6));
+    await page.locator('#explore').click({timeout:8000});
+    await page.waitForFunction(()=>document.querySelector('#intro')?.classList.contains('dismissed'),null,{timeout:8000});
+    await page.locator('#next').click({timeout:8000});
+    const next=await page.locator('#navIndex').textContent();
+    if(start===next)throw Error('Next artwork does not change gallery index');
+    await page.locator('#random').click({timeout:8000});
+    await page.waitForFunction(()=>document.querySelector('#detail')?.classList.contains('open'),null,{timeout:8000});
+    const art=(await page.locator('#detailTitle').textContent())?.trim();
+    if(!art)throw Error('Artwork detail has no title');
+    await page.locator('#closeDetail').click({timeout:8000});
+    await page.waitForFunction(()=>!document.querySelector('#detail')?.classList.contains('open'),null,{timeout:8000});
+
+    // Navigation affordances for real devices, not synthetic tour state.
+    await page.locator('#temFree').click({timeout:8000});
+    if(!await page.locator('#temFree').evaluate(el=>el.classList.contains('active')))
+      throw Error('Free navigation mode cannot be activated');
+    if(!await page.locator('#temDirections').evaluate(el=>el.classList.contains('visible')))
+      throw Error('Navigation directions do not appear in free mode');
+    await page.locator('#temGuide').click({timeout:8000});
+    if(!await page.locator('#temGuide').evaluate(el=>el.classList.contains('active')))
+      throw Error('Guided navigation mode cannot be activated');
+    console.log('PASS',mode.name,'V5 artwork navigation, detail and guided/free controls',start,'→',next,'art:',art);
+
+    const home=await page.goto(base,{waitUntil:'domcontentloaded',timeout:30000});
+    if(!home?.ok())throw Error('Museum homepage HTTP status '+(home?.status()??'unknown'));
+    await page.locator('#wall').waitFor({timeout:12000});
+    if(await page.locator('a[href="./3d.html"]').count()===0)
+      throw Error('Main museum page has no 3D entrance');
+    if(await page.locator('#mur-total').count()===0)
+      throw Error('Mur Total offer not present on the main page');
+    if(await page.locator('a[href="./3d.html"].btn.dark').count()===0)
+      throw Error('The primary visit CTA is not the new 3D museum');
+    console.log('PASS',mode.name,'homepage main 3D entrance and Mur Total');
+
+  }catch(e){
+    failures++;
+    console.error('FAIL',mode.name,e?.stack||String(e));
+    console.error('PAGE ERRORS',JSON.stringify(errors.slice(0,12)));
+    console.error('CONSOLE ERRORS',JSON.stringify(consoleWarnings.slice(0,12)));
+    console.error('FAILED REQUESTS',JSON.stringify(failedRequests.slice(0,12)));
     await page.screenshot({path:'/tmp/tem-'+mode.name+'-failure.png',fullPage:true}).catch(()=>{});
-  }finally{await ctx.close()}
+  }finally{await context.close();}
 }
 await browser.close();
-if(errorCount>0)process.exit(1);
+if(failures)process.exit(1);
