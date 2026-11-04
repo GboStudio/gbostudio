@@ -249,7 +249,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   }
   const stamp=canvasTexture((g,w,h)=>{
     g.clearRect(0,0,w,h);g.fillStyle="#252823";
-    g.font="400 83px Georgia";g.textAlign="center";g.fillText("THE EMPTY MUSEUM",w/2,176);
+    g.font="400 83px Georgia";g.textAlign="center";g.fillText("THE UNREAL MUSEUM",w/2,176);
     g.fillStyle="#88867f";g.font="600 24px Arial";g.letterSpacing="6px";g.fillText("A SPACE FOR WHAT WE CREATE",w/2,260);
     g.fillStyle="#aa9d86";g.fillRect(w/2-35,300,70,2);
   },1280,420);
@@ -331,7 +331,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       g.font="400 53px Georgia";
       g.fillText("The Partner Collection",w/2,h*.45,w*.86);
       g.fillStyle="#d2bea0";g.font="600 17px Arial";g.letterSpacing="3px";
-      g.fillText("CURATED SPACE · THE EMPTY MUSEUM",w/2,h*.67,w*.86);
+      g.fillText("CURATED SPACE · THE UNREAL MUSEUM",w/2,h*.67,w*.86);
     },1024,690);
   }
   function pictureMaterial(piece){
@@ -398,7 +398,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       g.strokeStyle="rgba(255,253,233,.48)";g.lineWidth=3;g.strokeRect(30,30,w-60,h-60);
       g.textAlign="left";g.textBaseline="alphabetic";
       g.fillStyle="#625437";g.font="700 20px Arial";g.letterSpacing="3px";
-      g.fillText("THE EMPTY MUSEUM",59,92,w-120);
+      g.fillText("THE UNREAL MUSEUM",59,92,w-120);
       g.fillStyle="#847452";g.font="600 20px Arial";
       g.fillText("EXHIBITION "+number,59,150,w-120);
       g.fillStyle="#342c20";
@@ -548,7 +548,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
         }
       }
     }catch(error){
-      console.warn("[The Empty Museum] Unable to display locally stored model",slot.id,error);
+      console.warn("[The Unreal Museum] Unable to display locally stored model",slot.id,error);
       // The placeholder stays visible; the exhibit remains selectable.
     }
   }
