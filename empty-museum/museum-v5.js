@@ -6,7 +6,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
   shell.className="museum-v5-shell";
   shell.innerHTML=`
     <div class="museum-v5-reticle" aria-hidden="true"></div>
-    <div class="museum-v5-help" aria-live="polite">GLISSEZ À DROITE POUR REGARDER · JOYSTICK À DROITE POUR AVANCER</div>
+    <div class="museum-v5-help" aria-live="polite">GLISSEZ POUR REGARDER · JOYSTICK POUR VOUS DÉPLACER</div>
     <div class="museum-v5-notice" aria-live="polite"></div>
     <div class="museum-v5-drive" aria-label="Déplacement assisté">
       <button type="button" id="museumAdvance" aria-pressed="false" aria-label="Découvrir l’œuvre suivante de l’exposition">
@@ -119,9 +119,12 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     let y=(event.clientY-b.top-b.height/2)/(b.height*.38);
     const m=Math.hypot(x,y);
     if(m>1){x/=m;y/=m;}
-    stick={x:Math.abs(x)<.13?0:x,y:Math.abs(y)<.13?0:y};
-    knob.style.transform="translate("+Math.round(x*31)+"px,"+Math.round(y*31)+"px)";
-    if(Math.hypot(x,y)>.1){
+    // Apply a circular dead-zone: avoid accidental diagonals and joystick drift.
+    const live=m>=.15;
+    stick=live?{x,y}:{x:0,y:0};
+    const travel=b.width*.31;
+    knob.style.transform="translate("+Math.round(stick.x*travel)+"px,"+Math.round(stick.y*travel)+"px)";
+    if(live){
       if(auto)manual();
       joystick.classList.add("active");
     }
