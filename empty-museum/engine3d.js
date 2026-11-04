@@ -15,6 +15,9 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   cinematicStyle.href="./museum-v5.css?v=20261031realism9b";
   document.head.appendChild(cinematicStyle);
   const tourStyle=document.createElement("link");tourStyle.rel="stylesheet";tourStyle.href="./tour-v10.css?v=20261103guided4";document.head.appendChild(tourStyle);
+  const mobileStyle=document.createElement("link");
+  mobileStyle.rel="stylesheet";mobileStyle.href="./museum-mobile-v12.css?v=20261104a";
+  document.head.appendChild(mobileStyle);
   const overlay = document.getElementById("walkOverlay");
   const canvas = document.getElementById("walkCanvas");
   if (!overlay || !canvas || !window.TEM) return;
@@ -28,8 +31,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   scene.background = new THREE.Color(0xf0efeb);
   scene.fog = new THREE.FogExp2(0xeceae5,0.0011);
   const camera = new THREE.PerspectiveCamera(mobile?64:59,1,.07,240);
-  const renderer = new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:"high-performance"});
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.66:1.8));
+  const renderer = new THREE.WebGLRenderer({canvas,antialias:!mobile,alpha:false,powerPreference:mobile?"low-power":"high-performance"});
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.45:1.8));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = .83;
@@ -215,7 +218,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     g.fillStyle="#75654b";
     g.font="56px Georgia, serif";
     g.letterSpacing="3px";
-    g.fillText("THE EMPTY MUSEUM",w/2,104);
+    g.fillText("THE UNREAL MUSEUM",w/2,104);
     g.fillStyle="#a69b88";
     g.font="22px Arial, sans-serif";
     g.letterSpacing="5px";
@@ -1007,6 +1010,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     overlay.hidden=false;document.body.classList.add("walk-is-open");
     resize();orient();
     frame=requestAnimationFrame(tick);
+    window.__TUM_PREMIUM_READY=true;
     overlay.querySelector(".walk-close")?.focus({preventScroll:true});
   }
   function close(){
@@ -1016,6 +1020,10 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     v5.leave();resetTourState();
     held.clear();keys.clear();walkTo=null;down=null;
     overlay.hidden=true;document.body.classList.remove("walk-is-open");
+    if(new URLSearchParams(location.search).get('visit')==='immersive'){
+      const u=new URL(location.href);u.searchParams.delete('visit');u.searchParams.delete('retry3d');
+      history.replaceState(null,'',u.pathname+(u.search||'')+u.hash);
+    }
     focusBefore?.focus?.({preventScroll:true});
   }
   document.querySelectorAll("[data-walk-open]").forEach(b=>b.addEventListener("click",open));
@@ -1103,5 +1111,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     close();
     overlay.querySelector(".walk-guide").textContent="L’affichage 3D a été interrompu. Rechargez la page pour réessayer.";
   });
-  requestAnimationFrame(open);
+  if(new URLSearchParams(location.search).get('visit')==='immersive'){
+    requestAnimationFrame(open);
+  }
 })();
