@@ -40,10 +40,12 @@ jobs:
           urls=(
             "https://gbostudio.fr/empty-museum/"
             "https://gbostudio.fr/empty-museum/3d.html"
-            "https://gbostudio.fr/empty-museum/gallery-v5.js"
-            "https://gbostudio.fr/empty-museum/museum-cloud.js"
-            "https://gbostudio.fr/empty-museum/museum-inventory.mjs"
-            "https://gbostudio.fr/empty-museum/gallery-fallback.js"
+            "https://gbostudio.fr/empty-museum/engine-loader.js"
+            "https://gbostudio.fr/empty-museum/engine3d.js"
+            "https://gbostudio.fr/empty-museum/museum-v5.js"
+            "https://gbostudio.fr/empty-museum/museum-mobile-v12.css"
+            "https://gbostudio.fr/empty-museum/scenography.js"
+            "https://gbostudio.fr/empty-museum/luxury-v8.js"
           )
           for url in "${urls[@]}"; do
             echo "::group::Checking ${url}"
