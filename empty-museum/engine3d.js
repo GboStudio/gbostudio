@@ -1,10 +1,10 @@
 import * as THREE from "three";
 import {getModel,loadModel,disposeModel} from "./models3d.js";
 import {buildMuseumScenography} from "./scenography.js?v=20261031realism9";
-import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261031realism9";
-import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261031pbr1";
+import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261105materials1";
+import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261105pbr2";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
-import {createMuseumV5Navigation} from "./museum-v5.js?v=20261104v13";
+import {createMuseumV5Navigation} from "./museum-v5.js?v=20261105joystick2";
 import {museumCameraMotion} from "./movement3d.js?v=20261105motion1";
 import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261102resume";
 
