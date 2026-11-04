@@ -16,7 +16,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   document.head.appendChild(cinematicStyle);
   const tourStyle=document.createElement("link");tourStyle.rel="stylesheet";tourStyle.href="./tour-v10.css?v=20261103guided4";document.head.appendChild(tourStyle);
   const mobileStyle=document.createElement("link");
-  mobileStyle.rel="stylesheet";mobileStyle.href="./museum-mobile-v12.css?v=20261104b";
+  mobileStyle.rel="stylesheet";mobileStyle.href="./museum-mobile-v12.css?v=20261104c";
   document.head.appendChild(mobileStyle);
   const overlay = document.getElementById("walkOverlay");
   const canvas = document.getElementById("walkCanvas");
