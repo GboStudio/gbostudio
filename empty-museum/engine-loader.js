@@ -23,6 +23,6 @@
     const canvas=document.getElementById("walkCanvas");
     if(!canvas)throw new Error("Museum canvas missing");
     if(!window.WebGLRenderingContext)throw new Error("WebGL not supported");
-    await import("./engine3d.js?v=20261104v12");
+    await import("./engine3d.js?v=20261104v13");
   }catch(error){legacy(error);}
 })();
