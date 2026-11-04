@@ -3,6 +3,7 @@
    and ceiling-unlock rule. It remains a LOCAL DEMONSTRATION, not a public backend. */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js';
 import {getPublishedArtworks} from './museum-cloud.js?v=20261103';
+import {availableWholeWalls} from './museum-inventory.mjs';
 if(window.__TEM_GALLERY_FALLBACK_STARTED||window.__TEM_GALLERY_FALLBACK_REQUESTED) throw Error('Gallery fallback already requested');
 const $=s=>document.querySelector(s), clamp=THREE.MathUtils.clamp;
 const presets=[
@@ -65,13 +66,7 @@ let scene,renderer,camera,clock,raycaster,raypoint,ambient,sun,fillLight,roofMat
 let renderedFrames=0,performanceTime=0,qualityAutoChanged=false;
 const works=[],clickables=[],keyset=new Set(),wholeWalls=[],obstacles=[];
 let wallWashTexture=null,shadowTexture=null;
-const wallSectionCandidates=[];
-for(let base=6;base+5<COUNT;base+=6){
-  for(const side of [-1,1]){
-    const slots=side<0?[base,base+2,base+4]:[base+1,base+3,base+5];
-    if(slots.every(n=>n>=4&&!wallWorks.has(n)))wallSectionCandidates.push({base,side,slots});
-  }
-}
+const wallSectionCandidates=availableWholeWalls(COUNT,[...wallWorks.keys()]);
 let activeWall=null, gltfLoaderModule=null;const desired=new THREE.Vector3(0,1.72,3.8),desiredRotation=new THREE.Quaternion(),lookCam=new THREE.PerspectiveCamera();
 const SWATCH=[['#29404a','#e4b5a5','#f7dec9'],['#cbbfa8','#635b4b','#efe8d8'],['#262532','#9b8998','#e9ddd5'],
   ['#0d3440','#6cb1bb','#cfe9e3'],['#272e23','#bcaa80','#f2daa2'],['#eed6c3','#ef8358','#69977c'],
