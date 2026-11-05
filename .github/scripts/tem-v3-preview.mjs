@@ -63,6 +63,23 @@ for(const device of setups){
       assert.ok(exit.roomWidth<=exit.vw+1 && exit.roomHeight<=exit.vh+1,
         'WebGL room must not extend beyond the visible iPhone viewport');
       assert.ok(exit.hittable,'Exit control must receive touch input above the WebGL canvas');
+      for(const selector of ['.joystick-ring','#museumTour','#museumFreeToggle']){
+        const control=await page.locator(selector).evaluate(el=>{
+          const r=el.getBoundingClientRect(),v=window.visualViewport;
+          const ox=v?.offsetLeft||0,oy=v?.offsetTop||0;
+          const vw=v?.width||window.innerWidth,vh=v?.height||window.innerHeight;
+          const x=r.left+r.width/2,y=r.top+r.height/2;
+          const hit=document.elementFromPoint(x,y);
+          return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,
+            vw,vh,ox,oy,hit:hit===el||el.contains(hit),
+            target:hit?.id||hit?.className||hit?.nodeName};
+        });
+        console.log('MOBILE CONTROL',selector,JSON.stringify(control));
+        assert.ok(control.left>=control.ox-1 && control.right<=control.ox+control.vw+1
+          && control.top>=control.oy-1 && control.bottom<=control.oy+control.vh+1,
+          'Mobile control '+selector+' is clipped outside the visual viewport');
+        assert.ok(control.hit,'Mobile control '+selector+' is not tappable above the 3D canvas');
+      }
     }
     try{
       await page.screenshot({path:'/tmp/museum-v3-'+device.name+'.png',timeout:60000});
