@@ -94,13 +94,22 @@ for(const mode of browsers){
       console.log('GUIDED BUTTON HIT TARGET',mode.name,JSON.stringify(hit));
       if(String(hit.top)!=='museumTour')
         throw Error('Guided tour button is covered by '+hit.top);
-      await page.locator('#museumTour').click({timeout:20000});
-      if(await page.locator('#museumTour').getAttribute('aria-pressed')!=='true')
-        throw Error('Guided tour cannot be activated');
-      // A second click pauses the guided tour. Give CPU-only CI WebGL enough time.
-      await page.locator('#museumTour').click({timeout:20000});
-      if(await page.locator('#museumTour').getAttribute('aria-pressed')!=='false')
-        throw Error('Guided tour cannot be paused');
+      // Mobile: tap fixed-screen coordinates like an actual finger.
+      // Playwright locator.click() may scroll the 3D viewport before clicking.
+      async function tapTour(){
+        if(!mode.mobile){
+          await page.locator('#museumTour').click({timeout:20000});
+          return;
+        }
+        const box=await page.locator('#museumTour').boundingBox();
+        if(!box)throw Error('Cannot locate guided tour button on mobile');
+        const x=box.x+box.width/2,y=box.y+box.height/2;
+        await page.touchscreen.tap(x,y);
+      }
+      await tapTour();
+      await page.waitForFunction(()=>document.querySelector('#museumTour')?.getAttribute('aria-pressed')==='true',null,{timeout:15000});
+      await tapTour();
+      await page.waitForFunction(()=>document.querySelector('#museumTour')?.getAttribute('aria-pressed')==='false',null,{timeout:15000});
       console.log('PASS',mode.name,'PBR gallery, default free roam, movement, guided mode');
     }else{
       console.log('WebGL not available in this environment; accessible fallback shown:',mode.name);
