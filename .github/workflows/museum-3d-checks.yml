@@ -1,4 +1,7 @@
 name: Museum 3D checks
+concurrency:
+  group: museum-3d-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 on:
   push:
     paths:
