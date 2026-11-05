@@ -22,7 +22,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   mobileStyle.rel="stylesheet";mobileStyle.href="./museum-mobile-v12.css?v=20261104c";
   document.head.appendChild(mobileStyle);
   const mobileCompactStyle=document.createElement("link");
-  mobileCompactStyle.rel="stylesheet";mobileCompactStyle.href="./museum-mobile-v13.css?v=20261105hud1";
+  mobileCompactStyle.rel="stylesheet";mobileCompactStyle.href="./museum-mobile-v13.css?v=20261106exit1";
   document.head.appendChild(mobileCompactStyle);
   const overlay = document.getElementById("walkOverlay");
   const canvas = document.getElementById("walkCanvas");
