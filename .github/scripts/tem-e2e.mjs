@@ -81,10 +81,26 @@ for(const mode of browsers){
       const afterZ=await page.locator('#walkOverlay').evaluate(el=>Number(el.dataset.tourCameraZ||0));
       console.log('WALK WORLD Z',mode.name,beforeZ,'→',afterZ);
       if(!(afterZ>beforeZ+.08))throw Error('Visitor did not move forward in the premium museum');
-      await page.locator('#museumTour').click({timeout:9000});
+      const hit=await page.locator('#museumTour').evaluate(btn=>{
+        const r=btn.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+        const top=document.elementFromPoint(x,y);
+        const layer=btn.closest('.museum-v5-shell');
+        return {top:top?.id||top?.className||top?.nodeName,
+          buttonVisible:getComputedStyle(btn).visibility,
+          buttonPointer:getComputedStyle(btn).pointerEvents,
+          shellZ:getComputedStyle(layer).zIndex,
+          shellPointer:getComputedStyle(layer).pointerEvents};
+      });
+      console.log('GUIDED BUTTON HIT TARGET',mode.name,JSON.stringify(hit));
+      if(String(hit.top)!=='museumTour')
+        throw Error('Guided tour button is covered by '+hit.top);
+      await page.locator('#museumTour').click({timeout:20000});
       if(await page.locator('#museumTour').getAttribute('aria-pressed')!=='true')
         throw Error('Guided tour cannot be activated');
-      await page.locator('#museumTour').click({timeout:9000});
+      // A second click pauses the guided tour. Give CPU-only CI WebGL enough time.
+      await page.locator('#museumTour').click({timeout:20000});
+      if(await page.locator('#museumTour').getAttribute('aria-pressed')!=='false')
+        throw Error('Guided tour cannot be paused');
       console.log('PASS',mode.name,'PBR gallery, default free roam, movement, guided mode');
     }else{
       console.log('WebGL not available in this environment; accessible fallback shown:',mode.name);
