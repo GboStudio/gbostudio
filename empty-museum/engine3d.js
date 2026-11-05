@@ -6,7 +6,7 @@ import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261105pbr2";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
 import {createMuseumV5Navigation} from "./museum-v5.js?v=20261105input3";
 import {museumCameraMotion} from "./movement3d.js?v=20261105motion1";
-import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261102resume";
+import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261105nearest1";
 
 (() => {
   "use strict";
@@ -751,7 +751,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     if(!stops.length){v5.toast("LE MUSÉE N’A PAS ENCORE D’ŒUVRE À PRÉSENTER");v5.finishTour();clearTourSession();return false;}
     const prevId=tourState.stops[tourState.index]?.id;
     const mapped=prevId?stops.findIndex(st=>st.id===prevId):-1;
-    const next=fromCurrent?routeResumeIndex(stops,view.z):routeNextIndex(stops,mapped,view.z);
+    const next=fromCurrent?routeResumeIndex(stops,view.z,{currentX:view.x}):routeNextIndex(stops,mapped,view.z);
     if(!fromCurrent&&mapped===stops.length-1&&next===0){
       view.x=0;view.z=.85;view.y=1.72;velX=0;velZ=0;
       yaw=0;yawTarget=0;pitch=0;pitchTarget=0;
@@ -805,45 +805,31 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   function onGuidedTourChange({playing,paused}){
     overlay.dataset.tourPlaying=String(playing);
     overlay.dataset.tourPaused=String(paused);
-    if(playing)tourState.started=true;
-    const motion=tourState.motion;
-    if(!playing && paused && motion && !motion.pausedAt){
-      // Pause the actual camera trajectory, not just the button label.
-      motion.pausedAt=performance.now();
+    if(playing){
+      tourState.started=true;
+      // Every time a guided tour is started or resumed, begin at the exhibit
+      // CLOSEST TO THE VISITOR'S CURRENT 3D POSITION. Never teleport back to
+      // the saved visit or assume that the old numbered stop is still nearby.
+      const stops=plannedStops();
+      const nearest=routeResumeIndex(stops,view.z,{currentX:view.x});
+      if(nearest<0){v5.finishTour();v5.toast("AUCUNE ŒUVRE EXPOSÉE POUR LE MOMENT");return;}
+      const shot=framingFor(stops[nearest],v5.getViewMode());
+      const alreadyViewing=tourState.stops[tourState.index]?.id===stops[nearest].id
+        && !story.hidden && !tourState.userMoved
+        && Math.hypot(view.x-shot.x,view.z-shot.z)<.75;
+      tourState.restored=false;
+      if(alreadyViewing){
+        tourState.stops=stops;tourState.index=nearest;tourState.motion=null;
+      }else{
+        goToArtworkIndex(nearest,stops);
+      }
+      return;
+    }
+    if(paused && tourState.motion && !tourState.motion.pausedAt){
+      tourState.motion.pausedAt=performance.now();
       velX=0;velZ=0;
     }
-    if(playing && motion?.pausedAt){
-      // Keep elapsed movement constant for the whole pause duration.
-      motion.startedAt+=performance.now()-motion.pausedAt;
-      delete motion.pausedAt;
-    }
-    if(playing && tourState.restored){
-      tourState.restored=false;
-      const stop=tourState.stops[tourState.index];
-      const shot=stop?framingFor(stop,v5.getViewMode()):null;
-      if(tourState.userMoved){
-        tourState.index=-1;tourState.motion=null;hideTourStory();
-        goToNextArtwork({fromCurrent:true});
-      }else if(shot&&Math.hypot(view.x-shot.x,view.z-shot.z)>0.75){
-        goToArtworkIndex(tourState.index,tourState.stops);
-      }else if(tourState.index>=0 && story.hidden){
-        showTourStory();
-      }
-    }else if(playing && tourState.userMoved){
-      // A visitor who walked in free mode resumes from the new location.
-      tourState.index=-1;
-      tourState.motion=null;
-      hideTourStory();
-      goToNextArtwork({fromCurrent:true});
-    }else if(playing && !tourState.motion && story.hidden && tourState.index>=0){
-      const at=tourState.stops[tourState.index];
-      if(at && Math.abs(view.z-at.cameraZ)<1.5){
-        showTourStory();
-      }else{
-        goToNextArtwork({fromCurrent:true});
-      }
-    }
-    if(!playing&&paused)saveTourSession();
+    if(paused)saveTourSession();
   }
   function movedByVisitor(){
     tourState.userMoved=true;
@@ -1014,7 +1000,9 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     focusBefore=document.activeElement;
     active=true;last=performance.now();view.x=0;view.z=.85;yaw=0;pitch=0;yawTarget=0;pitchTarget=0;velX=0;velZ=0;walkTo=null;resetTourState();
     v5.enter();
-    restoreTourSession();
+    // Fresh entry: start from the entrance; guided mode will seek the nearest
+    // real exhibit from the live camera position, never an old saved stop.
+    clearTourSession();
     overlay.hidden=false;document.body.classList.add("walk-is-open");
     resize();orient();
     frame=requestAnimationFrame(tick);
