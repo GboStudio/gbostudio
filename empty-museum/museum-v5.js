@@ -28,7 +28,18 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
       <button type="button" id="museumFreeToggle" aria-pressed="false">◌ &nbsp; MODE LIBRE</button>
       <button type="button" id="museumFull" aria-label="Passer en plein écran">⛶ &nbsp; PLEIN ÉCRAN</button>
     </div>`;
+  // Force the input layer above the WebGL canvas from the first frame:
+  // stylesheet imports can resolve after the 3D engine is already interactive.
+  shell.style.position="absolute";
+  shell.style.inset="0";
+  shell.style.zIndex="40";
+  shell.style.pointerEvents="none";
   overlay.appendChild(shell);
+  for(const cls of [".museum-v5-dock",".museum-v5-drive",".museum-v5-joystick"]){
+    const element=shell.querySelector(cls);
+    if(element)element.style.pointerEvents="auto";
+  }
+  shell.querySelectorAll("button").forEach(button=>button.style.pointerEvents="auto");
   const $=sel=>shell.querySelector(sel);
   const tourBtn=$("#museumTour"),cruiseBtn=$("#museumAdvance"),freeBtn=$("#museumFreeToggle"),nextBtn=$("#museumNextStop"),viewBtn=$("#museumView");
   const reticle=$(".museum-v5-reticle"),notice=$(".museum-v5-notice"),help=$(".museum-v5-help"),guide=overlay.querySelector(".walk-guide");
