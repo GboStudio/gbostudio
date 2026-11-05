@@ -44,6 +44,18 @@ for(const device of setups){
     assert.ok(state.visible && state.canvas.width>100 && state.canvas.height>100);
     assert.ok(Number.isFinite(state.initialZ),'Camera coordinates should be exposed for diagnostics');
     assert.deepEqual(errors,[],'No uncaught browser exceptions');
+    if(device.mobile){
+      const exit=await page.locator('.walk-close').evaluate(btn=>{
+        const r=btn.getBoundingClientRect(),vw=window.innerWidth,vh=window.innerHeight;
+        const x=r.left+r.width/2,y=r.top+r.height/2;
+        return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,vw,vh,
+          hittable:document.elementFromPoint(x,y)===btn};
+      });
+      console.log('MOBILE EXIT CONTROL',JSON.stringify(exit));
+      assert.ok(exit.left>=0 && exit.right<=exit.vw && exit.top>=0 && exit.bottom<=exit.vh,
+        'Exit control must fit entirely inside the portrait viewport');
+      assert.ok(exit.hittable,'Exit control must receive touch input above the WebGL canvas');
+    }
     try{
       await page.screenshot({path:'/tmp/museum-v3-'+device.name+'.png',timeout:60000});
     }catch(error){
