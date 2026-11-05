@@ -38,13 +38,25 @@ export async function enhanceScannedPBR(luxury,{mobile=false,length=28}={}) {
   const loader=new THREE.TextureLoader();loader.setCrossOrigin("anonymous");
   const wallRepeatX=Math.max(3,Math.round(length/3));
   const floorRepeatY=Math.max(4,Math.round(length/2.2));
-  const wallMaps=await Promise.all([
-    fetchMap(loader,"white_plaster_02","diff",wallRepeatX,2,true),
+  // Museum gallery walls are intended to be WARM WHITE.
+  // The scanned white_plaster_02 diffuse map reads dark brown under ACES and
+  // turned the room into a concrete tunnel. Retain the bright procedural
+  // painted plaster albedo; add only real micro-relief and roughness variation.
+  const [wallNormal,wallRough]=await Promise.all([
     fetchMap(loader,"white_plaster_02","nor_gl",wallRepeatX,2),
     mobile?Promise.resolve(null):fetchMap(loader,"white_plaster_02","rough",wallRepeatX,2)
   ]);
-  const wallUpgraded=apply(luxury.wall,...wallMaps,{tint:0xfaf9f6,normalScale:.13});
-  if(wallUpgraded)apply(luxury.wallAlt,...wallMaps,{tint:0xf6f5f0,normalScale:.13});
+  const wallUpgraded=Boolean(wallNormal||wallRough);
+  if(wallUpgraded)for(const mat of [luxury.wall,luxury.wallAlt]){
+    if(wallNormal){
+      mat.normalMap=wallNormal;
+      mat.normalScale.set(.13,.13);
+      mat.bumpMap=null;
+    }
+    if(wallRough){mat.roughnessMap=wallRough;mat.roughness=.94;}
+    // Deliberately do not touch mat.map or mat.color.
+    mat.needsUpdate=true;
+  }
   const floorMaps=await Promise.all([
     fetchMap(loader,"marble_01","diff",3,floorRepeatY,true),
     fetchMap(loader,"marble_01","nor_gl",3,floorRepeatY),

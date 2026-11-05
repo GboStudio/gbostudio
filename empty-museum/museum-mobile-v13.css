@@ -29,13 +29,43 @@
     text-shadow:0 1px 10px rgba(0,0,0,.35);
   }
   #walkOverlay .walk-actions .walk-exhibit {display:none!important}
+  /* Do not let the title and the exit control compete in the same flex row. */
+  #walkOverlay .walk-actions {
+    position:fixed!important;
+    top:calc(env(safe-area-inset-top) + 10px)!important;
+    right:calc(env(safe-area-inset-right) + 10px)!important;
+    left:auto!important;
+    z-index:48!important;
+    width:44px!important;
+    max-width:44px!important;
+    margin:0!important;
+    flex:none!important;
+    pointer-events:auto!important;
+  }
   #walkOverlay .walk-actions .walk-close {
-    min-width:44px!important;min-height:44px!important;
+    width:44px!important;
+    min-width:44px!important;max-width:44px!important;
+    height:44px!important;min-height:44px!important;
     border-radius:50%!important;
-    padding:8px!important;
+    padding:0!important;
+    font-size:0!important;line-height:0!important;
+    overflow:hidden!important;
     display:grid!important;place-items:center!important;
-    background:rgba(25,26,24,.57)!important;
-    border-color:rgba(250,245,234,.36)!important;
+    background:rgba(25,26,24,.68)!important;
+    border:1px solid rgba(250,245,234,.64)!important;
+    color:#fff!important;
+    box-shadow:0 3px 17px rgba(0,0,0,.18)!important;
+    touch-action:manipulation!important;
+  }
+  #walkOverlay .walk-actions .walk-close::before {
+    content:"×";
+    font:700 24px/1 Arial,sans-serif!important;
+    color:#fff!important;
+  }
+  #walkOverlay .walk-identity {
+    max-width:calc(100vw - 90px)!important;
+    min-width:0!important;
+    overflow:hidden!important;
   }
   #walkOverlay .museum-v5-reticle {opacity:.22!important}
   #walkOverlay .museum-v5-help {

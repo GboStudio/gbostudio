@@ -2,9 +2,10 @@ import * as THREE from "three";
 import {getModel,loadModel,disposeModel} from "./models3d.js";
 import {buildMuseumScenography} from "./scenography.js?v=20261105wallwash2";
 import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261105materials1";
-import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261105pbr2";
+import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261106whitewalls3";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
 import {RoundedBoxGeometry} from "three/addons/geometries/RoundedBoxGeometry.js";
+import {addPhysicalGalleryV3} from "./physical-gallery-v3.js?v=20261106a";
 import {createMuseumV5Navigation} from "./museum-v5.js?v=20261105input3";
 import {museumCameraMotion} from "./movement3d.js?v=20261105motion1";
 import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261105nearest1";
@@ -21,7 +22,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   mobileStyle.rel="stylesheet";mobileStyle.href="./museum-mobile-v12.css?v=20261104c";
   document.head.appendChild(mobileStyle);
   const mobileCompactStyle=document.createElement("link");
-  mobileCompactStyle.rel="stylesheet";mobileCompactStyle.href="./museum-mobile-v13.css?v=20261105hud1";
+  mobileCompactStyle.rel="stylesheet";mobileCompactStyle.href="./museum-mobile-v13.css?v=20261106exit1";
   document.head.appendChild(mobileCompactStyle);
   const overlay = document.getElementById("walkOverlay");
   const canvas = document.getElementById("walkCanvas");
@@ -76,7 +77,10 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   const luxury=makeWhiteLuxuryMaterials({mobile,length:LENGTH});
   // Upgrade the existing materials in place; never block gallery navigation.
   // If the scanned maps fail, the original high-quality procedural surfaces remain.
-  enhanceScannedPBR(luxury,{mobile,length:LENGTH}).catch(e=>console.warn("[TEM] Scanned PBR unavailable, retaining originals",e));
+  let physicalGallery=null;
+  enhanceScannedPBR(luxury,{mobile,length:LENGTH})
+    .then(()=>physicalGallery?.refreshFloor(luxury.floor))
+    .catch(e=>console.warn("[TEM] Scanned PBR unavailable, retaining originals",e));
   const stone=luxury.wall,stoneAlt=luxury.wallAlt;
   const floorMat=luxury.floor,grout=material(0xd4d1cb,.96);
   const plinthMat=luxury.whiteStone,inlay=material(0xc5bfb1,.67,.19);
@@ -112,6 +116,16 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
 
   // Mineral PBR floor, subtly veined slabs, hairline joints and micro-relief.
   box(architecture,HALF*2,.28,LENGTH,floorMat,0,-.16,LENGTH/2,false,true);
+  // Premium architecture has its own instanced, bevelled stone slabs and
+  // stationary indirect-occlusion atlas; never modify exhibition inventory.
+  try{
+    physicalGallery=addPhysicalGalleryV3({
+      architecture,half:HALF,height:HEIGHT,length:LENGTH,mobile,floorMaterial:floorMat
+    });
+    overlay.dataset.museumArchitecture="physical-v3";
+    console.info("[TEM] Gallery architecture",physicalGallery.stats);
+  }catch(error){console.warn("[TEM] Physical gallery enhancement disabled",error);}
+
   // WHITE CEILING: layered plaster vault, completely free from exhibits at launch.
   // All ceiling pieces are concealed until the wall gallery reaches capacity.
   const ceilingPlaster=material(0xf9f8f4,.95);
@@ -258,7 +272,11 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     g.fillStyle="#88867f";g.font="600 24px Arial";g.letterSpacing="6px";g.fillText("A SPACE FOR WHAT WE CREATE",w/2,260);
     g.fillStyle="#aa9d86";g.fillRect(w/2-35,300,70,2);
   },1280,420);
-  const welcome=surface(architecture,7.1,2.33,new THREE.MeshBasicMaterial({map:stamp,transparent:true,side:THREE.DoubleSide,depthWrite:false}),0,4.85,7.9,Math.PI);
+  // Physically scaled entrance signage: preserve its entire silhouette on
+  // a narrow portrait phone, instead of cropping enormous black letters.
+  const welcome=surface(architecture,mobile?3.05:5.2,mobile?1.00:1.70,
+    new THREE.MeshBasicMaterial({map:stamp,transparent:true,side:THREE.DoubleSide,depthWrite:false}),
+    0,4.80,7.9,Math.PI);
   welcome.renderOrder=4;
 
   // Materials for artworks are produced at runtime; uploaded images remain visible.
