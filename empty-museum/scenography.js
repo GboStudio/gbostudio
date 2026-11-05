@@ -66,6 +66,37 @@ export function buildMuseumScenography({scene,architecture,half,height,length,mo
     place(architecture,new THREE.PlaneGeometry(5.4,5.4),daylightPool,
       0,.046,z,{rotX:-Math.PI/2});
   }
+  // Soft precomputed-looking crevice occlusion along the floor / wall junction.
+  // Two translucent 256px decals cost almost nothing compared with realtime AO
+  // and preserve the expensive museum lighting rig for mobile visitors.
+  function wallFloorContact(side){
+    const canvas=document.createElement("canvas");
+    canvas.width=256;canvas.height=16;
+    const g=canvas.getContext("2d");
+    const grad=g.createLinearGradient(0,0,256,0);
+    if(side<0){
+      grad.addColorStop(0,"rgba(31,29,24,.23)");
+      grad.addColorStop(.20,"rgba(31,29,24,.13)");
+      grad.addColorStop(.63,"rgba(31,29,24,0)");
+      grad.addColorStop(1,"rgba(31,29,24,0)");
+    }else{
+      grad.addColorStop(0,"rgba(31,29,24,0)");
+      grad.addColorStop(.37,"rgba(31,29,24,0)");
+      grad.addColorStop(.80,"rgba(31,29,24,.13)");
+      grad.addColorStop(1,"rgba(31,29,24,.23)");
+    }
+    g.fillStyle=grad;g.fillRect(0,0,256,16);
+    const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
+    const mat=new THREE.MeshBasicMaterial({
+      map:tex,transparent:true,depthWrite:false,
+      side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1
+    });
+    const decal=place(architecture,new THREE.PlaneGeometry(.88,length),mat,
+      side*(half-.56),.012,length/2,{rotX:-Math.PI/2});
+    decal.renderOrder=1;
+  }
+  wallFloorContact(-1);
+  wallFloorContact(1);
   // Remove ornamental floor targets; the limestone slabs read as real architecture.
   function whiteBench(x,z){
     box(architecture,.78,.13,1.7,plaster,x,.55,z,{shadow:true});
