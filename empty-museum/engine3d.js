@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import {getModel,loadModel,disposeModel} from "./models3d.js";
-import {buildMuseumScenography} from "./scenography.js?v=20261105wallwash1";
+import {buildMuseumScenography} from "./scenography.js?v=20261105wallwash2";
 import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261105materials1";
 import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261105pbr2";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
