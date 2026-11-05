@@ -2,7 +2,7 @@ import * as THREE from "three";
 import {getModel,loadModel,disposeModel} from "./models3d.js";
 import {buildMuseumScenography} from "./scenography.js?v=20261105wallwash2";
 import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261105materials1";
-import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261105pbr2";
+import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261106whitewalls3";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
 import {RoundedBoxGeometry} from "three/addons/geometries/RoundedBoxGeometry.js";
 import {addPhysicalGalleryV3} from "./physical-gallery-v3.js?v=20261106a";
@@ -272,7 +272,11 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     g.fillStyle="#88867f";g.font="600 24px Arial";g.letterSpacing="6px";g.fillText("A SPACE FOR WHAT WE CREATE",w/2,260);
     g.fillStyle="#aa9d86";g.fillRect(w/2-35,300,70,2);
   },1280,420);
-  const welcome=surface(architecture,7.1,2.33,new THREE.MeshBasicMaterial({map:stamp,transparent:true,side:THREE.DoubleSide,depthWrite:false}),0,4.85,7.9,Math.PI);
+  // Physically scaled entrance signage: preserve its entire silhouette on
+  // a narrow portrait phone, instead of cropping enormous black letters.
+  const welcome=surface(architecture,mobile?3.05:5.2,mobile?1.00:1.70,
+    new THREE.MeshBasicMaterial({map:stamp,transparent:true,side:THREE.DoubleSide,depthWrite:false}),
+    0,4.80,7.9,Math.PI);
   welcome.renderOrder=4;
 
   // Materials for artworks are produced at runtime; uploaded images remain visible.
