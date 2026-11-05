@@ -1,3 +1,18 @@
+/* The navigation shell must be stacked above the WebGL canvas.
+   Transparent shell passes touches through to the canvas; only real controls capture them. */
+#walkOverlay .museum-v5-shell{
+  position:absolute!important;inset:0!important;
+  z-index:12!important;pointer-events:none!important;
+}
+#walkOverlay .museum-v5-shell .museum-v5-dock,
+#walkOverlay .museum-v5-shell .museum-v5-drive,
+#walkOverlay .museum-v5-shell .museum-v5-joystick {
+  pointer-events:auto!important;
+}
+#walkOverlay .museum-v5-shell button {
+  touch-action:manipulation;
+}
+
 /* THE UNREAL MUSEUM — focused mobile HUD. Load after v12.
    Respect safe areas; preserve readable controls and leave artwork visible. */
 @media (max-width:760px) {
