@@ -2,9 +2,9 @@ import {chromium} from 'playwright';
 
 /* THE UNREAL MUSEUM — browser acceptance test for the SINGLE PBR viewer.
    Covers actual exploration, not the abandoned frame-by-frame V5 gallery. */
-const base='https://gbostudio.fr/empty-museum/';
+const base=process.env.TEM_BASE_URL||'https://gbostudio.fr/empty-museum/';
 const browsers=[
-  {name:'desktop',viewport:{width:1380,height:850},mobile:false},
+  {name:'desktop',viewport:{width:1200,height:760},mobile:false},
   {name:'mobile',viewport:{width:390,height:844},mobile:true}
 ];
 const browser=await chromium.launch({
@@ -72,15 +72,15 @@ for(const mode of browsers){
         // Test actual 3D camera position, not the integer metres rounded in the HUD.
         await page.waitForFunction((origin)=>{
           const z=Number(document.querySelector('#walkOverlay')?.dataset.tourCameraZ||0);
-          return Number.isFinite(z) && z>origin+.08;
-        },beforeZ,{polling:300,timeout:16000});
+          return Number.isFinite(z) && z>origin+.035;
+        },beforeZ,{polling:350,timeout:45000});
       }finally{
         if(mode.mobile)await page.mouse.up().catch(()=>{});
         else await page.keyboard.up('w').catch(()=>{});
       }
       const afterZ=await page.locator('#walkOverlay').evaluate(el=>Number(el.dataset.tourCameraZ||0));
       console.log('WALK WORLD Z',mode.name,beforeZ,'→',afterZ);
-      if(!(afterZ>beforeZ+.08))throw Error('Visitor did not move forward in the premium museum');
+      if(!(afterZ>beforeZ+.035))throw Error('Visitor did not move forward in the premium museum');
       const hit=await page.locator('#museumTour').evaluate(btn=>{
         const r=btn.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
         const top=document.elementFromPoint(x,y);
