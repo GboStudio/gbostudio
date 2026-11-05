@@ -1,9 +1,10 @@
 import * as THREE from "three";
 import {getModel,loadModel,disposeModel} from "./models3d.js";
-import {buildMuseumScenography} from "./scenography.js?v=20261031realism9";
+import {buildMuseumScenography} from "./scenography.js?v=20261105wallwash1";
 import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261105materials1";
 import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261105pbr2";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
+import {RoundedBoxGeometry} from "three/addons/geometries/RoundedBoxGeometry.js";
 import {createMuseumV5Navigation} from "./museum-v5.js?v=20261105input3";
 import {museumCameraMotion} from "./movement3d.js?v=20261105motion1";
 import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261105nearest1";
@@ -435,18 +436,34 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     const screw=mesh(group,new THREE.SphereGeometry(.014,10,8),agedGold,x,y,z);
     screw.scale.z=.5;
   }
+  // Static, low-cost baked contact occlusion: subtle feathered shadow around
+  // each frame, directly against the fluted plaster bay.
+  const frameContactMap=canvasTexture((g,w,h)=>{
+    const grad=g.createRadialGradient(w/2,h/2,w*.18,w/2,h/2,w*.68);
+    grad.addColorStop(0,"rgba(31,28,24,.24)");
+    grad.addColorStop(.58,"rgba(31,28,24,.18)");
+    grad.addColorStop(.82,"rgba(31,28,24,.07)");
+    grad.addColorStop(1,"rgba(31,28,24,0)");
+    g.clearRect(0,0,w,h);g.fillStyle=grad;g.fillRect(0,0,w,h);
+  },256,256);
+  const frameContactMaterial=new THREE.MeshBasicMaterial({
+    map:frameContactMap,transparent:true,depthWrite:false,
+    side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1
+  });
   // One complete exhibition unit: a dimensional float-mount and its museum plaque.
   // Museum-grade floating mounts: accurate depth, restrained fine metal,
   // feathered contact shadow, a real matboard and discreet brass cartel.
   function addFrame(group,w,h,x,y,z,rot,frontMat,slot){
     const unit=new THREE.Group();
     unit.position.set(x,y,z);unit.rotation.y=rot;group.add(unit);
-    const contact=surface(unit,w+.26,h+.30,
-      new THREE.MeshBasicMaterial({color:0x39352f,transparent:true,opacity:.085,depthWrite:false,side:THREE.DoubleSide}),
-      0,-.025,-.118);
-    contact.renderOrder=0;
-    box(unit,w+.126,h+.126,.084,darkBronze,0,0,-.018,true);
-    box(unit,w+.084,h+.084,.092,agedGold,0,0,.026,true);
+    // Wall bays have a shallow relief. Put the shadow on its physical surface,
+    // rather than hiding it behind the wall (which made the frames look pasted on).
+    const shadow=surface(unit,w+.47,h+.50,frameContactMaterial,0,-.015,-.090);
+    shadow.renderOrder=0;
+    // Thin rounded metal lips catch real grazing highlights instead of producing
+    // perfectly sharp computer-generated boxes.
+    const outer=mesh(unit,new RoundedBoxGeometry(w+.126,h+.126,.084,2,.010),darkBronze,0,0,-.018,true);
+    const gilded=mesh(unit,new RoundedBoxGeometry(w+.084,h+.084,.092,2,.009),agedGold,0,0,.026,true);
     box(unit,w+.053,h+.053,.094,pictureMat,0,0,.062,true);
     const art=surface(unit,w,h,frontMat,0,0,.114);
     art.material.side=THREE.DoubleSide;
