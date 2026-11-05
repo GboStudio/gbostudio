@@ -37,17 +37,26 @@ test('a partial module never creates a whole-wall offer',()=>{
   assert.equal(availableWholeWalls(4,[],[]).length,0);
   assert.equal(availableWholeWalls(5,[],[]).length,0);
 });
-test('V5, its cloud adapter and entrypoint parse and point at each other',()=>{
-  for(const path of ['gallery-v5.js','museum-cloud.js','museum-inventory.mjs']){
+test('active WebGL engine, navigation and cloud adapter parse and route to the single immersive museum',()=>{
+  for(const path of ['engine-loader.js','engine3d.js','museum-v5.js','movement3d.js','museum-cloud.js','museum-inventory.mjs']){
     const src=file(path);
     const parsed=spawnSync(process.execPath,['--input-type=module','--check'],{input:src,encoding:'utf8'});
     assert.equal(parsed.status,0,path+': '+parsed.stderr);
   }
-  const page=file('3d.html');
-  assert.match(page,/gallery-v5\.js\?v=/);
-  assert.match(page,/gallery-fallback\.js/);
-  assert.match(page,/type="importmap"/);
-  assert.match(page,/THE UNREAL/);
+  const index=file('index.html');
+  const entry=file('3d.html');
+  const loader=file('engine-loader.js');
+  const engine=file('engine3d.js');
+  assert.match(index,/type="importmap"/);
+  assert.match(index,/engine-loader\.js\?v=/);
+  assert.match(index,/THE UNREAL MUSEUM/);
+  assert.match(index,/\?visit=immersive/);
+  assert.match(entry,/visit=immersive/);
+  assert.match(entry,/location\.replace\(target\.href\)/);
+  assert.match(loader,/import\("\.\/engine3d\.js\?v=/);
+  assert.match(loader,/walk\.js\?v=/);
+  assert.match(engine,/createMuseumV5Navigation/);
+  assert.match(engine,/museumCameraMotion/);
 });
 test('cloud mode remains disabled until an approved backend is configured',()=>{
   assert.match(file('cloud-config.js'),/enabled:\s*false/);
