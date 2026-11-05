@@ -133,12 +133,13 @@ export function buildMuseumScenography({scene,architecture,half,height,length,mo
       whiteLight,side*3.3,2.19,z+2.3);
   }
 
-  // The lighting rig tracks nearby artworks rather than creating 38 costly
-  // realtime spotlights; fixtures are visible on the roof throughout.
+  // The fixture pool remains small on mobile. We illuminate actual nearby
+  // architecture as well as exhibited art: the entrance must not look flat
+  // when the first few wall bays are empty.
   const spots=[];
   for(let i=0;i<(mobile?3:6);i++){
-    const light=new THREE.SpotLight(0xfffbf3,mobile?16:24,8.5,.45,.85,1.4);
-    light.castShadow=false;
+    const light=new THREE.SpotLight(0xffecd9,12,9.5,.39,.88,1.8);
+    light.castShadow=false; // one moving directional cascade owns true shadows
     light.visible=false;
     scene.add(light,light.target);
     spots.push(light);
@@ -159,21 +160,25 @@ export function buildMuseumScenography({scene,architecture,half,height,length,mo
     }
   }
   function updateSpotlights(z,slots){
-    const nearest=slots.filter(s=>s.piece && !s.reservedForAds)
-      .map(s=>({...s,at:5.7+s.id*3.5}))
-      .filter(s=>Math.abs(s.at-z)<21)
-      .sort((a,b)=>Math.abs(a.at-z)-Math.abs(b.at-z))
+    const near=(slots||[])
+      .filter(s=>s && Number.isInteger(s.id))
+      .map(s=>({id:s.id,at:5.7+s.id*3.5,occupied:Boolean(s.piece&&!s.reservedForAds)}))
+      .filter(s=>Math.abs(s.at-z)<19)
+      .sort((a,b)=>Math.abs(a.at-z)-Math.abs(b.at-z)||a.id-b.id)
       .slice(0,spots.length);
-    const signature=nearest.map(s=>s.id).join(",");
+    const signature=near.map(s=>s.id+(s.occupied?"a":"e")).join(",");
     if(signature===lastFocus)return;
     lastFocus=signature;
     for(let i=0;i<spots.length;i++){
-      const light=spots[i],slot=nearest[i];
-      if(!slot){light.visible=false;continue;}
-      const side=slot.id%2?1:-1,spotX=side*(half-1.35);
+      const light=spots[i],bay=near[i];
+      if(!bay){light.visible=false;continue;}
+      const side=bay.id%2?1:-1;
       light.visible=true;
-      light.position.set(spotX,height-.55,slot.at);
-      light.target.position.set(side*(half-.35),2.8,slot.at);
+      // Warm wall-washing grazing light creates a visible fall-off on plaster,
+      // with stronger focus on an actual creation.
+      light.intensity=bay.occupied?(mobile?17:21):(mobile?7:11);
+      light.position.set(side*(half-1.33),height-.48,bay.at-.28);
+      light.target.position.set(side*(half-.31),2.30,bay.at);
       light.target.updateMatrixWorld();
     }
   }
