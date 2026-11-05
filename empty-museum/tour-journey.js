@@ -37,17 +37,27 @@ export function routeNextIndex(stops,currentIndex,currentZ) {
   return next<0?0:next;
 }
 /**
- * Resume from the visitor's physical location, not an old sequence index.
- * If the visitor is at an exhibit, resume at that exhibit. Otherwise, continue
- * with the next exhibit in the current direction of the gallery.
+ * Join the guided visit at the real exhibit nearest to the visitor.
+ * Never blindly return to a previously saved itinerary index or jump to
+ * the next numbered bay. Side of room matters (wall, floor, ceiling).
+ * Nonexistent works / advert-only bays are excluded by planExhibitionStops.
  */
-export function routeResumeIndex(stops,currentZ,{tolerance=1.4}={}){
+export function routeResumeIndex(stops,currentZ,{currentX=0}={}){
   if(!stops?.length)return -1;
   const z=Number.isFinite(currentZ)?currentZ:0;
-  const nearby=stops.findIndex(stop=>Math.abs(stop.cameraZ-z)<=tolerance);
-  if(nearby>=0)return nearby;
-  const ahead=stops.findIndex(stop=>stop.cameraZ>z);
-  return ahead>=0?ahead:0;
+  const x=Number.isFinite(currentX)?currentX:0;
+  let best=-1,score=Infinity;
+  for(let i=0;i<stops.length;i++){
+    const stop=stops[i];
+    if(!stop||!Number.isFinite(stop.z))continue;
+    const artX=Number.isFinite(stop.focusX)?stop.focusX:(Number.isFinite(stop.cameraX)?stop.cameraX:0);
+    const dx=artX-x,dz=stop.z-z;
+    const distance=dx*dx+dz*dz;
+    if(distance<score-1e-8){score=distance;best=i;}
+    // On an exact tie, prefer the artwork in front of the visitor.
+    else if(Math.abs(distance-score)<1e-8 && best>=0 && stop.z>=z && stops[best].z<z){best=i;}
+  }
+  return best;
 }
 export function approachDuration(distance,reducedMotion=false){
   if(reducedMotion)return .14;
