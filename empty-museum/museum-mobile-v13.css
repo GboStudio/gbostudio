@@ -70,12 +70,14 @@
   }
   #walkOverlay .museum-v5-reticle {opacity:.22!important}
   #walkOverlay .museum-v5-help {
+    position:absolute!important;
     top:calc(72px + env(safe-area-inset-top))!important;
     left:16px!important;right:16px!important;
     font-size:8px!important;letter-spacing:.055em!important;
     opacity:.9!important;
   }
   #walkOverlay .museum-v5-shell .museum-v5-dock {
+    position:absolute!important;
     left:calc(11px + env(safe-area-inset-left))!important;
     right:auto!important;
     bottom:calc(13px + env(safe-area-inset-bottom))!important;
@@ -99,6 +101,7 @@
     border-color:rgba(255,249,235,.8)!important;
   }
   #walkOverlay .museum-v5-shell .museum-v5-joystick {
+    position:absolute!important;
     right:calc(12px + env(safe-area-inset-right))!important;
     bottom:calc(12px + env(safe-area-inset-bottom))!important;
     width:102px!important;height:113px!important;
@@ -117,6 +120,7 @@
     letter-spacing:.07em!important;
   }
   #walkOverlay .walk-progress {
+    position:absolute!important;
     left:13px!important;
     width:min(180px,52vw)!important;
     max-width:180px!important;
@@ -131,6 +135,7 @@
   }
   #walkOverlay .walk-progress-track {height:2px!important}
   #walkOverlay .tem-tour-story {
+    position:absolute!important;
     left:13px!important;right:13px!important;
     bottom:calc(145px + env(safe-area-inset-bottom))!important;
     max-height:41dvh!important;

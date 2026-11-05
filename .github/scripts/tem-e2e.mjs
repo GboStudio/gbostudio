@@ -59,6 +59,19 @@ for(const mode of browsers){
       const beforeZ=await page.locator('#walkOverlay').evaluate(el=>Number(el.dataset.tourCameraZ||0));
       if(mode.mobile && (state.stickDisplay==='none'||state.stickDisplay==='missing'))
         throw Error('Mobile joystick is not visible');
+      if(mode.mobile){
+        for(const selector of ['.joystick-ring','#museumTour','#museumFreeToggle']){
+          const bounds=await page.locator(selector).evaluate(el=>{
+            const r=el.getBoundingClientRect(),v=window.visualViewport;
+            const x=v?.offsetLeft||0,y=v?.offsetTop||0;
+            const w=v?.width||window.innerWidth,h=v?.height||window.innerHeight;
+            return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,x,y,w,h};
+          });
+          if(!(bounds.left>=bounds.x-1&&bounds.right<=bounds.x+bounds.w+1
+            &&bounds.top>=bounds.y-1&&bounds.bottom<=bounds.y+bounds.h+1))
+            throw Error('Mobile control outside visual viewport: '+selector+' '+JSON.stringify(bounds));
+        }
+      }
       try{
         if(mode.mobile){
           const bounds=await page.locator('.joystick-ring').boundingBox();
