@@ -31,7 +31,8 @@
   #walkOverlay .walk-actions .walk-exhibit {display:none!important}
   /* Do not let the title and the exit control compete in the same flex row. */
   #walkOverlay .walk-actions {
-    position:fixed!important;
+    /* Absolute in the corrected room viewport, not the overflowing layout viewport. */
+    position:absolute!important;
     top:calc(env(safe-area-inset-top) + 10px)!important;
     right:calc(env(safe-area-inset-right) + 10px)!important;
     left:auto!important;

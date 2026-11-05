@@ -46,14 +46,22 @@ for(const device of setups){
     assert.deepEqual(errors,[],'No uncaught browser exceptions');
     if(device.mobile){
       const exit=await page.locator('.walk-close').evaluate(btn=>{
-        const r=btn.getBoundingClientRect(),vw=window.innerWidth,vh=window.innerHeight;
+        const r=btn.getBoundingClientRect();
+        const v=window.visualViewport;
+        const vw=v?.width||window.innerWidth,vh=v?.height||window.innerHeight;
+        const ox=v?.offsetLeft||0,oy=v?.offsetTop||0;
+        const room=document.querySelector('#walkOverlay').getBoundingClientRect();
         const x=r.left+r.width/2,y=r.top+r.height/2;
-        return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,vw,vh,
+        return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,vw,vh,ox,oy,
+          roomWidth:room.width,roomHeight:room.height,
           hittable:document.elementFromPoint(x,y)===btn};
       });
       console.log('MOBILE EXIT CONTROL',JSON.stringify(exit));
-      assert.ok(exit.left>=0 && exit.right<=exit.vw && exit.top>=0 && exit.bottom<=exit.vh,
-        'Exit control must fit entirely inside the portrait viewport');
+      assert.ok(exit.left>=exit.ox && exit.right<=exit.ox+exit.vw+1
+        && exit.top>=exit.oy && exit.bottom<=exit.oy+exit.vh+1,
+        'Exit control must fit entirely inside the VISIBLE portrait viewport');
+      assert.ok(exit.roomWidth<=exit.vw+1 && exit.roomHeight<=exit.vh+1,
+        'WebGL room must not extend beyond the visible iPhone viewport');
       assert.ok(exit.hittable,'Exit control must receive touch input above the WebGL canvas');
     }
     try{
