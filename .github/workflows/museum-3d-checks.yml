@@ -23,3 +23,5 @@ jobs:
           node-version: '22'
       - name: Run museum smoke tests
         run: node --test empty-museum/tests/museum.test.mjs
+      - name: Validate physical gallery layout and indirect-occlusion profiles
+        run: node --test empty-museum/tests/gallery-layout-v3.test.mjs
