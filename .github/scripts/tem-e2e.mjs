@@ -56,24 +56,31 @@ for(const mode of browsers){
     if(state.premium){
       if(state.free!=='true'||!state.isFree)throw Error('Museum did not start in free exploration');
       if(state.canvasWidth<=0||state.canvasHeight<=0)throw Error('3D canvas was not resized');
-      if(mode.mobile){
-        if(state.stickDisplay==='none'||state.stickDisplay==='missing')throw Error('Mobile joystick is not visible');
-        const bounds=await page.locator('.joystick-ring').boundingBox();
-        if(!bounds)throw Error('No interactive joystick zone');
-        const x=bounds.x+bounds.width/2,y=bounds.y+bounds.height/2-30;
-        await page.mouse.move(x,y);await page.mouse.down();
-        await page.waitForTimeout(2500);
-        await page.mouse.up();
-      }else{
-        await page.keyboard.down('w');
-        await page.waitForTimeout(2000);
-        await page.keyboard.up('w');
+      const beforeZ=await page.locator('#walkOverlay').evaluate(el=>Number(el.dataset.tourCameraZ||0));
+      if(mode.mobile && (state.stickDisplay==='none'||state.stickDisplay==='missing'))
+        throw Error('Mobile joystick is not visible');
+      try{
+        if(mode.mobile){
+          const bounds=await page.locator('.joystick-ring').boundingBox();
+          if(!bounds)throw Error('No interactive joystick zone');
+          const x=bounds.x+bounds.width/2,y=bounds.y+bounds.height/2-30;
+          await page.mouse.move(x,y);await page.mouse.down();
+        }else{
+          await page.keyboard.down('w');
+        }
+        // SwiftShader WebGL software rendering can run only a few frames per second.
+        // Test actual 3D camera position, not the integer metres rounded in the HUD.
+        await page.waitForFunction((origin)=>{
+          const z=Number(document.querySelector('#walkOverlay')?.dataset.tourCameraZ||0);
+          return Number.isFinite(z) && z>origin+.08;
+        },beforeZ,{polling:300,timeout:16000});
+      }finally{
+        if(mode.mobile)await page.mouse.up().catch(()=>{});
+        else await page.keyboard.up('w').catch(()=>{});
       }
-      const after=await page.locator('#walkProgress').textContent();
-      const oldMetres=Number((state.progress||'').match(/^\d+/)?.[0]||'0');
-      const newMetres=Number((after||'').match(/^\d+/)?.[0]||'0');
-      console.log('WALK METRES',mode.name,oldMetres,'→',newMetres);
-      if(!(newMetres>oldMetres))throw Error('Visitor did not move forward in the premium museum');
+      const afterZ=await page.locator('#walkOverlay').evaluate(el=>Number(el.dataset.tourCameraZ||0));
+      console.log('WALK WORLD Z',mode.name,beforeZ,'→',afterZ);
+      if(!(afterZ>beforeZ+.08))throw Error('Visitor did not move forward in the premium museum');
       await page.locator('#museumTour').click({timeout:9000});
       if(await page.locator('#museumTour').getAttribute('aria-pressed')!=='true')
         throw Error('Guided tour cannot be activated');
