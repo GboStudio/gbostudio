@@ -5,6 +5,7 @@ import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261105materials1";
 import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261105pbr2";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
 import {RoundedBoxGeometry} from "three/addons/geometries/RoundedBoxGeometry.js";
+import {addPhysicalGalleryV3} from "./physical-gallery-v3.js?v=20261106a";
 import {createMuseumV5Navigation} from "./museum-v5.js?v=20261105input3";
 import {museumCameraMotion} from "./movement3d.js?v=20261105motion1";
 import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261105nearest1";
@@ -76,7 +77,10 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   const luxury=makeWhiteLuxuryMaterials({mobile,length:LENGTH});
   // Upgrade the existing materials in place; never block gallery navigation.
   // If the scanned maps fail, the original high-quality procedural surfaces remain.
-  enhanceScannedPBR(luxury,{mobile,length:LENGTH}).catch(e=>console.warn("[TEM] Scanned PBR unavailable, retaining originals",e));
+  let physicalGallery=null;
+  enhanceScannedPBR(luxury,{mobile,length:LENGTH})
+    .then(()=>physicalGallery?.refreshFloor(luxury.floor))
+    .catch(e=>console.warn("[TEM] Scanned PBR unavailable, retaining originals",e));
   const stone=luxury.wall,stoneAlt=luxury.wallAlt;
   const floorMat=luxury.floor,grout=material(0xd4d1cb,.96);
   const plinthMat=luxury.whiteStone,inlay=material(0xc5bfb1,.67,.19);
@@ -112,6 +116,16 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
 
   // Mineral PBR floor, subtly veined slabs, hairline joints and micro-relief.
   box(architecture,HALF*2,.28,LENGTH,floorMat,0,-.16,LENGTH/2,false,true);
+  // Premium architecture has its own instanced, bevelled stone slabs and
+  // stationary indirect-occlusion atlas; never modify exhibition inventory.
+  try{
+    physicalGallery=addPhysicalGalleryV3({
+      architecture,half:HALF,height:HEIGHT,length:LENGTH,mobile,floorMaterial:floorMat
+    });
+    overlay.dataset.museumArchitecture="physical-v3";
+    console.info("[TEM] Gallery architecture",physicalGallery.stats);
+  }catch(error){console.warn("[TEM] Physical gallery enhancement disabled",error);}
+
   // WHITE CEILING: layered plaster vault, completely free from exhibits at launch.
   // All ceiling pieces are concealed until the wall gallery reaches capacity.
   const ceilingPlaster=material(0xf9f8f4,.95);
