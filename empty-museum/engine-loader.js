@@ -23,6 +23,11 @@
     const canvas=document.getElementById("walkCanvas");
     if(!canvas)throw new Error("Museum canvas missing");
     if(!window.WebGLRenderingContext)throw new Error("WebGL not supported");
+    // Fix iOS visual vs layout viewport before the WebGL renderer measures its canvas.
+    if(matchMedia("(pointer:coarse)").matches){
+      const {fitMuseumVisualViewport}=await import("./visual-viewport-v1.js?v=20261106v1");
+      fitMuseumVisualViewport();
+    }
     await import("./engine3d.js?v=20261106physicalv3");
   }catch(error){legacy(error);}
 })();
