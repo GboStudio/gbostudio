@@ -934,6 +934,10 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       -(pressed("ArrowDown","KeyS","back")?1:0)+input.forward;
     let strafe=(pressed("KeyD")?1:0)-(pressed("KeyQ","KeyA")?1:0)+input.strafe;
     const turning=Number(pressed("ArrowRight","turn-right"))-Number(pressed("ArrowLeft","turn-left"));
+    // Expose actual consumed inputs for automated checks of live joystick
+    // steering, not merely static signs in the UI.
+    overlay.dataset.museumInputForward=fwd.toFixed(3);
+    overlay.dataset.museumInputStrafe=strafe.toFixed(3);
     if(turning||fwd||strafe){
       // Manual input wins. An old click-to-walk route must never restart
       // when the visitor releases the joystick.
