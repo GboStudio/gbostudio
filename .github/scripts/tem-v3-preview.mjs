@@ -1,5 +1,7 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
+import {existsSync} from 'node:fs';
+const requireV4=existsSync('empty-museum/assets/entrance-v4-baked.glb');
 
 const browser=await chromium.launch({
   headless:true,
@@ -43,6 +45,12 @@ for(const device of setups){
     assert.equal(state.mode,'physical-v3','Physical architecture must initialize');
     assert.ok(state.visible && state.canvas.width>100 && state.canvas.height>100);
     assert.ok(Number.isFinite(state.initialZ),'Camera coordinates should be exposed for diagnostics');
+    if(requireV4){
+      await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.museumLighting==='cycles-baked-v4',null,{timeout:35000});
+      const primitiveCount=Number(await page.locator('#walkOverlay').getAttribute('data-museum-bake-primitives'));
+      assert.ok(primitiveCount>0 && primitiveCount<=12,'Cycles baked scene must have a bounded draw-call count');
+      console.log('PASS real Blender Cycles light-baked GLB',device.name,primitiveCount,'draw calls');
+    }
     assert.deepEqual(errors,[],'No uncaught browser exceptions');
     if(device.mobile){
       const exit=await page.locator('.walk-close').evaluate(btn=>{
