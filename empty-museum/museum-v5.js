@@ -98,6 +98,23 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     auto=false;pausedTour=false;resumeRequested=false;resumeAvailable=false;paintTour();
   }
   function manual(){if(auto)setTour(false,true);}
+  function takeControl(){
+    // A manual drag cancels guided camera movement and enables immediate
+    // joystick steering, without making the visitor find a separate button.
+    manual();
+    stopCruise();
+    if(!free){
+      free=true;
+      shell.classList.add("is-free");
+      freeBtn.setAttribute("aria-pressed","true");
+      freeBtn.textContent="✓  MODE LIBRE";
+    }
+  }
+  function releaseInputs(){
+    releaseStick();
+    stopCruise();
+    if(auto)manual();
+  }
   function toggleCruise(){
     if(!visible)return;
     if(auto)manual();
@@ -156,7 +173,8 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
   });
   for(const evt of ["pointerup","pointercancel","lostpointercapture"])
     zone.addEventListener(evt,releaseStick);
-  window.addEventListener("blur",()=>{releaseStick();stopCruise();});
+  window.addEventListener("blur",releaseInputs);
+  document.addEventListener("visibilitychange",()=>{if(document.hidden)releaseInputs()});
   window.addEventListener("keydown",event=>{
     if(!visible||document.querySelector("dialog[open]"))return;
     if(event.code==="KeyR"){finishTour();stopCruise();home();}
@@ -197,5 +215,5 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
   }
   function setNear(flag){reticle.classList.toggle("is-near",Boolean(flag));}
   return {update,enter,leave,setTour,finishTour,setNear,toast,setResumeAvailable,setViewMode,getViewMode:()=>viewMode,isTour:()=>auto,
-    manual,stopCruise,isCruising:()=>cruise};
+    manual,takeControl,releaseInputs,stopCruise,isCruising:()=>cruise};
 }
