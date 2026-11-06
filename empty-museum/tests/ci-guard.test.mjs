@@ -7,7 +7,7 @@ test('public smoke waits for exact successful Pages revision on push',()=>{
   const cfg=text('.github/workflows/tem-smoke.yml');
   assert.match(cfg,/push:\s*\n\s+branches: \[main\]/);
   assert.match(cfg,/wait-pages-deployment\.py/);
-  assert.match(cfg,/--sha "\\$\{GITHUB_SHA\}"/);
+  assert.ok(cfg.includes('--sha "${GITHUB_SHA}"'),'CI must wait for the exact pushed SHA');
   assert.match(cfg,/actions: read/);
   assert.match(cfg,/github\.event_name == 'push'/);
   assert.match(cfg,/schedule:\s*\n\s+- cron:/);
