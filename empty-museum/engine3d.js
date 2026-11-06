@@ -6,6 +6,7 @@ import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261106whitewalls3";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
 import {RoundedBoxGeometry} from "three/addons/geometries/RoundedBoxGeometry.js";
 import {addPhysicalGalleryV3} from "./physical-gallery-v3.js?v=20261106a";
+import {addBakedEntranceV4} from "./baked-architecture-v4.js?v=20261106a";
 import {createMuseumV5Navigation} from "./museum-v5.js?v=20261105input3";
 import {museumCameraMotion} from "./movement3d.js?v=20261105motion1";
 import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261105nearest1";
@@ -246,6 +247,10 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   const inscription=new THREE.MeshBasicMaterial({map:portalInk,transparent:true,depthWrite:false,side:THREE.DoubleSide});
   const portalFront=surface(portalSign,3.95,.61,inscription,0,0,-.067,Math.PI);
   portalFront.renderOrder=3;
+  // Optional real Cycles light-baked architectural entrance: V3 remains usable
+  // until the generated GLB has been verified and downloaded.
+  addBakedEntranceV4({scene,overlay}).catch(error=>
+    console.warn("[TEM] Nonblocking V4 architectural enhancement",error));
   // No gold stripes or decorative circles cutting through the real stone floor.
   // The actual large-format stone joints provide the entire floor rhythm.
   function canvasTexture(painter,w=768,h=512){
