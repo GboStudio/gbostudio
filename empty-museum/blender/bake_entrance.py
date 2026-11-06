@@ -240,15 +240,15 @@ assert (out / "entrance-v4-baked.glb").stat().st_size > 5000
 cam = bpy.data.cameras.new("Gallery staging camera")
 camera = bpy.data.objects.new("Gallery staging camera", cam)
 scene.collection.objects.link(camera)
-camera.location = museum_point(0, 1.72, .85)
-look = Vector(museum_point(0, 3.1, 6.5)) - camera.location
+camera.location = museum_point(0, 2.28, -2.75)
+look = Vector(museum_point(0, 3.12, 4.1)) - camera.location
 camera.rotation_euler = look.to_track_quat("-Z", "Y").to_euler()
 cam.type = "PERSP"
-cam.lens = 22
+cam.lens = 23
 scene.camera = camera
 scene.render.filepath = str(out / "entrance-v4-blender-preview.png")
 scene.render.resolution_x = 1000
 scene.render.resolution_y = 650
-scene.cycles.samples = 12
+scene.cycles.samples = 28
 bpy.ops.render.render(write_still=True)
 print("TEM V4 | baked GLB and Blender preview generated successfully", flush=True)
