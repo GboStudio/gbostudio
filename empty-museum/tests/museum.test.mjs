@@ -86,7 +86,9 @@ test('verified V4 Cycles GLB is embedded, size-bounded and identical to its Blen
   assert.ok(gltf.images.some(img=>img.bufferView!==undefined),'Baked UV light texture must be embedded');
   assert.ok(gltf.materials.some(m=>m.pbrMetallicRoughness?.baseColorTexture),'Baked texture must be bound to the scene');
   assert.ok(manifest.primitives>=1&&manifest.primitives<=12);
-  assert.ok(manifest.vertices>=200&&manifest.vertices<250000);
+  // Acceptance: the entrance must include the forward visible second threshold,
+  // not just the hidden high lintel from the first V4 bake.
+  assert.ok(manifest.vertices>=17000&&manifest.vertices<250000);
   assert.deepEqual(manifest.texture_size,[1024,1024]);
   assert.ok(readFileSync(join(root,'assets/entrance-v4-lightbake.png')).byteLength>20000);
 });
