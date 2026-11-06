@@ -4,9 +4,9 @@
   "asset_file": "entrance-v4-baked.glb",
   "bake_texture": "entrance-v4-lightbake.png",
   "preview": "entrance-v4-blender-preview.png",
-  "sha256": "57fc3988d4ea3f574bb3b0a113eac5f547dca39a97cabcef17e4b51e38196426",
-  "glb_bytes": 1538124,
-  "vertices": 13920,
+  "sha256": "ff10b92e433c5e979d6a25801816deb44a371289b2cce1a383327e9ef114e0af",
+  "glb_bytes": 1503696,
+  "vertices": 18168,
   "primitives": 1,
   "embedded_images": 1,
   "texture_size": [
