@@ -4,6 +4,7 @@ concurrency:
   cancel-in-progress: true
 on:
   push:
+    branches: [main]
     paths:
       - 'empty-museum/**'
       - '.github/workflows/museum-3d-checks.yml'
