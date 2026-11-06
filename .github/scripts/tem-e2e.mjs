@@ -94,6 +94,34 @@ for(const mode of browsers){
       const afterZ=await page.locator('#walkOverlay').evaluate(el=>Number(el.dataset.tourCameraZ||0));
       console.log('WALK WORLD Z',mode.name,beforeZ,'→',afterZ);
       if(!(afterZ>beforeZ+.035))throw Error('Visitor did not move forward in the premium museum');
+
+      if(mode.mobile){
+        // Keep one finger on the joystick and change from FORWARD to RIGHT.
+        // Previously movement could remain stuck on the first direction.
+        const bounds=await page.locator('.joystick-ring').boundingBox();
+        if(!bounds)throw Error('No joystick bounds for direction-change test');
+        const cx=bounds.x+bounds.width/2,cy=bounds.y+bounds.height/2;
+        try{
+          await page.mouse.move(cx,cy-29);
+          await page.mouse.down();
+          await page.waitForFunction(()=>
+            Number(document.querySelector('#walkOverlay')?.dataset.museumInputForward||0)>.40,
+            null,{timeout:25000}
+          );
+          await page.mouse.move(cx+29,cy,{steps:3});
+          await page.waitForFunction(()=>{
+            const room=document.querySelector('#walkOverlay');
+            return Number(room?.dataset.museumInputStrafe||0)>.40 &&
+              Math.abs(Number(room?.dataset.museumInputForward||0))<.22;
+          },null,{timeout:25000});
+          console.log('PASS MOBILE JOYSTICK LIVE DIRECTION CHANGE');
+        }finally{await page.mouse.up().catch(()=>{});}
+        await page.waitForFunction(()=>{
+          const r=document.querySelector('#walkOverlay');
+          return Math.abs(Number(r?.dataset.museumInputForward||0))<.01 &&
+            Math.abs(Number(r?.dataset.museumInputStrafe||0))<.01;
+        },null,{timeout:25000});
+      }
       const hit=await page.locator('#museumTour').evaluate(btn=>{
         const r=btn.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
         const top=document.elementFromPoint(x,y);
@@ -123,6 +151,32 @@ for(const mode of browsers){
       await page.waitForFunction(()=>document.querySelector('#museumTour')?.getAttribute('aria-pressed')==='true',null,{timeout:15000});
       await tapTour();
       await page.waitForFunction(()=>document.querySelector('#museumTour')?.getAttribute('aria-pressed')==='false',null,{timeout:15000});
+
+      if(mode.mobile){
+        // Simulate an actual camera swipe while guided mode controls motion.
+        // It must hand control to the visitor immediately, not snap back to
+        // an old tour camera path during the asset-loading phase.
+        await tapTour();
+        await page.waitForFunction(()=>
+          document.querySelector('#museumTour')?.getAttribute('aria-pressed')==='true',
+          null,{timeout:15000});
+        const beforeYaw=Number(await page.locator('#walkOverlay').getAttribute('data-tour-camera-yaw'));
+        const bounds=await page.locator('#walkCanvas').boundingBox();
+        if(!bounds)throw Error('3D canvas missing for guided-to-manual transition');
+        const x=bounds.x+bounds.width*.42,y=bounds.y+bounds.height*.40;
+        await page.mouse.move(x,y);
+        await page.mouse.down();
+        await page.mouse.move(x+83,y+7,{steps:4});
+        await page.mouse.up();
+        await page.waitForFunction(()=>
+          document.querySelector('#museumTour')?.getAttribute('aria-pressed')==='false' &&
+          document.querySelector('#museumFreeToggle')?.getAttribute('aria-pressed')==='true',
+          null,{timeout:17000});
+        await page.waitForFunction(yaw=>
+          Math.abs(Number(document.querySelector('#walkOverlay')?.dataset.tourCameraYaw)-yaw)>.045,
+          beforeYaw,{timeout:26000});
+        console.log('PASS MOBILE GUIDED CAMERA INTERRUPT + FREE TURN');
+      }
       console.log('PASS',mode.name,'PBR gallery, default free roam, movement, guided mode');
     }else{
       console.log('WebGL not available in this environment; accessible fallback shown:',mode.name);
