@@ -4,6 +4,7 @@ concurrency:
   cancel-in-progress: true
 on:
   push:
+    branches: [main]
     paths:
       - 'empty-museum/**'
       - '.github/workflows/museum-3d-checks.yml'
@@ -24,6 +25,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify published Cycles GLB, UVs, texture and approved SHA-256 manifest
+        run: python3 empty-museum/blender/validate_bake.py --asset-dir empty-museum/assets
+      - name: Verify safe CI triggers and non-mutating Blender build
+        run: node --test empty-museum/tests/ci-guard.test.mjs
       - name: Run museum smoke tests
         run: node --test empty-museum/tests/museum.test.mjs
       - name: Validate physical gallery layout and indirect-occlusion profiles

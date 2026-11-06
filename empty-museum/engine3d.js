@@ -934,8 +934,24 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       -(pressed("ArrowDown","KeyS","back")?1:0)+input.forward;
     let strafe=(pressed("KeyD")?1:0)-(pressed("KeyQ","KeyA")?1:0)+input.strafe;
     const turning=Number(pressed("ArrowRight","turn-right"))-Number(pressed("ArrowLeft","turn-left"));
-    if((turning||fwd||strafe) && input.auto) v5.manual();
-    if(turning||fwd||strafe)movedByVisitor();
+    // Expose actual consumed inputs for automated checks of live joystick
+    // steering, not merely static signs in the UI.
+    overlay.dataset.museumInputForward=fwd.toFixed(3);
+    overlay.dataset.museumInputStrafe=strafe.toFixed(3);
+    if(turning||fwd||strafe){
+      // Manual input wins. An old click-to-walk route must never restart
+      // when the visitor releases the joystick.
+      walkTo=null;
+      if(input.auto){
+        v5.takeControl();
+        // The current frame already captured the old guided-mode snapshot.
+        // Clear it now, otherwise guided routing can restart in this frame.
+        input.auto=false;
+        input.simple=false;
+        input.resume=false;
+      }
+      movedByVisitor();
+    }
     if(input.auto && !blocked){
       // Auto-tour follows the same real-artwork journey as the mobile Next button.
       if(!tourState.motion){
@@ -962,7 +978,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     }
     yaw+=(yawTarget-yaw)*Math.min(1,dt*(input.auto?4.2:6.2));
     pitch+=(pitchTarget-pitch)*Math.min(1,dt*(input.auto?4.2:6));
-    if(blocked){fwd=0;strafe=0;walkTo=null;}
+    if(blocked){fwd=0;strafe=0;walkTo=null;velX=0;velZ=0;}
     // One-tap advance is independent of where the visitor is looking:
     // keep the visitor in the central aisle, not against a side wall.
     if(input.cruise && !blocked){fwd=1;strafe=0;walkTo=null;}
@@ -1007,6 +1023,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     orient();
     overlay.dataset.tourCameraZ=view.z.toFixed(3);
     overlay.dataset.tourCameraX=view.x.toFixed(3);
+    overlay.dataset.tourCameraYaw=yaw.toFixed(4);
+    overlay.dataset.tourAutoWalking=String(walkTo!==null);
     if(tourState.started && time-lastTourSnapshot>1750){
       lastTourSnapshot=time;saveTourSession();
     }
@@ -1085,7 +1103,12 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   window.addEventListener("keyup",e=>keys.delete(e.code));
   window.addEventListener("blur",()=>{held.clear();keys.clear();saveTourSession();});
   window.addEventListener("pagehide",saveTourSession);
-  document.addEventListener("visibilitychange",()=>{if(document.hidden)saveTourSession();});
+  document.addEventListener("visibilitychange",()=>{
+    if(document.hidden){
+      held.clear();keys.clear();velX=0;velZ=0;walkTo=null;down=null;
+      v5.releaseInputs();saveTourSession();
+    }
+  });
   window.addEventListener("resize",()=>{if(active)resize()});
   canvas.addEventListener("pointerdown",e=>{
     if(!active)return;
@@ -1103,7 +1126,15 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     if(down.id!==e.pointerId)return;
     const dx=e.clientX-down.x,dy=e.clientY-down.y;
     if(Math.abs(e.clientX-down.sx)>7||Math.abs(e.clientY-down.sy)>7)down.drag=true;
-    if(down.drag){movedByVisitor();yawTarget+=dx*(mobile?.0052:.0039);pitchTarget=clamp(pitchTarget-dy*.0037,-.98,.98);walkTo=null;}
+    if(down.drag){
+      // Dragging the view immediately hands control back to the visitor,
+      // even during a guided tour or camera transition.
+      v5.takeControl();
+      movedByVisitor();
+      yawTarget+=dx*(mobile?.0052:.0039);
+      pitchTarget=clamp(pitchTarget-dy*.0037,-.98,.98);
+      walkTo=null;
+    }
     down.x=e.clientX;down.y=e.clientY;
   });
   canvas.addEventListener("pointerup",e=>{
@@ -1114,7 +1145,11 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       const ny=-((e.clientY-rect.top)/rect.height*2-1);
       const hit=interactions(nx,ny);
       if(hit){walkTo=null;selected(hit);}
-      else if(ny<-.12&&Math.cos(yaw)>.25){movedByVisitor();walkTo=Math.min(LENGTH-3,view.z+12);}
+      else if(!mobile && ny<-.12&&Math.cos(yaw)>.25){
+        // Prevent accidental one-tap auto-walking on touchscreens: the
+        // joystick should be the only free-roam movement control on phones.
+        v5.takeControl();movedByVisitor();walkTo=Math.min(LENGTH-3,view.z+12);
+      }
     }
     down=null;
   });

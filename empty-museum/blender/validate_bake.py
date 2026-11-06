@@ -48,6 +48,15 @@ assert pw>=512 and ph>=512 and pw==ph, "Bake texture resolution invalid"
 assert preview.read_bytes()[:8]==b"\x89PNG\r\n\x1a\n", "Preview image not PNG"
 assert png.stat().st_size>18_000, "Bake is suspiciously small or missing"
 assert preview.stat().st_size>20_000, "Preview is suspiciously small or missing"
+# Detect an asset replaced without its verified manifest. The CI must not
+# silently rewrite a mismatching fingerprint and pronounce it valid.
+existing_manifest=directory/"entrance-v4-manifest.json"
+if existing_manifest.is_file():
+    existing=json.loads(existing_manifest.read_text())
+    actual=hashlib.sha256(data).hexdigest()
+    assert existing.get("sha256")==actual, "GLB differs from its approved SHA-256 manifest"
+    assert existing.get("glb_bytes")==len(data), "GLB size differs from approved manifest"
+
 manifest={
   "asset":"TEM_V4_CYCLES_BAKED_ENTRANCE",
   "generator":"Blender Cycles diffuse bake (COLOR + DIRECT + INDIRECT)",
