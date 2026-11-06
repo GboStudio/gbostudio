@@ -33,6 +33,12 @@ bpy.ops.object.delete(use_global=False)
 scene.render.engine = "CYCLES"
 scene.cycles.device = "CPU"
 scene.cycles.samples = max(4, min(64, args.samples))
+# Ubuntu Blender is compiled without OpenImageDenoiser; bake un-denoised.
+for layer in scene.view_layers:
+    if hasattr(layer.cycles, "use_denoising"):
+        layer.cycles.use_denoising = False
+if hasattr(scene.cycles, "use_denoising"):
+    scene.cycles.use_denoising = False
 scene.cycles.max_bounces = 4
 scene.render.image_settings.file_format = "PNG"
 scene.render.resolution_x = 960
@@ -83,7 +89,8 @@ def block(name, x, y, z, w, h, depth, mat, radius=.0, export=True):
         modifier.segments = 3
         bpy.context.view_layer.objects.active = ob
         bpy.ops.object.modifier_apply(modifier=modifier.name)
-        ob.modifiers.new("weighted normals", "WEIGHTED_NORMAL")
+        # Eased stone edges receive actual bevel geometry; no dependency on
+        # Auto Smooth / unsupported weighted-normal modifiers on Blender 4.
     if export:
         export_meshes.append(ob)
     return ob
