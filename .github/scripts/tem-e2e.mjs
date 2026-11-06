@@ -138,14 +138,14 @@ for(const mode of browsers){
       // Mobile: tap fixed-screen coordinates like an actual finger.
       // Playwright locator.click() may scroll the 3D viewport before clicking.
       async function tapTour(){
-        if(!mode.mobile){
-          await page.locator('#museumTour').click({timeout:20000});
-          return;
-        }
+        // Direct input avoids Playwright's "stable element" animation wait,
+        // which can time out when SwiftShader renders the large 3D museum.
+        // The preceding hit-test already proves the button is unobstructed.
         const box=await page.locator('#museumTour').boundingBox();
-        if(!box)throw Error('Cannot locate guided tour button on mobile');
+        if(!box)throw Error('Cannot locate guided tour button');
         const x=box.x+box.width/2,y=box.y+box.height/2;
-        await page.touchscreen.tap(x,y);
+        if(mode.mobile)await page.touchscreen.tap(x,y);
+        else await page.mouse.click(x,y);
       }
       await tapTour();
       await page.waitForFunction(()=>document.querySelector('#museumTour')?.getAttribute('aria-pressed')==='true',null,{timeout:15000});

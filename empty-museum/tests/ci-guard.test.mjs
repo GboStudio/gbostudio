@@ -37,4 +37,7 @@ test('manual camera and joystick actions take precedence over old movement',()=>
   assert.match(nav,/function takeControl\(\)/);
   assert.match(nav,/function releaseInputs\(\)/);
   assert.match(text('.github/scripts/tem-e2e.mjs'),/PASS MOBILE JOYSTICK LIVE DIRECTION CHANGE/);
+  const e2e=text('.github/scripts/tem-e2e.mjs');
+  assert.match(e2e,/page\.mouse\.click\(x,y\)/);
+  assert.doesNotMatch(e2e,/locator\('#museumTour'\)\.click\(/);
 });
