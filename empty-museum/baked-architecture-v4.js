@@ -50,8 +50,11 @@ export async function addBakedEntranceV4({
       obj.material=originals.map(m=>{
         if(m.map)m.map.colorSpace=THREE.SRGBColorSpace;
         return new THREE.MeshBasicMaterial({
-          map:m.map,side:THREE.DoubleSide,
-          depthWrite:true,transparent:false,toneMapped:false
+          map:m.map,color:0xf7f6f2,side:THREE.DoubleSide,
+          // ACES compresses the warm Cycles highlights to the same range as
+          // the rest of the PBR gallery. Un-tonemapped bakes turned the white
+          // stone yellow and visually dominated the iPhone screen.
+          depthWrite:true,transparent:false,toneMapped:true
         });
       });
       if(obj.material.length===1)obj.material=obj.material[0];
