@@ -1,17 +1,11 @@
 name: Museum V4 - Cycles baked entrance asset
+# Manually rebuild a new baked scene; publish an artifact for validation.
+# No workflow writes generated commits or floods PR conversations.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - feature/museum-v4-blender-baked-entry
-    paths:
-      - 'empty-museum/blender/**'
-      - '.github/workflows/museum-v4-bake.yml'
 
-# Only this trusted named feature branch may write generated binaries.
-# Nothing changes on main until the separate PR has passed staging.
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: museum-v4-cycles-bake
   cancel-in-progress: true
@@ -54,23 +48,3 @@ jobs:
             empty-museum/assets/entrance-v4-blender-preview.png
             empty-museum/assets/entrance-v4-manifest.json
           retention-days: 30
-      - name: Commit verified baked assets back to development branch
-        if: github.ref == 'refs/heads/feature/museum-v4-blender-baked-entry'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add empty-museum/assets/entrance-v4-baked.glb \
-            empty-museum/assets/entrance-v4-lightbake.png \
-            empty-museum/assets/entrance-v4-blender-preview.png \
-            empty-museum/assets/entrance-v4-manifest.json
-          if ! git diff --cached --quiet; then
-            git commit -m "asset(museum): Blender V4 baked Cycles limestone entrance"
-            # Other scene/test commits may have landed while Blender rendered.
-            # Rebase the verified generated asset on the latest trusted branch
-            # rather than forcing main or overwriting newer feature work.
-            git fetch origin feature/museum-v4-blender-baked-entry
-            git rebase origin/feature/museum-v4-blender-baked-entry
-            git push origin HEAD:feature/museum-v4-blender-baked-entry
-          else
-            echo "V4 bake unchanged; no extra commit"
-          fi
