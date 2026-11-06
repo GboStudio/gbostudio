@@ -36,7 +36,7 @@ jobs:
           mkdir -p empty-museum/assets
           PYTHONPATH=/usr/lib/python3/dist-packages blender --background --factory-startup \
             --python empty-museum/blender/bake_entrance.py \
-            -- --out empty-museum/assets --size 1024 --samples 12 \
+            -- --out empty-museum/assets --size 1024 --samples 56 \
             > /tmp/museum-v4-bake.log 2>&1 || {
               tail -160 /tmp/museum-v4-bake.log
               exit 1
