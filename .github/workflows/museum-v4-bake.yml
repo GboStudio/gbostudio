@@ -65,6 +65,11 @@ jobs:
             empty-museum/assets/entrance-v4-manifest.json
           if ! git diff --cached --quiet; then
             git commit -m "asset(museum): Blender V4 baked Cycles limestone entrance"
+            # Other scene/test commits may have landed while Blender rendered.
+            # Rebase the verified generated asset on the latest trusted branch
+            # rather than forcing main or overwriting newer feature work.
+            git fetch origin feature/museum-v4-blender-baked-entry
+            git rebase origin/feature/museum-v4-blender-baked-entry
             git push origin HEAD:feature/museum-v4-blender-baked-entry
           else
             echo "V4 bake unchanged; no extra commit"
