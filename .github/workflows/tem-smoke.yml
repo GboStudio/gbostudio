@@ -1,36 +1,47 @@
 name: The Unreal Museum - site health
 
-# Post-deployment verification: do not race GitHub Pages during its build.
-# Also check the live visitor journey once daily, even without new commits.
+# Public check runs on main updates, but never tests the old live site:
+# first wait until GitHub Pages has completed this exact revision.
+# Run a periodic independent check even without source changes.
 concurrency:
-  group: unreal-museum-public-${{ github.event.workflow_run.head_sha || github.sha }}
+  group: unreal-museum-public-${{ github.sha }}
   cancel-in-progress: true
 
 on:
-  workflow_run:
-    workflows: ["pages build and deployment"]
-    types: [completed]
+  push:
     branches: [main]
+    paths:
+      - 'empty-museum/**'
+      - '.github/workflows/tem-smoke.yml'
+      - '.github/scripts/tem-e2e.mjs'
+      - '.github/scripts/tem-tour-test.mjs'
+      - '.github/scripts/wait-pages-deployment.py'
   workflow_dispatch:
   schedule:
     - cron: '17 7 * * *'
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   smoke:
     name: Museum - public pages and visitor journey
-    # A failed Pages deployment already reports its failure; do not run
-    # browser checks against a stale version and send an unrelated alert.
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Wait for GitHub Pages deployment of this exact revision
+        if: github.event_name == 'push'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 .github/scripts/wait-pages-deployment.py \
+            --repo "${GITHUB_REPOSITORY}" \
+            --sha "${GITHUB_SHA}" \
+            --timeout 300
 
       - name: Test guided route logic
         run: node .github/scripts/tem-tour-test.mjs

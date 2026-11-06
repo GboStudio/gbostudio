@@ -29,6 +29,8 @@ jobs:
         run: python3 empty-museum/blender/validate_bake.py --asset-dir empty-museum/assets
       - name: Verify safe CI triggers and non-mutating Blender build
         run: node --test empty-museum/tests/ci-guard.test.mjs
+      - name: Validate public deployment gate against success and failure fixtures
+        run: python3 .github/scripts/test-wait-pages-deployment.py
       - name: Run museum smoke tests
         run: node --test empty-museum/tests/museum.test.mjs
       - name: Validate physical gallery layout and indirect-occlusion profiles
