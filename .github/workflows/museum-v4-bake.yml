@@ -26,14 +26,15 @@ jobs:
       - name: Install Blender headless CPU renderer
         run: |
           sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy
           blender --version | head -4
+          PYTHONPATH=/usr/lib/python3/dist-packages blender --background --factory-startup --python-expr 'import numpy; print("Blender numpy ready",numpy.__version__)'
       - name: Compile Blender scene script before expensive bake
         run: python3 -m py_compile empty-museum/blender/bake_entrance.py empty-museum/blender/validate_bake.py
       - name: Build sculpted limestone entrance, Cycles bounce light and GLB
         run: |
           mkdir -p empty-museum/assets
-          blender --background --factory-startup \
+          PYTHONPATH=/usr/lib/python3/dist-packages blender --background --factory-startup \
             --python empty-museum/blender/bake_entrance.py \
             -- --out empty-museum/assets --size 1024 --samples 12 \
             > /tmp/museum-v4-bake.log 2>&1 || {
