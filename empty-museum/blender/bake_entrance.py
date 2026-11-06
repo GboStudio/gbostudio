@@ -144,6 +144,26 @@ block("Lintel lower shadow slot", 0, 5.012, 3.37, 7.82, .026, .69, recess)
 block("Lintel underside gold inlay", 0, 4.982, 3.36, 7.77, .016, .65, bronze)
 block("Lintel top crown", 0, 5.436, 3.38, 8.26, .05, .67, plaster, radius=.007)
 
+# Gallery transition visible from the actual first-person starting point (z=.85).
+# The initial grand entrance at z=3.38 was above/outside the camera's field of
+# view. This secondary sculpted threshold stays outside the 5.7m-wide aisle and
+# is set beyond the first picture bay to avoid masking mounted artwork.
+for side in (-1,1):
+    x=side*3.46
+    block("Visible secondary pilaster",x,2.20,6.28,.205,4.22,.32,limestone,radius=.014)
+    block("Secondary pilaster shallow return",side*3.317,2.17,6.28,
+          .021,3.91,.34,recess,radius=.003)
+    block("Secondary brass joint",side*3.304,2.17,6.27,
+          .011,3.87,.33,bronze,radius=.002)
+    block("Mid-gallery wall reveal",side*4.41,2.34,7.52,
+          .072,4.36,.18,plaster,radius=.012)
+block("Secondary portal beam",0,4.35,6.28,7.12,.25,.40,limestone,radius=.012)
+block("Secondary portal underside shadow",0,4.205,6.28,
+      6.93,.025,.41,recess)
+block("Secondary portal brass edge",0,4.189,6.28,
+      6.87,.012,.42,bronze,radius=.003)
+block("Secondary top cornice",0,4.510,6.28,7.20,.047,.42,plaster,radius=.007)
+
 # Three shallow central ceiling panels subtly interrupt the overly long tunnel.
 for z in (1.15, 2.08, 3.01):
     block("Flush luminous ceiling raft", 0, 6.205, z, 1.56, .057, .62, plaster, radius=.018)
