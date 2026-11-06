@@ -942,7 +942,14 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       // Manual input wins. An old click-to-walk route must never restart
       // when the visitor releases the joystick.
       walkTo=null;
-      if(input.auto)v5.takeControl();
+      if(input.auto){
+        v5.takeControl();
+        // The current frame already captured the old guided-mode snapshot.
+        // Clear it now, otherwise guided routing can restart in this frame.
+        input.auto=false;
+        input.simple=false;
+        input.resume=false;
+      }
       movedByVisitor();
     }
     if(input.auto && !blocked){
