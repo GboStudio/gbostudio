@@ -65,11 +65,11 @@ def surface(name, rgba, roughness=.9, metallic=0, emission=0):
         node.inputs["Emission Strength"].default_value = emission
     return m
 
-plaster = surface("warm ivory mineral plaster", (.84, .83, .805), .95)
-limestone = surface("honed limestone edge", (.76, .735, .695), .82)
-recess = surface("recessed shadow mineral", (.63, .61, .59), .96)
-bronze = surface("satin champagne bronze", (.55, .46, .30), .44, .35)
-opal = surface("diffused warm LED", (.93, .88, .76), .66, 0, .85)
+plaster = surface("warm ivory mineral plaster", (.85, .845, .83), .95)
+limestone = surface("honed limestone edge", (.78, .772, .748), .84)
+recess = surface("recessed shadow mineral", (.63, .625, .61), .96)
+bronze = surface("satin champagne bronze", (.54, .50, .43), .49, .29)
+opal = surface("diffused warm LED", (.94, .93, .90), .66, 0, .67)
 floor_stage = surface("reference limestone stage", (.78, .75, .71), .83)
 export_meshes = []
 
@@ -149,20 +149,20 @@ block("Lintel top crown", 0, 5.436, 3.38, 8.26, .05, .67, plaster, radius=.007)
 # view. This secondary sculpted threshold stays outside the 5.7m-wide aisle and
 # is set beyond the first picture bay to avoid masking mounted artwork.
 for side in (-1,1):
-    x=side*3.46
-    block("Visible secondary pilaster",x,2.20,6.28,.205,4.22,.32,limestone,radius=.014)
-    block("Secondary pilaster shallow return",side*3.317,2.17,6.28,
+    x=side*2.65
+    block("Visible secondary pilaster",x,2.20,10.80,.205,4.22,.32,limestone,radius=.014)
+    block("Secondary pilaster shallow return",side*2.514,2.17,10.80,
           .021,3.91,.34,recess,radius=.003)
-    block("Secondary brass joint",side*3.304,2.17,6.27,
+    block("Secondary brass joint",side*2.499,2.17,10.79,
           .011,3.87,.33,bronze,radius=.002)
     block("Mid-gallery wall reveal",side*4.41,2.34,7.52,
           .072,4.36,.18,plaster,radius=.012)
-block("Secondary portal beam",0,4.35,6.28,7.12,.25,.40,limestone,radius=.012)
-block("Secondary portal underside shadow",0,4.205,6.28,
-      6.93,.025,.41,recess)
-block("Secondary portal brass edge",0,4.189,6.28,
-      6.87,.012,.42,bronze,radius=.003)
-block("Secondary top cornice",0,4.510,6.28,7.20,.047,.42,plaster,radius=.007)
+block("Secondary portal beam",0,4.35,10.80,5.48,.25,.40,limestone,radius=.012)
+block("Secondary portal underside shadow",0,4.205,10.80,
+      5.29,.025,.41,recess)
+block("Secondary portal brass edge",0,4.189,10.80,
+      5.23,.012,.42,bronze,radius=.003)
+block("Secondary top cornice",0,4.510,10.80,5.54,.047,.42,plaster,radius=.007)
 
 # Three shallow central ceiling panels subtly interrupt the overly long tunnel.
 for z in (1.15, 2.08, 3.01):
@@ -183,11 +183,13 @@ def area(name, pos, power, color, sx, sy):
     direction = target - ob.location
     ob.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
 
-area("warm indirect gallery wash", (0, 5.96, 2.1), 730, (1.0, .89, .76), 3.5, 2.4)
-area("diffused entrance fill", (0, 5.95, 4.2), 860, (1, .95, .87), 4.2, 3.0)
+area("warm indirect gallery wash", (0, 5.96, 2.1), 520, (1.0, .97, .94), 3.5, 2.4)
+area("diffused entrance fill", (0, 5.95, 4.2), 610, (1, .985, .97), 4.2, 3.0)
 for side in (-1, 1):
     area("wall grazing fill", (side*2.2, 5.4, 2.35),
-         260, (1, .92, .82), 1.3, 2.0)
+         190, (1, .98, .96), 1.3, 2.0)
+
+area("neutral transition ceiling wash", (0, 5.92, 10.0), 620, (1.0, .985, .965), 3.4, 2.8)
 
 # Join the architecture into one GPU draw call with ONE unique bake UV atlas.
 bpy.ops.object.select_all(action="DESELECT")
