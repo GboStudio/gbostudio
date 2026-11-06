@@ -1,0 +1,76 @@
+name: Museum V4 - Cycles baked entrance asset
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/museum-v4-blender-baked-entry
+    paths:
+      - 'empty-museum/blender/**'
+      - '.github/workflows/museum-v4-bake.yml'
+
+# Only this trusted named feature branch may write generated binaries.
+# Nothing changes on main until the separate PR has passed staging.
+permissions:
+  contents: write
+concurrency:
+  group: museum-v4-cycles-bake
+  cancel-in-progress: true
+
+jobs:
+  bake-and-validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout sculpted museum scene
+        uses: actions/checkout@v4
+      - name: Install Blender headless CPU renderer
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy
+          blender --version | head -4
+          PYTHONPATH=/usr/lib/python3/dist-packages blender --background --factory-startup --python-expr 'import numpy; print("Blender numpy ready",numpy.__version__)'
+      - name: Compile Blender scene script before expensive bake
+        run: python3 -m py_compile empty-museum/blender/bake_entrance.py empty-museum/blender/validate_bake.py
+      - name: Build sculpted limestone entrance, Cycles bounce light and GLB
+        run: |
+          mkdir -p empty-museum/assets
+          PYTHONPATH=/usr/lib/python3/dist-packages blender --background --factory-startup \
+            --python empty-museum/blender/bake_entrance.py \
+            -- --out empty-museum/assets --size 1024 --samples 56 \
+            > /tmp/museum-v4-bake.log 2>&1 || {
+              tail -160 /tmp/museum-v4-bake.log
+              exit 1
+            }
+          tail -30 /tmp/museum-v4-bake.log
+      - name: Validate GLB lighting UVs, geometry budget and embedded assets
+        run: python3 empty-museum/blender/validate_bake.py --asset-dir empty-museum/assets
+      - name: Publish preview, GLB and bake as CI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: museum-v4-cycles-baked-preview
+          path: |
+            empty-museum/assets/entrance-v4-baked.glb
+            empty-museum/assets/entrance-v4-lightbake.png
+            empty-museum/assets/entrance-v4-blender-preview.png
+            empty-museum/assets/entrance-v4-manifest.json
+          retention-days: 30
+      - name: Commit verified baked assets back to development branch
+        if: github.ref == 'refs/heads/feature/museum-v4-blender-baked-entry'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add empty-museum/assets/entrance-v4-baked.glb \
+            empty-museum/assets/entrance-v4-lightbake.png \
+            empty-museum/assets/entrance-v4-blender-preview.png \
+            empty-museum/assets/entrance-v4-manifest.json
+          if ! git diff --cached --quiet; then
+            git commit -m "asset(museum): Blender V4 baked Cycles limestone entrance"
+            # Other scene/test commits may have landed while Blender rendered.
+            # Rebase the verified generated asset on the latest trusted branch
+            # rather than forcing main or overwriting newer feature work.
+            git fetch origin feature/museum-v4-blender-baked-entry
+            git rebase origin/feature/museum-v4-blender-baked-entry
+            git push origin HEAD:feature/museum-v4-blender-baked-entry
+          else
+            echo "V4 bake unchanged; no extra commit"
+          fi

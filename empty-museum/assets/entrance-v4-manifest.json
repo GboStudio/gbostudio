@@ -1,0 +1,18 @@
+{
+  "asset": "TEM_V4_CYCLES_BAKED_ENTRANCE",
+  "generator": "Blender Cycles diffuse bake (COLOR + DIRECT + INDIRECT)",
+  "asset_file": "entrance-v4-baked.glb",
+  "bake_texture": "entrance-v4-lightbake.png",
+  "preview": "entrance-v4-blender-preview.png",
+  "sha256": "02536dc84ab0cfeb79defda99a3243a34ce8f3f612298ec61e3729064234754a",
+  "glb_bytes": 1531764,
+  "vertices": 18168,
+  "primitives": 1,
+  "embedded_images": 1,
+  "texture_size": [
+    1024,
+    1024
+  ],
+  "lighting": "static, baked; color/light do not react dynamically",
+  "v3_fallback": true
+}

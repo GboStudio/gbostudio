@@ -5,6 +5,7 @@ import {readFileSync} from 'node:fs';
 import {join,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import {availableWholeWalls,isSlotInsideWall,PARTNER_BAYS} from '../museum-inventory.mjs';
 
 const here=dirname(fileURLToPath(import.meta.url)),root=join(here,'..');
@@ -38,7 +39,7 @@ test('a partial module never creates a whole-wall offer',()=>{
   assert.equal(availableWholeWalls(5,[],[]).length,0);
 });
 test('active WebGL engine, navigation and cloud adapter parse and route to the single immersive museum',()=>{
-  for(const path of ['engine-loader.js','visual-viewport-v1.js','engine3d.js','physical-gallery-v3.js','gallery-layout-v3.js','museum-v5.js','movement3d.js','museum-cloud.js','museum-inventory.mjs']){
+  for(const path of ['engine-loader.js','visual-viewport-v1.js','engine3d.js','baked-architecture-v4.js','physical-gallery-v3.js','gallery-layout-v3.js','museum-v5.js','movement3d.js','museum-cloud.js','museum-inventory.mjs']){
     const src=file(path);
     const parsed=spawnSync(process.execPath,['--input-type=module','--check'],{input:src,encoding:'utf8'});
     assert.equal(parsed.status,0,path+': '+parsed.stderr);
@@ -59,9 +60,35 @@ test('active WebGL engine, navigation and cloud adapter parse and route to the s
   assert.match(engine,/createMuseumV5Navigation/);
   assert.match(engine,/museumCameraMotion/);
   assert.match(engine,/addPhysicalGalleryV3/);
+  assert.match(engine,/addBakedEntranceV4/);
+  assert.match(file('baked-architecture-v4.js'),/cycles-baked-v4/);
+  assert.match(file('baked-architecture-v4.js'),/v3-fallback/);
   assert.match(engine,/physical-v3/);
 });
 test('cloud mode remains disabled until an approved backend is configured',()=>{
   assert.match(file('cloud-config.js'),/enabled:\s*false/);
   assert.match(file('museum-cloud.js'),/endpoint.searchParams.set\('status','eq.published'\)/);
+});
+
+test('verified V4 Cycles GLB is embedded, size-bounded and identical to its Blender manifest',()=>{
+  const manifest=JSON.parse(file('assets/entrance-v4-manifest.json'));
+  const binary=readFileSync(join(root,'assets/entrance-v4-baked.glb'));
+  assert.equal(binary.toString('ascii',0,4),'glTF');
+  assert.equal(binary.readUInt32LE(4),2);
+  assert.equal(binary.readUInt32LE(8),binary.byteLength);
+  assert.ok(binary.byteLength>=10000&&binary.byteLength<=25000000);
+  assert.equal(createHash('sha256').update(binary).digest('hex'),manifest.sha256);
+  const jsonLen=binary.readUInt32LE(12);
+  assert.equal(binary.toString('ascii',16,20),'JSON');
+  const gltf=JSON.parse(binary.toString('utf8',20,20+jsonLen));
+  assert.equal(gltf.asset.version,'2.0');
+  assert.ok(gltf.meshes.length>=1);
+  assert.ok(gltf.images.some(img=>img.bufferView!==undefined),'Baked UV light texture must be embedded');
+  assert.ok(gltf.materials.some(m=>m.pbrMetallicRoughness?.baseColorTexture),'Baked texture must be bound to the scene');
+  assert.ok(manifest.primitives>=1&&manifest.primitives<=12);
+  // Acceptance: the entrance must include the forward visible second threshold,
+  // not just the hidden high lintel from the first V4 bake.
+  assert.ok(manifest.vertices>=17000&&manifest.vertices<250000);
+  assert.deepEqual(manifest.texture_size,[1024,1024]);
+  assert.ok(readFileSync(join(root,'assets/entrance-v4-lightbake.png')).byteLength>20000);
 });
