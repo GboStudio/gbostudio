@@ -38,7 +38,7 @@ test('a partial module never creates a whole-wall offer',()=>{
   assert.equal(availableWholeWalls(5,[],[]).length,0);
 });
 test('active WebGL engine, navigation and cloud adapter parse and route to the single immersive museum',()=>{
-  for(const path of ['engine-loader.js','visual-viewport-v1.js','engine3d.js','physical-gallery-v3.js','gallery-layout-v3.js','museum-v5.js','movement3d.js','museum-cloud.js','museum-inventory.mjs']){
+  for(const path of ['engine-loader.js','visual-viewport-v1.js','engine3d.js','baked-architecture-v4.js','physical-gallery-v3.js','gallery-layout-v3.js','museum-v5.js','movement3d.js','museum-cloud.js','museum-inventory.mjs']){
     const src=file(path);
     const parsed=spawnSync(process.execPath,['--input-type=module','--check'],{input:src,encoding:'utf8'});
     assert.equal(parsed.status,0,path+': '+parsed.stderr);
@@ -59,6 +59,9 @@ test('active WebGL engine, navigation and cloud adapter parse and route to the s
   assert.match(engine,/createMuseumV5Navigation/);
   assert.match(engine,/museumCameraMotion/);
   assert.match(engine,/addPhysicalGalleryV3/);
+  assert.match(engine,/addBakedEntranceV4/);
+  assert.match(file('baked-architecture-v4.js'),/cycles-baked-v4/);
+  assert.match(file('baked-architecture-v4.js'),/v3-fallback/);
   assert.match(engine,/physical-v3/);
 });
 test('cloud mode remains disabled until an approved backend is configured',()=>{
