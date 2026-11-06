@@ -3,12 +3,15 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const text=path=>readFileSync(path,'utf8');
-test('public site health follows Pages deployment, not a racing main push',()=>{
+test('public smoke waits for exact successful Pages revision on push',()=>{
   const cfg=text('.github/workflows/tem-smoke.yml');
-  assert.match(cfg,/workflow_run:\s*\n\s+workflows:\s*\["pages build and deployment"\]/);
-  assert.match(cfg,/github\.event\.workflow_run\.conclusion == 'success'/);
+  assert.match(cfg,/push:\s*\n\s+branches: \[main\]/);
+  assert.match(cfg,/wait-pages-deployment\.py/);
+  assert.match(cfg,/--sha "\\$\{GITHUB_SHA\}"/);
+  assert.match(cfg,/actions: read/);
+  assert.match(cfg,/github\.event_name == 'push'/);
   assert.match(cfg,/schedule:\s*\n\s+- cron:/);
-  assert.doesNotMatch(cfg,/^\s+push:/m);
+  assert.doesNotMatch(cfg,/^\s+workflow_run:/m);
   assert.match(cfg,/node \.github\/scripts\/tem-e2e\.mjs/);
 });
 test('museum engine validates before PR merge and does not duplicate feature pushes',()=>{
