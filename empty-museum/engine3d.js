@@ -1,11 +1,11 @@
 import * as THREE from "three";
 import {getModel,loadModel,disposeModel} from "./models3d.js";
 import {buildMuseumScenography} from "./scenography.js?v=20261105wallwash2";
-import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261105materials1";
-import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261106whitewalls3";
+import {makeWhiteLuxuryMaterials} from "./luxury-v8.js?v=20261109realism11";
+import {enhanceScannedPBR} from "./pbr-scanned.js?v=20261109realism11";
 import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
 import {RoundedBoxGeometry} from "three/addons/geometries/RoundedBoxGeometry.js";
-import {addPhysicalGalleryV3} from "./physical-gallery-v3.js?v=20261106a";
+import {addPhysicalGalleryV3} from "./physical-gallery-v3.js?v=20261109realism11";
 import {addBakedEntranceV4} from "./baked-architecture-v4.js?v=20261106a";
 import {createMuseumV5Navigation} from "./museum-v5.js?v=20261105input3";
 import {museumCameraMotion} from "./movement3d.js?v=20261105motion1";
@@ -42,7 +42,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.45:1.8));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = .79;
+  // Warm museum white needs plausible daylight detail, not crushed grey midtones.
+  renderer.toneMappingExposure = .91;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0xf7f6f3,1);
@@ -53,7 +54,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     const room=new RoomEnvironment();
     scene.environment=pmrem.fromScene(room,.025).texture;
     room.dispose();pmrem.dispose();
-    scene.environmentIntensity=mobile?.26:.36;
+    scene.environmentIntensity=mobile?.31:.42;
   } catch(error){console.warn("[TEM] Reflected ambience unavailable",error);}
 
   scene.add(new THREE.HemisphereLight(0xfff7ed,0xb5afa5,.62));
