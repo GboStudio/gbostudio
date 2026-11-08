@@ -1,0 +1,97 @@
+/* THE UNREAL MUSEUM — editorial entrance / isolated from the 3D visitor. */
+:root{--landing-ivory:#f5f1e8;--landing-gold:#d3c09a;--landing-dark:#121410}
+header.museum-site-header{background:rgba(246,243,235,.97);border-bottom-color:rgba(28,28,24,.12);backdrop-filter:blur(18px)}
+.museum-site-header .brand{gap:12px}
+.museum-site-header .brand b{height:37px;width:37px;border-color:#222821;font:800 10px/1 Arial,sans-serif}
+.museum-site-header .brand span{font:600 13px/1.2 Georgia,serif;letter-spacing:.065em}
+.museum-site-header nav a{opacity:.8;font-weight:600;letter-spacing:.025em}
+.museum-site-header nav a:hover{opacity:1;text-decoration:underline;text-underline-offset:6px}
+.museum-site-header .btn.dark{background:#222820;border-color:#222820}
+.demo-banner{background:#e9e3d5;color:#504b41;border-bottom:1px solid #d8d0c0;padding:9px 20px;font-size:10px}
+.demo-banner strong{color:#665530;font-size:9px}
+.museum-landing{position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:720px;min-height:max(720px,calc(100svh - 114px));padding:0!important;color:var(--landing-ivory);background:radial-gradient(ellipse at 75% 50%,#68665c 0%,#292b27 38%,#111310 100%)}
+.museum-landing .landing-media{position:absolute;inset:0;z-index:-3;overflow:hidden}
+.museum-landing .landing-media img{display:block;width:100%;height:100%;object-fit:cover;object-position:67% 50%;filter:brightness(.83) saturate(.68) contrast(1.11);transform:scale(1.015);animation:landingStill 18s ease-out both}
+.museum-landing .landing-veil{position:absolute;inset:0;z-index:-2;pointer-events:none;background:linear-gradient(90deg,rgba(14,17,14,.96) 0%,rgba(16,19,16,.92) 25%,rgba(17,21,18,.75) 46%,rgba(14,17,14,.31) 77%,rgba(14,17,14,.38) 100%),linear-gradient(0deg,rgba(12,15,12,.81) 0%,transparent 33%,rgba(10,13,11,.20) 100%)}
+.museum-landing:after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.16;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.3'/%3E%3C/svg%3E")}
+.landing-inner{display:flex;flex-direction:column;min-height:0;padding:clamp(26px,3.5vw,56px) clamp(25px,5.2vw,90px) clamp(30px,4vw,56px)}
+.landing-edition{display:flex;align-items:center;gap:13px;font-size:9px;font-weight:700;letter-spacing:.23em;color:rgba(246,241,230,.75)}
+.landing-edition-line{width:34px;height:1px;background:var(--landing-gold)}
+.landing-edition-right{margin-left:auto;color:rgba(246,241,230,.6);letter-spacing:.18em}
+.landing-story{margin:auto 0;max-width:790px;padding:60px 0 42px;animation:landingRise .9s ease both}
+.landing-intro-label{font-size:10px;font-weight:700;letter-spacing:.23em;color:var(--landing-gold)}
+.museum-landing .landing-story h1{margin:20px 0 28px;font:500 clamp(70px,8.2vw,142px)/.89 Georgia,serif;letter-spacing:-.072em;text-transform:uppercase;text-wrap:balance}
+.museum-landing .landing-story h1 em{font-family:Georgia,serif;font-weight:400;font-style:italic;letter-spacing:-.075em;color:#e6d5ae}
+.landing-lead{max-width:610px;font:400 clamp(19px,2vw,27px)/1.3 Georgia,serif;letter-spacing:-.025em;margin:0 0 12px}
+.landing-description{max-width:480px;color:rgba(246,241,232,.76);font:400 13px/1.8 Arial,sans-serif;letter-spacing:.015em;margin:0}
+.landing-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:32px 0 20px}
+.landing-actions a,.landing-actions button{min-height:59px;display:inline-flex;align-items:center;justify-content:space-between;gap:27px;padding:15px 18px;font:800 10px/1.3 Arial,sans-serif;letter-spacing:.1em;transition:background .25s,color .25s,border-color .25s,transform .25s;text-decoration:none}
+.landing-enter{background:#ede1cb;color:#22231f;border:1px solid #ede1cb;min-width:235px}
+.landing-enter:hover{background:#fff4dc;transform:translateY(-2px)}
+.landing-action-icon{display:grid;place-items:center;font-size:22px;font-weight:400;line-height:1}
+.landing-actions .landing-exhibit{color:#f6f2e8;background:rgba(11,14,11,.16);border:1px solid rgba(243,238,226,.65);min-width:205px}
+.landing-actions .landing-exhibit:hover{background:rgba(246,241,232,.15);transform:translateY(-2px)}
+.landing-exhibit span:last-child{font-size:18px;font-weight:400}
+.landing-visit-note{display:flex;align-items:center;gap:10px;color:rgba(245,239,225,.69);font:500 11px/1.5 Arial,sans-serif;letter-spacing:.015em}
+.landing-visit-pulse{width:6px;height:6px;background:#b8d2aa;border-radius:50%;box-shadow:0 0 0 4px rgba(184,210,170,.11);flex:none}
+.landing-photo-credit{display:flex;align-items:center;gap:10px;align-self:flex-end;margin-top:auto;color:rgba(246,241,230,.72);font:700 8px/1.4 Arial,sans-serif;letter-spacing:.14em}
+.landing-photo-credit span{font-size:14px}
+.landing-baseline{display:grid;grid-template-columns:1fr 1fr 1.2fr auto;align-items:center;min-height:105px;padding:0 clamp(25px,5.2vw,90px);border-top:1px solid rgba(239,231,213,.26);background:rgba(13,16,13,.38);backdrop-filter:blur(8px)}
+.landing-stat{min-height:64px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid rgba(239,231,213,.25)}
+.landing-stat:nth-child(2){padding-left:28px}
+.landing-stat span{font:700 9px/1.4 Arial,sans-serif;letter-spacing:.18em;color:rgba(244,239,227,.67)}
+.landing-stat strong{font:400 30px/1.2 Georgia,serif;letter-spacing:-.025em;margin-top:5px;color:#f7f1e7}
+.landing-baseline-note{font:400 italic 16px/1.45 Georgia,serif;letter-spacing:.025em;color:#dfcda8;padding:0 34px}
+.landing-scroll{border-left:1px solid rgba(239,231,213,.25);height:64px;display:flex;align-items:center;gap:21px;padding-left:28px;color:var(--landing-ivory);font:800 9px/1.5 Arial,sans-serif;letter-spacing:.15em}
+.landing-scroll:hover{color:#e6d5ae}
+.landing-scroll-arrow{display:grid;place-items:center;width:38px;height:38px;border:1px solid rgba(239,231,213,.56);border-radius:50%;font-size:20px;font-weight:400;transition:transform .25s}
+.landing-scroll:hover .landing-scroll-arrow{transform:translateY(4px)}
+.museum-landing a:focus-visible,.museum-landing button:focus-visible{outline:3px solid #e6d5ae;outline-offset:4px}
+@keyframes landingRise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes landingStill{from{transform:scale(1.065)}to{transform:scale(1.015)}}
+@media(max-width:1080px){
+ .museum-landing{min-height:690px}
+ .landing-baseline{grid-template-columns:1fr 1fr auto}
+ .landing-baseline-note{display:none}
+ .landing-scroll{padding-left:22px}
+ .museum-landing .landing-story h1{font-size:clamp(68px,9vw,112px)}
+}
+@media(max-width:700px){
+ .museum-site-header{height:61px;padding:0 16px}
+ .museum-site-header .brand span{display:inline;max-width:145px;font-size:11px;line-height:1.15}
+ .museum-site-header .btn.dark{font-size:9px;padding:11px 13px}
+ .demo-banner{padding:9px 15px;font-size:10px;gap:3px}
+ .museum-landing{min-height:735px;min-height:max(735px,calc(100svh - 112px))}
+ .museum-landing .landing-media img{object-position:60% center;filter:brightness(.62) saturate(.65)}
+ .museum-landing .landing-veil{background:linear-gradient(180deg,rgba(15,18,15,.78),rgba(15,18,15,.63) 32%,rgba(12,15,12,.89) 78%,rgba(12,15,12,.96)),linear-gradient(90deg,rgba(15,18,15,.43),transparent)}
+ .landing-inner{padding:24px 21px 23px}
+ .landing-edition{gap:10px;font-size:8px;letter-spacing:.12em}
+ .landing-edition-line{width:24px}
+ .landing-edition-right{display:none}
+ .landing-story{padding:48px 0 35px}
+ .landing-intro-label{font-size:9px;letter-spacing:.14em}
+ .museum-landing .landing-story h1{font-size:clamp(53px,12.4vw,86px);line-height:.95;margin:20px 0 23px;letter-spacing:-.067em}
+ .landing-lead{font-size:23px;max-width:390px}
+ .landing-description{font-size:12px;line-height:1.72;max-width:390px}
+ .landing-actions{display:grid;gap:10px;grid-template-columns:1fr;max-width:420px;margin-top:28px}
+ .landing-actions a,.landing-actions button{width:100%;min-height:55px;padding:13px 17px}
+ .landing-visit-note{font-size:10px;line-height:1.4}
+ .landing-photo-credit{align-self:flex-start;font-size:7px;opacity:.75}
+ .landing-baseline{grid-template-columns:1fr 1fr;padding:12px 21px;min-height:94px}
+ .landing-stat{min-height:64px}
+ .landing-stat:nth-child(2){padding-left:20px;border-right:0}
+ .landing-stat span{font-size:8px;letter-spacing:.09em}
+ .landing-stat strong{font-size:25px}
+ .landing-scroll{display:none}
+}
+@media(max-width:360px){
+ .museum-landing{min-height:740px}
+ .museum-landing .landing-story h1{font-size:52px}
+ .landing-lead{font-size:21px}
+ .landing-description{font-size:11px}
+ .museum-site-header .brand span{max-width:122px;font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+ .museum-landing .landing-media img,.landing-story{animation:none!important;transform:none!important}
+ .landing-actions a,.landing-actions button,.landing-scroll-arrow{transition:none!important}
+}
