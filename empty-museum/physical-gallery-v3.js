@@ -46,9 +46,10 @@ export function addPhysicalGalleryV3({architecture,half,height,length,mobile,flo
   stone.bumpMap=correctedTexture(floorMaterial.bumpMap);
   stone.normalMap=correctedTexture(floorMaterial.normalMap);
   stone.roughnessMap=correctedTexture(floorMaterial.roughnessMap);
-  stone.roughness=.64;
-  stone.clearcoat=.06;
-  stone.clearcoatRoughness=.68;
+  // Honed limestone: broad soft highlights, never a glossy showroom floor.
+  stone.roughness=.83;
+  stone.clearcoat=.025;
+  stone.clearcoatRoughness=.85;
   stone.needsUpdate=true;
 
   const geometry=new RoundedBoxGeometry(cellWidth-.013,.024,cellDepth-.013,2,.0035);
@@ -142,8 +143,9 @@ export function addPhysicalGalleryV3({architecture,half,height,length,mobile,flo
       stone[name]=correctedTexture(scannedMaterial[name]);
       if(previous && previous!==floorMaterial[name])previous.dispose?.();
     }
-    stone.roughness=.64;
-    stone.clearcoat=.06;
+    stone.roughness=.83;
+    stone.clearcoat=.025;
+    stone.clearcoatRoughness=.85;
     stone.needsUpdate=true;
   }
   function dispose(){
