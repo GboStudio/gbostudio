@@ -48,35 +48,35 @@ export function makeWhiteLuxuryMaterials({mobile,length}) {
     };
   }
   function mineralStone() {
-    const color=document.createElement("canvas"),height=document.createElement("canvas");
-    color.width=height.width=size;color.height=height.height=size;
-    const g=color.getContext("2d"),h=height.getContext("2d");
-    const a=g.createImageData(size,size),b=h.createImageData(size,size);
-    const rand=seeded(20261030),slab=size/4;
+    const color=document.createElement("canvas"),height=document.createElement("canvas"),roughness=document.createElement("canvas");
+    color.width=height.width=roughness.width=size;color.height=height.height=roughness.height=size;
+    const g=color.getContext("2d"),h=height.getContext("2d"),r=roughness.getContext("2d");
+    const a=g.createImageData(size,size),b=h.createImageData(size,size),c=r.createImageData(size,size);
+    const rand=seeded(20261030);
+    // One continuous stone surface per physically-modelled slab. Never draw
+    // counterfeit grout inside the albedo: the instanced geometry owns joints.
     for(let y=0;y<size;y++){
-      const row=Math.floor(y/slab),yy=y%slab;
       for(let x=0;x<size;x++){
-        const xx=(x+(row%2)*slab*.5)%size;
-        const cell=Math.floor(xx/slab)+row*5;
-        const joint=yy<1.1||xx%slab<1.1;
         const swirl=Math.sin(x*.029+y*.013+Math.sin(y*.010)*1.9)*1.5
           +Math.sin(x*.009-y*.022)*2.35
           +Math.sin(x*.047+y*.035)*.9;
         const crystalline=(rand()-.5)*4.1;
-        const tileBias=(((cell*97+11)%17)-8)*.43;
-        const vein=(Math.sin(x*.031+y*.024+Math.sin(y*.008)*2.0)> .986)?-3.2:0;
-        const grain=swirl+crystalline+tileBias+vein;
+        const vein=(Math.sin(x*.031+y*.024+Math.sin(y*.008)*2.0)>.989)?-2.0:0;
+        const cloud=(Math.sin(x*.006+y*.009)+.7*Math.sin(x*.012-y*.007))*1.5;
+        const grain=swirl*.62+crystalline*.45+cloud+vein;
         const p=(y*size+x)*4;
-        const value=joint?216:229+grain;
+        const value=235+grain*.85;
         a.data[p]=Math.round(value+.6);
         a.data[p+1]=Math.round(value-.1);
         a.data[p+2]=Math.round(value-2.4);
         a.data[p+3]=255;
-        const v=joint?106:Math.round(133+grain*1.9+(rand()-.5)*7);
+        const v=Math.round(132+grain*1.3+(rand()-.5)*4.4);
         b.data[p]=v;b.data[p+1]=v;b.data[p+2]=v;b.data[p+3]=255;
+        const q=Math.round(230+grain*.7+(rand()-.5)*9);
+        c.data[p]=q;c.data[p+1]=q;c.data[p+2]=q;c.data[p+3]=255;
       }
     }
-    g.putImageData(a,0,0);h.putImageData(b,0,0);
+    g.putImageData(a,0,0);h.putImageData(b,0,0);r.putImageData(c,0,0);
     // Extremely fine diffuse mineral veining; deliberately low contrast.
     const veinRand=seeded(1414);
     g.lineCap="round";
@@ -96,7 +96,8 @@ export function makeWhiteLuxuryMaterials({mobile,length}) {
     }
     return {
       map:texture(color,{x:1.5,y:length/6.15}),
-      bump:texture(height,{x:1.5,y:length/6.15,isColor:false})
+      bump:texture(height,{x:1.5,y:length/6.15,isColor:false}),
+      roughness:texture(roughness,{x:1.5,y:length/6.15,isColor:false})
     };
   }
   const plaster=plasterPair(),stone=mineralStone();
@@ -109,9 +110,10 @@ export function makeWhiteLuxuryMaterials({mobile,length}) {
     color:0xf4f3ef,roughness:.93,metalness:0
   });
   const floor=new THREE.MeshPhysicalMaterial({
-    map:stone.map,bumpMap:stone.bump,bumpScale:.005,
-    color:0xeeeae3,roughness:.65,metalness:0,
-    clearcoat:.08,clearcoatRoughness:.62
+    map:stone.map,bumpMap:stone.bump,bumpScale:.0035,
+    roughnessMap:stone.roughness,
+    color:0xf5f3ef,roughness:.83,metalness:0,
+    clearcoat:.025,clearcoatRoughness:.85
   });
   const whiteStone=new THREE.MeshStandardMaterial({
     color:0xf8f8f5,roughness:.63,metalness:0

@@ -24,16 +24,6 @@ function fetchMap(loader,id,channel,x,y,isColor=false) {
     },undefined,()=>resolve(null));
   });
 }
-function apply(material,albedo,normal,roughness,{tint=0xffffff,normalScale=.3}) {
-  // Do not overwrite working procedural textures on a partial fetch error.
-  if(!albedo)return false;
-  material.map=albedo;
-  if(normal){material.normalMap=normal;material.normalScale.set(normalScale,normalScale);material.bumpMap=null;}
-  if(roughness){material.roughnessMap=roughness;material.roughness=.92;}
-  material.color.setHex(tint);
-  material.needsUpdate=true;
-  return true;
-}
 export async function enhanceScannedPBR(luxury,{mobile=false,length=28}={}) {
   const loader=new THREE.TextureLoader();loader.setCrossOrigin("anonymous");
   const wallRepeatX=Math.max(3,Math.round(length/3));
@@ -57,13 +47,26 @@ export async function enhanceScannedPBR(luxury,{mobile=false,length=28}={}) {
     // Deliberately do not touch mat.map or mat.color.
     mat.needsUpdate=true;
   }
-  const floorMaps=await Promise.all([
-    fetchMap(loader,"marble_01","diff",3,floorRepeatY,true),
+  // Keep the calibrated warm limestone albedo. A scanned marble diffuse
+  // is far too contrasty for this room and makes distant walls look dirty.
+  // Use only true scanned micro-normal and roughness data on the stone.
+  const [floorNormal,floorRough]=await Promise.all([
     fetchMap(loader,"marble_01","nor_gl",3,floorRepeatY),
     mobile?Promise.resolve(null):fetchMap(loader,"marble_01","rough",3,floorRepeatY)
   ]);
-  const floorUpgraded=apply(luxury.floor,...floorMaps,{tint:0xf4f2ee,normalScale:.15});
-  if(floorUpgraded){luxury.floor.roughness=.60;luxury.floor.clearcoat=.08;}
+  const floorUpgraded=Boolean(floorNormal||floorRough);
+  if(floorUpgraded){
+    if(floorNormal){
+      luxury.floor.normalMap=floorNormal;
+      luxury.floor.normalScale.set(.10,.10);
+      luxury.floor.bumpMap=null;
+    }
+    if(floorRough)luxury.floor.roughnessMap=floorRough;
+    luxury.floor.roughness=.83;
+    luxury.floor.clearcoat=.025;
+    luxury.floor.clearcoatRoughness=.85;
+    luxury.floor.needsUpdate=true;
+  }
   document.documentElement.dataset.temScannedPbr=(wallUpgraded||floorUpgraded)?"active":"fallback";
   return {wall:wallUpgraded,floor:floorUpgraded};
 }

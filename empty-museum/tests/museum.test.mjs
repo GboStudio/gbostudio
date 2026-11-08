@@ -39,7 +39,7 @@ test('a partial module never creates a whole-wall offer',()=>{
   assert.equal(availableWholeWalls(5,[],[]).length,0);
 });
 test('active WebGL engine, navigation and cloud adapter parse and route to the single immersive museum',()=>{
-  for(const path of ['engine-loader.js','visual-viewport-v1.js','engine3d.js','baked-architecture-v4.js','physical-gallery-v3.js','gallery-layout-v3.js','museum-v5.js','movement3d.js','museum-cloud.js','museum-inventory.mjs']){
+  for(const path of ['engine-loader.js','visual-viewport-v1.js','engine3d.js','luxury-v8.js','pbr-scanned.js','baked-architecture-v4.js','physical-gallery-v3.js','gallery-layout-v3.js','museum-v5.js','movement3d.js','museum-cloud.js','museum-inventory.mjs']){
     const src=file(path);
     const parsed=spawnSync(process.execPath,['--input-type=module','--check'],{input:src,encoding:'utf8'});
     assert.equal(parsed.status,0,path+': '+parsed.stderr);
@@ -102,4 +102,25 @@ test('verified V4 Cycles GLB is embedded, size-bounded and identical to its Blen
   assert.ok(manifest.vertices>=17000&&manifest.vertices<250000);
   assert.deepEqual(manifest.texture_size,[1024,1024]);
   assert.ok(readFileSync(join(root,'assets/entrance-v4-lightbake.png')).byteLength>20000);
+});
+
+
+test('V11 lighting preserves real limestone geometry and avoids painted fake grout',()=>{
+  const materials=file('luxury-v8.js');
+  const slabs=file('physical-gallery-v3.js');
+  const scanned=file('pbr-scanned.js');
+  const engine=file('engine3d.js');
+  const loader=file('engine-loader.js');
+  assert.match(materials,/roughnessMap:stone\.roughness/);
+  assert.match(materials,/const value=235\+grain\*\.85/);
+  assert.doesNotMatch(materials,/joint\?216|yy<1\.1|xx%slab<1\.1/,
+    'Tile joints must be modeled physically, never painted inside the albedo');
+  assert.match(slabs,/new THREE\.InstancedMesh\(geometry,stone,slabs\.length\)/);
+  assert.match(slabs,/stone\.roughness=\.83/);
+  assert.match(scanned,/const floorUpgraded=Boolean\(floorNormal\|\|floorRough\)/);
+  assert.doesNotMatch(scanned,/marble_01","diff"/,
+    'Avoid swapping honed limestone albedo for dark scanned marble');
+  assert.match(engine,/renderer\.toneMappingExposure = \.91/);
+  assert.match(loader,/engine3d\.js\?v=20261109realism11/);
+  assert.match(file('index.html'),/engine-loader\.js\?v=20261109realism11/);
 });
