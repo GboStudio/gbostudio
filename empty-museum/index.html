@@ -1,9 +1,35 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f1efe7"><title>The Unreal Museum</title><meta name="description" content="Entrez dans un musée vivant : admirez des créations, choisissez un emplacement libre et exposez vos photos, dessins, textes ou œuvres."><link rel="stylesheet" href="styles.css?v=20261104wall"><link rel="stylesheet" href="walk.css?v=20261030scenography4"><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script></head><body>
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f1efe7"><title>The Unreal Museum</title><meta name="description" content="Entrez dans un musée vivant : admirez des créations, choisissez un emplacement libre et exposez vos photos, dessins, textes ou œuvres."><link rel="stylesheet" href="styles.css?v=20261104wall"><link rel="stylesheet" href="landing-premium.css?v=20261109"><link rel="stylesheet" href="walk.css?v=20261030scenography4"><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script></head><body>
 <div class="grain"></div>
-<header><a class="brand" href="#top"><b>TUM</b><span>THE UNREAL MUSEUM</span></a><nav><a href="#wall">Le mur</a><a href="#how">Comment ça marche</a><a href="#pricing">Exposer</a></nav><button class="btn dark" data-open>EXPOSER</button></header>
+<header class="museum-site-header"><a class="brand" href="#top"><b>TUM</b><span>THE UNREAL MUSEUM</span></a><nav><a href="#wall">Le mur</a><a href="#how">Comment ça marche</a><a href="#pricing">Exposer</a></nav><button class="btn dark" data-open>EXPOSER</button></header>
 <div class="demo-banner" role="status"><strong>VERSION DÉMONSTRATION</strong><span>Les œuvres d’exemple sont fictives. Les créations ajoutées restent uniquement sur votre appareil. Aucun paiement n’est effectué.</span></div>
 <main id="top">
-<section class="hero"><div class="heroCopy"><span class="eyebrow">UN MUSÉE POUR TOUTES VOS CRÉATIONS</span><h1>UN MUR BLANC.<br><em>PUIS INTERNET.</em></h1><p>Photos, dessins, mots, souvenirs, sculptures, œuvres IA ou créations entièrement personnelles : tout peut trouver sa place dans le musée.</p><div class="actions"><a class="btn dark" href="./?visit=immersive">ENTRER DANS LE MUSÉE ↗</a><a class="btn" href="#mur-total">DÉCOUVRIR LE MUR TOTAL ↗</a><button class="btn" data-open>CHOISIR UN EMPLACEMENT</button><a class="btn" href="#wall">VOIR LE MUR</a></div></div><div class="stats"><div><span>CRÉATIONS DE CETTE VISITE</span><strong id="countHero">018</strong></div><div><span>LONGUEUR SIMULÉE</span><strong id="metersHero">12,4 M</strong></div><div><span>OUVERT DEPUIS</span><strong>2026</strong></div></div><div class="blankHero"><div class="seg a"></div><div class="seg b"></div><div class="seg c"></div><div class="seg d"></div><div class="heroTitle">THE UNREAL MUSEUM<small>THE WALL STARTS EMPTY.</small></div></div></section>
+<section class="hero museum-landing" aria-labelledby="museum-home-title">
+  <div class="landing-media">
+    <img src="./assets/entrance-v4-blender-preview.png" alt="Aperçu de l'architecture de la galerie virtuelle, avec ses murs sculptés et son éclairage de musée." fetchpriority="high" decoding="async">
+  </div>
+  <div class="landing-veil" aria-hidden="true"></div>
+  <div class="landing-inner">
+    <div class="landing-edition"><span class="landing-edition-line"></span><span>GALERIE VIRTUELLE · ÉDITION 2026</span><span class="landing-edition-right">UN PROJET GBO STUDIO</span></div>
+    <div class="landing-story">
+      <span class="landing-intro-label">BIENVENUE DANS THE UNREAL MUSEUM</span>
+      <h1 id="museum-home-title">L'ART<br>DE <em>L'IRRÉEL.</em></h1>
+      <p class="landing-lead">Un vrai lieu pour les idées qui n'existent nulle part ailleurs.</p>
+      <p class="landing-description">Images créées avec l'IA, dessins, photographies, sculptures, objets 3D ou inventions personnelles. Ici, chaque imagination mérite sa place.</p>
+      <div class="landing-actions">
+        <a class="landing-enter" href="./?visit=immersive"><span>ENTRER DANS LE MUSÉE</span><span class="landing-action-icon" aria-hidden="true">↗</span></a>
+        <button class="landing-exhibit" type="button" data-open><span>EXPOSER UNE ŒUVRE</span><span aria-hidden="true">↗</span></button>
+      </div>
+      <div class="landing-visit-note"><span class="landing-visit-pulse" aria-hidden="true"></span> Visite libre ou guidée · Disponible sur ordinateur et mobile</div>
+    </div>
+    <div class="landing-photo-credit">APERÇU DE L'ARCHITECTURE 3D DU MUSÉE <span aria-hidden="true">↗</span></div>
+  </div>
+  <div class="landing-baseline">
+    <div class="landing-stat"><span>ŒUVRES DE LA DÉMO</span><strong id="countHero">018</strong></div>
+    <div class="landing-stat"><span>GALERIE SIMULÉE</span><strong id="metersHero">12,4 M</strong></div>
+    <div class="landing-baseline-note">L'IMAGINATION N'A<br>PLUS DE MURS.</div>
+    <a class="landing-scroll" href="#wall"><span>DÉCOUVRIR LE CONCEPT</span><span class="landing-scroll-arrow" aria-hidden="true">↓</span></a>
+  </div>
+</section>
 <section class="wallSec" id="wall"><div class="head"><div><span class="eyebrow">THE WALL / DEMO</span><h2>IL GRANDIT<br>À CHAQUE AJOUT.</h2></div><div><p>Les premières créations restent au début. Chaque nouvelle exposition agrandit physiquement le mur.</p><div class="filters"><button class="active" data-filter="all">TOUT</button><button data-filter="image">IMAGE</button><button data-filter="3d">3D</button><button data-filter="design">DESIGN</button><button data-filter="build">BUILD</button><button data-filter="words">WORDS</button><button data-filter="weird">WEIRD</button></div></div></div>
 <div class="walk-cta"><a href="./?visit=immersive">ENTRER DANS LE MUSÉE IMMERSIF ↗</a><span>Un véritable parcours 3D à explorer librement ou en visite guidée, sur ordinateur et téléphone.</span></div>
 <div class="museum"><div class="bar"><span><i></i><b id="liveCount">6</b> créations dans cette visite</span><div><button id="random">TAKE ME SOMEWHERE ↗</button><button id="reset">REVENIR AU DÉBUT</button></div></div><div class="viewport" id="viewport"><div class="track"><aside class="origin"><span>ORIGINAL WALL</span><strong>2026</strong><small>THE FIRST METERS</small></aside><div class="grid" id="grid"></div><aside class="end"><span>THE WALL CONTINUES</span><b>+</b><small>Chaque nouvelle pièce agrandit le musée.</small></aside></div></div><div class="hint">← &nbsp; GLISSEZ POUR EXPLORER &nbsp; →</div></div></section>
