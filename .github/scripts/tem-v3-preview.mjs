@@ -19,8 +19,10 @@ for(const device of setups){
     isMobile:device.mobile,
     hasTouch:device.mobile
   });
-  const page=await context.newPage(),errors=[];
+  const page=await context.newPage(),errors=[],diagnostics=[];
   page.on('pageerror',e=>errors.push(String(e)));
+  page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')diagnostics.push(m.type()+': '+m.text());});
+  page.on('requestfailed',r=>diagnostics.push('request failed: '+r.url()+' '+(r.failure()?.errorText||'')));
   try{
     const response=await page.goto('http://127.0.0.1:8765/empty-museum/?visit=immersive',{
       waitUntil:'domcontentloaded',timeout:45000
@@ -46,7 +48,21 @@ for(const device of setups){
     assert.ok(state.visible && state.canvas.width>100 && state.canvas.height>100);
     assert.ok(Number.isFinite(state.initialZ),'Camera coordinates should be exposed for diagnostics');
     if(requireV4){
-      await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.museumLighting==='cycles-baked-v4',null,{timeout:35000});
+      const baked=()=>document.querySelector('#walkOverlay')?.dataset.museumLighting==='cycles-baked-v4';
+      try{
+        await page.waitForFunction(baked,null,{timeout:35000});
+      }catch(initialError){
+        const lighting=await page.locator('#walkOverlay').getAttribute('data-museum-lighting').catch(()=>null);
+        console.warn('PREVIEW BAKE FIRST ATTEMPT',device.name,JSON.stringify({lighting,diagnostics:diagnostics.slice(-12)}));
+        // SwiftShader on the shared CI runner can exhaust the optional GLB's
+        // 15s download budget while warming the first WebGL context. Retry
+        // a fresh visit once, but never pass without the real baked geometry.
+        await page.reload({waitUntil:'domcontentloaded',timeout:45000});
+        await page.waitForFunction(()=>window.__TUM_PREMIUM_READY===true,null,{timeout:65000});
+        await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.museumArchitecture==='physical-v3',null,{timeout:25000});
+        await page.waitForFunction(baked,null,{timeout:45000});
+        console.log('PASS verified Blender bake after cold-render retry',device.name);
+      }
       const primitiveCount=Number(await page.locator('#walkOverlay').getAttribute('data-museum-bake-primitives'));
       assert.ok(primitiveCount>0 && primitiveCount<=12,'Cycles baked scene must have a bounded draw-call count');
       console.log('PASS real Blender Cycles light-baked GLB',device.name,primitiveCount,'draw calls');
@@ -102,6 +118,7 @@ for(const device of setups){
     fail++;
     console.error('FAIL architectural staging',device.name,error.stack||String(error));
     console.error('Browser errors:',JSON.stringify(errors));
+    console.error('Browser diagnostic warnings:',JSON.stringify(diagnostics.slice(-20)));
     await page.screenshot({path:'/tmp/museum-v3-'+device.name+'-failure.png'}).catch(()=>{});
   }finally{await context.close();}
 }
