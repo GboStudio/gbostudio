@@ -7,6 +7,8 @@ on:
       - 'empty-museum/**'
       - 'AGENTS.md'
       - '.github/scripts/museum-coherence.mjs'
+      - '.github/scripts/museum-coherence-lib.mjs'
+      - '.github/scripts/museum-coherence.test.mjs'
       - '.github/workflows/museum-coherence.yml'
       - '.github/scripts/tem-commerce-e2e.mjs'
   pull_request:
@@ -14,6 +16,8 @@ on:
       - 'empty-museum/**'
       - 'AGENTS.md'
       - '.github/scripts/museum-coherence.mjs'
+      - '.github/scripts/museum-coherence-lib.mjs'
+      - '.github/scripts/museum-coherence.test.mjs'
       - '.github/workflows/museum-coherence.yml'
       - '.github/scripts/tem-commerce-e2e.mjs'
   workflow_dispatch:
@@ -39,5 +43,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify guard catches good and deliberately broken fixtures
+        run: node --test .github/scripts/museum-coherence.test.mjs
       - name: Verify canonical version and critical invariants
         run: node .github/scripts/museum-coherence.mjs
