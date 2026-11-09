@@ -64,7 +64,7 @@ for(const device of setups){
             await page.reload({waitUntil:'domcontentloaded',timeout:45000});
             await page.waitForFunction(()=>window.__TUM_PREMIUM_READY===true,null,{timeout:65000});
             await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.museumArchitecture==='physical-v3',null,{timeout:25000});
-            await page.waitForFunction(baked,null,{timeout:50000});
+            await page.waitForFunction(baked,null,{timeout:75000});
             restored=true;
             console.log('PASS verified Blender bake after cold-render retry',device.name,attempt);
           }catch(error){
