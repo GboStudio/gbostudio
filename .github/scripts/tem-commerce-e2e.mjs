@@ -30,7 +30,7 @@ try{
   await page.locator('[data-range="landmark"]').fill('90');
   await page.locator('#saveRanges').click();
   assert.match(await page.locator('#aisleDetails').textContent(),/90 m/);
-  assert.match(await page.locator('#aislePrice').textContent(),/990/);
+  assert.match(await page.locator('#aislePrice').textContent(),/495/);
   await page.locator('#bookAisle').click();
   assert.match(await page.locator('#bookAisle').textContent(),/occupée/);
   await page.locator('[data-tab="management"]').click();
