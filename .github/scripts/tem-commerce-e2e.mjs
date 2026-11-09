@@ -23,7 +23,7 @@ try{
   assert.equal(await page.locator('#wallGrid [data-slot]').count(),16);
   await page.locator('[data-tab="aisle"]').click();
   await page.locator('[data-distance="landmark"]').click();
-  await page.locator('[data-days="1"]').click();
+  await page.locator('button[data-days="1"]').click();
   assert.match(await page.locator('#aislePrice').textContent(),/990/);
   await page.locator('#bookAisle').click();
   assert.match(await page.locator('#bookAisle').textContent(),/occupée/);
