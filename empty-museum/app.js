@@ -26,7 +26,7 @@ function safeStoredPiece(item){
   const id=Number(item.id);
   if(!Number.isSafeInteger(id)||id<=18||id>1000000)return null;
   const slot=typeof item.slot==='string'
-    ? ((/^(?:S0[1-4]|P0[1-6])$/.test(item.slot)||window.TUM_GALLERY_MIX?.allWallSlots().some(s=>s.id===item.slot))?item.slot:null)
+    ? ((/^(?:S0[1-4]|P0[1-6])$/.test(item.slot)||(typeof window!=='undefined'&&window.TUM_GALLERY_MIX?.allWallSlots().some(s=>s.id===item.slot)))?item.slot:null)
     : (Number.isInteger(item.slot)&&item.slot>=4&&item.slot<=250?item.slot:null);
   const sizes=new Set(['mini','standard','large','xl','portrait','landscape','tall','wide','panorama','floor','ceiling-mini','ceiling-medium','ceiling-large','very_large','normal','medium','small']);
   const categories=new Set(['image','3d','words','design','build','weird']);
