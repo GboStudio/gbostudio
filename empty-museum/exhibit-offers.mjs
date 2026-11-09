@@ -1,7 +1,7 @@
 /**
  * Public exhibition tariff *demonstration*.
  * Source: commerce-model.mjs default simulation, never browser localStorage.
- * Not a checkout: annual 3D amounts are a clearly labelled projection only.
+ * Not a checkout: 3D duration tiers are 1, 7 and 30 days.
  */
 import {
   DEFAULT_COMMERCE_CONFIG,normalizeCommerceConfig,
@@ -45,8 +45,8 @@ if(aisleRoot){
     distance.textContent='Jusqu’à '+config.aisle.distanceMetres[tier.id]+' m, sous réserve d’obstacles';
     title.append(distance);
     cell(row,euros(prices['1']));
+    cell(row,euros(prices['7']));
     cell(row,euros(prices['30']));
-    cell(row,euros(prices['30']*10),'price-projection');
     aisleRoot.append(row);
   }
 }
