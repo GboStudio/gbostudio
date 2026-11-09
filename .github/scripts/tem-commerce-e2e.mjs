@@ -51,7 +51,7 @@ try{
   await page.waitForFunction(()=>Boolean(window.TEM?.getWallDisplaySlots&&window.TEM?.openFloor),null,{timeout:45000});
   assert.equal(await page.evaluate(()=>window.TEM.getWallDisplaySlots().length),116);
   assert.equal(await page.evaluate(()=>window.TEM.getFloorSlots().length),4);
-  await page.locator('[data-plan="floor"]').click();
+  await page.locator('#pricing [data-plan="floor"]').click();
   await page.locator('#floorQuotedPrice').waitFor({state:'visible'});
   assert.match(await page.locator('#floorQuotedPrice').textContent(),/145/);
   await page.locator('#floorDurationDays').selectOption('7');
