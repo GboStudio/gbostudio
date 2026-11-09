@@ -159,9 +159,9 @@ const stopModelPreview=()=>{if(modelToolsPromise)modelToolsPromise.then(m=>m.sto
     ctx.strokeStyle='#c8c8be';ctx.lineWidth=1;
     for(let x=-5;x<=5;x++) {ctx.beginPath();let p=project(x,0,-3),q=project(x,0,4);ctx.moveTo(...p);ctx.lineTo(...q);ctx.stroke();}
     for(let z=-4;z<=5;z++) {let p=project(-5,0,z),q=project(5,0,z);ctx.beginPath();ctx.moveTo(...p);ctx.lineTo(...q);ctx.stroke();}
-    const floor=[[-.6,.015,-.6],[.6,.015,-.6],[.6,.015,.6],[-.6,.015,.6]].map(v=>project(...v));
+    const floor=[[-.75,.015,-.9],[.75,.015,-.9],[.75,.015,.9],[-.75,.015,.9]].map(v=>project(...v));
     polygon(floor,'#dfe6d8','#9aa992',2);
-    polygon([[-.56,.08,-.56],[.56,.08,-.56],[.56,.08,.56],[-.56,.08,.56]].map(v=>project(...v)),'#f6f4e8','#b5b5a5',2);
+    polygon([[-.72,.08,-.86],[.72,.08,-.86],[.72,.08,.86],[-.72,.08,.86]].map(v=>project(...v)),'#f6f4e8','#b5b5a5',2);
     ctx.fillStyle='#687365';ctx.font='700 13px Arial';ctx.textAlign='left';ctx.fillText('INSTALLATION · '+state.slot,30,39);
     ctx.fillStyle='#7b827a';ctx.font='11px Arial';ctx.fillText('TOURNEZ L’APERÇU EN GLISSANT',30,61);
 
