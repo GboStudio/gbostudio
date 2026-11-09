@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
+import {PNG} from 'pngjs';
 const browser=await chromium.launch({
   headless:true,args:['--no-sandbox','--disable-dev-shm-usage',
     '--enable-unsafe-swiftshader','--use-angle=swiftshader']
@@ -34,7 +35,21 @@ for(const device of [
     assert.ok(report.width>300 && report.height>300);
     assert.deepEqual(errors,[]);
     const path='/tmp/museum-v12-'+device.name+'.png';
-    await page.screenshot({path,timeout:90000});
+    const screenshot=await page.screenshot({path,timeout:90000});
+    const png=PNG.sync.read(screenshot);
+    let visible=0,measured=0;
+    for(let y=Math.floor(png.height*.20);y<Math.floor(png.height*.77);y+=12){
+      for(let x=Math.floor(png.width*.19);x<Math.floor(png.width*.82);x+=12){
+        const i=(y*png.width+x)*4;
+        const diff=Math.abs(png.data[i]-228)+Math.abs(png.data[i+1]-227)+Math.abs(png.data[i+2]-223);
+        if(diff>43)visible++;
+        measured++;
+      }
+    }
+    const visibleFraction=visible/measured;
+    console.log('V12 VISIBILITY ACCEPTANCE',device.name,visibleFraction);
+    assert.ok(visibleFraction>.08,
+      'Museum appears empty: 3D camera may be looking away or model not visible');
     console.log('V12 ACTUAL WEBGL RENDER',device.name,path,JSON.stringify(report));
   }catch(e){
     failures++;
