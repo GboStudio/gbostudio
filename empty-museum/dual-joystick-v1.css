@@ -88,6 +88,9 @@
     font:700 19px/1 Arial,sans-serif;touch-action:manipulation!important;cursor:pointer;
     pointer-events:auto!important;
   }
+  #walkOverlay .museum-v5-zoom button {
+    display:grid!important;visibility:visible!important;opacity:1!important;
+  }
   #walkOverlay .museum-v5-zoom button:active {background:#dfc993!important}
   /* Keep tour buttons out of both thumb zones. */
   #walkOverlay .museum-v5-shell .museum-v5-dock {
