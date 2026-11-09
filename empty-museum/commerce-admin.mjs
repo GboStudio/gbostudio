@@ -56,7 +56,6 @@ function renderWalls(){
   if(!slots.some(s=>s.id===selectedSlot))selectedSlot=slots.find(s=>canReserveWall(reservations,moduleNumber,s.id).ok)?.id||slots[0].id;
   const selected=slots.find(s=>s.id===selectedSlot)||slots[0];
   const slotFmt=WALL_FORMATS.find(f=>f.id===formatId);
-  if(moduleNumber<=4){notify('Les quatre premiers modules sont réservés aux partenaires.',true);return;}
   const booked=activeWallBookings(moduleNumber);
   $('#wallGrid').innerHTML=slots.map(slot=>{
     const n=slot.leaves[0],column=n%4+1,row=Math.floor(n/4)+1;
@@ -162,6 +161,7 @@ $('#module').addEventListener('change',event=>{
 $('#formats').addEventListener('click',event=>{
   const button=event.target.closest('[data-format]');if(!button)return;
   const newFormat=button.dataset.format;
+  if(moduleNumber<=4){notify('Les quatre premiers modules sont réservés aux partenaires.',true);return;}
   const booked=activeWallBookings(moduleNumber);
   if(booked.length&&booked[0].formatId!==newFormat){
     notify('Ce module contient déjà des réservations : son découpage ne peut pas changer.',true);return;
