@@ -40,7 +40,7 @@ jobs:
           git cat-file -e 'HEAD^2^{commit}'
           git diff --name-only HEAD^1 HEAD^2 > /tmp/museum-changed-paths.txt
           cat /tmp/museum-changed-paths.txt
-          if grep -Eq '^(empty-museum/|AGENTS\.md$|\.github/(scripts/(tem-|museum-)|workflows/(tem-|museum-)))' /tmp/museum-changed-paths.txt; then
+          if grep -Eq '^(empty-museum/|AGENTS\.md$|\.github/(scripts/(tem-|museum-)|workflows/(tem-|museum-)|scripts/(wait-pages-deployment|test-wait-pages-deployment)))' /tmp/museum-changed-paths.txt; then
             echo "museum=true" >> "$GITHUB_OUTPUT"
           else
             echo "museum=false" >> "$GITHUB_OUTPUT"
