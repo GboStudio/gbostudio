@@ -1,6 +1,6 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f1efe7"><title>The Unreal Museum</title><meta name="description" content="Entrez dans un musée vivant : admirez des créations, choisissez un emplacement libre et exposez vos photos, dessins, textes ou œuvres."><link rel="stylesheet" href="styles.css?v=20261104wall"><link rel="stylesheet" href="walk.css?v=20261030scenography4"><link rel="stylesheet" href="editorial-v2.css?v=20261109b"><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script></head><body class="museum-editorial">
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f1efe7"><title>The Unreal Museum</title><meta name="description" content="Entrez dans un musée vivant : admirez des créations, choisissez un emplacement libre et exposez vos photos, dessins, textes ou œuvres."><link rel="stylesheet" href="styles.css?v=20261104wall"><link rel="stylesheet" href="walk.css?v=20261030scenography4"><link rel="stylesheet" href="editorial-v2.css?v=20261109b"><link rel="stylesheet" href="exhibit-guide.css?v=20261109a"><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script></head><body class="museum-editorial">
 <div class="grain"></div>
-<header class="museum-site-header"><a class="brand" href="#top" aria-label="The Unreal Museum, revenir à l’accueil"><b>U<span aria-hidden="true">.</span></b><span>THE UNREAL<br>MUSEUM</span></a><nav aria-label="Navigation principale"><a href="#wall">La galerie</a><a href="#how">Le concept</a><a href="#pricing">Les emplacements</a></nav><a class="btn dark header-visit" href="./?visit=immersive">VISITER <span aria-hidden="true">↗</span></a></header>
+<header class="museum-site-header"><a class="brand" href="#top" aria-label="The Unreal Museum, revenir à l’accueil"><b>U<span aria-hidden="true">.</span></b><span>THE UNREAL<br>MUSEUM</span></a><nav aria-label="Navigation principale"><a href="#wall">La galerie</a><a href="#how">Comment exposer</a><a href="#pricing">Les emplacements</a></nav><a class="btn dark header-visit" href="./?visit=immersive">VISITER <span aria-hidden="true">↗</span></a></header>
 <div class="demo-banner" role="status"><strong>VERSION DÉMONSTRATION</strong><span>Œuvres d’exemple fictives · Ajouts visibles seulement sur votre appareil · Aucun paiement</span></div>
 <main id="top">
 <section class="hero editorial-hero" aria-labelledby="museum-home-title">
@@ -15,7 +15,7 @@
         <a class="editorial-primary" href="./?visit=immersive"><span>DÉMARRER LA VISITE</span><span class="editorial-arrow" aria-hidden="true">↗</span></a>
         <button type="button" class="editorial-secondary" data-open><span>EXPOSER UNE CRÉATION</span><span aria-hidden="true">↗</span></button>
       </div>
-      <div class="editorial-access"><span class="editorial-access-dot" aria-hidden="true"></span> Visite libre et guidée · Mobile et ordinateur</div>
+      <div class="editorial-access"><span class="editorial-access-dot" aria-hidden="true"></span> Visite libre et guidée · Mobile et ordinateur <a href="#how" class="editorial-help-link">COMMENT EXPOSER ? <span aria-hidden="true">↓</span></a></div>
     </div>
     <div class="editorial-art-scene" aria-label="Composition artistique originale illustrant l'esprit du musée, et non une capture de la visite 3D.">
       <div class="editorial-gallery-wall">
@@ -42,17 +42,62 @@
     <div class="editorial-scroll-note"><span>UN MUSÉE QUI GRANDIT<br>AVEC CHAQUE CRÉATEUR.</span><a href="#wall">DÉCOUVRIR LE MUSÉE <span aria-hidden="true">↓</span></a></div>
   </div>
 </section>
+<section class="how exhibit-guide" id="how" aria-labelledby="guide-title">
+  <div class="exhibit-guide-head">
+    <div><span class="eyebrow">LE MODE D’EMPLOI · 4 ÉTAPES</span><h2 id="guide-title">VOTRE ŒUVRE.<br><em>SA PLACE AU MUSÉE.</em></h2></div>
+    <p>Vous avez une image, une création IA ou un objet 3D dont vous êtes fier ? Choisissez où l’exposer, préparez sa présentation et découvrez le résultat dans notre musée virtuel.</p>
+  </div>
+  <div class="exhibit-kinds" aria-label="Exemples de créations que l’on peut présenter">
+    <article class="exhibit-kind exhibit-kind-image">
+      <div class="exhibit-kind-stage"><div class="exhibit-kind-art image-art" aria-hidden="true"></div><span class="exhibit-kind-tag">SUR UN MUR</span></div>
+      <div class="exhibit-kind-caption"><span>01 / IMAGE & ILLUSTRATION</span><h3>Images IA, dessins<br>et photographies</h3><p>Votre création prend la forme d’un tableau accroché au mur.</p></div>
+    </article>
+    <article class="exhibit-kind exhibit-kind-poster">
+      <div class="exhibit-kind-stage"><div class="exhibit-kind-art poster-art" aria-hidden="true"><span>UNREAL<br>IDEAS</span></div><span class="exhibit-kind-tag">SUR UN MUR</span></div>
+      <div class="exhibit-kind-caption"><span>02 / DESIGN & TYPOGRAPHIE</span><h3>Affiches, textes<br>et concepts</h3><p>Un message, une affiche graphique ou un projet imaginé de toutes pièces.</p></div>
+    </article>
+    <article class="exhibit-kind exhibit-kind-statue">
+      <div class="exhibit-kind-stage"><div class="exhibit-kind-pedestal" aria-hidden="true"><i></i></div><span class="exhibit-kind-tag">DANS L’ALLÉE</span></div>
+      <div class="exhibit-kind-caption"><span>03 / SCULPTURE & MODÈLE</span><h3>Statues, objets<br>et modèles 3D</h3><p>Un objet à observer sous plusieurs angles dans un espace au sol.</p></div>
+    </article>
+    <article class="exhibit-kind exhibit-kind-billboard">
+      <div class="exhibit-kind-stage"><div class="exhibit-kind-sign" aria-hidden="true"><span>IMAGINE<br>MORE.</span></div><span class="exhibit-kind-tag">DANS L’ALLÉE</span></div>
+      <div class="exhibit-kind-caption"><span>04 / INSTALLATION & ENSEIGNE</span><h3>Affiches 3D,<br>panneaux et néons</h3><p>Une présentation plus spectaculaire qu’un cadre classique.</p></div>
+    </article>
+  </div>
+  <p class="exhibit-kind-disclaimer">Illustrations de formats possibles, et non œuvres actuellement publiées par des visiteurs.</p>
+  <div class="exhibit-steps-heading"><span class="eyebrow">COMMENT FAIRE, CONCRÈTEMENT ?</span><p>De votre fichier à sa présentation dans la galerie.</p></div>
+  <div class="steps exhibit-steps">
+    <article><span>01</span><h3>CHOISISSEZ LE SUPPORT</h3><p>Cadre mural pour une image, un texte ou une affiche. Espace dans l’allée pour une statue, un objet ou un panneau 3D.</p></article>
+    <article><span>02</span><h3>TROUVEZ VOTRE PLACE</h3><p>Parcourez le musée, sélectionnez un emplacement disponible et consultez son format, sa durée et son tarif indicatif.</p></article>
+    <article><span>03</span><h3>AJOUTEZ VOTRE CRÉATION</h3><p>Importez votre image ou un modèle 3D compatible. Ajoutez un titre, votre pseudo et quelques mots pour raconter son histoire.</p></article>
+    <article><span>04</span><h3>VISUALISEZ LE RÉSULTAT</h3><p>Prévisualisez votre pièce dans la démo et créez une carte à partager. La publication visible par tous n’est pas encore ouverte.</p></article>
+  </div>
+  <div class="exhibit-how-actions">
+    <div><strong>Prêt à essayer ?</strong><span>Testez gratuitement la présentation de votre œuvre, sans compte ni paiement.</span></div>
+    <div class="exhibit-how-buttons"><button type="button" data-open>ESSAYER UN CADRE <span aria-hidden="true">↗</span></button><button type="button" data-plan="floor">ESSAYER UNE INSTALLATION 3D <span aria-hidden="true">↗</span></button></div>
+  </div>
+  <div class="exhibit-conditions"><strong>Bon à savoir</strong><span>Dans cette version de démonstration, les créations restent sur votre appareil ; elles ne sont ni publiées pour les autres visiteurs, ni facturées. Vérifiez que vous possédez les droits sur les images, textes ou modèles importés.</span></div>
+</section>
 <section class="wallSec" id="wall"><div class="head"><div><span class="eyebrow">LA GALERIE / DÉMONSTRATION</span><h2>CHAQUE ŒUVRE<br><em>AGRANDIT LE LIEU.</em></h2></div><div><p>Les premières créations restent au début. Chaque nouvelle exposition agrandit physiquement le mur.</p><div class="filters"><button class="active" data-filter="all">TOUT</button><button data-filter="image">IMAGE</button><button data-filter="3d">3D</button><button data-filter="design">DESIGN</button><button data-filter="build">BUILD</button><button data-filter="words">WORDS</button><button data-filter="weird">WEIRD</button></div></div></div>
 <div class="walk-cta"><span class="walk-cta-brow">L’EXPÉRIENCE 3D</span><span>Explorez la galerie, choisissez votre parcours et découvrez les œuvres de la démo.</span><a href="./?visit=immersive">ENTRER EN VISITE <span aria-hidden="true">↗</span></a></div>
 <div class="museum"><div class="bar"><span><i></i><b id="liveCount">6</b> créations dans cette visite</span><div><button id="random">DÉCOUVRIR AU HASARD ↗</button><button id="reset">REVENIR AU DÉBUT</button></div></div><div class="viewport" id="viewport"><div class="track"><aside class="origin"><span>ORIGINAL WALL</span><strong>2026</strong><small>THE FIRST METERS</small></aside><div class="grid" id="grid"></div><aside class="end"><span>THE WALL CONTINUES</span><b>+</b><small>Chaque nouvelle pièce agrandit le musée.</small></aside></div></div><div class="hint">← &nbsp; GLISSEZ POUR EXPLORER &nbsp; →</div></div></section>
 <section class="statement"><div class="num">01</div><div><span class="eyebrow">LE MANIFESTE</span><p>Vous avez créé quelque chose et vous vous êtes dit :</p><h2>“CELUI-LÀ,<br><em>JE VEUX LE GARDER.</em>”</h2><p class="serif">Alors exposez-le.</p></div></section>
-<section class="how" id="how"><span class="eyebrow">LE PARCOURS</span><h2>UNE EXPOSITION.<br><em>PAS UN FIL D’ACTUALITÉ.</em></h2><div class="steps"><article><span>01</span><h3>CHOISISSEZ</h3><p>Image, 3D, interface, texte, plan, vidéo ou projet réalisé.</p></article><article><span>02</span><h3>EXPOSEZ</h3><p>12 mois pour un cadre mural, 1 mois pour une installation au sol.</p></article><article><span>03</span><h3>RACONTEZ</h3><p>Ajoutez vos outils, votre démarche et l’histoire derrière la pièce.</p></article><article><span>04</span><h3>PARTAGEZ</h3><p>Une carte de présentation partageable. La publication publique arrive ensuite.</p></article></div></section>
-<section class="pricing" id="pricing"><div class="pricingHead"><div><span class="eyebrow">TARIFS DE DÉMONSTRATION · AUCUNE TRANSACTION</span><h2>UNE PLACE<br>POUR VOTRE ART.</h2></div><p>Chaque cadre possède un emplacement précis, une orientation et un prix. Les tarifs sont affichés avant toute création. Pas de paiement dans cette démo.</p></div>
-<div class="plans">
-<button data-plan="mini"><span>PETIT PORTRAIT · 20 × 30 CM</span><strong>9,90 €</strong><small>/ 12 mois</small><p>Une idée, un petit dessin ou une photo.</p><i>CHOISIR UNE PLACE ↗</i></button>
-<button data-plan="landscape" class="featured"><span>PHOTO · PORTRAIT OU PAYSAGE</span><strong>19,90 €</strong><small>/ 12 mois</small><p>40 × 60 ou 60 × 40 cm, au bon ratio.</p><i>CHOISIR UNE PLACE ↗</i></button>
-<button data-plan="wide"><span>GRAND FORMAT OU PANORAMA</span><strong>30 €</strong><small>/ 12 mois</small><p>Grand paysage, grand portrait ou format long.</p><i>CHOISIR UNE PLACE ↗</i></button>
-<button data-plan="floor"><span>EMPLACEMENT AU SOL</span><strong>499 €</strong><small>/ 1 mois</small><p>1,20 × 1,20 m : photo, sculpture, panneau ou enseigne 3D.</p><i>CHOISIR UNE PLACE ↗</i></button>
+
+<section class="pricing" id="pricing"><div class="pricingHead"><div><span class="eyebrow">TARIFS DE DÉMONSTRATION · AUCUNE TRANSACTION</span><h2>UNE PLACE<br>POUR VOTRE ART.</h2></div><p>Chaque support possède un emplacement précis dans le musée. Comparez les <strong>prix indicatifs de simulation</strong> ci-dessous avant de tester un cadre ou une installation 3D. Aucune vente n’est ouverte et aucun paiement n’est prélevé.</p></div>
+<div class="exhibit-offer-catalog" aria-label="Catalogue indicatif des emplacements">
+  <div class="exhibit-offer-section">
+    <div class="exhibit-offer-heading"><div><span class="eyebrow">01 / EXPOSER SUR LES MURS</span><h3>LES CADRES <em>MURAUX.</em></h3><p>Du plus petit cadre au très grand, dans des modules de galerie de 3 mètres. Chaque module peut accueillir 1, 2, 4, 8 ou 16 œuvres selon le découpage.</p></div><div class="exhibit-offer-pictos" aria-hidden="true"><i class="frame-icon frame-xl"></i><i class="frame-icon frame-md"></i><i class="frame-icon frame-sm"></i></div></div>
+    <div class="exhibit-price-table-wrap"><table class="exhibit-price-table" id="wall-price-table"><caption class="visually-hidden">Formats et prix mensuels et annuels simulés des cadres muraux</caption><thead><tr><th scope="col">Format</th><th scope="col">Capacité par module</th><th scope="col">Par mois</th><th scope="col">Par an</th></tr></thead><tbody id="exhibit-wall-prices"><tr><td colspan="4">Chargement de la grille indicative…</td></tr></tbody></table></div>
+    <p class="exhibit-offer-footnote">Tarifs de référence du <strong>simulateur commercial</strong>, non contractuels. L’éditeur de démonstration utilise encore certains formats historiques ; la vente et le choix définitif des 5 tailles ne sont pas activés.</p>
+    <button class="exhibit-offer-cta" type="button" data-open>TESTER L’EXPOSITION D’UN CADRE <span aria-hidden="true">↗</span></button>
+  </div>
+  <div class="exhibit-offer-section exhibit-offer-3d">
+    <div class="exhibit-offer-heading"><div><span class="eyebrow">02 / EXPOSER DANS L’ALLÉE</span><h3>LES ŒUVRES <em>EN 3D.</em></h3><p>Statue, objet, sculpture, affiche sur panneau ou enseigne lumineuse. L’offre dépend de la <strong>portée d’affichage</strong> choisie, pas uniquement de la nature de l’œuvre.</p></div><div class="exhibit-offer-symbol" aria-hidden="true">◇</div></div>
+    <div class="exhibit-price-table-wrap"><table class="exhibit-price-table" id="aisle-price-table"><caption class="visually-hidden">Prix indicatifs des installations 3D selon visibilité et durée</caption><thead><tr><th scope="col">Portée d’affichage</th><th scope="col">1 jour</th><th scope="col">1 mois</th><th scope="col">1 an <small>projection*</small></th></tr></thead><tbody id="exhibit-aisle-prices"><tr><td colspan="4">Chargement de la grille indicative…</td></tr></tbody></table></div>
+    <p class="exhibit-offer-footnote">* Projection annuelle indicative calculée sur dix mois au tarif mensuel, <strong>non paramétrée et non réservable</strong> actuellement. Le simulateur propose pour le moment 1 jour, 1 semaine ou 30 jours. Les distances sont des seuils techniques prévus, pas une garantie de visibilité sans obstacle.</p>
+    <button class="exhibit-offer-cta" type="button" data-plan="floor">TESTER UNE INSTALLATION 3D <span aria-hidden="true">↗</span></button>
+  </div>
 </div>
 <section class="total-wall-offer" id="mur-total" aria-labelledby="total-wall-title">
  <div class="total-wall-eyebrow">NOUVELLE EXPÉRIENCE · CONCEPT PREMIUM</div>
@@ -178,4 +223,4 @@
   <p class="reserve-disclaimer"><strong>VERSION DÉMONSTRATION.</strong> Aucun paiement n’est effectué. La création reste uniquement sur cet appareil et n’est pas visible par les autres visiteurs.</p>
 </form></dialog>
 <dialog id="share"><button class="x" id="closeShare">×</button><div class="shareWrap"><span class="eyebrow">APERÇU D’EXPOSITION</span><h2>VOTRE CRÉATION<br>EST DANS LE MUSÉE.</h2><p>Démo : elle est visible seulement sur cet appareil, sans paiement.</p><canvas id="canvas" width="1080" height="1350"></canvas><div class="shareActions"><button class="btn dark" id="shareNative">PARTAGER</button><button class="btn" id="download">TÉLÉCHARGER LA CARTE</button><button class="btn" id="copy">COPIER L’ADRESSE DU MUSÉE</button></div></div></dialog>
-<script src="app.js?v=20261104brand"></script><script type="module" src="floor.js?v=20261104brand"></script><script type="module" src="engine-loader.js?v=20261109dualstick3baketimeout"></script></body></html>
+<script type="module" src="exhibit-offers.mjs?v=20261109a"></script><script src="app.js?v=20261104brand"></script><script type="module" src="floor.js?v=20261104brand"></script><script type="module" src="engine-loader.js?v=20261109dualstick3baketimeout"></script></body></html>
