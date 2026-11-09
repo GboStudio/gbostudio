@@ -54,14 +54,24 @@ for(const device of setups){
       }catch(initialError){
         const lighting=await page.locator('#walkOverlay').getAttribute('data-museum-lighting').catch(()=>null);
         console.warn('PREVIEW BAKE FIRST ATTEMPT',device.name,JSON.stringify({lighting,diagnostics:diagnostics.slice(-12)}));
-        // SwiftShader on the shared CI runner can exhaust the optional GLB's
-        // 15s download budget while warming the first WebGL context. Retry
-        // a fresh visit once, but never pass without the real baked geometry.
-        await page.reload({waitUntil:'domcontentloaded',timeout:45000});
-        await page.waitForFunction(()=>window.__TUM_PREMIUM_READY===true,null,{timeout:65000});
-        await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.museumArchitecture==='physical-v3',null,{timeout:25000});
-        await page.waitForFunction(baked,null,{timeout:45000});
-        console.log('PASS verified Blender bake after cold-render retry',device.name);
+        // A shared SwiftShader runner may abort a cold GLB request while
+        // compiling its first WebGL context. Keep the baked-geometry assertion,
+        // but allow two fresh-load retries rather than failing on the first
+        // transient asset timeout. Never report success on a V3 fallback.
+        let restored=false;
+        for(let attempt=1;attempt<=2&&!restored;attempt++){
+          try{
+            await page.reload({waitUntil:'domcontentloaded',timeout:45000});
+            await page.waitForFunction(()=>window.__TUM_PREMIUM_READY===true,null,{timeout:65000});
+            await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.museumArchitecture==='physical-v3',null,{timeout:25000});
+            await page.waitForFunction(baked,null,{timeout:75000});
+            restored=true;
+            console.log('PASS verified Blender bake after cold-render retry',device.name,attempt);
+          }catch(error){
+            console.warn('BAKED GLB RETRY FAILED',device.name,attempt,String(error).slice(0,200));
+            if(attempt===2)throw error;
+          }
+        }
       }
       const primitiveCount=Number(await page.locator('#walkOverlay').getAttribute('data-museum-bake-primitives'));
       assert.ok(primitiveCount>0 && primitiveCount<=12,'Cycles baked scene must have a bounded draw-call count');

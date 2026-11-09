@@ -1,12 +1,12 @@
 // The Unreal Museum · V7 — simplified mobile gallery navigation.
 // The renderer remains responsible for all camera physics.
 // Visitors can look freely while moving safely down the central aisle.
-export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nextStop,onTourChange,onViewChange}) {
+export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,adjustZoom,nextStop,onTourChange,onViewChange}) {
   const shell=document.createElement("div");
   shell.className="museum-v5-shell";
   shell.innerHTML=`
     <div class="museum-v5-reticle" aria-hidden="true"></div>
-    <div class="museum-v5-help" aria-live="polite">GLISSEZ POUR REGARDER · JOYSTICK POUR VOUS DÉPLACER</div>
+    <div class="museum-v5-help" aria-live="polite">GAUCHE : REGARD · DROITE : DÉPLACEMENT · ZOOM + / −</div>
     <div class="museum-v5-notice" aria-live="polite"></div>
     <div class="museum-v5-drive" aria-label="Déplacement assisté">
       <button type="button" id="museumAdvance" aria-pressed="false" aria-label="Découvrir l’œuvre suivante de l’exposition">
@@ -15,10 +15,21 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
       <small>UNE ŒUVRE À CHAQUE APPUI</small>
     </div>
     <div class="museum-v5-joystick" aria-label="Déplacement libre">
-      <div class="joystick-ring" role="group" aria-label="Joystick de déplacement : haut, bas, gauche et droite">
+      <div class="joystick-ring" role="group" aria-label="Joystick droit : déplacement avant, arrière et latéral">
         <div class="joystick-knob"></div>
       </div>
-      <small>MODE LIBRE</small>
+      <small>DÉPLACEMENT</small>
+    </div>
+    <div class="museum-v5-lookstick" aria-label="Orientation de la caméra">
+      <div class="lookstick-ring" role="group" aria-label="Joystick gauche : regarder à gauche, à droite, en haut et en bas">
+        <div class="lookstick-knob"></div>
+      </div>
+      <small>REGARD</small>
+    </div>
+    <div class="museum-v5-zoom" role="group" aria-label="Zoom de la caméra">
+      <button type="button" id="museumZoomOut" aria-label="Dézoomer">−</button>
+      <span aria-hidden="true">ZOOM</span>
+      <button type="button" id="museumZoomIn" aria-label="Zoomer">+</button>
     </div>
     <div class="museum-v5-dock">
       <button type="button" id="museumTour" aria-pressed="false">▶ &nbsp; VISITE GUIDÉE</button>
@@ -35,16 +46,29 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
   shell.style.zIndex="40";
   shell.style.pointerEvents="none";
   overlay.appendChild(shell);
-  for(const cls of [".museum-v5-dock",".museum-v5-drive",".museum-v5-joystick"]){
+  for(const cls of [".museum-v5-dock",".museum-v5-drive",".museum-v5-joystick",".museum-v5-lookstick",".museum-v5-zoom"]){
     const element=shell.querySelector(cls);
     if(element)element.style.pointerEvents="auto";
   }
   shell.querySelectorAll("button").forEach(button=>button.style.pointerEvents="auto");
+  // Safari and some emulated coarse-pointer browsers may retain the desktop
+  // display:none rule even when the joysticks are visible: make zoom explicit.
+  if(mobile){
+    const zoomControls=shell.querySelector(".museum-v5-zoom");
+    zoomControls.style.setProperty("display","flex","important");
+    zoomControls.style.setProperty("visibility","visible","important");
+    for(const button of zoomControls.querySelectorAll("button")){
+      button.style.setProperty("display","grid","important");
+      button.style.setProperty("visibility","visible","important");
+    }
+  }
   const $=sel=>shell.querySelector(sel);
   const tourBtn=$("#museumTour"),cruiseBtn=$("#museumAdvance"),freeBtn=$("#museumFreeToggle"),nextBtn=$("#museumNextStop"),viewBtn=$("#museumView");
   const reticle=$(".museum-v5-reticle"),notice=$(".museum-v5-notice"),help=$(".museum-v5-help"),guide=overlay.querySelector(".walk-guide");
   const zone=$(".joystick-ring"),knob=$(".joystick-knob"),joystick=$(".museum-v5-joystick");
-  let stick={x:0,y:0},touchId=null,auto=false,cruise=false,free=false,elapsed=0,visible=false,pausedTour=false,resumeRequested=false,resumeAvailable=false,viewMode="art";
+  const lookZone=$(".lookstick-ring"),lookKnob=$(".lookstick-knob"),lookJoystick=$(".museum-v5-lookstick");
+  let stick={x:0,y:0},touchId=null,lookStick={x:0,y:0},lookTouchId=null;
+  let auto=false,cruise=false,free=false,elapsed=0,visible=false,pausedTour=false,resumeRequested=false,resumeAvailable=false,viewMode="art";
   let toastTimer=0,helpTimer=0,guideTimer=0;
   function toast(message){
     notice.textContent=message;
@@ -85,7 +109,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
       resumeRequested=pausedTour||resumeAvailable;
       resumeAvailable=false;
       if(cruise)stopCruise();
-      if(free){free=false;shell.classList.remove("is-free");freeBtn.setAttribute("aria-pressed","false");freeBtn.textContent="◌  MODE LIBRE";releaseStick();}
+      if(free){free=false;shell.classList.remove("is-free");freeBtn.setAttribute("aria-pressed","false");freeBtn.textContent="◌  MODE LIBRE";releaseStick();releaseLookStick();}
       pausedTour=false;
     }else if(auto){pausedTour=true;}
     auto=Boolean(next);
@@ -111,7 +135,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     }
   }
   function releaseInputs(){
-    releaseStick();
+    releaseStick();releaseLookStick();
     stopCruise();
     if(auto)manual();
   }
@@ -132,8 +156,8 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     shell.classList.toggle("is-free",free);
     freeBtn.setAttribute("aria-pressed",String(free));
     freeBtn.textContent=free?"✓  MODE LIBRE":"◌  MODE LIBRE";
-    releaseStick();
-    toast(free?"MODE LIBRE · DÉPLACEZ LE JOYSTICK À DROITE":"MODE GUIDÉ · ŒUVRE SUIVANTE");
+    releaseStick();releaseLookStick();
+    toast(free?"GAUCHE POUR REGARDER · DROITE POUR MARCHER":"MODE GUIDÉ · ŒUVRE SUIVANTE");
   });
   $("#museumFull").addEventListener("click",async()=>{
     try{
@@ -173,6 +197,37 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
   });
   for(const evt of ["pointerup","pointercancel","lostpointercapture"])
     zone.addEventListener(evt,releaseStick);
+  // Each stick captures its own pointer: truly simultaneous walking and looking.
+  function updateLookStick(event){
+    const b=lookZone.getBoundingClientRect();
+    let x=(event.clientX-b.left-b.width/2)/(b.width*.38);
+    let y=(event.clientY-b.top-b.height/2)/(b.height*.38);
+    const m=Math.hypot(x,y);
+    if(m>1){x/=m;y/=m;}
+    const live=m>=.13;
+    lookStick=live?{x,y}:{x:0,y:0};
+    const travel=b.width*.31;
+    lookKnob.style.transform="translate("+Math.round(lookStick.x*travel)+"px,"+Math.round(lookStick.y*travel)+"px)";
+    if(live){takeControl();lookJoystick.classList.add("active");}
+  }
+  function releaseLookStick(event){
+    if(lookTouchId!==null && event && event.pointerId!==lookTouchId)return;
+    lookTouchId=null;lookStick={x:0,y:0};
+    lookKnob.style.transform="translate(0px,0px)";
+    lookJoystick.classList.remove("active");
+  }
+  lookZone.addEventListener("pointerdown",event=>{
+    if(lookTouchId!==null||!free)return;
+    event.preventDefault();event.stopPropagation();
+    lookTouchId=event.pointerId;lookZone.setPointerCapture(event.pointerId);updateLookStick(event);
+  });
+  lookZone.addEventListener("pointermove",event=>{
+    if(event.pointerId===lookTouchId){event.preventDefault();updateLookStick(event);}
+  });
+  for(const evt of ["pointerup","pointercancel","lostpointercapture"])
+    lookZone.addEventListener(evt,releaseLookStick);
+  $("#museumZoomIn").addEventListener("click",()=>adjustZoom?.(-4));
+  $("#museumZoomOut").addEventListener("click",()=>adjustZoom?.(4));
   window.addEventListener("blur",releaseInputs);
   document.addEventListener("visibilitychange",()=>{if(document.hidden)releaseInputs()});
   window.addEventListener("keydown",event=>{
@@ -189,6 +244,8 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     return {
       forward:mobile&&free?-stick.y:0,
       strafe:mobile&&free?stick.x:0,
+      lookX:mobile&&free?lookStick.x:0,
+      lookY:mobile&&free?lookStick.y:0,
       cruise:false,
       simple:mobile&&!free,
       auto,resume,t:elapsed
@@ -199,7 +256,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     shell.classList.add("is-free");
     freeBtn.setAttribute("aria-pressed","true");
     freeBtn.textContent="✓  MODE LIBRE";
-    releaseStick();
+    releaseStick();releaseLookStick();
     setZoom?.(mobile?60:59);
     guide?.classList.remove("is-faded");
     clearTimeout(guideTimer);
@@ -209,7 +266,7 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,nex
     helpTimer=setTimeout(()=>help.classList.remove("show"),mobile?14000:7500);
   }
   function leave(){
-    visible=false;finishTour();stopCruise();releaseStick();
+    visible=false;finishTour();stopCruise();releaseStick();releaseLookStick();
     help.classList.remove("show");
     clearTimeout(guideTimer);
   }
