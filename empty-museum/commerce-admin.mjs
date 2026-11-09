@@ -85,10 +85,11 @@ function renderAisle(){
   $('#station').value=stationId;
   $('#objectType').innerHTML=AISLE_TYPES.map(item=>'<option value="'+item.id+'">'+item.label+'</option>').join('');
   $('#objectType').value=objectType;
-  $('#distances').innerHTML=DISTANCE_LEVELS.map(item=>'<button type="button" data-distance="'+item.id+'" aria-pressed="'+(distanceId===item.id)+'">'+item.label+' · '+item.meters+' m</button>').join('');
+  $('#distances').innerHTML=DISTANCE_LEVELS.map(item=>'<button type="button" data-distance="'+item.id+'" aria-pressed="'+(distanceId===item.id)+'">'+item.label+' · '+config.aisle.distanceMetres[item.id]+' m</button>').join('');
   $('#durations').innerHTML=AISLE_DURATIONS.map(item=>'<button type="button" data-days="'+item.days+'" aria-pressed="'+(days===item.days)+'">'+item.label+'</button>').join('');
+  $('#rangeFields').innerHTML=DISTANCE_LEVELS.map(d=>'<div class="field"><label for="range-'+d.id+'">'+d.label+' (m)</label><input id="range-'+d.id+'" type="number" step="1" min="5" max="200" data-range="'+d.id+'" value="'+config.aisle.distanceMetres[d.id]+'"></div>').join('');
   const choiceIndex=DISTANCE_LEVELS.findIndex(d=>d.id===distanceId);
-  $('#aisleMap').innerHTML=DISTANCE_LEVELS.map((d,i)=>'<div class="aisle-segment'+(i<=choiceIndex?' on':'')+'"><span>'+(i===0?'◆':i===1?'◇':'·')+'</span><strong>'+d.meters+' m</strong><small>'+(i<=choiceIndex?'Zone incluse':'Au-delà du seuil')+'</small></div>').join('');
+  $('#aisleMap').innerHTML=DISTANCE_LEVELS.map((d,i)=>'<div class="aisle-segment'+(i<=choiceIndex?' on':'')+'"><span>'+(i===0?'◆':i===1?'◇':'·')+'</span><strong>'+config.aisle.distanceMetres[d.id]+' m</strong><small>'+(i<=choiceIndex?'Zone incluse':'Au-delà du seuil')+'</small></div>').join('');
   const amount=aislePrice(config,distanceId,days).amount;
   $('#aisleSelection').textContent=AISLE_TYPES.find(o=>o.id===objectType).label+' · '+stationId;
   $('#aisleDetails').textContent=DISTANCE_LEVELS.find(d=>d.id===distanceId).label+' (jusqu’à '+aislePrice(config,distanceId,days).maxVisibleDistanceM+' m) · '+AISLE_DURATIONS.find(d=>d.days===days).label;
@@ -108,7 +109,7 @@ function renderWallPrices(){
 }
 function renderAislePrices(){
   $('#aislePricesTable').innerHTML=DISTANCE_LEVELS.map(level=>
-    '<tr><td><strong>'+level.label+' · '+level.meters+' m</strong></td>'+
+    '<tr><td><strong>'+level.label+' · '+config.aisle.distanceMetres[level.id]+' m</strong></td>'+
     AISLE_DURATIONS.map(duration=>
       '<td><input aria-label="'+level.label+' '+duration.label+'" data-aisle-price="'+level.id+'" data-days="'+duration.days+'" type="number" step=".01" min="0" max="10000000" value="'+config.aisle.pricing[level.id][String(duration.days)]+'"></td>'
     ).join('')+'</tr>'
@@ -198,6 +199,18 @@ $('#bookAisle').addEventListener('click',()=>{
   try{
     const reservation=createPreviewReservation({config,reservations,type:'aisle',stationId,objectType,distanceId,days});
     reservations.push(reservation);persist();render();notify('Installation 3D simulée, sans paiement.');
+  }catch(error){notify(error.message,true)}
+});
+$('#saveRanges').addEventListener('click',()=>{
+  try{
+    const next=deepCopy(config);
+    $('[data-range]').forEach(input=>{
+      if(input.value.trim()==='')throw new Error('Une portée est vide.');
+      next.aisle.distanceMetres[input.dataset.range]=Number(input.value);
+    });
+    config=normalizeCommerceConfig(next);
+    persist();render();renderAislePrices();
+    notify('Nouvelles distances de visibilité enregistrées localement.');
   }catch(error){notify(error.message,true)}
 });
 $('#saveAislePrices').addEventListener('click',()=>{
