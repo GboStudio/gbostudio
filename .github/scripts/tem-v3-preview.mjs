@@ -46,6 +46,40 @@ for(const device of setups){
     assert.equal(entry.visitLink,'immersive','Visitor CTA must enter the actual 3D museum');
     assert.ok(entry.primary.visible&&entry.primary.inside&&entry.secondary.visible&&entry.secondary.inside,
       'Both entry CTAs must remain visible and within viewport width');
+    // The visitor must be able to understand how to submit an artwork
+    // and compare truthful simulator prices before trying to exhibit.
+    await page.waitForFunction(()=>document.querySelectorAll('#exhibit-wall-prices tr').length===5
+      &&document.querySelectorAll('#exhibit-aisle-prices tr').length===3,null,{timeout:15000});
+    const catalog=await page.evaluate(()=>{
+      const text=document.querySelector('#how')?.textContent||'';
+      const wall=[...document.querySelectorAll('#exhibit-wall-prices tr')].map(x=>x.textContent);
+      const aisle=[...document.querySelectorAll('#exhibit-aisle-prices tr')].map(x=>x.textContent);
+      return {helpLink:!!document.querySelector('a[href="#how"].editorial-help-link'),
+        steps:document.querySelectorAll('#how .exhibit-steps article').length,
+        kinds:document.querySelectorAll('#how .exhibit-kind').length,
+        legalDemo:/restent sur votre appareil/.test(text)&&/ni facturées/.test(text),
+        annualProjection:/projection/i.test(document.querySelector('.exhibit-offer-3d')?.textContent||''),
+        wall,aisle};
+    });
+    assert.ok(catalog.helpLink&&catalog.legalDemo&&catalog.annualProjection,'Exhibition guidance must be truthful and accessible');
+    assert.equal(catalog.steps,4);
+    assert.equal(catalog.kinds,4);
+    assert.equal(catalog.wall.length,5);
+    assert.equal(catalog.aisle.length,3);
+    assert.match(catalog.wall[0],/Petit/);
+    assert.match(catalog.wall[4],/Très grand/);
+    assert.match(catalog.aisle[0],/Proximité/);
+    assert.match(catalog.aisle[2],/Monumental/);
+    assert.ok(catalog.wall.every(x=>x.includes('€'))&&catalog.aisle.every(x=>x.includes('€')),
+      'Every public demonstration tariff must render from the commercial model');
+    console.log('PASS visitor exhibit guide and transparent tariff catalog',device.name,
+      JSON.stringify({steps:catalog.steps,kinds:catalog.kinds,wall:catalog.wall.length,aisle:catalog.aisle.length}));
+    await page.locator('button.exhibit-offer-cta[data-open]').click({timeout:15000});
+    await page.waitForFunction(()=>document.querySelector('#exhibit')?.open===true,null,{timeout:10000});
+    await page.keyboard.press('Escape');
+    await page.locator('.exhibit-how-buttons button[data-plan="floor"]').click({timeout:15000});
+    await page.waitForFunction(()=>document.querySelector('#floorStudio')?.open===true,null,{timeout:15000});
+    await page.keyboard.press('Escape');
     await page.locator('.editorial-secondary').click({timeout:10000});
     await page.waitForFunction(()=>document.querySelector('#exhibit')?.open===true,null,{timeout:10000});
     console.log('PASS editorial homepage',device.name,JSON.stringify(entry));
