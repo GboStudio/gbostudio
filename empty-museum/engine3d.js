@@ -253,7 +253,10 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   portalFront.renderOrder=3;
   // Optional real Cycles light-baked architectural entrance: V3 remains usable
   // until the generated GLB has been verified and downloaded.
-  addBakedEntranceV4({scene,overlay}).catch(error=>
+  // Loading stays asynchronous; the visitor can already explore the V3
+  // gallery while the verified Blender light-bake arrives. Software WebGL
+  // and slower desktop devices need more than the old hard 15s cutoff.
+  addBakedEntranceV4({scene,overlay,timeoutMs:mobile?25000:90000}).catch(error=>
     console.warn("[TEM] Nonblocking V4 architectural enhancement",error));
   // No gold stripes or decorative circles cutting through the real stone floor.
   // The actual large-format stone joints provide the entire floor rhythm.
