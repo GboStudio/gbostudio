@@ -13,6 +13,7 @@ args=parser.parse_args()
 out=Path(args.out)
 manifest=json.loads((out/"room-v12-manifest.json").read_text())
 assert manifest["status"]=="STAGING_ONLY_NOT_LIVE"
+assert "Cycles" in manifest.get("denoise",""),"Export must include denoised, still physically calculated GI"
 assert manifest["room_dimensions_m"]==[9.2,6.4,14.0]
 assert manifest["floor_type"].startswith("continuous mineral microcement")
 binary=(out/"room-v12-baked.glb").read_bytes()
