@@ -80,7 +80,7 @@ function getWallDisplaySlots(){
       ||(panel.ordinal===1?bay?.piece:null)||null;
     const price=mix.PRICES[panel.formatId].monthly;
     const name=mix.FORMATS[panel.formatId].name;
-    const dimensions=panel.widthM.toFixed(2).replace('.',',)+' × '+panel.heightM.toFixed(2).replace('.',',')+' m';
+    const dimensions=panel.widthM.toFixed(2).replace('.',',')+' × '+panel.heightM.toFixed(2).replace('.',',')+' m';
     return {...panel,side:panel.parentBayId%2?1:-1,
       z:5.7+panel.parentBayId*3.5,
       y:.9+panel.yM+panel.heightM/2,
