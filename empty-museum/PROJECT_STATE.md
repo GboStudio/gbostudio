@@ -55,6 +55,12 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Guide d'activation et vérification : `.github/MUSEUM_MAIN_PROTECTION.md`.
 - Interdiction de fusionner cette PR avant tous ses checks verts ; ne jamais considérer un simple workflow comme équivalent à une protection de branche.
 
+## Renforcement de la coordination — 9 novembre 2026
+- Contrôler les références statiques réellement chargées par l'entrée, le moteur 3D et les styles associés pour détecter les dépendances locales manquantes avant fusion.
+- Vérifier le contrat des deux joysticks + zoom, la priorité des commandes manuelles et la présence des tests de sécurité dans les pipelines.
+- Exécuter des jeux de tests positifs **et négatifs** du garde-fou : un contrôle qui ne sait pas échouer lors d'une rupture simulée ne fournit aucune garantie.
+- Les tests statiques ne prouvent ni la qualité visuelle ni le succès de publication. Utiliser séparément Playwright et la vérification du déploiement GitHub Pages correspondant au SHA exact.
+
 ## Sécurité phase 2 — correctifs proposés (branche dédiée, non encore fusionnés)
 - Contrôle d'import des images JPG/PNG/WebP : signature réelle, taille de fichier et dimensions décodées avant création de canvas.
 - Budget de ressources pour glTF/GLB/STL et interdiction des URI externes/malformées et boucles de nœuds.
