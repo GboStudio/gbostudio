@@ -38,3 +38,12 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Test de régression ajouté aux contrôles CI/quotidiens ; validation des tests unitaires de la branche antérieure réussie, validation navigateur complète à renouveler après synchronisation avec `main`.
 - **La commercialisation demeure en démonstration.** Aucun compte administrateur, paiement réel ni publication serveur ne doit être activé sans autorisations serveur, modération, vérification des règles RLS effectivement déployées et audit des en-têtes HTTP.
 - Référence de sécurité : `empty-museum/docs/SECURITY.md` ; la validation finale exige tests PR puis contrôles de déploiement de la révision exacte.
+
+
+## Protection des fusions de `main` — 9 novembre 2026
+
+- Décision : un seul statut **`Museum PR quality gate`**, toujours présent sur les PR vers `main`, doit devenir obligatoire dans GitHub.
+- Les PR qui modifient le musée exigent à la fois la validation des modules, de la cohérence, de la sécurité, du configurateur et le rendu de navigation desktop/mobile. Les PR sans changement du musée ne sont pas soumises aux tests 3D lourds.
+- La PR `feature/museum-required-main-gate-20261109` prépare le contrôle fail-closed et sa documentation. **La protection n'est PAS encore active** tant qu'un administrateur GitHub n'a pas appliqué une règle à `main` exigeant `Museum PR quality gate`.
+- Guide d'activation et vérification : `.github/MUSEUM_MAIN_PROTECTION.md`.
+- Interdiction de fusionner cette PR avant tous ses checks verts ; ne jamais considérer un simple workflow comme équivalent à une protection de branche.
