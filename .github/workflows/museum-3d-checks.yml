@@ -8,14 +8,48 @@ on:
     paths:
       - 'empty-museum/**'
       - '.github/workflows/museum-3d-checks.yml'
+  # The required quality-gate job must appear on EVERY PR to main.
+  # Restrict the heavy jobs at the job level, never with a workflow path filter.
   pull_request:
-    paths:
-      - 'empty-museum/**'
+    branches: [main]
 permissions:
   contents: read
 jobs:
+  changes:
+    name: Detect museum-related changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      museum: ${{ steps.scope.outputs.museum }}
+    steps:
+      - name: Checkout PR merge candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Classify changed files against the PR merge candidate
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "museum=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Pull requests check out refs/pull/N/merge. Both parents must exist.
+          git cat-file -e 'HEAD^1^{commit}'
+          git cat-file -e 'HEAD^2^{commit}'
+          git diff --name-only HEAD^1 HEAD^2 > /tmp/museum-changed-paths.txt
+          cat /tmp/museum-changed-paths.txt
+          if grep -Eq '^(empty-museum/|AGENTS\.md$|\.github/(scripts/(tem-|museum-)|workflows/(tem-|museum-)|scripts/(wait-pages-deployment|test-wait-pages-deployment)))' /tmp/museum-changed-paths.txt; then
+            echo "museum=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "museum=false" >> "$GITHUB_OUTPUT"
+          fi
+
   validation:
     name: Node inventory and module checks
+    needs: [changes]
+    if: needs.changes.outputs.museum == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -29,6 +63,10 @@ jobs:
         run: python3 empty-museum/blender/validate_bake.py --asset-dir empty-museum/assets
       - name: Verify safe CI triggers and non-mutating Blender build
         run: node --test empty-museum/tests/ci-guard.test.mjs
+      - name: Check shared museum contract and canonical entry
+        run: node .github/scripts/museum-coherence.mjs
+      - name: Guard against stored-content XSS and unsafe image uploads
+        run: node --test empty-museum/tests/security-hardening.test.mjs
       - name: Validate public deployment gate against success and failure fixtures
         run: python3 .github/scripts/test-wait-pages-deployment.py
       - name: Run museum smoke tests
@@ -42,6 +80,8 @@ jobs:
 
   browser-preview:
     name: Architectural staging render (desktop and mobile)
+    needs: [changes]
+    if: needs.changes.outputs.museum == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     steps:
@@ -70,3 +110,38 @@ jobs:
           path: /tmp/museum-v3-*.png
           if-no-files-found: ignore
           retention-days: 7
+
+  quality-gate:
+    # Require ONLY this stable job in the main-branch protection settings.
+    # A failed dependency must NEVER turn into a falsely successful skipped gate.
+    name: Museum PR quality gate
+    needs: [changes, validation, browser-preview]
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Block merge unless all applicable museum checks passed
+        shell: bash
+        env:
+          DETECTION: ${{ needs.changes.result }}
+          MUSEUM: ${{ needs.changes.outputs.museum }}
+          NODE: ${{ needs.validation.result }}
+          BROWSER: ${{ needs.browser-preview.result }}
+        run: |
+          set -euo pipefail
+          if [[ "$DETECTION" != "success" ]]; then
+            echo "::error::Cannot determine which project changed."
+            exit 1
+          fi
+          if [[ "$MUSEUM" == "true" ]]; then
+            if [[ "$NODE" != "success" || "$BROWSER" != "success" ]]; then
+              echo "::error::Museum tests incomplete or failed: node=$NODE, browser=$BROWSER"
+              exit 1
+            fi
+            echo "All museum checks passed: Node, coherence, desktop/mobile browser."
+          elif [[ "$MUSEUM" == "false" ]]; then
+            echo "No museum changes; unrelated GBO Studio projects are not blocked by 3D tests."
+          else
+            echo "::error::Unrecognized scope: $MUSEUM"
+            exit 1
+          fi
