@@ -51,6 +51,17 @@ export function createMuseumV5Navigation({overlay,canvas,mobile,home,setZoom,adj
     if(element)element.style.pointerEvents="auto";
   }
   shell.querySelectorAll("button").forEach(button=>button.style.pointerEvents="auto");
+  // Safari and some emulated coarse-pointer browsers may retain the desktop
+  // display:none rule even when the joysticks are visible: make zoom explicit.
+  if(mobile){
+    const zoomControls=shell.querySelector(".museum-v5-zoom");
+    zoomControls.style.setProperty("display","flex","important");
+    zoomControls.style.setProperty("visibility","visible","important");
+    for(const button of zoomControls.querySelectorAll("button")){
+      button.style.setProperty("display","grid","important");
+      button.style.setProperty("visibility","visible","important");
+    }
+  }
   const $=sel=>shell.querySelector(sel);
   const tourBtn=$("#museumTour"),cruiseBtn=$("#museumAdvance"),freeBtn=$("#museumFreeToggle"),nextBtn=$("#museumNextStop"),viewBtn=$("#museumView");
   const reticle=$(".museum-v5-reticle"),notice=$(".museum-v5-notice"),help=$(".museum-v5-help"),guide=overlay.querySelector(".walk-guide");
