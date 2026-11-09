@@ -22,16 +22,16 @@ let pieces=base.slice(0,6), filter='all', plan={size:'standard',price:9.9}, uplo
 try{const s=JSON.parse(localStorage.getItem('tem-demo')||'[]');if(Array.isArray(s))pieces=[...base.slice(0,6),...s]}catch(e){}
 const grid=$('#grid'),viewport=$('#viewport');
 const FORMATS={
-  mini:{name:'Petit portrait',dimensions:'20 × 30 cm',ratio:2/3,price:9.90},
-  portrait:{name:'Portrait',dimensions:'40 × 60 cm',ratio:2/3,price:19.90},
+  mini:{name:'Petit portrait',dimensions:'20 × 30 cm',ratio:2/3,price:4.95},
+  portrait:{name:'Portrait',dimensions:'40 × 60 cm',ratio:2/3,price:9.95},
   landscape:{name:'Paysage',dimensions:'60 × 40 cm',ratio:3/2,price:19.90},
-  tall:{name:'Grand portrait',dimensions:'60 × 90 cm',ratio:2/3,price:30},
+  tall:{name:'Grand portrait',dimensions:'60 × 90 cm',ratio:2/3,price:15},
   wide:{name:'Grand paysage',dimensions:'90 × 60 cm',ratio:3/2,price:30},
   panorama:{name:'Panoramique',dimensions:'100 × 40 cm',ratio:5/2,price:30},
   floor:{name:'Emplacement au sol',dimensions:'1,80 × 1,50 m',ratio:1.2,price:249.50},
   'ceiling-mini':{name:'Cadre suspendu',dimensions:'20 × 30 cm',ratio:2/3,price:19.90},
-  'ceiling-medium':{name:'Caisson lumineux',dimensions:'60 × 40 cm',ratio:3/2,price:29.90},
-  'ceiling-large':{name:'Bannière aérienne',dimensions:'90 × 60 cm',ratio:3/2,price:40}
+  'ceiling-medium':{name:'Caisson lumineux',dimensions:'60 × 40 cm',ratio:3/2,price:14.95},
+  'ceiling-large':{name:'Bannière aérienne',dimensions:'90 × 60 cm',ratio:3/2,price:20}
 };
 // Deux premiers cadres à gauche (0, 2) et à droite (1, 3) : espaces publicitaires hors vente.
 const AD_RESERVED_SLOTS=new Set([0,1,2,3]);
@@ -134,13 +134,13 @@ function openExhibit(size='landscape',price=null,slot=null){
   const commercial=typeof slot==='string'&&slot.startsWith('M')?getWallDisplaySlots().find(p=>p.id===slot&&!p.piece):null;
   if(typeof slot==='string'&&slot.startsWith('M')&&!commercial)return;
   const chosen=commercial?.format||FORMATS[size]||FORMATS.landscape;
-  plan={size,price:price===null?chosen.price:Number(price)};
+  plan={size,price:price===null?(commercial?.price??chosen.price):Number(price)};
   selectedSlot=slot;
   const isFloor=typeof slot==='string' && slot.startsWith('S');
   const isCeiling=typeof slot==='string' && slot.startsWith('P');
   $('#durationLabel').textContent=commercial?'EXPOSITION · 1 MOIS':'EXPOSITION · 12 MOIS';
   const reserveTerm=document.querySelector('.reserve-pay small');
-  if(reserveTerm)reserveTerm.textContent=commercial?'1 MOIS':isCeiling?'12 MOIS':'1 MOIS';
+  if(reserveTerm)reserveTerm.textContent=commercial?'1 MOIS':'12 MOIS';
   const name=commercial?'MODULE '+String(commercial.moduleNumber).padStart(3,'0')+' · '+commercial.format.name.toUpperCase()+' · CADRE '+commercial.ordinal:isCeiling?'PLAFOND · '+slot:isFloor?'ESPACE AU SOL N°'+slot.slice(1):(Number.isInteger(slot)?'MUR '+(slot%2?'DROIT':'GAUCHE')+' · CADRE N°'+String(slot+1).padStart(2,'0'):'EMPLACEMENT LIBRE');
   $('#slotName').textContent=name;
   $('#formatName').textContent=chosen.name;
