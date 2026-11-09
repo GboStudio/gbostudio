@@ -45,7 +45,20 @@ try{
   assert.equal(await page.locator('[data-range="landmark"]').inputValue(),'90');
   assert.equal(await page.locator('#wallGrid [data-slot]').count(),16);
   assert.match(await page.locator('#wallPrice').textContent(),/11/);
-  assert.deepEqual(errors,[],'No uncaught browser script errors');
+  // Exercise the REAL museum entry, not just the administration prototype.
+  const front=await page.goto(origin,{waitUntil:'domcontentloaded',timeout:45000});
+  assert.equal(front?.status(),200);
+  await page.waitForFunction(()=>Boolean(window.TEM?.getWallDisplaySlots&&window.TEM?.openFloor),null,{timeout:45000});
+  assert.equal(await page.evaluate(()=>window.TEM.getWallDisplaySlots().length),116);
+  assert.equal(await page.evaluate(()=>window.TEM.getFloorSlots().length),4);
+  await page.locator('[data-plan="floor"]').click();
+  await page.locator('#floorQuotedPrice').waitFor({state:'visible'});
+  assert.match(await page.locator('#floorQuotedPrice').textContent(),/145/);
+  await page.locator('#floorDurationDays').selectOption('7');
+  await page.locator('#floorVisibilityTier').selectOption('gallery');
+  assert.match(await page.locator('#floorQuotedPrice').textContent(),/1\\s?245/);
+  await page.locator('#floorClose').click();
+    assert.deepEqual(errors,[],'No uncaught browser script errors');
   console.log('PASS: configurator geometry, exclusivity, premium prices and storage persistence.');
 }catch(error){
   failed=true;
