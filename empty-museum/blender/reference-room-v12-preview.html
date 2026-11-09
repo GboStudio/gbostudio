@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>THE UNREAL MUSEUM — V12 Salle témoin / Cycles</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;font:13px/1.5 system-ui,Arial,sans-serif;color:#f4f3f0;background:#20211f}
+canvas{display:block;width:100vw;height:100dvh;touch-action:none}
+header{position:fixed;left:16px;right:16px;top:16px;display:flex;justify-content:space-between;gap:16px;pointer-events:none}
+header>div{padding:12px 17px;border-radius:8px;background:#20211fb5;backdrop-filter:blur(12px);max-width:min(490px,76vw)}
+header b{display:block;letter-spacing:.14em;font-size:11px}
+header span{font-size:11px;color:#d0ccc3}
+footer{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);padding:9px 15px;background:#20211fc9;border-radius:9px;font-size:11px;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
+#status{position:fixed;right:16px;bottom:65px;background:#20211fd9;padding:9px 13px;border-radius:8px}
+@media(max-width:650px){header>div{max-width:none}header>div:nth-child(2){display:none}footer{font-size:10px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script></head>
+<body>
+<canvas id="v12Canvas" aria-label="Salle témoin Blender Cycles du musée"></canvas>
+<header><div><b>THE UNREAL MUSEUM — V12</b><span>SALLE TÉMOIN · BAKED BLENDER CYCLES · NON PUBLIÉE</span></div><div><span>Géométrie et GI statiques véritables · sans œuvres publiques</span></div></header>
+<div id="status" role="status">Chargement de la scène témoin…</div>
+<footer>Glisser pour regarder · WASD/ZQSD pour avancer · Molette pour zoomer</footer>
+<script type="module">
+import * as THREE from "three";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
+const canvas=document.querySelector("#v12Canvas"),status=document.querySelector("#status");
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xe4e3df);
+const camera=new THREE.PerspectiveCamera(59,1,.08,60);
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:"high-performance"});
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=.93;
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,matchMedia("(pointer:coarse)").matches?1.45:1.8));
+const eye=new THREE.Vector3(0,1.72,-.8);
+let yaw=0,pitch=.065;
+const keys=new Set();let down=null,ready=false,last=performance.now();
+function fit(){const width=innerWidth,height=innerHeight;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();}
+addEventListener("resize",fit);fit();
+const updateView=()=>{camera.position.copy(eye);camera.rotation.order="YXZ";// Three.js faces -Z by default. Our exported gallery extends toward +Z.
+camera.rotation.y=Math.PI+yaw;camera.rotation.x=-pitch;};
+updateView();
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  if(ready){
+    const speed=(keys.has("Shift")?3.6:2.0)*dt;
+    const f=(keys.has("KeyW")||keys.has("KeyZ")||keys.has("ArrowUp")?1:0)
+      -(keys.has("KeyS")||keys.has("ArrowDown")?1:0);
+    const a=(keys.has("KeyD")?1:0)-(keys.has("KeyA")||keys.has("KeyQ")?1:0);
+    eye.z=Math.max(-1.1,Math.min(13.2,eye.z+Math.cos(yaw)*f*speed-Math.sin(yaw)*a*speed));
+    eye.x=Math.max(-4.15,Math.min(4.15,eye.x+Math.sin(yaw)*f*speed+Math.cos(yaw)*a*speed));
+    updateView();
+  }
+  renderer.render(scene,camera);
+}
+requestAnimationFrame(loop);
+canvas.addEventListener("pointerdown",e=>{down={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener("pointermove",e=>{if(!down||e.pointerId!==down.id)return;yaw-=(e.clientX-down.x)*.0035;pitch=Math.max(-1.0,Math.min(1.0,pitch-(e.clientY-down.y)*.0035));down.x=e.clientX;down.y=e.clientY;});
+for(const ev of ["pointerup","pointercancel","lostpointercapture"]){canvas.addEventListener(ev,()=>down=null);}
+addEventListener("keydown",e=>{if(/^(Key[WASDQZ]|ArrowUp|ArrowDown|ShiftLeft|ShiftRight)$/.test(e.code)){keys.add(e.code);e.preventDefault();}});
+addEventListener("keyup",e=>keys.delete(e.code));
+canvas.addEventListener("wheel",e=>{e.preventDefault();camera.fov=Math.max(40,Math.min(70,camera.fov+Math.sign(e.deltaY)*2));camera.updateProjectionMatrix();},{passive:false});
+try{
+ const model=await new GLTFLoader().loadAsync("../assets/v12/room-v12-baked.glb");
+ let surfaces=0;
+ model.scene.traverse(obj=>{
+   if(!obj.isMesh)return;
+   surfaces++;
+   const original=Array.isArray(obj.material)?obj.material[0]:obj.material;
+   if(!original?.map)throw new Error("Non-baked surface: "+obj.name);
+   original.map.colorSpace=THREE.SRGBColorSpace;
+   obj.material=new THREE.MeshBasicMaterial({map:original.map,side:THREE.DoubleSide,toneMapped:true});
+ });
+ if(!surfaces||surfaces>12)throw new Error("Excessive draw calls: "+surfaces);
+ scene.add(model.scene);
+ ready=true;
+ document.documentElement.dataset.roomV12="cycles-baked";
+ window.__TEM_V12_READY=true;
+ window.__TEM_V12_STATE={surfaces,room:[9.2,6.4,14]};
+ status.textContent="✓ Salle témoin Cycles chargée · "+surfaces+" surfaces";
+}catch(error){
+ console.error(error);
+ status.textContent="Échec du chargement : "+String(error);
+ document.documentElement.dataset.roomV12="error";
+}
+</script></body></html>
