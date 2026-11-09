@@ -7,7 +7,7 @@ export function planExhibitionStops(slots,{step=3.5,half=4.6,start=5.7,floorSlot
   const wall=(slots||[]).filter(s=>s && s.piece && !s.reservedForAds && (Number.isInteger(s.id)||Boolean(s.isCommercial&&Number.isInteger(s.parentBayId))))
     .map(slot=>{
       const side=slot.isCommercial?slot.side:slot.id%2?1:-1;
-      const z=slot.isCommercial?(slot.z+slot.xM+slot.widthM/2-1.5):start+slot.id*step;
+      const z=slot.isCommercial?(slot.z+side*(slot.xM+slot.widthM/2-1.5)):start+slot.id*step;
       return {
         id:"wall-"+slot.id,kind:"wall",slot,piece:slot.piece,z,
         cameraX:side*1.15,cameraZ:z-.17,
