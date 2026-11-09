@@ -607,6 +607,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   }
   let galleryRevision=0;
   const activeImported=new Set();
+  const premiumExhibits=[];
   async function mount3DModel(slot,root,revision){
     try{
       const saved=await getModel(slot.piece?.modelKey);
@@ -705,6 +706,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   }
   function drawInventory(){
     galleryRevision++;
+    premiumExhibits.length=0;
     for(const imported of activeImported)disposeModel(imported);
     activeImported.clear();
     for(const child of [...interactive.children]){interactive.remove(child);
@@ -719,7 +721,20 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     // The pristine ceiling stays free of objects until all original wall
     // exhibitions are occupied. Structure and six future mounts already exist.
     window.TEM.getCeilingSlots().filter(slot=>slot.unlocked || slot.piece).forEach(drawCeilingSlot);
-    window.TEM.getFloorSlots().forEach(platform);
+    window.TEM.getFloorSlots().forEach(slot=>{
+      const firstChild=interactive.children.length;
+      platform(slot);
+      if(slot.piece&&Number.isFinite(slot.piece.maxVisibleDistanceM)){
+        // A separately transformable node lets the rendering engine honor the
+        // chosen view distance without changing the exhibition geometry.
+        const container=new THREE.Group();
+        for(const child of interactive.children.slice(firstChild)){
+          interactive.remove(child);container.add(child);
+        }
+        interactive.add(container);
+        premiumExhibits.push({container,slot});
+      }
+    });
   }
   drawInventory();
 
@@ -1093,6 +1108,13 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     if(time-rayTime>180){
       rayTime=time;
       v5.setNear(!input.auto&&Boolean(interactions(0,0)));
+    }
+    for(const item of premiumExhibits){
+      const piece=item.slot.piece;
+      const distance=Math.hypot(view.x-item.slot.x,view.z-item.slot.z);
+      const stillActive=!piece.expiresAt||Date.parse(piece.expiresAt)>Date.now();
+      item.container.visible=Boolean(stillActive&&distance<=(piece.maxVisibleDistanceM||0));
+      // Standard depth testing still provides real architectural occlusion.
     }
     renderer.render(scene,camera);
     const frees=(window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots().filter(s=>!s.reservedForAds)).filter(s=>!s.piece).length+
