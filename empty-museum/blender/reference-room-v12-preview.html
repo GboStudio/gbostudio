@@ -35,7 +35,8 @@ let yaw=0,pitch=.065;
 const keys=new Set();let down=null,ready=false,last=performance.now();
 function fit(){const width=innerWidth,height=innerHeight;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();}
 addEventListener("resize",fit);fit();
-const updateView=()=>{camera.position.copy(eye);camera.rotation.order="YXZ";camera.rotation.y=yaw;camera.rotation.x=pitch;};
+const updateView=()=>{camera.position.copy(eye);camera.rotation.order="YXZ";// Three.js faces -Z by default. Our exported gallery extends toward +Z.
+camera.rotation.y=Math.PI+yaw;camera.rotation.x=-pitch;};
 updateView();
 function loop(now){
   requestAnimationFrame(loop);
