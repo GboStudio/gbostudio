@@ -149,7 +149,13 @@ export function createPreviewReservation({config,reservations=[],type,slotId,mod
     const check=canReserveWall(reservations,moduleNumber,slotId,when);
     if(!check.ok)throw new Error(check.reason);
     amount=wallPrice(c,formatId,term).amount;
-    const date=new Date(when);date.setUTCMonth(date.getUTCMonth()+(term==='annual'?12:1));endsAt=date.toISOString();
+    // Add calendar months without shifting January 31 into March.
+    const months=term==='annual'?12:1;
+    const d=new Date(when);
+    const target=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+months,1,d.getUTCHours(),d.getUTCMinutes(),d.getUTCSeconds(),d.getUTCMilliseconds()));
+    const lastDay=new Date(Date.UTC(target.getUTCFullYear(),target.getUTCMonth()+1,0)).getUTCDate();
+    target.setUTCDate(Math.min(d.getUTCDate(),lastDay));
+    endsAt=target.toISOString();
     Object.assign(reservation,{moduleNumber,formatId,slotId,term});
   }else if(type==='aisle'){
     if(!c.aisle.stations.includes(stationId)||!AISLE_TYPES.some(t=>t.id===objectType))throw new Error('Installation non reconnue.');
