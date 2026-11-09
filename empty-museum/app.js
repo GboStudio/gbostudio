@@ -18,18 +18,18 @@ const base=[
 {id:16,title:'Bench 01',author:'Kian',category:'build',tools:'ChatGPT + SketchUp',description:'Un banc produit après avoir demandé comment faire tenir trois personnes sans créer trois places séparées.',size:'large',image:'linear-gradient(150deg,#85796e,#d7cec2 50%,#3d3935)',date:'Oct. 2026'},
 {id:17,title:'Signal',author:'Eva',category:'design',tools:'ChatGPT + Figma',description:'Identité visuelle pour un projet qui n’existera probablement jamais.',size:'standard',image:'linear-gradient(135deg,#161616 0 45%,#d1ff39 45% 58%,#f0eee5 58%)',date:'Oct. 2026'},
 {id:18,title:'Tomorrow, Maybe',author:'Iris',category:'image',tools:'ChatGPT + image generation',description:'Une image produite à partir d’une phrase : demain, mais sans certitude.',size:'xl',image:'linear-gradient(165deg,#d9d6cf,#b7c6d3 45%,#f1c1a6 70%,#393f49)',date:'Oct. 2026'}];
-let pieces=base.slice(0,6), filter='all', plan={size:'standard',price:9.9}, upload='', selectedSlot=null;
+let pieces=base.slice(0,6), filter='all', plan={size:'standard',price:4.95}, upload='', selectedSlot=null;
 try{const s=JSON.parse(localStorage.getItem('tem-demo')||'[]');if(Array.isArray(s))pieces=[...base.slice(0,6),...s]}catch(e){}
 const grid=$('#grid'),viewport=$('#viewport');
 const FORMATS={
   mini:{name:'Petit portrait',dimensions:'20 × 30 cm',ratio:2/3,price:4.95},
   portrait:{name:'Portrait',dimensions:'40 × 60 cm',ratio:2/3,price:9.95},
-  landscape:{name:'Paysage',dimensions:'60 × 40 cm',ratio:3/2,price:19.90},
+  landscape:{name:'Paysage',dimensions:'60 × 40 cm',ratio:3/2,price:9.95},
   tall:{name:'Grand portrait',dimensions:'60 × 90 cm',ratio:2/3,price:15},
-  wide:{name:'Grand paysage',dimensions:'90 × 60 cm',ratio:3/2,price:30},
-  panorama:{name:'Panoramique',dimensions:'100 × 40 cm',ratio:5/2,price:30},
+  wide:{name:'Grand paysage',dimensions:'90 × 60 cm',ratio:3/2,price:15},
+  panorama:{name:'Panoramique',dimensions:'100 × 40 cm',ratio:5/2,price:15},
   floor:{name:'Emplacement au sol',dimensions:'1,80 × 1,50 m',ratio:1.2,price:249.50},
-  'ceiling-mini':{name:'Cadre suspendu',dimensions:'20 × 30 cm',ratio:2/3,price:19.90},
+  'ceiling-mini':{name:'Cadre suspendu',dimensions:'20 × 30 cm',ratio:2/3,price:9.95},
   'ceiling-medium':{name:'Caisson lumineux',dimensions:'60 × 40 cm',ratio:3/2,price:14.95},
   'ceiling-large':{name:'Bannière aérienne',dimensions:'90 × 60 cm',ratio:3/2,price:20}
 };
@@ -65,7 +65,7 @@ function getSlots(){
   const highest=Math.max(17,...placements.keys()),total=Math.max(38,highest+5);
   return Array.from({length:total},(_,id)=>{
     const piece=placements.get(id)||null,size=piece&&piece.id>18?normalizeSize(piece.size):SLOT_SIZES[id%SLOT_SIZES.length];
-    return{id,size,price:FORMATS[size]?.price||19.9,format:FORMATS[size]||FORMATS.landscape,piece,reservedForAds:AD_RESERVED_SLOTS.has(id)};
+    return{id,size,price:FORMATS[size]?.price||9.95,format:FORMATS[size]||FORMATS.landscape,piece,reservedForAds:AD_RESERVED_SLOTS.has(id)};
   });
 }
 function getWallDisplaySlots(){
