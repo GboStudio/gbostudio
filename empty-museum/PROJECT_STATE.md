@@ -17,8 +17,8 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 | Navigation mobile | **Joystick gauche = regard, joystick droit = déplacement**, zoom dédié, multi-touch, changement de direction immédiat | PR #34 fusionnée dans main ; vérifier la publication et le comportement sur iPhone réel |
 | Visite guidée | Depuis la position réelle, reprise vers l'œuvre la plus proche, priorité aux commandes manuelles | Code dans `engine3d.js`, `tour-journey.js` ; parcours navigateur à maintenir |
 | Guide d’exposition grand public | Présenter des exemples concrets de créations murales et d’installations 3D, puis un parcours support → place → import et description → aperçu dans la démo | Ajout de la section `#how`, des CTA vers les éditeurs et des tableaux de démonstration ; **aucune publication publique ni vente réelle** |
-| Commercialisation murs | Modules de **3 m** découpés en **1/2/4/8/16** cadres, abonnement mensuel et annuel | Configurateur de démonstration dans `commerce-model.mjs` |
-| Objets dans l'allée | Sculptures/installations 3D ; visible selon distance ; durées jour/semaine/mois, offre premium | Configuration de démonstration, **pas de réservation/paiement réels** |
+| Commercialisation murs | Modules de **3 m** découpés en **1/2/4/8/16** cadres, abonnements mensuels/annuels et tarifs divisés par deux | Répartition 34 modules commercialisables : 8 très grands, 12 grands, 9 normaux, 4 moyens, 1 petit = **116 cadres**. Quatre modules partenaires conservés ; PR d'intégration en validation |
+| Objets dans l'allée | **4 stations** de **1,80 × 1,50 m**, hauteur maximale indicative de 2,50 m ; statues, objets 3D, affiches ; visibilité 15/35/75 m, durées 1/7/30 jours | Tarifs premium / 2 ; configuration et expiration simulées localement ; **aucun paiement ni stock serveur** |
 | Sécurité | Ne jamais vendre sans stock serveur fiable, droits, modération, paiement et facturation | Chantier non terminé ; traitements de paiement non actifs |
 | Qualité | Tests avant fusion, échec diagnostiqué, contrôle de la version exacte en ligne | Workflows 3D/smoke + contrôle de cohérence du registre |
 
@@ -28,6 +28,13 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Afficher tous les **5 formats muraux** (petit à très grand, 16/8/4/2/1 cadres par module de 3 m) avec tarifs mensuels et annuels du **simulateur `commerce-model.mjs`**. Les prix historiques de `app.js` ne sont pas remplacés ici ; cette contradiction reste ouverte avant tout lancement.
 - Pour les installations en allée, distinguer trois niveaux de portée (proximité/galerie/monumental) et afficher les tarifs indicatifs d’**une journée** et de **30 jours** du même simulateur ; l’**année** est une simple **projection visuelle (10 × tarif 30 jours)**, non contractualisée, et doit toujours être signalée comme non réservable. Une vraie durée 365 jours nécessitera modèle, inventaire serveur et parcours de réservation adaptés.
 - Les exemples sont fictifs ; les tarifs sont simulés ; absence de paiement, de publication publique et de contrôle serveur : ne jamais présenter ces fonctionnalités comme disponibles avant validation technique et juridique.
+
+## Décision d'implantation et prix — 9 novembre 2026
+- 38 baies physiques, dont 4 partenaires ; les 34 autres sont des modules commerciaux de 3 m et accueillent **116 cadres** selon la répartition 8/12/9/4/1 des formats 1/2/4/8/16.
+- Les **prix sont divisés par deux** pour toutes les offres de simulation. Les prix des murs sont mensuels et annuels ; les installations premium se louent 1, 7 ou 30 jours selon une portée maximale de 15/35/75 m.
+- Quatre places latérales de 1,80 × 1,50 m dans l'allée, hauteur maximale envisagée de 2,50 m ; ces dimensions désignent la surface au sol, non la taille obligatoire des œuvres.
+- Le rendu de démonstration limite la visibilité des installations selon leur portée et date d'expiration locales. Un serveur de réservation, une modération et un paiement sécurisé restent indispensables avant toute vente.
+- **Livraison : branche d'intégration sur la révision récente de `main`**, qui conserve les améliorations du guide d'exposition et les correctifs de sécurité #38. Aucun déploiement de cette branche ne doit être affirmé avant CI et fusion.
 
 ## Contradictions à résoudre (pas des fonctions terminées)
 1. L'interface classique `index.html` / `app.js` utilise encore certaines durées et certains prix historiques alors que le nouveau configurateur fonctionne en mensuel/annuel. **Unifier l'offre avant de lancer les ventes.**
