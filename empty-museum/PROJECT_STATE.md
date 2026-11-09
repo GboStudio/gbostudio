@@ -17,8 +17,8 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 | Navigation mobile | **Joystick gauche = regard, joystick droit = déplacement**, zoom dédié, multi-touch, changement de direction immédiat | PR #34 fusionnée dans main ; vérifier la publication et le comportement sur iPhone réel |
 | Visite guidée | Depuis la position réelle, reprise vers l'œuvre la plus proche, priorité aux commandes manuelles | Code dans `engine3d.js`, `tour-journey.js` ; parcours navigateur à maintenir |
 | Guide d’exposition grand public | Présenter des exemples concrets de créations murales et d’installations 3D, puis un parcours support → place → import et description → aperçu dans la démo | Ajout de la section `#how`, des CTA vers les éditeurs et des tableaux de démonstration ; **aucune publication publique ni vente réelle** |
-| Commercialisation murs | Modules de **3 m** découpés en **1/2/4/8/16** cadres, abonnement mensuel et annuel | Configurateur de démonstration dans `commerce-model.mjs` |
-| Objets dans l'allée | Sculptures/installations 3D ; visible selon distance ; durées jour/semaine/mois, offre premium | Configuration de démonstration, **pas de réservation/paiement réels** |
+| Commercialisation murs | 38 modules physiques : 4 réservés aux partenaires, 34 commerciaux (8 très grands, 12 grands, 9 normaux, 4 moyens, 1 petit), soit **116 cadres individuels**. Surface commerciale de 3 m par module. Tarifs mensuels et annuels divisés par deux. | PR #44 : réalisation 3D en attente de validation, sans paiement réel |
+| Objets dans l’allée | Quatre emplacements 3D de **1,80 × 1,50 m**, hauteur maximale de référence 2,50 m ; durées 1/7/30 jours et portées configurables, tarifs divisés par deux. | PR #44 ; visibilité par distance non encore intégrée au moteur 3D |
 | Sécurité | Ne jamais vendre sans stock serveur fiable, droits, modération, paiement et facturation | Chantier non terminé ; traitements de paiement non actifs |
 | Qualité | Tests avant fusion, échec diagnostiqué, contrôle de la version exacte en ligne | Workflows 3D/smoke + contrôle de cohérence du registre |
 
@@ -28,6 +28,13 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Afficher tous les **5 formats muraux** (petit à très grand, 16/8/4/2/1 cadres par module de 3 m) avec tarifs mensuels et annuels du **simulateur `commerce-model.mjs`**. Les prix historiques de `app.js` ne sont pas remplacés ici ; cette contradiction reste ouverte avant tout lancement.
 - Pour les installations en allée, distinguer trois niveaux de portée (proximité/galerie/monumental) et afficher les tarifs indicatifs d’**une journée** et de **30 jours** du même simulateur ; l’**année** est une simple **projection visuelle (10 × tarif 30 jours)**, non contractualisée, et doit toujours être signalée comme non réservable. Une vraie durée 365 jours nécessitera modèle, inventaire serveur et parcours de réservation adaptés.
 - Les exemples sont fictifs ; les tarifs sont simulés ; absence de paiement, de publication publique et de contrôle serveur : ne jamais présenter ces fonctionnalités comme disponibles avant validation technique et juridique.
+
+## Décision de distribution physique du musée — 9 novembre 2026
+- 34 modules commerciaux variés : 8×1 très grand, 12×2 grands, 9×4 normaux, 4×8 moyens, 1×16 petits, soit 116 cadres. Quatre modules partenaires restent réservés.
+- Quatre stations S01–S04 dans l’allée, 1,80 × 1,50 m, hauteur maximale indicative 2,50 m, implantées latéralement.
+- Tous les tarifs muraux, premium, sol et plafond du prototype sont divisés par deux ; aucun encaissement réel n’est activé.
+- Les baies physiques restent espacées de 3,5 m ; chacune possède 3 m de longueur commerciale disponible.
+- Intégration en PR #44 : non déployée tant que la fusion, les contrôles automatiques et la visite publique ne sont pas validés.
 
 ## Contradictions à résoudre (pas des fonctions terminées)
 1. L'interface classique `index.html` / `app.js` utilise encore certaines durées et certains prix historiques alors que le nouveau configurateur fonctionne en mensuel/annuel. **Unifier l'offre avant de lancer les ventes.**
