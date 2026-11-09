@@ -29,7 +29,7 @@
       const {fitMuseumVisualViewport}=await import("./visual-viewport-v1.js?v=20261106v2");
       fitMobile=fitMuseumVisualViewport();
     }
-    await import("./engine3d.js?v=20261109realism11-dualstick2");
+    await import("./engine3d.js?v=20261109dualstick3baketimeout");
     // The 3D engine mounts the joystick and dock asynchronously during import.
     fitMobile();
   }catch(error){legacy(error);}
