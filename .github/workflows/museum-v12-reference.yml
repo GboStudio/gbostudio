@@ -7,6 +7,7 @@ on:
     paths:
       - 'empty-museum/blender/bake_room_reference_v12.py'
       - 'empty-museum/blender/validate_room_v12.py'
+      - 'empty-museum/blender/denoise_room_v12.py'
       - 'empty-museum/blender/reference-room-v12-preview.html'
       - '.github/scripts/tem-v12-preview.mjs'
       - '.github/workflows/museum-v12-reference.yml'
@@ -32,13 +33,14 @@ jobs:
         run: |
           python3 -m py_compile \
             empty-museum/blender/bake_room_reference_v12.py \
-            empty-museum/blender/validate_room_v12.py
+            empty-museum/blender/validate_room_v12.py \
+            empty-museum/blender/denoise_room_v12.py
           node --check .github/scripts/tem-v12-preview.mjs
 
       - name: Install Blender headless with numpy
         run: |
           sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy python3-pil
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy python3-pil python3-opencv
           blender --version | head -4
 
       - name: Produce physical Cycles images and the baked UV atlas
@@ -52,6 +54,9 @@ jobs:
               exit 1
             }
           tail -38 /tmp/museum-v12-cycles.log
+
+      - name: Denoise true Cycles samples and refresh the embedded GLB atlas
+        run: PYTHONPATH=/usr/lib/python3/dist-packages python3 empty-museum/blender/denoise_room_v12.py --out empty-museum/assets/v12
 
       - name: Verify actual UV-baked GLB and true Cycles PNG files
         run: PYTHONPATH=/usr/lib/python3/dist-packages python3 empty-museum/blender/validate_room_v12.py --out empty-museum/assets/v12
