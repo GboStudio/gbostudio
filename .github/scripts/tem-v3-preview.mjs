@@ -58,10 +58,11 @@ for(const device of setups){
         steps:document.querySelectorAll('#how .exhibit-steps article').length,
         kinds:document.querySelectorAll('#how .exhibit-kind').length,
         legalDemo:/restent sur votre appareil/.test(text)&&/ni facturées/.test(text),
-        annualProjection:/projection/i.test(document.querySelector('.exhibit-offer-3d')?.textContent||''),
+        correctAisleTerms:/1 semaine/.test(document.querySelector('#aisle-price-table')?.textContent||'')&&/30 jours/.test(document.querySelector('#aisle-price-table')?.textContent||''),
+        noFakeAnnualProjection:!/projection annuelle/i.test(document.querySelector('.exhibit-offer-3d')?.textContent||''),
         wall,aisle};
     });
-    assert.ok(catalog.helpLink&&catalog.legalDemo&&catalog.annualProjection,'Exhibition guidance must be truthful and accessible');
+    assert.ok(catalog.helpLink&&catalog.legalDemo&&catalog.correctAisleTerms&&catalog.noFakeAnnualProjection,'Exhibition guidance must be truthful and accessible');
     assert.equal(catalog.steps,4);
     assert.equal(catalog.kinds,4);
     assert.equal(catalog.wall.length,5);

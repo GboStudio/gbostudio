@@ -45,8 +45,8 @@ if(aisleRoot){
     distance.textContent='Jusqu’à '+config.aisle.distanceMetres[tier.id]+' m, sous réserve d’obstacles';
     title.append(distance);
     cell(row,euros(prices['1']));
+    cell(row,euros(prices['7']));
     cell(row,euros(prices['30']));
-    cell(row,euros(prices['30']*10),'price-projection');
     aisleRoot.append(row);
   }
 }
