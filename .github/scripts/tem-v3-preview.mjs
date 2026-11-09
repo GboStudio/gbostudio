@@ -24,6 +24,31 @@ for(const device of setups){
   page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')diagnostics.push(m.type()+': '+m.text());});
   page.on('requestfailed',r=>diagnostics.push('request failed: '+r.url()+' '+(r.failure()?.errorText||'')));
   try{
+    // Verify that the landing page is an actual working entry, not only
+    // a decorative hero. Run in both desktop and iPhone-sized viewports.
+    const home=await page.goto('http://127.0.0.1:8765/empty-museum/',{
+      waitUntil:'domcontentloaded',timeout:45000
+    });
+    assert.equal(home?.status(),200,'Landing page must be served');
+    await page.locator('#museum-home-title').waitFor({state:'visible',timeout:12000});
+    const entry=await page.evaluate(()=>{
+      const hero=document.querySelector('.editorial-hero');
+      const visual=document.querySelector('.editorial-art-canvas');
+      const primary=document.querySelector('.editorial-primary');
+      const secondary=document.querySelector('.editorial-secondary');
+      const stylesheet=[...document.styleSheets].some(x=>x.href?.includes('editorial-v2.css'));
+      const fit=el=>{const r=el.getBoundingClientRect();return {visible:r.width>20&&r.height>20,inside:r.left>=-1&&r.right<=window.innerWidth+1}};
+      return {hero:!!hero,style:stylesheet,visual:!!visual,primary:fit(primary),secondary:fit(secondary),
+        visitLink:new URL(primary.href).searchParams.get('visit'),
+        stats:!!document.querySelector('#countHero')&&!!document.querySelector('#metersHero')};
+    });
+    assert.ok(entry.hero&&entry.style&&entry.visual&&entry.stats,'Editorial landing must load its layout and existing counters');
+    assert.equal(entry.visitLink,'immersive','Visitor CTA must enter the actual 3D museum');
+    assert.ok(entry.primary.visible&&entry.primary.inside&&entry.secondary.visible&&entry.secondary.inside,
+      'Both entry CTAs must remain visible and within viewport width');
+    await page.locator('.editorial-secondary').click({timeout:10000});
+    await page.waitForFunction(()=>document.querySelector('#exhibit')?.open===true,null,{timeout:10000});
+    console.log('PASS editorial homepage',device.name,JSON.stringify(entry));
     const response=await page.goto('http://127.0.0.1:8765/empty-museum/?visit=immersive',{
       waitUntil:'domcontentloaded',timeout:45000
     });

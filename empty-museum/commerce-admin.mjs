@@ -204,7 +204,7 @@ $('#bookAisle').addEventListener('click',()=>{
 $('#saveRanges').addEventListener('click',()=>{
   try{
     const next=deepCopy(config);
-    $('[data-range]').forEach(input=>{
+    document.querySelectorAll('[data-range]').forEach(input=>{
       if(input.value.trim()==='')throw new Error('Une portée est vide.');
       next.aisle.distanceMetres[input.dataset.range]=Number(input.value);
     });
