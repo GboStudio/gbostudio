@@ -1,0 +1,80 @@
+name: Museum V13 - scanned PBR and Cycles GI reference
+on:
+  pull_request:
+    paths:
+      - 'empty-museum/blender/*v13*'
+      - '.github/scripts/tem-v13-preview.mjs'
+      - '.github/workflows/museum-v13-reference.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: museum-v13-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  reference-pbr:
+    name: True scan, Blender Cycles indirect bake and WebGL visual tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 42
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@v4
+      - name: Check source before expensive work
+        run: |
+          python3 -m py_compile empty-museum/blender/bake_room_reference_v13.py \
+            empty-museum/blender/denoise_room_v13.py \
+            empty-museum/blender/validate_room_v13.py
+          node --check .github/scripts/tem-v13-preview.mjs
+      - name: Download and verify authentic CC0 scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="empty-museum/assets/v13/scans"
+          mkdir -p "$dir"
+          for kind in diff nor_gl rough; do
+            name="smooth_concrete_floor_${kind}_1k.jpg"
+            curl --fail --location --retry 3 --retry-delay 3 \
+              --connect-timeout 12 --max-time 90 \
+              "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/smooth_concrete_floor/$name" \
+              --output "$dir/$name"
+            test "$(wc -c < "$dir/$name")" -gt 8000
+            file "$dir/$name" | grep -i -E 'JPEG|image'
+          done
+      - name: Install headless Blender, Pillow and OpenCV
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy python3-pil python3-opencv
+      - name: Physically render true scan and bake INDIRECT-only Cycles UV1
+        run: |
+          PYTHONPATH=/usr/lib/python3/dist-packages blender --background --factory-startup \
+            --python empty-museum/blender/bake_room_reference_v13.py \
+            -- --out empty-museum/assets/v13 --samples 16 --size 1024 \
+            > /tmp/museum-v13-cycles.log 2>&1 || { tail -150 /tmp/museum-v13-cycles.log; exit 1; }
+          tail -35 /tmp/museum-v13-cycles.log
+      - name: Denoise original Cycles illumination without flattening PBR
+        run: PYTHONPATH=/usr/lib/python3/dist-packages python3 empty-museum/blender/denoise_room_v13.py --out empty-museum/assets/v13
+      - name: Verify two independent UVs, three scans, GLB and actual images
+        run: PYTHONPATH=/usr/lib/python3/dist-packages python3 empty-museum/blender/validate_room_v13.py --out empty-museum/assets/v13
+      - name: Install real browser for desktop/mobile
+        run: |
+          npm install --no-save playwright@1.55.0 pngjs@7.0.0
+          npx playwright install chromium --with-deps
+      - name: Inspect true PBR scene in WebGL and compare GI on/off
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/v13-staging.log 2>&1 &
+          sleep 2
+          node .github/scripts/tem-v13-preview.mjs
+      - name: Attach inspectable physical render, PBR textures, UV atlas, GLB and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: museum-v13-scanned-pbr-cycles-reference
+          path: |
+            empty-museum/assets/v13/room-v13-*.png
+            empty-museum/assets/v13/room-v13-*.jpg
+            empty-museum/assets/v13/room-v13-*.glb
+            empty-museum/assets/v13/room-v13-manifest.json
+            /tmp/museum-v13-*.png
+            /tmp/museum-v13-cycles.log
+          if-no-files-found: warn
+          retention-days: 14
