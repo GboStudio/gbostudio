@@ -75,7 +75,7 @@ Le moteur de rendu devra appliquer des règles de **frustum culling, occlusion r
 
 1. **Effectué en branche de développement** : la galerie conserve son espacement physique de 3,5 m et attribue une surface commerciale de 3 m à chaque baie.
 2. **Effectué en branche de développement** : 34 baies mixtes / 116 cadres, 4 baies partenaires hors vente ; les œuvres de démonstration historiques sont conservées sur la première subdivision de leur baie.
-3. **Socles 3D rendus et redimensionnés en branche** ; reste à brancher les règles premium réelles d'exposition temporelle et de portée à `aisleVisibility()`, avec LOD, occlusion et contrôle de performance sur iPhone.
+3. **Socles 3D rendus et redimensionnés en branche** : le studio local permet de choisir la durée et la portée, de simuler le prix et de masquer l'installation une fois la portée dépassée ou la durée expirée. Il reste à brancher l'autorité serveur, la facturation, un fondu progressif / LOD et les contrôles de performance sur iPhone.
 4. Migrer les données des œuvres de démonstration vers des contenus modérés provenant d'un backend authentifié.
 5. Brancher le catalogue de prix, le checkout, les abonnements et les webhooks de paiement. Protéger les écritures globales et l'inventaire.
 6. **Démo actualisée en branche de développement** : les cartes affichent les tarifs divisés par deux, sans checkout et sans promesse de réservation réelle.
