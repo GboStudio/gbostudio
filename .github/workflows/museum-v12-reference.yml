@@ -38,7 +38,7 @@ jobs:
       - name: Install Blender headless with numpy
         run: |
           sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy python3-pil
           blender --version | head -4
 
       - name: Produce physical Cycles images and the baked UV atlas
@@ -54,11 +54,11 @@ jobs:
           tail -38 /tmp/museum-v12-cycles.log
 
       - name: Verify actual UV-baked GLB and true Cycles PNG files
-        run: python3 empty-museum/blender/validate_room_v12.py --out empty-museum/assets/v12
+        run: PYTHONPATH=/usr/lib/python3/dist-packages python3 empty-museum/blender/validate_room_v12.py --out empty-museum/assets/v12
 
       - name: Install browser preview tooling
         run: |
-          npm install --no-save playwright@1.55.0
+          npm install --no-save playwright@1.55.0 pngjs@7.0.0
           npx playwright install chromium --with-deps
 
       - name: Render actual baked architecture in WebGL desktop and mobile
