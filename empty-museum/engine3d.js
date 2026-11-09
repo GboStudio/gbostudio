@@ -532,6 +532,40 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     });
     addFrame(interactive,w,h,x,y,z,rot,mat,slot);
   }
+  // The 34 commercial bays use independent, geometrically correct frames.
+  // Unlike the historical oversized plaque on every bay, these share museum
+  // materials and avoid rendering 116 giant 640x950 textures on mobile.
+  const modularBareMat=new THREE.MeshStandardMaterial({
+    color:0xf1ede7,roughness:.93,metalness:0,side:THREE.DoubleSide
+  });
+  const modularMountMat=new THREE.MeshStandardMaterial({
+    color:0xe3dfd5,roughness:.82,metalness:0
+  });
+  const modularFrameMat=new THREE.MeshStandardMaterial({
+    color:0x655c50,roughness:.48,metalness:.34
+  });
+  function drawCommercialFrame(slot){
+    const side=slot.side;
+    const x=side*(HALF-.39),z=slot.z+(slot.xM+slot.widthM/2-1.5);
+    const y=slot.y,w=slot.widthM,h=slot.heightM;
+    const rot=side<0?Math.PI/2:-Math.PI/2;
+    const unit=new THREE.Group();
+    unit.position.set(x,y,z);unit.rotation.y=rot;
+    interactive.add(unit);
+    // A shadow-line frame and shallow museum float-mount keep the gallery
+    // quiet even with a high density of small pieces.
+    box(unit,w+.035,h+.035,.05,modularFrameMat,0,0,-.025);
+    box(unit,w+.012,h+.012,.055,modularMountMat,0,0,.012);
+    const imageMaterial=slot.piece?pictureMaterial(slot.piece):modularBareMat;
+    const art=surface(unit,w-.015,h-.015,imageMaterial,0,0,.047);
+    markInteractive(art,slot);
+    if(slot.piece){
+      // Label below the frame, not beside it, so the small subdivisions cannot
+      // hide neighboring works. A small 3D brass label remains clickable.
+      const labelWidth=Math.min(.31,w*.75),labelHeight=Math.min(.065,h*.14);
+      box(unit,labelWidth,labelHeight,.012,champagneGold,0,-h/2-.052,.021);
+    }
+  }
   function drawCeilingSlot(slot){
     const isMini=slot.style==="frame",isMedium=slot.style==="lightbox";
     const w=isMini?1.45:isMedium?2.25:2.78,h=isMini?.86:isMedium?1.03:1.16;
@@ -677,7 +711,11 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       child.traverse(o=>{if(o.geometry)o.geometry.dispose();});
     }
     clickable.length=0;
-    window.TEM.getSlots().forEach(drawWallSlot);
+    // Four partner bays retain their historical reserved plaques.
+    window.TEM.getSlots().filter(slot=>slot.reservedForAds).forEach(drawWallSlot);
+    // The commercial distribution is now 116 independent frames.
+    (window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots().filter(slot=>!slot.reservedForAds))
+      .forEach(slot=>slot.isCommercial?drawCommercialFrame(slot):drawWallSlot(slot));
     // The pristine ceiling stays free of objects until all original wall
     // exhibitions are occupied. Structure and six future mounts already exist.
     window.TEM.getCeilingSlots().filter(slot=>slot.unlocked || slot.piece).forEach(drawCeilingSlot);
@@ -1057,7 +1095,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       v5.setNear(!input.auto&&Boolean(interactions(0,0)));
     }
     renderer.render(scene,camera);
-    const frees=window.TEM.getSlots().filter(s=>!s.piece&&!s.reservedForAds).length+
+    const frees=(window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots().filter(s=>!s.reservedForAds)).filter(s=>!s.piece).length+
       window.TEM.getCeilingSlots().filter(s=>s.unlocked&&!s.piece).length+
       window.TEM.getFloorSlots().filter(s=>!s.piece).length;
     if(progress)progress.textContent=Math.floor(view.z)+" / "+Math.floor(LENGTH)+" M · "+window.TEM.getPieces().length+" CRÉATIONS · "+frees+" PLACES LIBRES";
