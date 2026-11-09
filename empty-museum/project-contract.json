@@ -32,5 +32,33 @@
     35,
     75
   ],
-  "updated": "2026-11-09"
+  "updated": "2026-11-09",
+  "galleryPhysicalBays": 38,
+  "galleryPartnerBays": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "galleryCommercialMix": {
+    "very_large": 8,
+    "large": 12,
+    "normal": 9,
+    "medium": 4,
+    "small": 1
+  },
+  "galleryCommercialSlots": 116,
+  "aisleStations": [
+    "S01",
+    "S02",
+    "S03",
+    "S04"
+  ],
+  "aisleFootprintMetres": {
+    "width": 1.5,
+    "length": 1.8,
+    "maxHeight": 2.5
+  },
+  "catalogPricingVersion": "halved-2026-11-09-demo",
+  "commerceReleaseStatus": "integrated-pr-validation-pending"
 }
