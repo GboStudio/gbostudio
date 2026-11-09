@@ -90,7 +90,7 @@ function getWallDisplaySlots(){
   });
 }
 function getFloorSlots(){
-  return FLOOR_POSITIONS.map(s=>({...s,size:'floor',price:249.5,format:FORMATS.floor,piece:pieces.find(p=>p.slot===s.id)||null}));
+  return FLOOR_POSITIONS.map(s=>({...s,size:'floor',price:249.5,format:FORMATS.floor,piece:[...pieces].reverse().find(p=>p.slot===s.id && (!p.expiresAt || Date.parse(p.expiresAt)>Date.now()))||null}));
 }
 function getCeilingStatus(){
   const occupied=getWallDisplaySlots().filter(s=>!!s.piece).length;
