@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>THE UNREAL MUSEUM — V13 Salle témoin / Cycles</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;font:13px/1.5 system-ui,Arial,sans-serif;color:#f4f3f0;background:#20211f}
+canvas{display:block;width:100vw;height:100dvh;touch-action:none}
+header{position:fixed;left:16px;right:16px;top:16px;display:flex;justify-content:space-between;gap:16px;pointer-events:none}
+header>div{padding:12px 17px;border-radius:8px;background:#20211fb5;backdrop-filter:blur(12px);max-width:min(490px,76vw)}
+header b{display:block;letter-spacing:.14em;font-size:11px}
+header span{font-size:11px;color:#d0ccc3}
+footer{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);padding:9px 15px;background:#20211fc9;border-radius:9px;font-size:11px;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
+#status{position:fixed;right:16px;bottom:65px;background:#20211fd9;padding:9px 13px;border-radius:8px}
+@media(max-width:650px){header>div{max-width:none}header>div:nth-child(2){display:none}footer{font-size:10px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script></head>
+<body>
+<canvas id="v13Canvas" aria-label="Salle témoin Blender Cycles du musée"></canvas>
+<header><div><b>THE UNREAL MUSEUM — V13</b><span>SALLE TÉMOIN · BAKED BLENDER CYCLES · NON PUBLIÉE</span></div><div><span>Géométrie et GI statiques véritables · sans œuvres publiques</span></div></header>
+<div id="status" role="status">Chargement de la scène témoin…</div>
+<button id="giToggle" type="button" style="position:fixed;left:16px;bottom:76px;border:1px solid #ffffff72;padding:10px 15px;border-radius:24px;background:#20211fc9;color:white;z-index:10">GI Cycles : active</button>
+<footer>Glisser pour regarder · WASD/ZQSD pour avancer · Molette pour zoomer</footer>
+<script type="module">
+import * as THREE from "three";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
+const canvas=document.querySelector("#v13Canvas"),status=document.querySelector("#status");
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xe4e3df);
+scene.environmentIntensity=.38;
+const sky=new THREE.HemisphereLight(0xfffcf4,0xc4c0b8,.55);scene.add(sky);
+const sunlight=new THREE.DirectionalLight(0xfff4e9,1.15);sunlight.position.set(-2.5,8,3);scene.add(sunlight);
+const camera=new THREE.PerspectiveCamera(59,1,.08,60);
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:"high-performance"});
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=.93;
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,matchMedia("(pointer:coarse)").matches?1.45:1.8));
+const eye=new THREE.Vector3(-.35,1.72,2.8);
+let yaw=-.42,pitch=.06;
+const keys=new Set();let down=null,ready=false,last=performance.now(),giEnabled=true;
+const giToggle=document.querySelector("#giToggle");
+giToggle.addEventListener("click",()=>{giEnabled=!giEnabled;scene.traverse(obj=>{if(!obj.isMesh)return;for(const m of (Array.isArray(obj.material)?obj.material:[obj.material])){if(m.isMeshStandardMaterial&&m.lightMap){m.lightMapIntensity=giEnabled?.40:0;m.needsUpdate=true;}}});giToggle.textContent=giEnabled?"GI Cycles : active":"GI Cycles : désactivée";});
+function fit(){const width=innerWidth,height=innerHeight;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();}
+addEventListener("resize",fit);fit();
+const updateView=()=>{camera.position.copy(eye);camera.rotation.order="YXZ";// Three.js faces -Z by default. Our exported gallery extends toward +Z.
+camera.rotation.y=Math.PI+yaw;camera.rotation.x=-pitch;};
+updateView();
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  if(ready){
+    const speed=(keys.has("Shift")?3.6:2.0)*dt;
+    const f=(keys.has("KeyW")||keys.has("KeyZ")||keys.has("ArrowUp")?1:0)
+      -(keys.has("KeyS")||keys.has("ArrowDown")?1:0);
+    const a=(keys.has("KeyD")?1:0)-(keys.has("KeyA")||keys.has("KeyQ")?1:0);
+    eye.z=Math.max(-1.1,Math.min(13.2,eye.z+Math.cos(yaw)*f*speed-Math.sin(yaw)*a*speed));
+    eye.x=Math.max(-4.15,Math.min(4.15,eye.x+Math.sin(yaw)*f*speed+Math.cos(yaw)*a*speed));
+    updateView();
+  }
+  renderer.render(scene,camera);
+}
+requestAnimationFrame(loop);
+canvas.addEventListener("pointerdown",e=>{down={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener("pointermove",e=>{if(!down||e.pointerId!==down.id)return;yaw-=(e.clientX-down.x)*.0035;pitch=Math.max(-1.0,Math.min(1.0,pitch-(e.clientY-down.y)*.0035));down.x=e.clientX;down.y=e.clientY;});
+for(const ev of ["pointerup","pointercancel","lostpointercapture"]){canvas.addEventListener(ev,()=>down=null);}
+addEventListener("keydown",e=>{if(/^(Key[WASDQZ]|ArrowUp|ArrowDown|ShiftLeft|ShiftRight)$/.test(e.code)){keys.add(e.code);e.preventDefault();}});
+addEventListener("keyup",e=>keys.delete(e.code));
+canvas.addEventListener("wheel",e=>{e.preventDefault();camera.fov=Math.max(40,Math.min(70,camera.fov+Math.sign(e.deltaY)*2));camera.updateProjectionMatrix();},{passive:false});
+try{
+  const prefix="../assets/v13/";
+  const manager=new THREE.LoadingManager();
+  const loader=new THREE.TextureLoader(manager);
+  const load=async(url,color=false)=>{
+    const tex=await loader.loadAsync(prefix+url);
+    tex.colorSpace=color?THREE.SRGBColorSpace:THREE.NoColorSpace;
+    tex.anisotropy=4;
+    tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+    tex.needsUpdate=true;
+    return tex;
+  };
+  const [model,base,normal,roughness,indirect]=await Promise.all([
+    new GLTFLoader().loadAsync(prefix+"room-v13-pbr-geometry.glb"),
+    load("room-v13-floor-albedo.jpg",true),
+    load("room-v13-floor-normal.jpg"),
+    load("room-v13-floor-roughness.jpg"),
+    load("room-v13-indirect-gi.png",true)
+  ]);
+  const floorMat=new THREE.MeshStandardMaterial({
+    map:base,normalMap:normal,roughnessMap:roughness,
+    roughness:.87,metalness:0,normalScale:new THREE.Vector2(.12,.12),
+    side:THREE.DoubleSide
+  });
+  for(const texture of [base,normal,roughness]){
+    texture.repeat.set(4.6,7.0);
+  }
+  indirect.flipY=false;
+  indirect.wrapS=indirect.wrapT=THREE.ClampToEdgeWrapping;
+  indirect.channel=1;
+  let surfaces=0,floors=0,uv1Meshes=0;
+  model.scene.traverse(obj=>{
+    if(!obj.isMesh)return;
+    surfaces++;
+    // The imported geometry must carry real UV0 and UV1, as exported by Blender.
+    if(!obj.geometry.attributes.uv)throw Error("Missing true PBR UV0");
+    if(!obj.geometry.attributes.uv1)throw Error("Missing independent Cycles GI UV1");
+    uv1Meshes++;
+    const originals=Array.isArray(obj.material)?obj.material:[obj.material];
+    obj.material=originals.map(m=>{
+      const isFloor=(m.name||"").includes("V13 scanned CC0 honed microcement");
+      if(isFloor)floors++;
+      // Important: preserve physically-based materials for real light response.
+      const replacement=isFloor?floorMat.clone():new THREE.MeshStandardMaterial({
+        color:m.color?.clone()||new THREE.Color(0xf4f1eb),
+        roughness:m.roughness??.9,metalness:m.metalness??0,
+        map:m.map||null,normalMap:m.normalMap||null,side:THREE.DoubleSide
+      });
+      replacement.lightMap=indirect;
+      replacement.lightMapIntensity=.40;
+      replacement.needsUpdate=true;
+      return replacement;
+    });
+    if(obj.material.length===1)obj.material=obj.material[0];
+  });
+  if(!surfaces||surfaces>24||!floors||uv1Meshes!==surfaces)
+    throw new Error("Invalid PBR/GI GLB: "+JSON.stringify({surfaces,floors,uv1Meshes}));
+  scene.add(model.scene);
+  ready=true;
+  document.documentElement.dataset.roomV13="scanned-pbr-cycles-indirect";
+  window.__TEM_V13_READY=true;
+  window.__TEM_V13_STATE={
+    surfaces,floors,uv1Meshes,giChannel:indirect.channel,
+    floorHasNormal:!!floorMat.normalMap,floorHasRoughness:!!floorMat.roughnessMap,
+    room:[9.2,6.4,14]
+  };
+  status.textContent="✓ Scan PBR réel + GI Cycles UV1 · "+surfaces+" surfaces";
+}catch(error){
+  console.error(error);
+  status.textContent="Échec : "+String(error);
+  document.documentElement.dataset.roomV13="error";
+}
+</script></body></html>
