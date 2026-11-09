@@ -1,7 +1,10 @@
 // Source-of-truth smoke guard: verifies critical coherence without altering site code.
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
+import {createRequire} from 'node:module';
 import {WALL_FORMATS,AISLE_DURATIONS,DISTANCE_LEVELS,DEFAULT_COMMERCE_CONFIG} from '../../empty-museum/commerce-model.mjs';
+const require=createRequire(import.meta.url);
+const mix=require('../../empty-museum/gallery-mix.js');
 const read=path=>readFileSync(path,'utf8');
 const config=JSON.parse(read('empty-museum/project-contract.json'));
 const entry=read('empty-museum/index.html');
@@ -17,6 +20,9 @@ const tests=[
   ['Active WebGL renderer loaded',()=>assert.ok(loader.includes('engine3d.js?'))],
   ['Fallback renderer preserved',()=>assert.ok(loader.includes('walk.js?'))],
   ['3m wall modules',()=>assert.equal(DEFAULT_COMMERCE_CONFIG.wall.moduleLengthM,config.wallModuleLengthM)],
+  ['Curated physical gallery counts',()=>{assert.equal(config.galleryPhysicalBays,mix.MODULE_COUNT);assert.deepEqual(config.galleryPartnerBays,mix.PARTNER_BAYS);assert.deepEqual(config.galleryCommercialMix,mix.mix());assert.equal(config.galleryCommercialSlots,mix.allWallSlots().length)}],
+  ['Four aisle slots and 1.8 by 1.5m footprints',()=>{assert.deepEqual(config.aisleStations,DEFAULT_COMMERCE_CONFIG.aisle.stations);assert.equal(config.aisleFootprintMetres.width,DEFAULT_COMMERCE_CONFIG.aisle.footprintWidthM);assert.equal(config.aisleFootprintMetres.length,DEFAULT_COMMERCE_CONFIG.aisle.footprintLengthM);assert.equal(config.aisleFootprintMetres.maxHeight,DEFAULT_COMMERCE_CONFIG.aisle.maxHeightM)}],
+  ['Shared gallery layout loaded before the visitor app',()=>assert.ok(entry.indexOf('gallery-mix.js?')>=0 && entry.indexOf('gallery-mix.js?')<entry.indexOf('src="app.js?'))],
   ['1/2/4/8/16 wall subdivision',()=>assert.deepEqual(WALL_FORMATS.map(f=>f.count),config.wallSizes)],
   ['Daily/weekly/monthly aisle placements',()=>assert.deepEqual(AISLE_DURATIONS.map(x=>x.days),config.aisleDurationsDays)],
   ['Visibility distance levels',()=>assert.deepEqual(DISTANCE_LEVELS.map(x=>x.meters),config.aisleDistanceMetres)],
