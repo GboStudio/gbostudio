@@ -8,7 +8,7 @@ Before any museum change:
 3. Distinguish **discussed / approved / proposed in PR / merged / tested / deployed**. Do not promise it is live from a passing unit test or commit.
 4. Make a focused change against current HEAD; do not revert or overwrite parallel changes. Prefer feature branches + CI + PR to direct production edits.
 5. Update the project state for every accepted decision and delivered change, recording open contradictions. Update the machine contract and tests if invariants change.
-6. Run `node .github/scripts/museum-coherence.mjs` and relevant unit, Playwright and public deployment checks. Never weaken or disable a failing check merely to avoid notification.
+6. Run `node --test .github/scripts/museum-coherence.test.mjs`, `node .github/scripts/museum-coherence.mjs` and relevant unit, Playwright and public deployment checks. The coherence guard checks static runtime references, tactile navigation contracts and retention of security tests; it is not a substitute for browser tests. Never weaken or disable a failing check merely to avoid notification.
 7. Prove deployed status with the exact GitHub Pages revision and a public browser check.
 8. Keep demonstration prices and browser-only reservations clearly marked DEMO until secure server stock, authentication, moderation and real payments are in place.
 
