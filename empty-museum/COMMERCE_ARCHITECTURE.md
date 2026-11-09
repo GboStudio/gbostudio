@@ -23,7 +23,7 @@ Sur les 38 baies physiques, **4 baies partenaires non commercialisées** et **34
 - Le format actif d'un module ne peut pas changer tant qu'une réservation de ce module est en cours. Ceci évite tout chevauchement d'œuvres. Les 16 cellules permettent ultérieurement un moteur de subdivisions mixtes, sous réserve de gérer l'inventaire transactionnel par cellule.
 - La réservation désigne l'identifiant du module, du format et de la case. Les tailles physiques sont calculées automatiquement à partir des marges et joints.
 
-### Tarifs initiaux de travail (non publiés)
+### Tarifs de démonstration (affichés dans l'accueil sans paiement)
 
 | Format | Nombre par module | Mensuel | Annuel |
 |---|---:|---:|---:|
@@ -33,7 +33,7 @@ Sur les 38 baies physiques, **4 baies partenaires non commercialisées** et **34
 | Moyen | 8 | 9,50 € | 95 € |
 | Petit | 16 | 4,50 € | 45 € |
 
-Les tarifs sont des hypothèses commerciales **paramétrables**, pas des prix validés par le propriétaire. Ils ne sont pas appliqués à la page publique.
+Les tarifs sont les montants de simulation divisés par deux sur demande, également affichés sur les offres publiques de démonstration. Aucun paiement réel n'est possible.
 
 ## Installations 3D premium dans l'allée
 
@@ -75,14 +75,14 @@ Le moteur de rendu devra appliquer des règles de **frustum culling, occlusion r
 
 1. **Effectué en branche de développement** : la galerie conserve son espacement physique de 3,5 m et attribue une surface commerciale de 3 m à chaque baie.
 2. **Effectué en branche de développement** : 34 baies mixtes / 116 cadres, 4 baies partenaires hors vente ; les œuvres de démonstration historiques sont conservées sur la première subdivision de leur baie.
-3. Ajouter dans `engine3d.js` le rendu des objets premium en appliquant `aisleVisibility()`, LOD et occlusion ; vérifier les performances sur iPhone.
+3. **Socles 3D rendus et redimensionnés en branche** ; reste à brancher les règles premium réelles d'exposition temporelle et de portée à `aisleVisibility()`, avec LOD, occlusion et contrôle de performance sur iPhone.
 4. Migrer les données des œuvres de démonstration vers des contenus modérés provenant d'un backend authentifié.
 5. Brancher le catalogue de prix, le checkout, les abonnements et les webhooks de paiement. Protéger les écritures globales et l'inventaire.
 6. **Démo actualisée en branche de développement** : les cartes affichent les tarifs divisés par deux, sans checkout et sans promesse de réservation réelle.
 
 ## Vérifications
 
-- `node --test empty-museum/commerce-model.test.mjs`
+- `node --test empty-museum/commerce-model.test.mjs empty-museum/gallery-mix.test.mjs`
 - `node .github/scripts/tem-commerce-e2e.mjs` avec Playwright et le site servi localement sur le port 8765.
 - Intégration à `.github/workflows/museum-3d-checks.yml` pour rejouer les tests lors de modifications.
 
