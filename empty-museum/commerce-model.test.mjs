@@ -23,8 +23,8 @@ test('Les modules conservent exactement 3 m',()=>{
   assert.throws(()=>normalizeCommerceConfig({...config,wall:{...config.wall,moduleLengthM:4}}));
 });
 test('Tarifs muraux mensuels et annuels distincts',()=>{
-  assert.equal(wallPrice(config,'very_large','monthly').amount,119);
-  assert.equal(wallPrice(config,'small','annual').amount,90);
+  assert.equal(wallPrice(config,'very_large','monthly').amount,59.5);
+  assert.equal(wallPrice(config,'small','annual').amount,45);
   assert.throws(()=>wallPrice(config,'small','daily'));
 });
 test('Interdit la double réservation et la conversion de format d’un module occupé',()=>{
@@ -51,7 +51,7 @@ test('Offres 3D premium : distances et durées autorisées',()=>{
 });
 test('Installation 3D : station exclusive et date d’expiration',()=>{
   const r=createPreviewReservation({config,reservations:[],type:'aisle',stationId:'S01',objectType:'sculpture',distanceId:'landmark',days:7},start);
-  assert.equal(r.amount,4990);
+  assert.equal(r.amount,2495);
   assert.equal(canReserveAisle([r],'S01',start).ok,false);
   assert.equal(canReserveAisle([r],'S02',start).ok,true);
   assert.equal(isActive(r,start),true);
@@ -75,4 +75,21 @@ test('La distance de visibilité est configurable et figée à la réservation',
   assert.equal(aisleVisibility(changed,r,85,start).visible,false);
   assert.equal(aisleVisibility(config,r,10,Date.parse(r.endsAt)).visible,false);
   assert.throws(()=>normalizeCommerceConfig({...config,aisle:{...config.aisle,distanceMetres:{near:50,gallery:25,landmark:100}}}));
+});
+
+test('Le catalogue divisé par deux et les quatre stations 3D sont cohérents',()=>{
+  assert.equal(config.aisle.stations.length,4);
+  assert.deepEqual(config.aisle.stations,['S01','S02','S03','S04']);
+  assert.equal(config.aisle.footprintWidthM,1.5);
+  assert.equal(config.aisle.footprintLengthM,1.8);
+  assert.equal(config.aisle.maxHeightM,2.5);
+  assert.equal(aislePrice(config,'near',1).amount,145);
+  assert.equal(aislePrice(config,'near',7).amount,645);
+  assert.equal(aislePrice(config,'near',30).amount,1995);
+  assert.equal(aislePrice(config,'gallery',1).amount,295);
+  assert.equal(aislePrice(config,'gallery',7).amount,1245);
+  assert.equal(aislePrice(config,'gallery',30).amount,3995);
+  assert.equal(aislePrice(config,'landmark',1).amount,495);
+  assert.equal(aislePrice(config,'landmark',30).amount,7950);
+  assert.throws(()=>createPreviewReservation({config,reservations:[],type:'aisle',stationId:'S05',objectType:'sculpture',distanceId:'near',days:1},start));
 });
