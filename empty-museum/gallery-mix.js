@@ -44,7 +44,7 @@
     Object.freeze({id:'S01',x:2.25,z:15}),
     Object.freeze({id:'S02',x:-2.25,z:47}),
     Object.freeze({id:'S03',x:2.25,z:85}),
-    Object.freeze({id:'S04',x:-2.25,z:123})
+    Object.freeze({id:'S04',x:-2.25,z:112})
   ]);
   const AISLE_WIDTH_M=1.5,AISLE_LENGTH_M=1.8,AISLE_MAX_HEIGHT_M=2.5;
 
