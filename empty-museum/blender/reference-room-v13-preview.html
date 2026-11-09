@@ -10,8 +10,8 @@ header>div{padding:12px 17px;border-radius:8px;background:#20211fb5;backdrop-fil
 header b{display:block;letter-spacing:.14em;font-size:11px}
 header span{font-size:11px;color:#d0ccc3}
 footer{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);padding:9px 15px;background:#20211fc9;border-radius:9px;font-size:11px;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
-#status{position:fixed;right:16px;bottom:65px;background:#20211fd9;padding:9px 13px;border-radius:8px}
-@media(max-width:650px){header>div{max-width:none}header>div:nth-child(2){display:none}footer{font-size:10px}}
+#status{position:fixed;right:16px;bottom:68px;background:#20211fd9;padding:9px 13px;border-radius:8px;max-width:260px;text-align:right}
+@media(max-width:650px){header>div{max-width:none}header>div:nth-child(2){display:none}footer{font-size:10px}#status{left:16px;right:16px;bottom:76px;max-width:none;text-align:center;font-size:10px}#giToggle{bottom:124px!important;left:16px!important;font-size:11px}}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script></head>
 <body>
@@ -22,18 +22,26 @@ footer{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);padding:9p
 <footer>Glisser pour regarder · WASD/ZQSD pour avancer · Molette pour zoomer</footer>
 <script type="module">
 import * as THREE from "three";
+import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 const canvas=document.querySelector("#v13Canvas"),status=document.querySelector("#status");
 const scene=new THREE.Scene();scene.background=new THREE.Color(0xe4e3df);
 scene.environmentIntensity=.38;
-const sky=new THREE.HemisphereLight(0xfffcf4,0xc4c0b8,.55);scene.add(sky);
-const sunlight=new THREE.DirectionalLight(0xfff4e9,1.15);sunlight.position.set(-2.5,8,3);scene.add(sunlight);
+const sky=new THREE.HemisphereLight(0xfffcf4,0xc4c0b8,.55);scene.add(sky);sky.intensity=1.1;
+const sunlight=new THREE.DirectionalLight(0xfff4e9,1.8);sunlight.position.set(-2.5,8,3);scene.add(sunlight);
 const camera=new THREE.PerspectiveCamera(59,1,.08,60);
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:"high-performance"});
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=.93;
+renderer.toneMappingExposure=1.02;
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,matchMedia("(pointer:coarse)").matches?1.45:1.8));
+try{
+  const pmrem=new THREE.PMREMGenerator(renderer);
+  const room=new RoomEnvironment();
+  scene.environment=pmrem.fromScene(room,.025).texture;
+  scene.environmentIntensity=.30;
+  room.dispose();pmrem.dispose();
+}catch(error){console.warn("Neutral PMREM unavailable",error);}
 const eye=new THREE.Vector3(-.35,1.72,2.8);
 let yaw=-.42,pitch=.06;
 const keys=new Set();let down=null,ready=false,last=performance.now(),giEnabled=true;
@@ -86,7 +94,7 @@ try{
   ]);
   const floorMat=new THREE.MeshStandardMaterial({
     map:base,normalMap:normal,roughnessMap:roughness,
-    roughness:.87,metalness:0,normalScale:new THREE.Vector2(.12,.12),
+    roughness:.83,metalness:0,normalScale:new THREE.Vector2(.10,.10),clearcoat:.026,clearcoatRoughness:.85,
     side:THREE.DoubleSide
   });
   for(const texture of [base,normal,roughness]){
@@ -113,6 +121,7 @@ try{
         roughness:m.roughness??.9,metalness:m.metalness??0,
         map:m.map||null,normalMap:m.normalMap||null,side:THREE.DoubleSide
       });
+      if((m.name||"").includes("plaster"))replacement.color.setHex(0xfbf9f5);
       replacement.lightMap=indirect;
       replacement.lightMapIntensity=.40;
       replacement.needsUpdate=true;

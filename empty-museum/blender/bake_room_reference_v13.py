@@ -50,7 +50,7 @@ if hasattr(scene.cycles,"use_denoising"):
     scene.cycles.use_denoising=False
 scene.view_settings.view_transform="Standard"
 scene.view_settings.look="Medium High Contrast"
-scene.view_settings.exposure=-1.3
+scene.view_settings.exposure=-1.17
 
 world=bpy.data.worlds.new("Museum neutral environment")
 scene.world=world
@@ -162,7 +162,7 @@ links.new(rough_node.outputs["Color"],rough_adjust.inputs["Value"])
 links.new(rough_adjust.outputs["Result"],bsdf.inputs["Roughness"])
 links.new(albedo_node.outputs["Color"],bsdf.inputs["Base Color"])
 plaster=mineral("V13 fine warm ivory plaster",
-    (.84,.833,.815),(.835,.827,.81),.65,260,.00045,.94)
+    (.94,.933,.92),(.924,.915,.901),.65,260,.00045,.94)
 stone=mineral("V13 honed limestone plinth",
     (.79,.781,.759),(.773,.763,.742),1.8,170,.0008,.85)
 bronze,_=material("V13 aged brushed brass",(.49,.42,.31),.56,.63)
