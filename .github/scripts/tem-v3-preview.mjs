@@ -77,7 +77,7 @@ for(const device of setups){
     await page.locator('button.exhibit-offer-cta[data-open]').click({timeout:15000});
     await page.waitForFunction(()=>document.querySelector('#exhibit')?.open===true,null,{timeout:10000});
     await page.keyboard.press('Escape');
-    await page.locator('button.exhibit-how-buttons button[data-plan="floor"]').click({timeout:15000});
+    await page.locator('.exhibit-how-buttons button[data-plan="floor"]').click({timeout:15000});
     await page.waitForFunction(()=>document.querySelector('#floorStudio')?.open===true,null,{timeout:15000});
     await page.keyboard.press('Escape');
     await page.locator('.editorial-secondary').click({timeout:10000});
