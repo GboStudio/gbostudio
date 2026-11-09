@@ -124,3 +124,22 @@ test('V11 lighting preserves real limestone geometry and avoids painted fake gro
   assert.match(loader,/engine3d\.js\?v=20261109dualstick3baketimeout/);
   assert.match(file('index.html'),/engine-loader\.js\?v=20261109dualstick3baketimeout/);
 });
+
+test('3D network recovery is limited to one reload and never masks code exceptions',()=>{
+  const loader=file('engine-loader.js');
+  const network=loader.match(/  function looksLikeModuleNetworkFailure\(error\)\{[\s\S]*?\n  \}/)?.[0];
+  const claim=loader.match(/  function claimModuleReload\(storage,key\)\{[\s\S]*?\n  \}/)?.[0];
+  assert.ok(network&&claim,'Network recovery helpers must remain testable');
+  const helper=new Function(network+'\n'+claim+'\nreturn {looksLikeModuleNetworkFailure,claimModuleReload};')();
+  assert.equal(helper.looksLikeModuleNetworkFailure({name:'TypeError',message:'Failed to fetch dynamically imported module: https://example.test/engine3d.js'}),true);
+  assert.equal(helper.looksLikeModuleNetworkFailure({name:'TypeError',message:'Importing a module script failed.'}),true);
+  assert.equal(helper.looksLikeModuleNetworkFailure({name:'SyntaxError',message:'Unexpected token'}),false);
+  assert.equal(helper.looksLikeModuleNetworkFailure({name:'TypeError',message:'Cannot read properties of undefined'}),false);
+  const data=new Map();
+  const storage={getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,value)};
+  assert.equal(helper.claimModuleReload(storage,'test'),true);
+  assert.equal(helper.claimModuleReload(storage,'test'),false,'Repeated failures must not trigger reload loops');
+  assert.match(loader,/navigator\.onLine!==false/);
+  assert.match(loader,/window\.sessionStorage\.removeItem\(moduleRetryKey\)/);
+  assert.match(loader,/legacy\(error\)/,'Existing 2D fallback must remain available');
+});

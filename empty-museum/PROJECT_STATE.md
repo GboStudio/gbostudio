@@ -35,6 +35,10 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 3. Le sol et l'accueil restent insatisfaisants visuellement malgré les tests logiciels ; validation visuelle nécessaire.
 4. PR #34 navigation et #37 accueil sont fusionnées ; PR #35 photoréalisme reste ouverte, synchronisée le 9 novembre avec la sécurité #38 sur `main` ; préserver ses six fichiers isolés et vérifier ses CI avant une éventuelle fusion. Le prototype n'est pas encore intégré à la galerie publique.
 
+## Fiabilité du chargement immersif — correctif proposé
+- Incident confirmé sur le contrôle public du 9 novembre : `luxury-v8.js` a temporairement répondu HTTP 503 sur desktop, déclenchant le secours 2D. Le mobile a ensuite réussi. L'origine de l'erreur HTTP n'est pas confirmée ; un test source vert ne garantit pas la disponibilité du CDN.
+- Une modification isolée propose une unique récupération après un échec réseau de chargement des modules ; un défaut persistant ou une erreur de code reste détectable et utilise le secours 2D. Ne considérer la reprise comme effective qu'après CI et déploiement du SHA précis.
+
 ## Politique de modifications et d'alertes
 - Réutiliser le registre avant toute modification ; compléter les décisions utiles après une discussion et lors de la livraison.
 - En cas de CI rouge : examiner le **premier échec réel** dans les logs, corriger sa cause, valider à nouveau ; ne pas couper les notifications, ne pas rendre le test facultatif.
