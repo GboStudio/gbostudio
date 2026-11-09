@@ -119,11 +119,29 @@ function renderManagement(){
   $('#metricStations').textContent=String(config.aisle.stations.length);
   const active=reservations.filter(r=>isActive(r));
   $('#metricReservations').textContent=String(active.length);
-  $('#reservations').innerHTML=active.length?active.slice().reverse().map(r=>{
+  // Browser storage can be modified outside the app. Never parse reservation fields as HTML.
+  const list=$('#reservations');
+  list.replaceChildren();
+  if(!active.length){
+    const empty=document.createElement('p');
+    empty.className='muted';
+    empty.textContent='Aucune réservation simulée active.';
+    list.appendChild(empty);
+    return;
+  }
+  for(const r of active.slice().reverse()){
     const name=r.type==='wall'?('Mur '+r.moduleNumber+' / '+r.formatId+' / '+r.slotId):('Allée '+r.stationId+' / '+r.objectType);
     const end=new Date(r.endsAt).toLocaleDateString('fr-FR');
-    return '<div class="reservation"><div><strong>'+name+'</strong><small>'+euros(r.amount)+' · Fin '+end+'</small></div><button data-cancel="'+r.id+'" type="button">Annuler</button></div>';
-  }).join(''):'<p class="muted">Aucune réservation simulée active.</p>';
+    const row=document.createElement('div');row.className='reservation';
+    const details=document.createElement('div');
+    const title=document.createElement('strong');title.textContent=name;
+    const subtitle=document.createElement('small');subtitle.textContent=euros(r.amount)+' · Fin '+end;
+    details.append(title,subtitle);
+    const cancel=document.createElement('button');
+    cancel.type='button';cancel.dataset.cancel=String(r.id??'');cancel.textContent='Annuler';
+    row.append(details,cancel);
+    list.appendChild(row);
+  }
 }
 function render(){
   renderWalls();
