@@ -59,5 +59,28 @@
     "length": 1.8,
     "maxHeight": 2.5
   },
-  "catalogPricingVersion": "halved-2026-11-09-demo"
+  "catalogPricingVersion": "halved-2026-11-09-demo",
+  "wallMix": {
+    "very_large": 8,
+    "large": 12,
+    "normal": 9,
+    "medium": 4,
+    "small": 1
+  },
+  "wallSaleableModuleCount": 34,
+  "wallPartnerModuleCount": 4,
+  "wallSaleableSlots": 116,
+  "aisleStationIds": [
+    "S01",
+    "S02",
+    "S03",
+    "S04"
+  ],
+  "aisleFootprintM": {
+    "length": 1.8,
+    "width": 1.5,
+    "maxHeight": 2.5
+  },
+  "commerceDefaultPricingVersion": 2,
+  "commerceReleaseStatus": "draft-pr-not-deployed"
 }
