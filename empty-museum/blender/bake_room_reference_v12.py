@@ -42,8 +42,11 @@ scene.render.resolution_percentage=100
 scene.render.image_settings.file_format="PNG"
 scene.render.film_transparent=False
 for layer in scene.view_layers:
+    # Ubuntu Blender lacks OpenImageDenoiser. Disable to avoid runtime crash.
     if hasattr(layer.cycles,"use_denoising"):
-        layer.cycles.use_denoising=True
+        layer.cycles.use_denoising=False
+if hasattr(scene.cycles,"use_denoising"):
+    scene.cycles.use_denoising=False
 scene.view_settings.view_transform="Standard"
 scene.view_settings.look="Medium High Contrast"
 scene.view_settings.exposure=-.05
