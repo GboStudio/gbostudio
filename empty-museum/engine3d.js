@@ -645,13 +645,13 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       const inset=new THREE.MeshBasicMaterial({
         color:0xb5ad9d,transparent:true,opacity:.075,depthWrite:false,side:THREE.DoubleSide
       });
-      const floorLot=mesh(interactive,new THREE.PlaneGeometry(1.18,1.18),inset,x,.045,z);
+      const floorLot=mesh(interactive,new THREE.PlaneGeometry(1.5,1.8),inset,x,.045,z);
       floorLot.rotation.x=-Math.PI/2;
       markInteractive(floorLot,slot);
       const trace=material(0xb0a38d,.58,.24);
       const corner=.25,edge=.018;
       for(const sx of [-1,1])for(const sz of [-1,1]){
-        const px=x+sx*.59,pz=z+sz*.59;
+        const px=x+sx*.75,pz=z+sz*.9;
         box(interactive,corner,edge,.014,trace,px-sx*corner/2,.049,pz);
         box(interactive,.014,edge,corner,trace,px,.049,pz-sz*corner/2);
       }
@@ -661,13 +661,13 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
         g.letterSpacing="5px";g.fillText("PLACE "+slot.id,w/2,h*.53);
       },500,120);
       const label=new THREE.MeshBasicMaterial({map:tileLabel,transparent:true,depthWrite:false,side:THREE.DoubleSide});
-      const m=mesh(interactive,new THREE.PlaneGeometry(.54,.13),label,x,.053,z+.41);
+      const m=mesh(interactive,new THREE.PlaneGeometry(.54,.13),label,x,.053,z+.69);
       m.rotation.x=-Math.PI/2;
       return;
     }
     // Occupied installation gets a real freestanding stone plinth.
-    const base=box(interactive,1.25,.20,1.25,plinthMat,x,.12,z,true,true);
-    box(interactive,1.27,.014,1.27,brass,x,.227,z);
+    const base=box(interactive,1.55,.20,1.85,plinthMat,x,.12,z,true,true);
+    box(interactive,1.57,.014,1.87,brass,x,.227,z);
     const piece=slot.piece, tint=new THREE.Color(/^#[0-9a-f]{6}$/i.test(piece.floorColor||"")?piece.floorColor:0xb6a893);
     const sculpture=material(tint,.34,.24);
     let top;
