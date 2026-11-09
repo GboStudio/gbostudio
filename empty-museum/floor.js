@@ -1,3 +1,4 @@
+import {DEFAULT_COMMERCE_CONFIG,COMMERCE_STORAGE_KEY,normalizeCommerceConfig,aislePrice} from './commerce-model.mjs';
 // Lazy-load 3D addons: the original photo/sculpture floor studio still works
 // when Three.js/CDN/WebGL is unavailable and the gallery uses its 2D fallback.
 let modelToolsPromise=null;
@@ -14,6 +15,20 @@ const stopModelPreview=()=>{if(modelToolsPromise)modelToolsPromise.then(m=>m.sto
   let modelFile=null,modelValidated=false,modelRequest=0;
   let state={slot:'S01',type:'photo',author:'',title:'',text:'',shape:'spire',tint:'#d8b68b',image:''},angle=-.25;
   const LINE_LIMIT=46;
+  function catalog(){
+    try{return normalizeCommerceConfig(JSON.parse(localStorage.getItem(COMMERCE_STORAGE_KEY)||'null')||DEFAULT_COMMERCE_CONFIG);}
+    catch{return normalizeCommerceConfig(DEFAULT_COMMERCE_CONFIG);}
+  }
+  function priceSelection(){
+    return aislePrice(catalog(),$('#floorVisibilityTier').value,Number($('#floorDurationDays').value));
+  }
+  function updateFloorQuote(){
+    const offer=priceSelection();
+    $('#floorQuotedPrice').textContent=new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR'}).format(offer.amount);
+    $('#floorQuotedTerm').textContent='/ '+offer.days+' JOUR'+(offer.days>1?'S':'')+' · '+offer.maxVisibleDistanceM+' M';
+    return offer;
+  }
+  for(const id of ['floorVisibilityTier','floorDurationDays'])$('#'+id).addEventListener('change',updateFloorQuote);
   const colorHex=s=>/^#[0-9a-fA-F]{6}$/.test(s||'')?s:'#d8b68b';
   function openFloor(id){
     const slot=window.TEM.getFloorSlots().find(s=>s.id===id && !s.piece);
@@ -24,6 +39,9 @@ const stopModelPreview=()=>{if(modelToolsPromise)modelToolsPromise.then(m=>m.sto
     $('#floorModelCanvas').hidden=true;
     $('#floorPreviewCanvas').hidden=false;
     $('#floorSlotLabel').textContent='SOL '+id+' · 1,80 × 1,50 M · H MAX. 2,50 M';
+    $('#floorVisibilityTier').value='near';
+    $('#floorDurationDays').value='1';
+    updateFloorQuote();
     $('#floorAuthor').value='';
     $('#floorTitle').value='';
     $('#floorText').value='';
@@ -246,7 +264,13 @@ const stopModelPreview=()=>{if(modelToolsPromise)modelToolsPromise.then(m=>m.sto
       showError(error.message||'Enregistrement du modèle impossible.');
       publishButton.disabled=false;publishButton.textContent=oldLabel;return;
     }
-    const p={slot:state.slot,size:'floor',floorType:state.type,floorColor:colorHex(state.tint),floorShape:state.shape,floorText:text,
+    const chosenOffer=updateFloorQuote();
+    const dateStart=Date.now();
+    const p={slot:state.slot,size:'floor',floorType:state.type,
+      distanceId:$('#floorVisibilityTier').value,durationDays:chosenOffer.days,
+      maxVisibleDistanceM:chosenOffer.maxVisibleDistanceM,pricePreview:chosenOffer.amount,
+      startsAt:new Date(dateStart).toISOString(),expiresAt:new Date(dateStart+chosenOffer.days*86400000).toISOString(),
+      commercialMode:'browser-demo-no-payment',floorColor:colorHex(state.tint),floorShape:state.shape,floorText:text,
       category:state.type==='model'||state.type==='statue'?'3d':state.type==='photo'?'image':state.type==='neon'?'words':'design',
       title,author,description:state.type==='model'?'Modèle 3D personnel exposé sur le socle '+state.slot+'.':text||'Installation créée pour The Unreal Museum.',
       tools:state.type==='model'?'Import 3D : '+saved.format.toUpperCase():'Studio du musée',
