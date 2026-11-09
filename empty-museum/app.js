@@ -19,7 +19,48 @@ const base=[
 {id:17,title:'Signal',author:'Eva',category:'design',tools:'ChatGPT + Figma',description:'Identité visuelle pour un projet qui n’existera probablement jamais.',size:'standard',image:'linear-gradient(135deg,#161616 0 45%,#d1ff39 45% 58%,#f0eee5 58%)',date:'Oct. 2026'},
 {id:18,title:'Tomorrow, Maybe',author:'Iris',category:'image',tools:'ChatGPT + image generation',description:'Une image produite à partir d’une phrase : demain, mais sans certitude.',size:'xl',image:'linear-gradient(165deg,#d9d6cf,#b7c6d3 45%,#f1c1a6 70%,#393f49)',date:'Oct. 2026'}];
 let pieces=base.slice(0,6), filter='all', plan={size:'standard',price:9.9}, upload='', selectedSlot=null;
-try{const s=JSON.parse(localStorage.getItem('tem-demo')||'[]');if(Array.isArray(s))pieces=[...base.slice(0,6),...s]}catch(e){}
+// Treat locally persisted exhibits as untrusted input (browser extensions and other code
+// running on the same origin can modify localStorage). Keep only known, bounded fields.
+function safeStoredPiece(item){
+  if(!item||typeof item!=='object')return null;
+  const id=Number(item.id);
+  if(!Number.isSafeInteger(id)||id<=18||id>1000000)return null;
+  const slot=typeof item.slot==='string'
+    ? (/^(?:S0[1-5]|P0[1-6])$/.test(item.slot)?item.slot:null)
+    : (Number.isInteger(item.slot)&&item.slot>=4&&item.slot<=250?item.slot:null);
+  const sizes=new Set(['mini','standard','large','xl','portrait','landscape','tall','wide','panorama','floor','ceiling-mini','ceiling-medium','ceiling-large']);
+  const categories=new Set(['image','3d','words','design','build','weird']);
+  const str=(v,n)=>typeof v==='string'?v.slice(0,n):'';
+  const image=str(item.image,3000000);
+  return {
+    id,slot,
+    date:str(item.date,40),
+    durationMonths:1,
+    floorType:['photo','statue','billboard','neon','model'].includes(item.floorType)?item.floorType:'photo',
+    floorShape:['spire','orb','rings'].includes(item.floorShape)?item.floorShape:'spire',
+    floorColor:/^#[0-9a-f]{6}$/i.test(item.floorColor||'')?item.floorColor:'#b6a893',
+    modelKey:/^model-[a-z0-9._-]{1,96}$/i.test(item.modelKey||'')?item.modelKey:null,
+    modelName:str(item.modelName,120),
+    modelFormat:['glb','gltf','stl'].includes(item.modelFormat)?item.modelFormat:null,
+    size:sizes.has(item.size)?item.size:'standard',
+    category:categories.has(item.category)?item.category:'image',
+    title:str(item.title,100),author:str(item.author,80),
+    description:str(item.description,650),tools:str(item.tools,100),
+    words:str(item.words,300),floorText:str(item.floorText,300),
+    // Uploaded files are converted to raster data URLs; reject arbitrary CSS and URLs.
+    image:/^data:image\/(?:png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(image)?image:''
+  };
+}
+try{
+  const stored=JSON.parse(localStorage.getItem('tem-demo')||'[]');
+  if(Array.isArray(stored)){
+    const ids=new Set();
+    const safe=stored.slice(0,100).map(safeStoredPiece).filter(p=>{
+      if(!p||ids.has(p.id))return false;ids.add(p.id);return true;
+    });
+    pieces=[...base.slice(0,6),...safe];
+  }
+}catch(e){}
 const grid=$('#grid'),viewport=$('#viewport');
 const FORMATS={
   mini:{name:'Petit portrait',dimensions:'20 × 30 cm',ratio:2/3,price:9.90},
@@ -147,7 +188,8 @@ $('#reserveBack').onclick=()=>setReserveStage(1);
 $('#title').oninput=()=>$('#prevTitle').textContent=($('#title').value||'VOTRE CRÉATION').toUpperCase();
 $('#file').onchange=e=>{
   const f=e.target.files?.[0];if(!f)return;
-  if(!f.type.startsWith('image/')){alert('Choisissez une image.');return;}
+  if(!['image/jpeg','image/png','image/webp'].includes(f.type)){alert('Choisissez une image JPG, PNG ou WebP.');e.target.value='';return;}
+  if(!f.size||f.size>15*1024*1024){alert('Image invalide ou supérieure à 15 Mo.');e.target.value='';return;}
   const reader=new FileReader();
   reader.onload=()=>{
     const img=new Image();
