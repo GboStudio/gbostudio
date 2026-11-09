@@ -49,7 +49,7 @@ if hasattr(scene.cycles,"use_denoising"):
     scene.cycles.use_denoising=False
 scene.view_settings.view_transform="Standard"
 scene.view_settings.look="Medium High Contrast"
-scene.view_settings.exposure=-.05
+scene.view_settings.exposure=-1.3
 
 world=bpy.data.worlds.new("Museum neutral environment")
 scene.world=world
