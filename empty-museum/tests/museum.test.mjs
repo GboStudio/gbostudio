@@ -121,6 +121,7 @@ test('V11 lighting preserves real limestone geometry and avoids painted fake gro
   assert.doesNotMatch(scanned,/marble_01","diff"/,
     'Avoid swapping honed limestone albedo for dark scanned marble');
   assert.match(engine,/renderer\.toneMappingExposure = \.91/);
-  assert.match(loader,/engine3d\.js\?v=20261109dualstick3baketimeout/);
-  assert.match(file('index.html'),/engine-loader\.js\?v=20261109dualstick3baketimeout/);
+  // Versioned URLs change on each deploy; verify the active engines are still loaded.
+  assert.match(loader,/await import\(["']\.\/engine3d\.js\?v=[a-zA-Z0-9_-]+["']\)/);
+  assert.match(file('index.html'),/<script type="module" src="engine-loader\.js\?v=[a-zA-Z0-9_-]+"><\/script>/);
 });
