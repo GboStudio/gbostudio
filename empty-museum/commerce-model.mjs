@@ -165,7 +165,7 @@ export function createPreviewReservation({config,reservations=[],type,slotId,mod
     if(!check.ok)throw new Error(check.reason);
     amount=aislePrice(c,distanceId,days).amount;
     endsAt=new Date(when+Number(days)*86400000).toISOString();
-    Object.assign(reservation,{stationId,objectType,distanceId,days:Number(days)});
+    Object.assign(reservation,{stationId,objectType,distanceId,days:Number(days),maxVisibleDistanceM:c.aisle.distanceMetres[distanceId]});
   }else throw new Error('Type de vente inconnu.');
   return {...reservation,amount,currency:'EUR',endsAt,mode:'browser-demo-no-payment'};
 }
@@ -177,7 +177,7 @@ export function createPreviewReservation({config,reservations=[],type,slotId,mod
  */
 export function aisleVisibility(config,reservation,visitorDistanceM,when=Date.now()){
   const c=normalizeCommerceConfig(config);
-  const reach=c.aisle.distanceMetres[reservation?.distanceId];
+  const reach=reservation?.maxVisibleDistanceM??c.aisle.distanceMetres[reservation?.distanceId];
   const distance=Number(visitorDistanceM);
   if(reservation?.type!=='aisle'||!reach||!Number.isFinite(distance)||distance<0||!isActive(reservation,when))return {visible:false,alpha:0,maxDistanceM:reach||0};
   const fadeStart=Math.max(0,reach-Math.max(3,reach*.15));
