@@ -666,8 +666,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       return;
     }
     // Occupied installation gets a real freestanding stone plinth.
-    const base=box(interactive,1.55,.20,1.85,plinthMat,x,.12,z,true,true);
-    box(interactive,1.57,.014,1.87,brass,x,.227,z);
+    const base=box(interactive,1.46,.20,1.76,plinthMat,x,.12,z,true,true);
+    box(interactive,1.48,.014,1.78,brass,x,.227,z);
     const piece=slot.piece, tint=new THREE.Color(/^#[0-9a-f]{6}$/i.test(piece.floorColor||"")?piece.floorColor:0xb6a893);
     const sculpture=material(tint,.34,.24);
     let top;
