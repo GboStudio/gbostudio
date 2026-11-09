@@ -33,7 +33,15 @@ function safeStoredPiece(item){
   const str=(v,n)=>typeof v==='string'?v.slice(0,n):'';
   const image=str(item.image,3000000);
   return {
-    ...item,id,slot,
+    id,slot,
+    date:str(item.date,40),
+    durationMonths:1,
+    floorType:['photo','statue','billboard','neon','model'].includes(item.floorType)?item.floorType:'photo',
+    floorShape:['spire','orb','rings'].includes(item.floorShape)?item.floorShape:'spire',
+    floorColor:/^#[0-9a-f]{6}$/i.test(item.floorColor||'')?item.floorColor:'#b6a893',
+    modelKey:/^model-[a-z0-9._-]{1,96}$/i.test(item.modelKey||'')?item.modelKey:null,
+    modelName:str(item.modelName,120),
+    modelFormat:['glb','gltf','stl'].includes(item.modelFormat)?item.modelFormat:null,
     size:sizes.has(item.size)?item.size:'standard',
     category:categories.has(item.category)?item.category:'image',
     title:str(item.title,100),author:str(item.author,80),

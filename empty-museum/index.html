@@ -1,41 +1,53 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f1efe7"><title>The Unreal Museum</title><meta name="description" content="Entrez dans un musée vivant : admirez des créations, choisissez un emplacement libre et exposez vos photos, dessins, textes ou œuvres."><link rel="stylesheet" href="styles.css?v=20261104wall"><link rel="stylesheet" href="landing-premium.css?v=20261109"><link rel="stylesheet" href="walk.css?v=20261030scenography4"><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script></head><body>
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f1efe7"><title>The Unreal Museum</title><meta name="description" content="Entrez dans un musée vivant : admirez des créations, choisissez un emplacement libre et exposez vos photos, dessins, textes ou œuvres."><link rel="stylesheet" href="styles.css?v=20261104wall"><link rel="stylesheet" href="walk.css?v=20261030scenography4"><link rel="stylesheet" href="editorial-v2.css?v=20261109b"><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script></head><body class="museum-editorial">
 <div class="grain"></div>
-<header class="museum-site-header"><a class="brand" href="#top"><b>TUM</b><span>THE UNREAL MUSEUM</span></a><nav><a href="#wall">Le mur</a><a href="#how">Comment ça marche</a><a href="#pricing">Exposer</a></nav><button class="btn dark" data-open>EXPOSER</button></header>
-<div class="demo-banner" role="status"><strong>VERSION DÉMONSTRATION</strong><span>Les œuvres d’exemple sont fictives. Les créations ajoutées restent uniquement sur votre appareil. Aucun paiement n’est effectué.</span></div>
+<header class="museum-site-header"><a class="brand" href="#top" aria-label="The Unreal Museum, revenir à l’accueil"><b>U<span aria-hidden="true">.</span></b><span>THE UNREAL<br>MUSEUM</span></a><nav aria-label="Navigation principale"><a href="#wall">La galerie</a><a href="#how">Le concept</a><a href="#pricing">Les emplacements</a></nav><a class="btn dark header-visit" href="./?visit=immersive">VISITER <span aria-hidden="true">↗</span></a></header>
+<div class="demo-banner" role="status"><strong>VERSION DÉMONSTRATION</strong><span>Œuvres d’exemple fictives · Ajouts visibles seulement sur votre appareil · Aucun paiement</span></div>
 <main id="top">
-<section class="hero museum-landing" aria-labelledby="museum-home-title">
-  <div class="landing-media">
-    <img src="./assets/entrance-v4-blender-preview.png" alt="Aperçu de l'architecture de la galerie virtuelle, avec ses murs sculptés et son éclairage de musée." fetchpriority="high" decoding="async">
-  </div>
-  <div class="landing-veil" aria-hidden="true"></div>
-  <div class="landing-inner">
-    <div class="landing-edition"><span class="landing-edition-line"></span><span>GALERIE VIRTUELLE · ÉDITION 2026</span><span class="landing-edition-right">UN PROJET GBO STUDIO</span></div>
-    <div class="landing-story">
-      <span class="landing-intro-label">BIENVENUE DANS THE UNREAL MUSEUM</span>
-      <h1 id="museum-home-title">L'ART<br>DE <em>L'IRRÉEL.</em></h1>
-      <p class="landing-lead">Un vrai lieu pour les idées qui n'existent nulle part ailleurs.</p>
-      <p class="landing-description">Images créées avec l'IA, dessins, photographies, sculptures, objets 3D ou inventions personnelles. Ici, chaque imagination mérite sa place.</p>
-      <div class="landing-actions">
-        <a class="landing-enter" href="./?visit=immersive"><span>ENTRER DANS LE MUSÉE</span><span class="landing-action-icon" aria-hidden="true">↗</span></a>
-        <button class="landing-exhibit" type="button" data-open><span>EXPOSER UNE ŒUVRE</span><span aria-hidden="true">↗</span></button>
+<section class="hero editorial-hero" aria-labelledby="museum-home-title">
+  <div class="editorial-edition"><span>THE UNREAL MUSEUM <i aria-hidden="true">/</i> EXPÉRIENCE NUMÉRIQUE</span><span>ÉDITION 2026 · PAR GBO STUDIO</span></div>
+  <div class="editorial-hero-grid">
+    <div class="editorial-copy">
+      <div class="editorial-chapter"><span class="editorial-number">01 /</span> LE PREMIER MUSÉE DE CE QUI N'EXISTE PAS ENCORE</div>
+      <h1 id="museum-home-title">L'IMAGINAIRE<br><em>PREND PLACE.</em></h1>
+      <p class="editorial-lead">Il y a des idées qui méritent mieux qu'un écran.</p>
+      <p class="editorial-explain">Un lieu virtuel à parcourir, où se rencontrent images créées avec l'IA, dessins, photos, sculptures et inventions. Chaque création devient une pièce à découvrir.</p>
+      <div class="editorial-cta">
+        <a class="editorial-primary" href="./?visit=immersive"><span>DÉMARRER LA VISITE</span><span class="editorial-arrow" aria-hidden="true">↗</span></a>
+        <button type="button" class="editorial-secondary" data-open><span>EXPOSER UNE CRÉATION</span><span aria-hidden="true">↗</span></button>
       </div>
-      <div class="landing-visit-note"><span class="landing-visit-pulse" aria-hidden="true"></span> Visite libre ou guidée · Disponible sur ordinateur et mobile</div>
+      <div class="editorial-access"><span class="editorial-access-dot" aria-hidden="true"></span> Visite libre et guidée · Mobile et ordinateur</div>
     </div>
-    <div class="landing-photo-credit">APERÇU DE L'ARCHITECTURE 3D DU MUSÉE <span aria-hidden="true">↗</span></div>
+    <div class="editorial-art-scene" aria-label="Composition artistique originale illustrant l'esprit du musée, et non une capture de la visite 3D.">
+      <div class="editorial-gallery-wall">
+        <div class="editorial-wall-light" aria-hidden="true"></div>
+        <div class="editorial-art-frame" aria-hidden="true">
+          <div class="editorial-art-mat">
+            <div class="editorial-art-canvas">
+              <div class="editorial-art-horizon"></div>
+              <div class="editorial-art-sphere"></div>
+              <div class="editorial-art-ring"></div>
+              <div class="editorial-art-sheen"></div>
+            </div>
+          </div>
+        </div>
+        <div class="editorial-art-plaque"><span>01 — FICTIONS CONTEMPORAINES</span><strong>SANS LIMITES</strong><small>COMPOSITION ORIGINALE · VISUEL D'AMBIANCE</small></div>
+        <div class="editorial-gallery-base" aria-hidden="true"></div>
+      </div>
+      <div class="editorial-art-annotation"><span>01</span><i></i><span>IMAGINEZ · CRÉEZ · EXPOSEZ</span></div>
+    </div>
   </div>
-  <div class="landing-baseline">
-    <div class="landing-stat"><span>ŒUVRES DE LA DÉMO</span><strong id="countHero">018</strong></div>
-    <div class="landing-stat"><span>GALERIE SIMULÉE</span><strong id="metersHero">12,4 M</strong></div>
-    <div class="landing-baseline-note">L'IMAGINATION N'A<br>PLUS DE MURS.</div>
-    <a class="landing-scroll" href="#wall"><span>DÉCOUVRIR LE CONCEPT</span><span class="landing-scroll-arrow" aria-hidden="true">↓</span></a>
+  <div class="editorial-metrics">
+    <div class="editorial-stat"><span>ŒUVRES DANS CETTE DÉMONSTRATION</span><strong id="countHero">018</strong></div>
+    <div class="editorial-stat"><span>LONGUEUR SIMULÉE DE LA GALERIE</span><strong id="metersHero">12,4 M</strong></div>
+    <div class="editorial-scroll-note"><span>UN MUSÉE QUI GRANDIT<br>AVEC CHAQUE CRÉATEUR.</span><a href="#wall">DÉCOUVRIR LE MUSÉE <span aria-hidden="true">↓</span></a></div>
   </div>
 </section>
-<section class="wallSec" id="wall"><div class="head"><div><span class="eyebrow">THE WALL / DEMO</span><h2>IL GRANDIT<br>À CHAQUE AJOUT.</h2></div><div><p>Les premières créations restent au début. Chaque nouvelle exposition agrandit physiquement le mur.</p><div class="filters"><button class="active" data-filter="all">TOUT</button><button data-filter="image">IMAGE</button><button data-filter="3d">3D</button><button data-filter="design">DESIGN</button><button data-filter="build">BUILD</button><button data-filter="words">WORDS</button><button data-filter="weird">WEIRD</button></div></div></div>
-<div class="walk-cta"><a href="./?visit=immersive">ENTRER DANS LE MUSÉE IMMERSIF ↗</a><span>Un véritable parcours 3D à explorer librement ou en visite guidée, sur ordinateur et téléphone.</span></div>
-<div class="museum"><div class="bar"><span><i></i><b id="liveCount">6</b> créations dans cette visite</span><div><button id="random">TAKE ME SOMEWHERE ↗</button><button id="reset">REVENIR AU DÉBUT</button></div></div><div class="viewport" id="viewport"><div class="track"><aside class="origin"><span>ORIGINAL WALL</span><strong>2026</strong><small>THE FIRST METERS</small></aside><div class="grid" id="grid"></div><aside class="end"><span>THE WALL CONTINUES</span><b>+</b><small>Chaque nouvelle pièce agrandit le musée.</small></aside></div></div><div class="hint">← &nbsp; GLISSEZ POUR EXPLORER &nbsp; →</div></div></section>
-<section class="statement"><div class="num">01</div><div><span class="eyebrow">WHY IT EXISTS</span><p>Vous avez créé quelque chose et vous vous êtes dit :</p><h2>“CELUI-LÀ,<br><em>JE VEUX LE GARDER.</em>”</h2><p class="serif">Alors exposez-le.</p></div></section>
-<section class="how" id="how"><span class="eyebrow">HOW IT WORKS</span><h2>UNE EXPOSITION,<br>PAS UN FEED.</h2><div class="steps"><article><span>01</span><h3>CHOISISSEZ</h3><p>Image, 3D, interface, texte, plan, vidéo ou projet réalisé.</p></article><article><span>02</span><h3>EXPOSEZ</h3><p>12 mois pour un cadre mural, 1 mois pour une installation au sol.</p></article><article><span>03</span><h3>RACONTEZ</h3><p>Ajoutez vos outils, votre démarche et l’histoire derrière la pièce.</p></article><article><span>04</span><h3>PARTAGEZ</h3><p>Une carte de présentation partageable. La publication publique arrive ensuite.</p></article></div></section>
-<section class="pricing" id="pricing"><div class="pricingHead"><div><span class="eyebrow">MURS ET PLAFOND : 12 MOIS · SOL : 1 MOIS</span><h2>UNE PLACE<br>POUR VOTRE ART.</h2></div><p>Chaque cadre possède un emplacement précis, une orientation et un prix. Les tarifs sont affichés avant toute création. Pas de paiement dans cette démo.</p></div>
+<section class="wallSec" id="wall"><div class="head"><div><span class="eyebrow">LA GALERIE / DÉMONSTRATION</span><h2>CHAQUE ŒUVRE<br><em>AGRANDIT LE LIEU.</em></h2></div><div><p>Les premières créations restent au début. Chaque nouvelle exposition agrandit physiquement le mur.</p><div class="filters"><button class="active" data-filter="all">TOUT</button><button data-filter="image">IMAGE</button><button data-filter="3d">3D</button><button data-filter="design">DESIGN</button><button data-filter="build">BUILD</button><button data-filter="words">WORDS</button><button data-filter="weird">WEIRD</button></div></div></div>
+<div class="walk-cta"><span class="walk-cta-brow">L’EXPÉRIENCE 3D</span><span>Explorez la galerie, choisissez votre parcours et découvrez les œuvres de la démo.</span><a href="./?visit=immersive">ENTRER EN VISITE <span aria-hidden="true">↗</span></a></div>
+<div class="museum"><div class="bar"><span><i></i><b id="liveCount">6</b> créations dans cette visite</span><div><button id="random">DÉCOUVRIR AU HASARD ↗</button><button id="reset">REVENIR AU DÉBUT</button></div></div><div class="viewport" id="viewport"><div class="track"><aside class="origin"><span>ORIGINAL WALL</span><strong>2026</strong><small>THE FIRST METERS</small></aside><div class="grid" id="grid"></div><aside class="end"><span>THE WALL CONTINUES</span><b>+</b><small>Chaque nouvelle pièce agrandit le musée.</small></aside></div></div><div class="hint">← &nbsp; GLISSEZ POUR EXPLORER &nbsp; →</div></div></section>
+<section class="statement"><div class="num">01</div><div><span class="eyebrow">LE MANIFESTE</span><p>Vous avez créé quelque chose et vous vous êtes dit :</p><h2>“CELUI-LÀ,<br><em>JE VEUX LE GARDER.</em>”</h2><p class="serif">Alors exposez-le.</p></div></section>
+<section class="how" id="how"><span class="eyebrow">LE PARCOURS</span><h2>UNE EXPOSITION.<br><em>PAS UN FIL D’ACTUALITÉ.</em></h2><div class="steps"><article><span>01</span><h3>CHOISISSEZ</h3><p>Image, 3D, interface, texte, plan, vidéo ou projet réalisé.</p></article><article><span>02</span><h3>EXPOSEZ</h3><p>12 mois pour un cadre mural, 1 mois pour une installation au sol.</p></article><article><span>03</span><h3>RACONTEZ</h3><p>Ajoutez vos outils, votre démarche et l’histoire derrière la pièce.</p></article><article><span>04</span><h3>PARTAGEZ</h3><p>Une carte de présentation partageable. La publication publique arrive ensuite.</p></article></div></section>
+<section class="pricing" id="pricing"><div class="pricingHead"><div><span class="eyebrow">TARIFS DE DÉMONSTRATION · AUCUNE TRANSACTION</span><h2>UNE PLACE<br>POUR VOTRE ART.</h2></div><p>Chaque cadre possède un emplacement précis, une orientation et un prix. Les tarifs sont affichés avant toute création. Pas de paiement dans cette démo.</p></div>
 <div class="plans">
 <button data-plan="mini"><span>PETIT PORTRAIT · 20 × 30 CM</span><strong>9,90 €</strong><small>/ 12 mois</small><p>Une idée, un petit dessin ou une photo.</p><i>CHOISIR UNE PLACE ↗</i></button>
 <button data-plan="landscape" class="featured"><span>PHOTO · PORTRAIT OU PAYSAGE</span><strong>19,90 €</strong><small>/ 12 mois</small><p>40 × 60 ou 60 × 40 cm, au bon ratio.</p><i>CHOISIR UNE PLACE ↗</i></button>
@@ -59,8 +71,8 @@
   </div>
   <p class="ceiling-disclaimer">Les formats et tarifs du plafond sont présentés en prévision de l’agrandissement. Aucun cadre suspendu n’est actuellement visible ni réservable. Aucun paiement réel n’est possible dans cette démonstration.</p>
 </div></section>
-<section class="cats"><span class="eyebrow">PAS SEULEMENT DE L’ART IA</span><h2>TOUT CE QUE<br>VOUS AVEZ ENVIE<br>DE PARTAGER.</h2><div><article><b>MEDIA</b><p>Images, illustration, vidéo, musique.</p></article><article><b>DESIGN</b><p>Interfaces, logos, affiches, produits.</p></article><article><b>3D</b><p>Modèles, sculptures, architecture, imprimables.</p></article><article><b>BUILD</b><p>Ce que vous avez réellement fabriqué.</p></article><article><b>WORDS</b><p>Histoires, textes, poésie, concepts.</p></article><article><b>WEIRD</b><p>Tout ce qui n’aurait probablement jamais dû exister.</p></article></div></section>
-<section class="final"><span class="eyebrow">THE UNREAL MUSEUM</span><h2>LE MUR EST<br>ENCORE PETIT.</h2><p>C’est justement le moment d’y être.</p><button class="btn dark" data-open>EXPOSER MA CRÉATION</button></section>
+<section class="cats"><span class="eyebrow">PAS SEULEMENT DE L’ART IA</span><h2>TOUTES LES<br><em>FORMES D’IMAGINATION.</em></h2><div><article><b>MEDIA</b><p>Images, illustration, vidéo, musique.</p></article><article><b>DESIGN</b><p>Interfaces, logos, affiches, produits.</p></article><article><b>3D</b><p>Modèles, sculptures, architecture, imprimables.</p></article><article><b>BUILD</b><p>Ce que vous avez réellement fabriqué.</p></article><article><b>WORDS</b><p>Histoires, textes, poésie, concepts.</p></article><article><b>WEIRD</b><p>Tout ce qui n’aurait probablement jamais dû exister.</p></article></div></section>
+<section class="final"><span class="eyebrow">THE UNREAL MUSEUM</span><h2>VOTRE PROCHAINE<br><em>ŒUVRE EST ATTENDUE.</em></h2><p>Entrez pour découvrir le lieu, puis imaginez ce que vous pourriez y exposer.</p><div class="editorial-final-actions"><a class="btn dark" href="./?visit=immersive">VISITER LE MUSÉE ↗</a><button class="btn" data-open>EXPOSER MA CRÉATION ↗</button></div></section>
 </main>
 <footer><div class="brand"><b>TUM</b><span>THE UNREAL MUSEUM</span></div><p>Un musée ouvert aux créations de tous.</p><div><a href="/legal-notice.html">Mentions légales</a><a href="/privacy.html">Confidentialité GBO Studio</a><a href="mailto:contact.gbostudio@gmail.com?subject=The%20Unreal%20Museum">Contact</a></div></footer>
 <section id="walkOverlay" class="walk-overlay" role="dialog" aria-modal="true" aria-label="The Unreal Museum, visite libre" hidden>
@@ -166,4 +178,4 @@
   <p class="reserve-disclaimer"><strong>VERSION DÉMONSTRATION.</strong> Aucun paiement n’est effectué. La création reste uniquement sur cet appareil et n’est pas visible par les autres visiteurs.</p>
 </form></dialog>
 <dialog id="share"><button class="x" id="closeShare">×</button><div class="shareWrap"><span class="eyebrow">APERÇU D’EXPOSITION</span><h2>VOTRE CRÉATION<br>EST DANS LE MUSÉE.</h2><p>Démo : elle est visible seulement sur cet appareil, sans paiement.</p><canvas id="canvas" width="1080" height="1350"></canvas><div class="shareActions"><button class="btn dark" id="shareNative">PARTAGER</button><button class="btn" id="download">TÉLÉCHARGER LA CARTE</button><button class="btn" id="copy">COPIER L’ADRESSE DU MUSÉE</button></div></div></dialog>
-<script src="app.js?v=20261104brand"></script><script type="module" src="floor.js?v=20261104brand"></script><script type="module" src="engine-loader.js?v=20261109realism11"></script></body></html>
+<script src="app.js?v=20261104brand"></script><script type="module" src="floor.js?v=20261104brand"></script><script type="module" src="engine-loader.js?v=20261109dualstick3baketimeout"></script></body></html>

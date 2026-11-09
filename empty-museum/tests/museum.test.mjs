@@ -58,6 +58,17 @@ test('active WebGL engine, navigation and cloud adapter parse and route to the s
   assert.match(loader,/visual-viewport-v1\.js\?v=/);
   assert.match(loader,/walk\.js\?v=/);
   assert.match(engine,/createMuseumV5Navigation/);
+  const navigation=file('museum-v5.js');
+  assert.match(navigation,/lookstick-ring/);
+  assert.match(navigation,/museumZoomIn/);
+  assert.match(navigation,/lookTouchId/);
+  assert.match(navigation,/lookX:mobile&&free\?lookStick\.x:0/);
+  assert.match(engine,/input\.lookX\*1\.9/);
+  assert.match(engine,/input\.lookY\*dt\*1\.32/);
+  assert.match(engine,/dual-joystick-v1\.css/);
+  const dualCSS=file('dual-joystick-v1.css');
+  assert.match(dualCSS,/\.museum-v5-lookstick/);
+  assert.match(dualCSS,/Requested controls: LEFT look, RIGHT movement/);
   assert.match(engine,/museumCameraMotion/);
   assert.match(engine,/addPhysicalGalleryV3/);
   assert.match(engine,/addBakedEntranceV4/);
@@ -93,6 +104,7 @@ test('verified V4 Cycles GLB is embedded, size-bounded and identical to its Blen
   assert.ok(readFileSync(join(root,'assets/entrance-v4-lightbake.png')).byteLength>20000);
 });
 
+
 test('V11 lighting preserves real limestone geometry and avoids painted fake grout',()=>{
   const materials=file('luxury-v8.js');
   const slabs=file('physical-gallery-v3.js');
@@ -109,6 +121,6 @@ test('V11 lighting preserves real limestone geometry and avoids painted fake gro
   assert.doesNotMatch(scanned,/marble_01","diff"/,
     'Avoid swapping honed limestone albedo for dark scanned marble');
   assert.match(engine,/renderer\.toneMappingExposure = \.91/);
-  assert.match(loader,/engine3d\.js\?v=20261109realism11/);
-  assert.match(file('index.html'),/engine-loader\.js\?v=20261109realism11/);
+  assert.match(loader,/engine3d\.js\?v=20261109dualstick3baketimeout/);
+  assert.match(file('index.html'),/engine-loader\.js\?v=20261109dualstick3baketimeout/);
 });

@@ -1,0 +1,43 @@
+name: Museum cross-version coherence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'empty-museum/**'
+      - 'AGENTS.md'
+      - '.github/scripts/museum-coherence.mjs'
+      - '.github/workflows/museum-coherence.yml'
+      - '.github/scripts/tem-commerce-e2e.mjs'
+  pull_request:
+    paths:
+      - 'empty-museum/**'
+      - 'AGENTS.md'
+      - '.github/scripts/museum-coherence.mjs'
+      - '.github/workflows/museum-coherence.yml'
+      - '.github/scripts/tem-commerce-e2e.mjs'
+  workflow_dispatch:
+  schedule:
+    - cron: '41 7 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: museum-coherence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  consistency:
+    name: Check single museum version and product contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout current revision
+        uses: actions/checkout@v4
+      - name: Prepare Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify canonical version and critical invariants
+        run: node .github/scripts/museum-coherence.mjs

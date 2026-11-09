@@ -38,7 +38,7 @@ export const DEFAULT_COMMERCE_CONFIG = Object.freeze({
       medium:{monthly:19,annual:190},
       small:{monthly:9,annual:90}
     }},
-  aisle:{stations:['S01','S02','S03','S04','S05'],footprintM:1.2,
+  aisle:{stations:['S01','S02','S03','S04','S05'],footprintM:1.2,distanceMetres:{near:15,gallery:35,landmark:75},
     pricing:{
       near:{'1':290,'7':1290,'30':3990},
       gallery:{'1':590,'7':2490,'30':7990},
@@ -75,14 +75,16 @@ export function normalizeCommerceConfig(input=DEFAULT_COMMERCE_CONFIG){
       annual:numeric(w.pricing?.[f.id]?.annual??defaultW.pricing[f.id].annual,0,10000000)
     };
   }
-  const aisle={stations:[...defaultA.stations],footprintM:numeric(a.footprintM??defaultA.footprintM,0.3,2.5),pricing:{}};
+  const aisle={stations:[...defaultA.stations],footprintM:numeric(a.footprintM??defaultA.footprintM,0.3,2.5),distanceMetres:{},pricing:{}};
   for(const level of DISTANCE_LEVELS){
+    aisle.distanceMetres[level.id]=numeric(a.distanceMetres?.[level.id]??defaultA.distanceMetres[level.id],5,200);
     aisle.pricing[level.id]={};
     for(const duration of AISLE_DURATIONS){
       const key=String(duration.days);
       aisle.pricing[level.id][key]=numeric(a.pricing?.[level.id]?.[key]??defaultA.pricing[level.id][key],0,10000000);
     }
   }
+  if(aisle.distanceMetres.near>=aisle.distanceMetres.gallery||aisle.distanceMetres.gallery>=aisle.distanceMetres.landmark)throw new Error('Les portées doivent être croissantes.');
   return {schemaVersion:1,wall,aisle};
 }
 
@@ -120,7 +122,7 @@ export function aislePrice(config,distanceId,days){
   const c=normalizeCommerceConfig(config);
   if(!DISTANCE_LEVELS.some(d=>d.id===distanceId)||![1,7,30].includes(Number(days)))throw new Error('Option premium inconnue.');
   return {amount:c.aisle.pricing[distanceId][String(days)],currency:'EUR',days:Number(days),
-    maxVisibleDistanceM:DISTANCE_LEVELS.find(d=>d.id===distanceId).meters};
+    maxVisibleDistanceM:c.aisle.distanceMetres[distanceId]};
 }
 export function isActive(reservation,when=Date.now()){
   return reservation?.status==='active' && Number.isFinite(Date.parse(reservation.endsAt)) && Date.parse(reservation.endsAt)>when;
@@ -163,7 +165,22 @@ export function createPreviewReservation({config,reservations=[],type,slotId,mod
     if(!check.ok)throw new Error(check.reason);
     amount=aislePrice(c,distanceId,days).amount;
     endsAt=new Date(when+Number(days)*86400000).toISOString();
-    Object.assign(reservation,{stationId,objectType,distanceId,days:Number(days)});
+    Object.assign(reservation,{stationId,objectType,distanceId,days:Number(days),maxVisibleDistanceM:c.aisle.distanceMetres[distanceId]});
   }else throw new Error('Type de vente inconnu.');
   return {...reservation,amount,currency:'EUR',endsAt,mode:'browser-demo-no-payment'};
+}
+
+/**
+ * Rendering guidance, not an authorization check or an occlusion bypass.
+ * Return alpha=0 outside the configured draw distance or the rental window.
+ * The 3D engine must still apply wall occlusion, frustum culling and LOD.
+ */
+export function aisleVisibility(config,reservation,visitorDistanceM,when=Date.now()){
+  const c=normalizeCommerceConfig(config);
+  const reach=reservation?.maxVisibleDistanceM??c.aisle.distanceMetres[reservation?.distanceId];
+  const distance=Number(visitorDistanceM);
+  if(reservation?.type!=='aisle'||!reach||!Number.isFinite(distance)||distance<0||!isActive(reservation,when))return {visible:false,alpha:0,maxDistanceM:reach||0};
+  const fadeStart=Math.max(0,reach-Math.max(3,reach*.15));
+  const alpha=distance>=reach?0:distance<=fadeStart?1:(reach-distance)/(reach-fadeStart);
+  return {visible:alpha>0,alpha:Math.max(0,Math.min(1,alpha)),maxDistanceM:reach};
 }

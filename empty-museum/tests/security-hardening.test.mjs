@@ -15,6 +15,13 @@ test('untrusted local artwork IDs cannot inject HTML',()=>{
   assert.equal(safeStoredPiece({id:19.5}),null);
 });
 
+test('local exhibits never retain arbitrary unvalidated properties',()=>{
+  const item=safeStoredPiece({id:22,title:'Demo',secret:'do-not-keep',floorColor:'url(https://tracker.example)',modelKey:'../../outside'});
+  assert.equal(Object.hasOwn(item,'secret'),false);
+  assert.equal(item.floorColor,'#b6a893');
+  assert.equal(item.modelKey,null);
+});
+
 test('untrusted artwork image CSS, slot and size are rejected',()=>{
   const item=safeStoredPiece({
     id:19,slot:'<img onerror=alert(1)>',size:'x" onmouseover="alert(1)',

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_COMMERCE_CONFIG,WALL_FORMATS,AISLE_DURATIONS,DISTANCE_LEVELS,
   normalizeCommerceConfig,makeWallSlots,wallPrice,aislePrice,
-  createPreviewReservation,canReserveWall,canReserveAisle,isActive
+  createPreviewReservation,canReserveWall,canReserveAisle,isActive,aisleVisibility
 } from './commerce-model.mjs';
 
 const config=normalizeCommerceConfig(DEFAULT_COMMERCE_CONFIG);
@@ -62,4 +62,17 @@ test('Import invalide rejeté et limites géométriques protégées',()=>{
   assert.throws(()=>normalizeCommerceConfig({schemaVersion:9,wall:config.wall,aisle:config.aisle}));
   assert.throws(()=>normalizeCommerceConfig({...config,wall:{...config.wall,marginM:0.5,gapM:0.12,exhibitHeightM:1.2}}));
   assert.throws(()=>makeWallSlots(config,0,'small'));
+});
+
+test('La distance de visibilité est configurable et figée à la réservation',()=>{
+  const r=createPreviewReservation({config,reservations:[],type:'aisle',stationId:'S02',objectType:'sculpture',distanceId:'landmark',days:7},start);
+  assert.equal(r.maxVisibleDistanceM,75);
+  assert.equal(aisleVisibility(config,r,15,start).alpha,1);
+  assert.equal(aisleVisibility(config,r,74,start).visible,true);
+  assert.equal(aisleVisibility(config,r,75,start).visible,false);
+  const changed=normalizeCommerceConfig({...config,aisle:{...config.aisle,distanceMetres:{near:10,gallery:25,landmark:100}}});
+  assert.equal(aislePrice(changed,'landmark',7).maxVisibleDistanceM,100);
+  assert.equal(aisleVisibility(changed,r,85,start).visible,false);
+  assert.equal(aisleVisibility(config,r,10,Date.parse(r.endsAt)).visible,false);
+  assert.throws(()=>normalizeCommerceConfig({...config,aisle:{...config.aisle,distanceMetres:{near:50,gallery:25,landmark:100}}}));
 });
