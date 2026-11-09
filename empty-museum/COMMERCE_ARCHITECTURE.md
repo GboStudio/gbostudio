@@ -4,7 +4,11 @@
 
 Ce développement ajoute un **simulateur d'administration** :
 `commerce-configurator.html`, `commerce-admin.mjs` et `commerce-model.mjs`.
-Il **ne** remplace **pas** le moteur 3D existant, la vente statique des cadres, le stockage local des œuvres ou les anciennes offres affichées sur la page d'accueil. Il n'active **aucune** vente ni aucune réservation partagée. Les changements restent dans le navigateur utilisé, via localStorage. N'utilisez pas ce formulaire comme console d'administration sécurisée.
+Le configurateur reste isolé du stock serveur et de la facturation ; une branche dédiée intègre désormais le découpage dans la scène 3D et actualise les cartes tarifaires publiques de démonstration. Il n'active **aucune** vente ni aucune réservation partagée. Les changements restent dans le navigateur utilisé, via localStorage. N'utilisez pas ce formulaire comme console d'administration sécurisée.
+
+## Répartition retenue — scène de démonstration
+
+Sur les 38 baies physiques, **4 baies partenaires non commercialisées** et **34 baies commercialisables**. Distribution des 34 : 8 très grands (1 cadre), 12 grands (2 cadres), 9 normaux (4 cadres), 4 moyens (8 cadres), 1 petit (16 cadres) = **116 cadres individuels**. Le fichier partagé `gallery-mix.js` donne la répartition déterministe, les tailles et les quatre coordonnées des stations 3D. Le simulateur d'administration reste local, et ses modifications ne sont pas automatiquement appliquées à la galerie publique.
 
 ## Découpage d'un module mural
 
@@ -23,17 +27,17 @@ Il **ne** remplace **pas** le moteur 3D existant, la vente statique des cadres, 
 
 | Format | Nombre par module | Mensuel | Annuel |
 |---|---:|---:|---:|
-| Très grand | 1 | 119 € | 1 190 € |
-| Grand | 2 | 69 € | 690 € |
-| Normal | 4 | 39 € | 390 € |
-| Moyen | 8 | 19 € | 190 € |
-| Petit | 16 | 9 € | 90 € |
+| Très grand | 1 | 59,50 € | 595 € |
+| Grand | 2 | 34,50 € | 345 € |
+| Normal | 4 | 19,50 € | 195 € |
+| Moyen | 8 | 9,50 € | 95 € |
+| Petit | 16 | 4,50 € | 45 € |
 
 Les tarifs sont des hypothèses commerciales **paramétrables**, pas des prix validés par le propriétaire. Ils ne sont pas appliqués à la page publique.
 
 ## Installations 3D premium dans l'allée
 
-Le simulateur réutilise les cinq stations conceptuelles S01 à S05.
+Le simulateur réutilise les quatre stations S01 à S04 de 1,80 m × 1,50 m au sol (2,70 m² chacune), hauteur maximale indicative de 2,50 m.
 Exemples de créations : sculpture, modèle 3D, installation animée.
 Chaque station peut accueillir **un seul objet pendant une période active**.
 La réservation peut durer **1 journée (24 h), 1 semaine (7 jours), 1 mois (30 jours)**.
@@ -44,9 +48,9 @@ La plage de visibilité souscrite est enregistrée en instantané dans la réser
 
 | Portée maximum | 1 jour | 7 jours | 30 jours |
 |---|---:|---:|---:|
-| Proximité : 15 m | 290 € | 1 290 € | 3 990 € |
-| Galerie : 35 m | 590 € | 2 490 € | 7 990 € |
-| Monumental : 75 m | 990 € | 4 990 € | 15 900 € |
+| Proximité : 15 m | 145 € | 645 € | 1 995 € |
+| Galerie : 35 m | 295 € | 1 245 € | 3 995 € |
+| Monumental : 75 m | 495 € | 2 495 € | 7 950 € |
 
 Ces montants servent uniquement à illustrer une tarification premium et sont modifiables.
 Le moteur de rendu devra appliquer des règles de **frustum culling, occlusion réelle, distance maximale, fondu de visibilité et LOD**, et conserver les collisions et les itinéraires de visite.
@@ -69,12 +73,12 @@ Le moteur de rendu devra appliquer des règles de **frustum culling, occlusion r
 
 ## Intégration future sans régression 3D
 
-1. Cartographier les murs actuellement construits par `engine3d.js` (pas de 3,5 m, 38 positions) avec les **nouveaux modules commerciaux de 3 m** ; ne jamais remplacer le pas physique sans refaire la scénographie, les circulations et les collisions.
-2. Rendre les cadres d'un module en fonction de son format et de la matrice de cellules réservées. Les objets existants et emplacements partenaires doivent être repris dans l'inventaire.
+1. **Effectué en branche de développement** : la galerie conserve son espacement physique de 3,5 m et attribue une surface commerciale de 3 m à chaque baie.
+2. **Effectué en branche de développement** : 34 baies mixtes / 116 cadres, 4 baies partenaires hors vente ; les œuvres de démonstration historiques sont conservées sur la première subdivision de leur baie.
 3. Ajouter dans `engine3d.js` le rendu des objets premium en appliquant `aisleVisibility()`, LOD et occlusion ; vérifier les performances sur iPhone.
 4. Migrer les données des œuvres de démonstration vers des contenus modérés provenant d'un backend authentifié.
 5. Brancher le catalogue de prix, le checkout, les abonnements et les webhooks de paiement. Protéger les écritures globales et l'inventaire.
-6. Remplacer les anciennes cartes de tarifs de la page publique seulement lorsque le moteur de placement, le stock et la facturation seront réellement synchronisés.
+6. **Démo actualisée en branche de développement** : les cartes affichent les tarifs divisés par deux, sans checkout et sans promesse de réservation réelle.
 
 ## Vérifications
 
