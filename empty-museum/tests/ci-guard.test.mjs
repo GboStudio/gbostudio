@@ -41,3 +41,20 @@ test('manual camera and joystick actions take precedence over old movement',()=>
   assert.match(e2e,/page\.mouse\.click\(x,y\)/);
   assert.doesNotMatch(e2e,/locator\('#museumTour'\)\.click\(/);
 });
+
+
+test('main branch exposes one fail-closed quality gate on every pull request',()=>{
+  const cfg=text('.github/workflows/museum-3d-checks.yml');
+  assert.match(cfg,/pull_request:\s*\n\s+branches: \[main\]/,
+    'Required gate must be present on all PRs, not filtered by changed paths');
+  assert.match(cfg,/pull_request:\s*\n\s+branches: \[main\]\s*\npermissions:/);
+  assert.match(cfg,/name: Museum PR quality gate/);
+  assert.match(cfg,/needs: \[changes, validation, browser-preview\]/);
+  assert.match(cfg,/if: \$\{\{ always\(\) && github\.event_name == 'pull_request' \}\}/);
+  assert.match(cfg,/git diff --name-only HEAD\^1 HEAD\^2/);
+  assert.match(cfg,/fetch-depth: 0/);
+  assert.match(cfg,/if: needs\.changes\.outputs\.museum == 'true'/);
+  assert.match(cfg,/NODE.*BROWSER/s);
+  assert.match(cfg,/NODE" != "success" \|\| "\$BROWSER" != "success"/);
+  assert.match(cfg,/node \.github\/scripts\/museum-coherence\.mjs/);
+});

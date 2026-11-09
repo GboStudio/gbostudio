@@ -12,7 +12,7 @@
 - `commerce-model.mjs` declares pricing, holds and reservations as **simulations without payment**.
 - GitHub Actions include browser/availability smoke checks and 3D validation; these are **not** a full vulnerability scan.
 
-## Changes proposed on the security branch
+## Protections déployées via la PR #38
 - Render local reservation fields as DOM text instead of templated HTML.
 - Validate local artwork IDs, slots, formats and raster images before rendering; limit user image uploads to supported raster MIME types and 15 MB.
 - Run regression tests for these cases on every museum pull request.
@@ -32,3 +32,12 @@ This audit is based on code and configuration checked in to GitHub, **not** on a
 
 ## Change control
 Keep security changes in a dedicated branch and review the pull request/test results before merging to `main`. Do not disable protective alerts just to silence them.
+
+## Security hardening phase 2 (proposed in PR, not yet deployed)
+- Verify PNG/JPEG/WebP file signatures, the claimed MIME, the 15 MB limit and decoded pixel budgets before drawing visitor images onto a canvas.
+- Reject oversized glTF buffer views, accessor claims, external asset URIs and cyclic node graphs before invoking the renderer. Bound binary STL triangle declarations. These checks run locally; they do not imply that the file is malware-free.
+- Add a restrictive browser Content Security Policy via `<meta http-equiv="Content-Security-Policy">`, limiting script sources and hash-allowing the static import map; remove the inline dialog event handler. GitHub Pages **does not provide all HTTP-only protections through a meta tag** (notably HSTS, frame-ancestors, X-Content-Type-Options). A controlled reverse proxy would be needed for full header security.
+- Add repository checks for recognizable accidentally committed credentials, unpinned active Three.js CDN dependencies, disabled real commerce and missing upload security hooks. This heuristic scan does not replace GitHub secret scanning, CodeQL or real CVE advisory feeds.
+- Add independent CI on PR, main pushes and daily checks, plus weekly Dependabot suggestions for GitHub Actions.
+- Maintain `demo-no-live-payments` until authentication, payment webhooks, moderation and backend inventory are built and reviewed.
+- The definitive proof of deployment is successful GitHub Pages plus the live browser check for the exact SHA, **not a passing isolated unit test**.

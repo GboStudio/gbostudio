@@ -186,24 +186,43 @@ $$('[data-plan]').forEach(b=>b.onclick=()=>{
 $('#reserveContinue').onclick=()=>setReserveStage(2);
 $('#reserveBack').onclick=()=>setReserveStage(1);
 $('#title').oninput=()=>$('#prevTitle').textContent=($('#title').value||'VOTRE CRÉATION').toUpperCase();
-$('#file').onchange=e=>{
+let imageRequest=0;
+$('#file').onchange=async e=>{
   const f=e.target.files?.[0];if(!f)return;
-  if(!['image/jpeg','image/png','image/webp'].includes(f.type)){alert('Choisissez une image JPG, PNG ou WebP.');e.target.value='';return;}
-  if(!f.size||f.size>15*1024*1024){alert('Image invalide ou supérieure à 15 Mo.');e.target.value='';return;}
-  const reader=new FileReader();
-  reader.onload=()=>{
-    const img=new Image();
-    img.onload=()=>{
-      const ratio=Math.min(1,1100/Math.max(img.width,img.height));
-      const work=document.createElement('canvas');
-      work.width=Math.max(1,Math.round(img.width*ratio));
-      work.height=Math.max(1,Math.round(img.height*ratio));
-      const c=work.getContext('2d');c.drawImage(img,0,0,work.width,work.height);
-      upload=work.toDataURL('image/jpeg',.82);
-      $('#preview').style.backgroundImage='url("'+upload+'")';
-    };img.src=String(reader.result);
-  };reader.readAsDataURL(f);
+  const request=++imageRequest;
+  upload='';$('#preview').style.backgroundImage='';
+  try{
+    const {validateRasterFile,validateRasterDimensions}=await import('./upload-policy.mjs');
+    await validateRasterFile(f);
+    if(request!==imageRequest)return;
+    const reader=new FileReader();
+    reader.onerror=()=>{if(request===imageRequest)alert('Impossible de lire cette image.');};
+    reader.onload=()=>{
+      if(request!==imageRequest)return;
+      const img=new Image();
+      img.onerror=()=>{if(request===imageRequest)alert('Image illisible ou endommagée.');};
+      img.onload=()=>{
+        if(request!==imageRequest)return;
+        try{
+          validateRasterDimensions(img.naturalWidth,img.naturalHeight);
+          const ratio=Math.min(1,1100/Math.max(img.naturalWidth,img.naturalHeight));
+          const work=document.createElement('canvas');
+          work.width=Math.max(1,Math.round(img.naturalWidth*ratio));
+          work.height=Math.max(1,Math.round(img.naturalHeight*ratio));
+          const c=work.getContext('2d');
+          if(!c)throw Error('Aperçu de cette image indisponible.');
+          c.drawImage(img,0,0,work.width,work.height);
+          upload=work.toDataURL('image/jpeg',.82);
+          $('#preview').style.backgroundImage='url("'+upload+'")';
+        }catch(error){alert(error.message||'Image refusée.');}
+      };
+      img.src=String(reader.result);
+    };
+    reader.readAsDataURL(f);
+  }catch(error){if(request===imageRequest)alert(error.message||'Image refusée.');}
 };
+$('#exhibit').addEventListener('close',()=>{imageRequest++;});
+$('#closeExhibit').onclick=()=>$('#exhibit').close();
 const sketch=$('#sketch'),sketchCtx=sketch?.getContext('2d');
 let sketchUsed=false,sketchPointer=null;
 if(sketchCtx){

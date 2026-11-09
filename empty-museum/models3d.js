@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { STLLoader } from "three/addons/loaders/STLLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import {inspectGLTF,validateSTLFile} from "./model-policy.mjs";
 
 // All uploaded models remain on the visitor's device: no public upload, payment or publication.
 const DB_NAME = "tem-exhibitions-models-v1";
@@ -17,29 +18,13 @@ export function modelFormat(name="") {
 export function modelKey(){
   return "model-"+(globalThis.crypto?.randomUUID?.() || Date.now()+"-"+Math.random().toString(36).slice(2));
 }
-function inspectGLTF(json) {
-  if(!json?.asset?.version || !String(json.asset.version).startsWith("2.")){
-    throw Error("Seuls les fichiers glTF 2.0 sont pris en charge.");
-  }
-  // External buffer/image URIs could request an arbitrary network resource.
-  // The offline demo intentionally accepts embedded data only.
-  for(const entry of [...(json.buffers||[]),...(json.images||[])]){
-    if(entry.uri && !/^data:(?:application\/octet-stream|application\/gltf-buffer|image\/(?:png|jpeg|webp));base64,/i.test(entry.uri)){
-      throw Error("Ce modèle référence des ressources externes : exportez un GLB avec textures intégrées.");
-    }
-  }
-  const unsupported=(json.extensionsRequired||[]).filter(x=>/draco|meshopt|basisu|ktx2/i.test(x));
-  if(unsupported.length)throw Error("Ce modèle utilise une compression non prise en charge. Exportez un GLB standard sans Draco/Meshopt/KTX2.");
-  if((json.nodes||[]).length>10000 || (json.meshes||[]).length>2000 || (json.images||[]).length>200){
-    throw Error("Ce modèle comporte trop d’éléments pour être affiché dans le musée.");
-  }
-}
 export async function validateFile(file) {
   if (!file || !(file instanceof Blob)) throw Error("Choisissez un fichier 3D.");
   const format=modelFormat(file.name);
   if(!format)throw Error("Formats acceptés : GLB, glTF autonome et STL.");
   if(!file.size)throw Error("Ce fichier est vide.");
   if(file.size>MAX_BYTES)throw Error("Fichier trop lourd : 25 Mo maximum.");
+  if(format==="stl")await validateSTLFile(file);
   if(format==="gltf"){
     let json;
     try{json=JSON.parse(await file.text());}catch(e){throw Error("Le fichier glTF n’est pas un JSON valide.");}
@@ -109,7 +94,8 @@ export async function deleteModel(key){
 }
 
 export async function loadModel(file,knownFormat=null){
-  const format=knownFormat || await validateFile(file);
+  const format=await validateFile(file);
+  if(knownFormat && knownFormat!==format)throw Error("Format 3D incohérent.");
   let model;
   if(format==="stl"){
     const geometry=new STLLoader().parse(await file.arrayBuffer());

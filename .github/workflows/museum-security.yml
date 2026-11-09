@@ -1,0 +1,39 @@
+name: Museum security gates
+on:
+  pull_request:
+    paths:
+      - 'empty-museum/**'
+      - '.github/workflows/museum-security.yml'
+      - '.github/scripts/museum-security-audit.mjs'
+  push:
+    branches: [main]
+    paths:
+      - 'empty-museum/**'
+      - '.github/workflows/museum-security.yml'
+      - '.github/scripts/museum-security-audit.mjs'
+  workflow_dispatch:
+  schedule:
+    - cron: '23 6 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: museum-security-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  security:
+    name: Museum browser and upload security
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate image, GLTF/STL and XSS defences
+        run: node --test empty-museum/tests/security-hardening.test.mjs empty-museum/tests/upload-policy.test.mjs empty-museum/tests/model-policy.test.mjs
+      - name: Scan museum source for secrets, unsafe CDNs and missing guards
+        run: node .github/scripts/museum-security-audit.mjs
+      - name: Verify single museum version
+        run: node .github/scripts/museum-coherence.mjs
