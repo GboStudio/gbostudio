@@ -32,17 +32,17 @@ export const DEFAULT_COMMERCE_CONFIG = Object.freeze({
   schemaVersion:1,
   wall:{moduleLengthM:3,exhibitHeightM:2.4,marginM:0.12,gapM:0.045,moduleCount:38,defaultFormat:'normal',
     pricing:{
-      very_large:{monthly:119,annual:1190},
-      large:{monthly:69,annual:690},
-      normal:{monthly:39,annual:390},
-      medium:{monthly:19,annual:190},
-      small:{monthly:9,annual:90}
+      very_large:{monthly:59.5,annual:595},
+      large:{monthly:34.5,annual:345},
+      normal:{monthly:19.5,annual:195},
+      medium:{monthly:9.5,annual:95},
+      small:{monthly:4.5,annual:45}
     }},
-  aisle:{stations:['S01','S02','S03','S04','S05'],footprintM:1.2,distanceMetres:{near:15,gallery:35,landmark:75},
+  aisle:{stations:['S01','S02','S03','S04'],footprintWidthM:1.5,footprintLengthM:1.8,maxHeightM:2.5,distanceMetres:{near:15,gallery:35,landmark:75},
     pricing:{
-      near:{'1':290,'7':1290,'30':3990},
-      gallery:{'1':590,'7':2490,'30':7990},
-      landmark:{'1':990,'7':4990,'30':15900}
+      near:{'1':145,'7':645,'30':1995},
+      gallery:{'1':295,'7':1245,'30':3995},
+      landmark:{'1':495,'7':2495,'30':7950}
     }}
 });
 
@@ -75,7 +75,7 @@ export function normalizeCommerceConfig(input=DEFAULT_COMMERCE_CONFIG){
       annual:numeric(w.pricing?.[f.id]?.annual??defaultW.pricing[f.id].annual,0,10000000)
     };
   }
-  const aisle={stations:[...defaultA.stations],footprintM:numeric(a.footprintM??defaultA.footprintM,0.3,2.5),distanceMetres:{},pricing:{}};
+  const aisle={stations:[...defaultA.stations],footprintWidthM:numeric(a.footprintWidthM??defaultA.footprintWidthM,0.5,3),footprintLengthM:numeric(a.footprintLengthM??defaultA.footprintLengthM,0.5,3),maxHeightM:numeric(a.maxHeightM??defaultA.maxHeightM,0.5,4),distanceMetres:{},pricing:{}};
   for(const level of DISTANCE_LEVELS){
     aisle.distanceMetres[level.id]=numeric(a.distanceMetres?.[level.id]??defaultA.distanceMetres[level.id],5,200);
     aisle.pricing[level.id]={};
