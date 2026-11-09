@@ -56,7 +56,7 @@ try{
   assert.match(await page.locator('#floorQuotedPrice').textContent(),/145/);
   await page.locator('#floorDurationDays').selectOption('7');
   await page.locator('#floorVisibilityTier').selectOption('gallery');
-  assert.match(await page.locator('#floorQuotedPrice').textContent(),/1\\s?245/);
+  assert.match(await page.locator('#floorQuotedPrice').textContent(),/1[^0-9]*245/);
   await page.locator('#floorClose').click();
     assert.deepEqual(errors,[],'No uncaught browser script errors');
   console.log('PASS: configurator geometry, exclusivity, premium prices and storage persistence.');
