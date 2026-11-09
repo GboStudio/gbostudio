@@ -190,7 +190,7 @@ def area(name,x,y,z,power,sizex,sizey,target_x,target_y,target_z):
     obj.rotation_euler=(Vector(pt(target_x,target_y,target_z))-obj.location).to_track_quat("-Z","Y").to_euler()
 
 for z in (2.2,6.2,10.4):
-    area("large diffused ceiling source",0,6.12,z,510,3.4,2.4,0,.8,z+.3)
+    area("large diffused ceiling source",0,6.12,z,108,3.4,2.4,0,.8,z+.3)
 for side in (-1,1):
     for z in (5.4,9.6):
         area("gentle framed artwork wallwasher",side*2.45,5.74,z-.25,175,1.45,.8,side*4.4,2.35,z)
