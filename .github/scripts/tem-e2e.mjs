@@ -155,8 +155,21 @@ for(const mode of browsers){
             Math.abs(Number(el?.dataset.museumInputForward||0))<.01;
         },null,{timeout:25000});
         const fovBefore=Number(await page.locator('#walkOverlay').getAttribute('data-museum-camera-fov'));
+        const zoomDiagnostics=await page.locator('#museumZoomIn').evaluate(el=>{
+          const parent=el.parentElement,cs=getComputedStyle(el),ps=getComputedStyle(parent);
+          const rect=el.getBoundingClientRect(),pr=parent.getBoundingClientRect();
+          return {
+            buttonDisplay:cs.display,buttonVisibility:cs.visibility,
+            parentDisplay:ps.display,parentVisibility:ps.visibility,
+            width:rect.width,height:rect.height,parentWidth:pr.width,parentHeight:pr.height,
+            hit:document.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2)?.id||''
+          };
+        });
+        console.log('MOBILE ZOOM CONTROL',JSON.stringify(zoomDiagnostics));
         const zoom=await page.locator('#museumZoomIn').boundingBox();
-        if(!zoom)throw Error('Zoom button unavailable');
+        if(!zoom)throw Error('Zoom button unavailable: '+JSON.stringify(zoomDiagnostics));
+        if(zoomDiagnostics.hit!=='museumZoomIn')
+          throw Error('Zoom button obscured by '+zoomDiagnostics.hit);
         await page.touchscreen.tap(zoom.x+zoom.width/2,zoom.y+zoom.height/2);
         await page.waitForFunction(before=>
           Number(document.querySelector('#walkOverlay')?.dataset.museumCameraFov||0)<before-1,
