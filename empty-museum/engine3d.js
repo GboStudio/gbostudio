@@ -546,7 +546,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   });
   function drawCommercialFrame(slot){
     const side=slot.side;
-    const x=side*(HALF-.39),z=slot.z+(slot.xM+slot.widthM/2-1.5);
+    const x=side*(HALF-.39),z=slot.z+side*(slot.xM+slot.widthM/2-1.5);
     const y=slot.y,w=slot.widthM,h=slot.heightM;
     const rot=side<0?Math.PI/2:-Math.PI/2;
     const unit=new THREE.Group();
@@ -1134,7 +1134,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   document.querySelectorAll("[data-walk-open]").forEach(b=>b.addEventListener("click",open));
   overlay.querySelectorAll("[data-walk-close]").forEach(b=>b.addEventListener("click",close));
   overlay.querySelectorAll("[data-walk-exhibit]").forEach(b=>b.addEventListener("click",()=>{
-    const free=window.TEM.getSlots().find(s=>!s.piece&&!s.reservedForAds);
+    const free=(window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots()).find(s=>!s.piece&&!s.reservedForAds);
     if(free)selected(free);
   }));
   overlay.querySelectorAll("[data-walk-hold]").forEach(b=>{
