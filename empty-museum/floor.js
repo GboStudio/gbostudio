@@ -11,7 +11,7 @@ const stopModelPreview=()=>{if(modelToolsPromise)modelToolsPromise.then(m=>m.sto
   const buttons=[...dialog.querySelectorAll('[data-floor-type]')];
   const canvas=$('#floorPreviewCanvas'),ctx=canvas.getContext('2d');
   const colors={photo:'#d8b68b',statue:'#d8b68b',billboard:'#d8b68b',neon:'#8fd6e8',model:'#d5c8b4'};
-  let modelFile=null,modelValidated=false,modelRequest=0;
+  let modelFile=null,modelValidated=false,modelRequest=0,imageRequest=0;
   let state={slot:'S01',type:'photo',author:'',title:'',text:'',shape:'spire',tint:'#d8b68b',image:''},angle=-.25;
   const LINE_LIMIT=46;
   const colorHex=s=>/^#[0-9a-fA-F]{6}$/.test(s||'')?s:'#d8b68b';
@@ -67,25 +67,40 @@ const stopModelPreview=()=>{if(modelToolsPromise)modelToolsPromise.then(m=>m.sto
   for (const [id,key] of [['floorAuthor','author'],['floorTitle','title'],['floorText','text'],['floorShape','shape'],['floorTint','tint']]) {
     $('#'+id).addEventListener('input',e=>{state[key]=e.target.value;preview();});
   }
-  $('#floorFile').addEventListener('change',e=>{
-    const f=e.target.files?.[0]; if(!f)return;
-    if(!['image/jpeg','image/png','image/webp'].includes(f.type)){showError('Utilisez une image JPG, PNG ou WebP.');return;}
-    if(f.size>15*1024*1024){showError('Cette image dépasse 15 Mo. Choisissez une image plus légère.');return;}
-    const fr=new FileReader();
-    fr.onload=()=>{
-      const img=new Image();
-      img.onload=()=>{
-        const scale=Math.min(1,900/Math.max(img.naturalWidth,img.naturalHeight));
-        const c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*scale);c.height=Math.round(img.naturalHeight*scale);
-        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-        state.image=c.toDataURL('image/jpeg',.79);
-        $('#floorError').textContent='';
-        preview();
+  $('#floorFile').addEventListener('change',async e=>{
+    const f=e.target.files?.[0];if(!f)return;
+    const request=++imageRequest;
+    state.image='';preview();
+    try{
+      const {validateRasterFile,validateRasterDimensions}=await import('./upload-policy.mjs');
+      await validateRasterFile(f);
+      if(request!==imageRequest)return;
+      const fr=new FileReader();
+      fr.onerror=()=>{if(request===imageRequest)showError('Impossible de lire cette image.');};
+      fr.onload=()=>{
+        if(request!==imageRequest)return;
+        const img=new Image();
+        img.onload=()=>{
+          if(request!==imageRequest)return;
+          try{
+            validateRasterDimensions(img.naturalWidth,img.naturalHeight);
+            const scale=Math.min(1,900/Math.max(img.naturalWidth,img.naturalHeight));
+            const c=document.createElement('canvas');
+            c.width=Math.max(1,Math.round(img.naturalWidth*scale));
+            c.height=Math.max(1,Math.round(img.naturalHeight*scale));
+            const ctx=c.getContext('2d');
+            if(!ctx)throw Error('Aperçu de cette image indisponible.');
+            ctx.drawImage(img,0,0,c.width,c.height);
+            state.image=c.toDataURL('image/jpeg',.79);
+            $('#floorError').textContent='';
+            preview();
+          }catch(error){showError(error.message||'Image refusée.');}
+        };
+        img.onerror=()=>{if(request===imageRequest)showError('Impossible de lire cette image.');};
+        img.src=String(fr.result);
       };
-      img.onerror=()=>showError('Impossible de lire cette image.');
-      img.src=String(fr.result);
-    };
-    fr.readAsDataURL(f);
+      fr.readAsDataURL(f);
+    }catch(error){if(request===imageRequest)showError(error.message||'Image refusée.');}
   });
   $('#floorModelFile').addEventListener('change',async e=>{
     const file=e.target.files?.[0];
@@ -119,7 +134,7 @@ const stopModelPreview=()=>{if(modelToolsPromise)modelToolsPromise.then(m=>m.sto
     }
   });
   $('#floorClose').addEventListener('click',()=>dialog.close());
-  dialog.addEventListener('close',()=>{modelRequest++;stopModelPreview();});
+  dialog.addEventListener('close',()=>{modelRequest++;imageRequest++;stopModelPreview();});
   dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
   function showError(t){const el=$('#floorError');el.textContent=t;el.scrollIntoView({block:'center',behavior:'smooth'});}
   let currentImage=null,lastImgSrc='';

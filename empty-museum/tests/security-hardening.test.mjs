@@ -51,9 +51,12 @@ test('commerce reservations render with DOM text nodes, never untrusted HTML',()
   assert.doesNotMatch(render,/\.innerHTML\s*=|\.outerHTML\s*=|insertAdjacentHTML/);
 });
 
-test('main exhibit image uploads are raster-only and size-bounded',()=>{
-  assert.match(app,/\['image\/jpeg','image\/png','image\/webp'\]\.includes\(f\.type\)/);
-  assert.match(app,/f\.size>15\*1024\*1024/);
+test('main exhibit and floor image uploads use signature and dimension validation',()=>{
+  const floor=readFileSync('empty-museum/floor.js','utf8');
+  for(const src of [app,floor]){
+    assert.match(src,/validateRasterFile\(f\)/);
+    assert.match(src,/validateRasterDimensions\(img\.naturalWidth,img\.naturalHeight\)/);
+  }
 });
 
 test('public Supabase schema retains published-only SELECT and no public writes',()=>{

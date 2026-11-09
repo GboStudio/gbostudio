@@ -60,3 +60,11 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Vérifier le contrat des deux joysticks + zoom, la priorité des commandes manuelles et la présence des tests de sécurité dans les pipelines.
 - Exécuter des jeux de tests positifs **et négatifs** du garde-fou : un contrôle qui ne sait pas échouer lors d'une rupture simulée ne fournit aucune garantie.
 - Les tests statiques ne prouvent ni la qualité visuelle ni le succès de publication. Utiliser séparément Playwright et la vérification du déploiement GitHub Pages correspondant au SHA exact.
+
+## Sécurité phase 2 — correctifs proposés (branche dédiée, non encore fusionnés)
+- Contrôle d'import des images JPG/PNG/WebP : signature réelle, taille de fichier et dimensions décodées avant création de canvas.
+- Budget de ressources pour glTF/GLB/STL et interdiction des URI externes/malformées et boucles de nœuds.
+- CSP dans le HTML de l'entrée pour limiter les scripts externes, retrait du gestionnaire d'événement inline ; limite GitHub Pages : en-têtes HTTP non tous configurables via balise meta.
+- Tests automatisés dédiés à la sécurité, contrôle local de secrets connus et vérifications de dépendances/CDN, Dependabot hebdomadaire pour les GitHub Actions.
+- Le travail ne modifie ni l'économie des produits ni le moteur 3D. **Les achats réels restent interdits** en l'absence de backend et contrôles serveur validés.
+- Les tests CI et le déploiement public de cette seconde phase doivent être validés après la PR, séparément des protections de la PR #38.
