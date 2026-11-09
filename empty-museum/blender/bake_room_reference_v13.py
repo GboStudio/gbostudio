@@ -168,7 +168,38 @@ stone=mineral("V13 honed limestone plinth",
 bronze,_=material("V13 aged brushed brass",(.49,.42,.31),.56,.63)
 shadow,_=material("V13 recessed neutral reveals",(.56,.55,.535),.94)
 white,_=material("V13 soft matte frame",(.89,.88,.864),.9)
-art,_=material("V13 neutral demonstration paintings",(.62,.65,.66),.91)
+# Four original, strictly fictional collection studies for staging.
+# No uploaded user artwork, public reservation or purchased space is touched.
+from PIL import ImageDraw
+def study_artwork(i):
+    width,height=640,800
+    palette=[
+      ((241,230,208),(171,87,65),(67,91,113),(224,183,129)),
+      ((220,228,224),(46,79,103),(182,103,71),(146,167,136)),
+      ((236,231,215),(77,91,73),(201,159,106),(67,65,63)),
+      ((238,225,214),(110,76,82),(169,146,111),(42,72,92))
+    ]
+    bg,a,b,c=palette[i]
+    image=Image.new("RGB",(width,height),bg)
+    d=ImageDraw.Draw(image)
+    # Quiet geometric paintings with irregular layered shapes, not brand imagery.
+    d.ellipse((-140+i*42,100,510+i*9,760),fill=a)
+    d.ellipse((80,230+i*19,540,675),fill=bg)
+    d.polygon([(width*.24,20),(width*.90,110+i*17),
+               (width*.79,460),(width*.35,425)],fill=b)
+    d.rectangle((0,620,width,656+i*17),fill=c)
+    for line in range(10):
+        xx=(line*67+i*47)%width
+        yy=180+line*54
+        d.line((xx-38,yy,xx+75,yy+14),fill=(*a,),width=1)
+    path=out/f"room-v13-sample-art-{i+1}.png"
+    image.save(path)
+    mat,shader=material(f"V13 original abstract study {i+1}",(1,1,1),.91)
+    tex=mat.node_tree.nodes.new("ShaderNodeTexImage")
+    tex.image=bpy.data.images.load(str(path),check_existing=True)
+    mat.node_tree.links.new(tex.outputs["Color"],shader.inputs["Base Color"])
+    return mat
+study_materials=[study_artwork(i) for i in range(4)]
 opal,opal_bsdf=material("V13 recessed diffusers",(.92,.917,.89),.62)
 if "Emission Color" in opal_bsdf.inputs:
     opal_bsdf.inputs["Emission Color"].default_value=(.97,.96,.94,1)
@@ -224,7 +255,7 @@ for side in (-1,1):
         box("art contact shadow",x,2.30,z,.075,1.82,2.26,shadow,.008)
         box("floating natural wood/stone frame",side*4.425,2.30,z,.12,1.74,2.17,bronze,.008)
         box("warm white mat board",side*4.34,2.30,z,.023,1.61,2.00,white)
-        box("placeholder artwork matte",side*4.316,2.30,z,.009,1.41,1.80,art)
+        box("original staging artwork, fictional",side*4.316,2.30,z,.009,1.41,1.80,study_materials[i+(0 if side<0 else 2)])
         box("brass wall label",side*4.39,1.45,z+1.30,.036,.18,.29,bronze,.004)
         box("plaque inset",side*4.365,1.45,z+1.30,.009,.145,.26,stone)
 # Physically grounded visitor seat: realistic contact shadow, no fantasy CGI.
