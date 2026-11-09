@@ -24,6 +24,9 @@ try{
   await page.locator('[data-tab="aisle"]').click();
   await page.locator('[data-distance="landmark"]').click();
   await page.locator('[data-days="1"]').click();
+  await page.locator('[data-range="landmark"]').fill('90');
+  await page.locator('#saveRanges').click();
+  assert.match(await page.locator('#aisleDetails').textContent(),/90 m/);
   assert.match(await page.locator('#aislePrice').textContent(),/990/);
   await page.locator('#bookAisle').click();
   assert.match(await page.locator('#bookAisle').textContent(),/occupée/);
@@ -34,6 +37,8 @@ try{
   await page.locator('#saveWallPrices').click();
   await page.reload({waitUntil:'networkidle'});
   assert.equal(await page.locator('[data-wall-price="small"][data-term="monthly"]').inputValue(),'11');
+  await page.locator('[data-tab="aisle"]').click();
+  assert.equal(await page.locator('[data-range="landmark"]').inputValue(),'90');
   assert.equal(await page.locator('#wallGrid [data-slot]').count(),16);
   assert.match(await page.locator('#wallPrice').textContent(),/11/);
   assert.deepEqual(errors,[],'No uncaught browser script errors');
