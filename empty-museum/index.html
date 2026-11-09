@@ -103,7 +103,15 @@
   <div><span class="eyebrow" id="floorSlotLabel">SOL S01 · 1,80 × 1,50 M</span><h2>VOTRE ESPACE.<br><em>VOTRE INSTALLATION.</em></h2></div>
   <button type="button" class="floor-close" id="floorClose" aria-label="Fermer">×</button>
  </div>
- <div class="floor-price"><div><b>DÈS 145 €</b><span>/ JOURNÉE · OFFRE PREMIUM DÉMO</span></div><small>Quatre places de 1,80 × 1,50 m. Tarifs selon durée (1, 7 ou 30 jours) et distance de visibilité. Aucun paiement dans cette démonstration.</small></div>
+ <div class="floor-price"><div><b id="floorQuotedPrice">145 €</b><span id="floorQuotedTerm">/ 1 JOUR · 15 M</span></div><small>Quatre places de 1,80 × 1,50 m. Tarif selon durée et portée ; aucun paiement n'est effectué.</small></div>
+<div class="floor-pricing-choices" style="display:flex;gap:12px;flex-wrap:wrap;padding:16px 20px;background:#eeece6;border-bottom:1px solid #d8d5ce">
+  <label style="font-size:12px;display:flex;flex-direction:column;gap:6px">DURÉE D'EXPOSITION
+    <select id="floorDurationDays" style="padding:9px;min-width:140px"><option value="1">1 journée</option><option value="7">1 semaine</option><option value="30">1 mois (30 jours)</option></select>
+  </label>
+  <label style="font-size:12px;display:flex;flex-direction:column;gap:6px">VISIBILITÉ MAXIMALE
+    <select id="floorVisibilityTier" style="padding:9px;min-width:140px"><option value="near">15 mètres</option><option value="gallery">35 mètres</option><option value="landmark">75 mètres</option></select>
+  </label>
+</div>
  <div class="floor-layout">
   <div class="floor-editor">
    <span class="floor-step">01 / CHOISISSEZ CE QUE VOUS INSTALLEZ</span>
