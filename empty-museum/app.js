@@ -99,7 +99,7 @@ function getCeilingStatus(){
 function getCeilingSlots(){
   const {unlocked}=getCeilingStatus();
   return CEILING_POSITIONS.map(s=>({...s,price:FORMATS[s.size].price,format:FORMATS[s.size],
-    piece:pieces.find(p=>p.slot===s.id)||null,unlocked}));
+    piece:pieces.slice().reverse().find(p=>p.slot===s.id&&(!p.expiresAt||Date.parse(p.expiresAt)>Date.now()))||null,unlocked}));
 }
 function refreshCeilingOffers(){
   const state=getCeilingStatus();
