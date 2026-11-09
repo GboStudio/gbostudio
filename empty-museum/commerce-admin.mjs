@@ -7,7 +7,7 @@ import {
 
 const $=(selector)=>document.querySelector(selector);
 const $$=(selector)=>Array.from(document.querySelectorAll(selector));
-const LAYOUT_STORAGE_KEY='tum-commerce-module-layouts-preview-v1';
+const LAYOUT_STORAGE_KEY='tum-commerce-module-layouts-preview-v2';
 const deepCopy=value=>JSON.parse(JSON.stringify(value));
 function stored(key,fallback) {
   try{const value=localStorage.getItem(key);return value?JSON.parse(value):fallback}
@@ -39,7 +39,7 @@ function activeAisleBookings(id){
   return reservations.filter(r=>r?.type==='aisle'&&r.stationId===id&&isActive(r));
 }
 function formatForModule(number){
-  return activeWallBookings(number)[0]?.formatId||layouts[String(number)]||config.wall.defaultFormat;
+  return activeWallBookings(number)[0]?.formatId||layouts[String(number)]||window.TUM_GALLERY_MIX?.formatForBay(number-1)||config.wall.defaultFormat;
 }
 function numberFR(n,digits=2){return Number(n).toLocaleString('fr-FR',{maximumFractionDigits:digits})}
 function renderWalls(){
@@ -56,6 +56,7 @@ function renderWalls(){
   if(!slots.some(s=>s.id===selectedSlot))selectedSlot=slots.find(s=>canReserveWall(reservations,moduleNumber,s.id).ok)?.id||slots[0].id;
   const selected=slots.find(s=>s.id===selectedSlot)||slots[0];
   const slotFmt=WALL_FORMATS.find(f=>f.id===formatId);
+  if(moduleNumber<=4){notify('Les quatre premiers modules sont réservés aux partenaires.',true);return;}
   const booked=activeWallBookings(moduleNumber);
   $('#wallGrid').innerHTML=slots.map(slot=>{
     const n=slot.leaves[0],column=n%4+1,row=Math.floor(n/4)+1;
@@ -74,8 +75,9 @@ function renderWalls(){
   $('#wallPriceNote').textContent=term==='annual'
     ? 'Abonnement sur 12 mois · renouvellement automatique seulement après intégration des paiements'
     : 'Abonnement mensuel · renouvellement automatique seulement après intégration des paiements';
-  $('#bookWall').disabled=!!booked.find(b=>b.slotId===selectedSlot);
-  $('#bookWall').textContent=$('#bookWall').disabled?'Emplacement déjà réservé':'Simuler cette réservation →';
+  const partnerModule=moduleNumber<=4;
+  $('#bookWall').disabled=partnerModule||!!booked.find(b=>b.slotId===selectedSlot);
+  $('#bookWall').textContent=partnerModule?'MODULE PARTENAIRE NON COMMERCIALISÉ':$('#bookWall').disabled?'Emplacement déjà réservé':'Simuler cette réservation →';
   $('#moduleCount').value=String(config.wall.moduleCount);
   $('#exhibitHeight').value=String(config.wall.exhibitHeightM);
 }
@@ -198,6 +200,7 @@ $('#saveWallPrices').addEventListener('click',()=>{
 });
 $('#bookWall').addEventListener('click',()=>{
   try{
+    if(moduleNumber<=4)throw new Error('Module partenaire non commercialisable.');
     const formatId=formatForModule(moduleNumber);
     const choice=createPreviewReservation({config,reservations,type:'wall',moduleNumber,formatId,slotId:selectedSlot,term});
     reservations.push(choice);persist();selectedSlot=null;render();notify('Réservation murale simulée, sans paiement.'); 
