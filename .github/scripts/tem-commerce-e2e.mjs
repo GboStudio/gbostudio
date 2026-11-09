@@ -13,6 +13,9 @@ try{
   const response=await page.goto(new URL('commerce-configurator.html',origin).href,{waitUntil:'networkidle'});
   assert.equal(response?.status(),200);
   await page.locator('#formats [data-format="normal"]').waitFor();
+  assert.equal(await page.locator('#bookWall').isDisabled(),true,'First four modules reserved for partners');
+  await page.locator('#module').selectOption('5');
+  await page.locator('#formats [data-format="normal"]').click();
   assert.equal(await page.locator('#wallGrid [data-slot]').count(),4);
   await page.locator('#formats [data-format="small"]').click();
   assert.equal(await page.locator('#wallGrid [data-slot]').count(),16);
@@ -36,6 +39,7 @@ try{
   await page.locator('[data-wall-price="small"][data-term="monthly"]').fill('11');
   await page.locator('#saveWallPrices').click();
   await page.reload({waitUntil:'networkidle'});
+  await page.locator('#module').selectOption('5');
   assert.equal(await page.locator('[data-wall-price="small"][data-term="monthly"]').inputValue(),'11');
   await page.locator('[data-tab="aisle"]').click();
   assert.equal(await page.locator('[data-range="landmark"]').inputValue(),'90');
