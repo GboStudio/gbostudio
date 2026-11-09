@@ -742,7 +742,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     }catch{return null;}
   }
   function plannedStops(){
-    return planExhibitionStops(window.TEM.getSlots(),{
+    return planExhibitionStops(window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots(),{
       step:STEP,half:HALF,start:5.7,
       floorSlots:window.TEM.getFloorSlots(),ceilingSlots:window.TEM.getCeilingSlots()
     });
