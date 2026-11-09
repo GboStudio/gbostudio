@@ -36,6 +36,7 @@ for(const mode of browsers){
     const state=await page.evaluate(()=>{
       const overlay=document.querySelector('#walkOverlay');
       const stick=document.querySelector('.museum-v5-joystick');
+      const lookStick=document.querySelector('.museum-v5-lookstick');
       const c=document.querySelector('#walkCanvas');
       let available=false;
       try{const test=document.createElement('canvas');available=!!(test.getContext('webgl')||test.getContext('experimental-webgl'));}catch(e){}
@@ -45,6 +46,7 @@ for(const mode of browsers){
         free:document.querySelector('#museumFreeToggle')?.getAttribute('aria-pressed'),
         isFree:document.querySelector('.museum-v5-shell')?.classList.contains('is-free'),
         stickDisplay:stick?getComputedStyle(stick).display:'missing',
+        lookDisplay:lookStick?getComputedStyle(lookStick).display:'missing',
         canvasWidth:c?.width||0,canvasHeight:c?.height||0,
         webgl:available,
         progress:document.querySelector('#walkProgress')?.textContent||''
@@ -57,10 +59,10 @@ for(const mode of browsers){
       if(state.free!=='true'||!state.isFree)throw Error('Museum did not start in free exploration');
       if(state.canvasWidth<=0||state.canvasHeight<=0)throw Error('3D canvas was not resized');
       const beforeZ=await page.locator('#walkOverlay').evaluate(el=>Number(el.dataset.tourCameraZ||0));
-      if(mode.mobile && (state.stickDisplay==='none'||state.stickDisplay==='missing'))
-        throw Error('Mobile joystick is not visible');
+      if(mode.mobile && [state.stickDisplay,state.lookDisplay].some(v=>v==='none'||v==='missing'))
+        throw Error('Both mobile joysticks must be visible');
       if(mode.mobile){
-        for(const selector of ['.joystick-ring','#museumTour','#museumFreeToggle']){
+        for(const selector of ['.joystick-ring','.lookstick-ring','#museumZoomIn','#museumZoomOut','#museumTour','#museumFreeToggle']){
           const bounds=await page.locator(selector).evaluate(el=>{
             const r=el.getBoundingClientRect(),v=window.visualViewport;
             const x=v?.offsetLeft||0,y=v?.offsetTop||0;
@@ -121,6 +123,58 @@ for(const mode of browsers){
           return Math.abs(Number(r?.dataset.museumInputForward||0))<.01 &&
             Math.abs(Number(r?.dataset.museumInputStrafe||0))<.01;
         },null,{timeout:25000});
+        const left=await page.locator('.lookstick-ring').boundingBox();
+        const right=await page.locator('.joystick-ring').boundingBox();
+        if(!left||!right)throw Error('Dual-stick touch targets unavailable');
+        if(!(left.x+left.width<right.x))
+          throw Error('Expected LOOK joystick on LEFT and MOVE joystick on RIGHT');
+        const lx=left.x+left.width/2+27,ly=left.y+left.height/2;
+        const rx=right.x+right.width/2,ry=right.y+right.height/2-28;
+        const cdp=await context.newCDPSession(page);
+        try{
+          await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+            {id:1,x:lx,y:ly},{id:2,x:rx,y:ry}
+          ]});
+          await page.waitForFunction(()=>{
+            const el=document.querySelector('#walkOverlay');
+            return Number(el?.dataset.museumInputForward||0)>.4 &&
+              Number(el?.dataset.museumInputLookX||0)>.4;
+          },null,{timeout:30000});
+          const yawBefore=Number(await page.locator('#walkOverlay').getAttribute('data-tour-camera-yaw'));
+          await page.waitForFunction(previous=>
+            Number(document.querySelector('#walkOverlay')?.dataset.tourCameraYaw||0)>previous+.012,
+            yawBefore,{timeout:30000});
+          console.log('PASS MOBILE SIMULTANEOUS LEFT LOOK + RIGHT MOVE');
+        }finally{
+          await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]}).catch(()=>{});
+          await cdp.detach().catch(()=>{});
+        }
+        await page.waitForFunction(()=>{
+          const el=document.querySelector('#walkOverlay');
+          return Math.abs(Number(el?.dataset.museumInputLookX||0))<.01 &&
+            Math.abs(Number(el?.dataset.museumInputForward||0))<.01;
+        },null,{timeout:25000});
+        const fovBefore=Number(await page.locator('#walkOverlay').getAttribute('data-museum-camera-fov'));
+        const zoomDiagnostics=await page.locator('#museumZoomIn').evaluate(el=>{
+          const parent=el.parentElement,cs=getComputedStyle(el),ps=getComputedStyle(parent);
+          const rect=el.getBoundingClientRect(),pr=parent.getBoundingClientRect();
+          return {
+            buttonDisplay:cs.display,buttonVisibility:cs.visibility,
+            parentDisplay:ps.display,parentVisibility:ps.visibility,
+            width:rect.width,height:rect.height,parentWidth:pr.width,parentHeight:pr.height,
+            hit:document.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2)?.id||''
+          };
+        });
+        console.log('MOBILE ZOOM CONTROL',JSON.stringify(zoomDiagnostics));
+        const zoom=await page.locator('#museumZoomIn').boundingBox();
+        if(!zoom)throw Error('Zoom button unavailable: '+JSON.stringify(zoomDiagnostics));
+        if(zoomDiagnostics.hit!=='museumZoomIn')
+          throw Error('Zoom button obscured by '+zoomDiagnostics.hit);
+        await page.touchscreen.tap(zoom.x+zoom.width/2,zoom.y+zoom.height/2);
+        await page.waitForFunction(before=>
+          Number(document.querySelector('#walkOverlay')?.dataset.museumCameraFov||0)<before-1,
+          fovBefore,{timeout:25000});
+        console.log('PASS MOBILE ZOOM IN');
       }
       const hit=await page.locator('#museumTour').evaluate(btn=>{
         const r=btn.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;

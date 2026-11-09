@@ -31,7 +31,7 @@ test('Blender build is manual, read-only and cannot generate PR commit emails',(
 });
 test('manual camera and joystick actions take precedence over old movement',()=>{
   const engine=text('empty-museum/engine3d.js'),nav=text('empty-museum/museum-v5.js');
-  assert.match(engine,/if\(turning\|\|fwd\|\|strafe\)\s*\{\s*\/\/ Manual input wins/);
+  assert.match(engine,/if\(turning\|\|fwd\|\|strafe\|\|input\.lookX\|\|input\.lookY\)\s*\{\s*\/\/ Manual input wins/);
   assert.match(engine,/v5\.takeControl\(\)/);
   assert.match(engine,/v5\.releaseInputs\(\)/);
   assert.match(nav,/function takeControl\(\)/);

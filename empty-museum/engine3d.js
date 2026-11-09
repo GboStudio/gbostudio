@@ -7,7 +7,7 @@ import {RoomEnvironment} from "three/addons/environments/RoomEnvironment.js";
 import {RoundedBoxGeometry} from "three/addons/geometries/RoundedBoxGeometry.js";
 import {addPhysicalGalleryV3} from "./physical-gallery-v3.js?v=20261109realism11";
 import {addBakedEntranceV4} from "./baked-architecture-v4.js?v=20261106a";
-import {createMuseumV5Navigation} from "./museum-v5.js?v=20261105input3";
+import {createMuseumV5Navigation} from "./museum-v5.js?v=20261109dualstick2";
 import {museumCameraMotion} from "./movement3d.js?v=20261105motion1";
 import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261105nearest1";
 
@@ -25,6 +25,9 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   const mobileCompactStyle=document.createElement("link");
   mobileCompactStyle.rel="stylesheet";mobileCompactStyle.href="./museum-mobile-v13.css?v=20261106exit1";
   document.head.appendChild(mobileCompactStyle);
+  const dualStickStyle=document.createElement("link");
+  dualStickStyle.rel="stylesheet";dualStickStyle.href="./dual-joystick-v1.css?v=20261109dualstick2";
+  document.head.appendChild(dualStickStyle);
   const overlay = document.getElementById("walkOverlay");
   const canvas = document.getElementById("walkCanvas");
   if (!overlay || !canvas || !window.TEM) return;
@@ -250,7 +253,10 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   portalFront.renderOrder=3;
   // Optional real Cycles light-baked architectural entrance: V3 remains usable
   // until the generated GLB has been verified and downloaded.
-  addBakedEntranceV4({scene,overlay}).catch(error=>
+  // Loading stays asynchronous; the visitor can already explore the V3
+  // gallery while the verified Blender light-bake arrives. Software WebGL
+  // and slower desktop devices need more than the old hard 15s cutoff.
+  addBakedEntranceV4({scene,overlay,timeoutMs:mobile?25000:90000}).catch(error=>
     console.warn("[TEM] Nonblocking V4 architectural enhancement",error));
   // No gold stripes or decorative circles cutting through the real stone floor.
   // The actual large-format stone joints provide the entire floor rhythm.
@@ -884,6 +890,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       yaw=0;pitch=0;yawTarget=0;pitchTarget=0;walkTo=null;velX=0;velZ=0;
     },
     setZoom:(fov)=>{camera.fov=fov;camera.updateProjectionMatrix();},
+    adjustZoom:(delta)=>{camera.fov=clamp(camera.fov+delta,40,75);camera.updateProjectionMatrix();},
     nextStop:()=>goToNextArtwork(),
     onTourChange:onGuidedTourChange,
     onViewChange:(mode)=>{
@@ -939,7 +946,9 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     // steering, not merely static signs in the UI.
     overlay.dataset.museumInputForward=fwd.toFixed(3);
     overlay.dataset.museumInputStrafe=strafe.toFixed(3);
-    if(turning||fwd||strafe){
+    overlay.dataset.museumInputLookX=input.lookX.toFixed(3);
+    overlay.dataset.museumInputLookY=input.lookY.toFixed(3);
+    if(turning||fwd||strafe||input.lookX||input.lookY){
       // Manual input wins. An old click-to-walk route must never restart
       // when the visitor releases the joystick.
       walkTo=null;
@@ -971,7 +980,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       }
       fwd=0;strafe=0;
     }else{
-      yawTarget+=turning*dt*1.22;
+      yawTarget+=(turning*1.22+input.lookX*1.9)*dt;
+      pitchTarget=clamp(pitchTarget-input.lookY*dt*1.32,-.98,.98);
       if(walkTo!==null && !fwd && !strafe){
         if(view.z<walkTo-.45)fwd=.8;
         else walkTo=null;
@@ -1025,6 +1035,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     overlay.dataset.tourCameraZ=view.z.toFixed(3);
     overlay.dataset.tourCameraX=view.x.toFixed(3);
     overlay.dataset.tourCameraYaw=yaw.toFixed(4);
+    overlay.dataset.tourCameraPitch=pitch.toFixed(4);
+    overlay.dataset.museumCameraFov=camera.fov.toFixed(2);
     overlay.dataset.tourAutoWalking=String(walkTo!==null);
     if(tourState.started && time-lastTourSnapshot>1750){
       lastTourSnapshot=time;saveTourSession();

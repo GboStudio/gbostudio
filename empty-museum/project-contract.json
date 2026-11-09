@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "project": "THE UNREAL MUSEUM",
+  "repository": "GboStudio/gbostudio",
+  "branch": "main",
+  "appRoot": "empty-museum",
+  "publicPath": "/empty-museum/",
+  "visitQuery": "visit=immersive",
+  "activeEntrypoint": "index.html",
+  "primary3DEngine": "engine3d.js",
+  "fallbackEngine": "walk.js",
+  "commercialState": "demo-no-live-payments",
+  "wallModuleLengthM": 3,
+  "wallSizes": [
+    1,
+    2,
+    4,
+    8,
+    16
+  ],
+  "wallBilling": [
+    "monthly",
+    "annual"
+  ],
+  "aisleDurationsDays": [
+    1,
+    7,
+    30
+  ],
+  "aisleDistanceMetres": [
+    15,
+    35,
+    75
+  ],
+  "updated": "2026-11-09"
+}

@@ -35,11 +35,13 @@ jobs:
         run: node --test empty-museum/tests/museum.test.mjs
       - name: Validate physical gallery layout and indirect-occlusion profiles
         run: node --test empty-museum/tests/gallery-layout-v3.test.mjs
+      - name: Validate commercial wall subdivisions, prices and reservations
+        run: node --test empty-museum/commerce-model.test.mjs
 
   browser-preview:
     name: Architectural staging render (desktop and mobile)
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 18
     steps:
       - name: Checkout development branch
         uses: actions/checkout@v4
@@ -57,6 +59,7 @@ jobs:
           sleep 2
           node .github/scripts/tem-v3-preview.mjs
           TEM_BASE_URL=http://127.0.0.1:8765/empty-museum/ node .github/scripts/tem-e2e.mjs
+          TEM_BASE_URL=http://127.0.0.1:8765/empty-museum/ node .github/scripts/tem-commerce-e2e.mjs
       - name: Publish preview screenshots
         if: always()
         uses: actions/upload-artifact@v4

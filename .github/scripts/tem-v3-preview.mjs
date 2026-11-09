@@ -24,6 +24,31 @@ for(const device of setups){
   page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')diagnostics.push(m.type()+': '+m.text());});
   page.on('requestfailed',r=>diagnostics.push('request failed: '+r.url()+' '+(r.failure()?.errorText||'')));
   try{
+    // Verify that the landing page is an actual working entry, not only
+    // a decorative hero. Run in both desktop and iPhone-sized viewports.
+    const home=await page.goto('http://127.0.0.1:8765/empty-museum/',{
+      waitUntil:'domcontentloaded',timeout:45000
+    });
+    assert.equal(home?.status(),200,'Landing page must be served');
+    await page.locator('#museum-home-title').waitFor({state:'visible',timeout:12000});
+    const entry=await page.evaluate(()=>{
+      const hero=document.querySelector('.editorial-hero');
+      const visual=document.querySelector('.editorial-art-canvas');
+      const primary=document.querySelector('.editorial-primary');
+      const secondary=document.querySelector('.editorial-secondary');
+      const stylesheet=[...document.styleSheets].some(x=>x.href?.includes('editorial-v2.css'));
+      const fit=el=>{const r=el.getBoundingClientRect();return {visible:r.width>20&&r.height>20,inside:r.left>=-1&&r.right<=window.innerWidth+1}};
+      return {hero:!!hero,style:stylesheet,visual:!!visual,primary:fit(primary),secondary:fit(secondary),
+        visitLink:new URL(primary.href).searchParams.get('visit'),
+        stats:!!document.querySelector('#countHero')&&!!document.querySelector('#metersHero')};
+    });
+    assert.ok(entry.hero&&entry.style&&entry.visual&&entry.stats,'Editorial landing must load its layout and existing counters');
+    assert.equal(entry.visitLink,'immersive','Visitor CTA must enter the actual 3D museum');
+    assert.ok(entry.primary.visible&&entry.primary.inside&&entry.secondary.visible&&entry.secondary.inside,
+      'Both entry CTAs must remain visible and within viewport width');
+    await page.locator('.editorial-secondary').click({timeout:10000});
+    await page.waitForFunction(()=>document.querySelector('#exhibit')?.open===true,null,{timeout:10000});
+    console.log('PASS editorial homepage',device.name,JSON.stringify(entry));
     const response=await page.goto('http://127.0.0.1:8765/empty-museum/?visit=immersive',{
       waitUntil:'domcontentloaded',timeout:45000
     });
@@ -54,14 +79,24 @@ for(const device of setups){
       }catch(initialError){
         const lighting=await page.locator('#walkOverlay').getAttribute('data-museum-lighting').catch(()=>null);
         console.warn('PREVIEW BAKE FIRST ATTEMPT',device.name,JSON.stringify({lighting,diagnostics:diagnostics.slice(-12)}));
-        // SwiftShader on the shared CI runner can exhaust the optional GLB's
-        // 15s download budget while warming the first WebGL context. Retry
-        // a fresh visit once, but never pass without the real baked geometry.
-        await page.reload({waitUntil:'domcontentloaded',timeout:45000});
-        await page.waitForFunction(()=>window.__TUM_PREMIUM_READY===true,null,{timeout:65000});
-        await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.museumArchitecture==='physical-v3',null,{timeout:25000});
-        await page.waitForFunction(baked,null,{timeout:45000});
-        console.log('PASS verified Blender bake after cold-render retry',device.name);
+        // A shared SwiftShader runner may abort a cold GLB request while
+        // compiling its first WebGL context. Keep the baked-geometry assertion,
+        // but allow two fresh-load retries rather than failing on the first
+        // transient asset timeout. Never report success on a V3 fallback.
+        let restored=false;
+        for(let attempt=1;attempt<=2&&!restored;attempt++){
+          try{
+            await page.reload({waitUntil:'domcontentloaded',timeout:45000});
+            await page.waitForFunction(()=>window.__TUM_PREMIUM_READY===true,null,{timeout:65000});
+            await page.waitForFunction(()=>document.querySelector('#walkOverlay')?.dataset.museumArchitecture==='physical-v3',null,{timeout:25000});
+            await page.waitForFunction(baked,null,{timeout:75000});
+            restored=true;
+            console.log('PASS verified Blender bake after cold-render retry',device.name,attempt);
+          }catch(error){
+            console.warn('BAKED GLB RETRY FAILED',device.name,attempt,String(error).slice(0,200));
+            if(attempt===2)throw error;
+          }
+        }
       }
       const primitiveCount=Number(await page.locator('#walkOverlay').getAttribute('data-museum-bake-primitives'));
       assert.ok(primitiveCount>0 && primitiveCount<=12,'Cycles baked scene must have a bounded draw-call count');

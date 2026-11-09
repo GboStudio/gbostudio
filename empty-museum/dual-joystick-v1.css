@@ -1,0 +1,130 @@
+/* THE UNREAL MUSEUM — two-thumb exploration.
+   Loaded after V5, tour V10, mobile V12/V13; position in the corrected overlay viewport. */
+.museum-v5-lookstick,.museum-v5-zoom{display:none}
+@media (pointer:coarse) {
+  #walkOverlay .museum-v5-shell .museum-v5-joystick,
+  #walkOverlay .museum-v5-shell .museum-v5-lookstick {
+    position:absolute!important;top:auto!important;
+    bottom:calc(14px + env(safe-area-inset-bottom))!important;
+    z-index:30!important;display:flex!important;flex-direction:column!important;
+    align-items:center!important;justify-content:end!important;
+    width:110px!important;height:119px!important;gap:5px!important;
+    transform:none!important;pointer-events:auto!important;
+    user-select:none;-webkit-user-select:none;touch-action:none;
+  }
+  /* Requested controls: LEFT look, RIGHT movement. */
+  #walkOverlay .museum-v5-shell .museum-v5-lookstick {
+    left:calc(12px + env(safe-area-inset-left))!important;right:auto!important;
+  }
+  #walkOverlay .museum-v5-shell .museum-v5-joystick {
+    right:calc(12px + env(safe-area-inset-right))!important;left:auto!important;
+  }
+  #walkOverlay .museum-v5-shell:not(.is-free) .museum-v5-joystick,
+  #walkOverlay .museum-v5-shell:not(.is-free) .museum-v5-lookstick {
+    display:none!important;
+  }
+  #walkOverlay .museum-v5-joystick .joystick-ring,
+  #walkOverlay .museum-v5-lookstick .lookstick-ring {
+    display:block!important;position:relative!important;flex:none;
+    width:96px!important;height:96px!important;box-sizing:border-box;
+    border:1px solid rgba(251,247,235,.58)!important;border-radius:50%!important;
+    background:rgba(24,28,26,.41)!important;
+    box-shadow:0 6px 28px rgba(0,0,0,.20),inset 0 0 0 16px rgba(255,255,255,.035)!important;
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    touch-action:none!important;pointer-events:auto!important;
+  }
+  #walkOverlay .museum-v5-joystick .joystick-ring::before,
+  #walkOverlay .museum-v5-joystick .joystick-ring::after,
+  #walkOverlay .museum-v5-lookstick .lookstick-ring::before,
+  #walkOverlay .museum-v5-lookstick .lookstick-ring::after {
+    content:"";position:absolute;background:rgba(249,246,233,.18);pointer-events:none;
+  }
+  #walkOverlay .museum-v5-joystick .joystick-ring::before,
+  #walkOverlay .museum-v5-lookstick .lookstick-ring::before {
+    width:64px;height:1px;left:15px;top:47px;
+  }
+  #walkOverlay .museum-v5-joystick .joystick-ring::after,
+  #walkOverlay .museum-v5-lookstick .lookstick-ring::after {
+    width:1px;height:64px;left:47px;top:15px;
+  }
+  #walkOverlay .museum-v5-joystick .joystick-knob,
+  #walkOverlay .museum-v5-lookstick .lookstick-knob {
+    position:absolute!important;top:29px!important;left:29px!important;
+    width:36px!important;height:36px!important;box-sizing:border-box;
+    border-radius:50%;border:1px solid rgba(255,255,255,.80)!important;
+    background:rgba(245,239,225,.54)!important;
+    box-shadow:0 3px 13px rgba(0,0,0,.22)!important;
+    transition:none!important;pointer-events:none!important;
+  }
+  #walkOverlay .museum-v5-joystick.active .joystick-knob,
+  #walkOverlay .museum-v5-lookstick.active .lookstick-knob {
+    background:rgba(242,225,184,.93)!important;
+  }
+  #walkOverlay .museum-v5-joystick small,
+  #walkOverlay .museum-v5-lookstick small {
+    display:block!important;color:rgba(255,255,255,.96)!important;
+    font:700 8px/1.2 Arial,sans-serif!important;letter-spacing:.12em!important;
+    text-align:center;text-shadow:0 2px 9px rgba(0,0,0,.7);white-space:nowrap;
+  }
+  #walkOverlay .museum-v5-shell .museum-v5-zoom {
+    position:absolute!important;right:calc(16px + env(safe-area-inset-right))!important;
+    left:auto!important;top:auto!important;
+    bottom:calc(145px + env(safe-area-inset-bottom))!important;
+    display:flex!important;align-items:center!important;justify-content:space-between!important;
+    gap:4px!important;width:103px!important;height:32px!important;box-sizing:border-box;
+    z-index:31!important;pointer-events:auto!important;
+    border:1px solid rgba(255,255,255,.48);border-radius:20px;
+    padding:2px 4px;background:rgba(25,28,27,.60);
+    backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  }
+  #walkOverlay .museum-v5-zoom span {
+    font:700 8px Arial,sans-serif;letter-spacing:.12em;
+    color:#f7f3e8;pointer-events:none;
+  }
+  #walkOverlay .museum-v5-zoom button {
+    display:grid;place-items:center;border:0;border-radius:50%;padding:0;
+    min-width:26px!important;width:26px!important;height:26px!important;min-height:26px!important;
+    color:#292723!important;background:rgba(248,246,236,.94)!important;
+    font:700 19px/1 Arial,sans-serif;touch-action:manipulation!important;cursor:pointer;
+    pointer-events:auto!important;
+  }
+  #walkOverlay .museum-v5-zoom button {
+    display:grid!important;visibility:visible!important;opacity:1!important;
+  }
+  #walkOverlay .museum-v5-zoom button:active {background:#dfc993!important}
+  /* Keep tour buttons out of both thumb zones. */
+  #walkOverlay .museum-v5-shell .museum-v5-dock {
+    position:absolute!important;left:50%!important;right:auto!important;
+    top:calc(124px + env(safe-area-inset-top))!important;bottom:auto!important;
+    transform:translateX(-50%)!important;z-index:29!important;
+    display:flex!important;flex-direction:row!important;align-items:center!important;
+    justify-content:center!important;flex-wrap:nowrap!important;
+    width:min(275px,calc(100% - 28px))!important;max-width:calc(100% - 28px)!important;
+    gap:7px!important;pointer-events:auto!important;
+  }
+  #walkOverlay .museum-v5-shell .museum-v5-dock #museumTour,
+  #walkOverlay .museum-v5-shell .museum-v5-dock #museumFreeToggle {
+    display:block!important;position:static!important;flex:1 1 0!important;
+    width:calc(50% - 4px)!important;min-width:0!important;
+    min-height:38px!important;padding:8px 6px!important;
+    font:700 9px/1.25 Arial,sans-serif!important;letter-spacing:0!important;
+    background:rgba(28,31,29,.73)!important;color:#faf7ef!important;
+    border:1px solid rgba(245,239,223,.50)!important;border-radius:10px!important;
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    white-space:normal!important;
+  }
+  #walkOverlay .museum-v5-shell .museum-v5-dock #museumFreeToggle[aria-pressed="true"] {
+    background:rgba(242,235,216,.95)!important;color:#282b27!important;
+  }
+  #walkOverlay .museum-v5-help {top:calc(88px + env(safe-area-inset-top))!important}
+  #walkOverlay .walk-progress {bottom:calc(182px + env(safe-area-inset-bottom))!important}
+}
+@media (pointer:coarse) and (max-width:360px) {
+  #walkOverlay .museum-v5-shell .museum-v5-lookstick {left:5px!important;width:100px!important}
+  #walkOverlay .museum-v5-shell .museum-v5-joystick {right:5px!important;width:100px!important}
+  #walkOverlay .museum-v5-shell .museum-v5-zoom {right:6px!important}
+}
+@media (prefers-reduced-motion:reduce) {
+  #walkOverlay .museum-v5-joystick .joystick-knob,
+  #walkOverlay .museum-v5-lookstick .lookstick-knob {transition:none!important}
+}
