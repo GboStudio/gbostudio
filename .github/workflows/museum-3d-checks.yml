@@ -25,7 +25,7 @@ jobs:
       - name: Checkout PR merge candidate
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - name: Classify changed files against the PR merge candidate
         id: scope
         shell: bash
