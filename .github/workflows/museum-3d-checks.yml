@@ -75,6 +75,8 @@ jobs:
         run: node --test empty-museum/tests/gallery-layout-v3.test.mjs
       - name: Validate commercial wall subdivisions, prices and reservations
         run: node --test empty-museum/commerce-model.test.mjs
+      - name: Validate mixed gallery and four side installations
+        run: node --test empty-museum/gallery-mix.test.mjs
 
   browser-preview:
     name: Architectural staging render (desktop and mobile)
