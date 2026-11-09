@@ -25,8 +25,8 @@ export const AISLE_TYPES = Object.freeze([
   {id:'object',label:'Objet / modèle 3D'},
   {id:'installation',label:'Installation animée'}
 ]);
-export const COMMERCE_STORAGE_KEY = 'tum-commerce-preview-v1';
-export const RESERVATION_STORAGE_KEY = 'tum-commerce-reservations-preview-v1';
+export const COMMERCE_STORAGE_KEY = 'tum-commerce-preview-v2';
+export const RESERVATION_STORAGE_KEY = 'tum-commerce-reservations-preview-v2';
 
 export const DEFAULT_COMMERCE_CONFIG = Object.freeze({
   schemaVersion:1,
