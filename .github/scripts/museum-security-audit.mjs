@@ -37,6 +37,8 @@ check('pinned Three.js CDN and no unpinned active imports',()=>{
   assert.match(entry,/https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.186\.1\//);
   assert.doesNotMatch(entry,/(?:cdn\.jsdelivr\.net|unpkg\.com)\/[^"'\s<>]*@(?:latest|next|master)\b/i);
   assert.match(entry,/http-equiv="Content-Security-Policy"/);
+  // GLTFLoader uses same-origin blob URLs for Blender-baked texture payloads.
+  assert.match(entry,/connect-src[^;]*blob:/);
   assert.doesNotMatch(entry,/\son[a-z]+\s*=/i);
 });
 check('images and 3D uploads must use preflight policy',()=>{

@@ -41,3 +41,6 @@ Keep security changes in a dedicated branch and review the pull request/test res
 - Add independent CI on PR, main pushes and daily checks, plus weekly Dependabot suggestions for GitHub Actions.
 - Maintain `demo-no-live-payments` until authentication, payment webhooks, moderation and backend inventory are built and reviewed.
 - The definitive proof of deployment is successful GitHub Pages plus the live browser check for the exact SHA, **not a passing isolated unit test**.
+
+### Compatibility note: verified CSP exception
+- The Cycles-baked GLB uses temporary browser-local `blob:` URLs for its embedded texture payloads. `connect-src blob:` is required by Three.js/GLTFLoader and does **not** authorize arbitrary third-party network origins. A PR browser regression test caught this omission; keep the exception covered by the CI guard.
