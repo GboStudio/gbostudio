@@ -532,6 +532,40 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     });
     addFrame(interactive,w,h,x,y,z,rot,mat,slot);
   }
+  // The 34 commercial bays use independent, geometrically correct frames.
+  // Unlike the historical oversized plaque on every bay, these share museum
+  // materials and avoid rendering 116 giant 640x950 textures on mobile.
+  const modularBareMat=new THREE.MeshStandardMaterial({
+    color:0xf1ede7,roughness:.93,metalness:0,side:THREE.DoubleSide
+  });
+  const modularMountMat=new THREE.MeshStandardMaterial({
+    color:0xe3dfd5,roughness:.82,metalness:0
+  });
+  const modularFrameMat=new THREE.MeshStandardMaterial({
+    color:0x655c50,roughness:.48,metalness:.34
+  });
+  function drawCommercialFrame(slot){
+    const side=slot.side;
+    const x=side*(HALF-.39),z=slot.z+side*(slot.xM+slot.widthM/2-1.5);
+    const y=slot.y,w=slot.widthM,h=slot.heightM;
+    const rot=side<0?Math.PI/2:-Math.PI/2;
+    const unit=new THREE.Group();
+    unit.position.set(x,y,z);unit.rotation.y=rot;
+    interactive.add(unit);
+    // A shadow-line frame and shallow museum float-mount keep the gallery
+    // quiet even with a high density of small pieces.
+    box(unit,w+.035,h+.035,.05,modularFrameMat,0,0,-.025);
+    box(unit,w+.012,h+.012,.055,modularMountMat,0,0,.012);
+    const imageMaterial=slot.piece?pictureMaterial(slot.piece):modularBareMat;
+    const art=surface(unit,w-.015,h-.015,imageMaterial,0,0,.047);
+    markInteractive(art,slot);
+    if(slot.piece){
+      // Label below the frame, not beside it, so the small subdivisions cannot
+      // hide neighboring works. A small 3D brass label remains clickable.
+      const labelWidth=Math.min(.31,w*.75),labelHeight=Math.min(.065,h*.14);
+      box(unit,labelWidth,labelHeight,.012,champagneGold,0,-h/2-.052,.021);
+    }
+  }
   function drawCeilingSlot(slot){
     const isMini=slot.style==="frame",isMedium=slot.style==="lightbox";
     const w=isMini?1.45:isMedium?2.25:2.78,h=isMini?.86:isMedium?1.03:1.16;
@@ -573,6 +607,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   }
   let galleryRevision=0;
   const activeImported=new Set();
+  const premiumExhibits=[];
   async function mount3DModel(slot,root,revision){
     try{
       const saved=await getModel(slot.piece?.modelKey);
@@ -611,13 +646,13 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       const inset=new THREE.MeshBasicMaterial({
         color:0xb5ad9d,transparent:true,opacity:.075,depthWrite:false,side:THREE.DoubleSide
       });
-      const floorLot=mesh(interactive,new THREE.PlaneGeometry(1.18,1.18),inset,x,.045,z);
+      const floorLot=mesh(interactive,new THREE.PlaneGeometry(1.5,1.8),inset,x,.045,z);
       floorLot.rotation.x=-Math.PI/2;
       markInteractive(floorLot,slot);
       const trace=material(0xb0a38d,.58,.24);
       const corner=.25,edge=.018;
       for(const sx of [-1,1])for(const sz of [-1,1]){
-        const px=x+sx*.59,pz=z+sz*.59;
+        const px=x+sx*.75,pz=z+sz*.9;
         box(interactive,corner,edge,.014,trace,px-sx*corner/2,.049,pz);
         box(interactive,.014,edge,corner,trace,px,.049,pz-sz*corner/2);
       }
@@ -627,13 +662,13 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
         g.letterSpacing="5px";g.fillText("PLACE "+slot.id,w/2,h*.53);
       },500,120);
       const label=new THREE.MeshBasicMaterial({map:tileLabel,transparent:true,depthWrite:false,side:THREE.DoubleSide});
-      const m=mesh(interactive,new THREE.PlaneGeometry(.54,.13),label,x,.053,z+.41);
+      const m=mesh(interactive,new THREE.PlaneGeometry(.54,.13),label,x,.053,z+.69);
       m.rotation.x=-Math.PI/2;
       return;
     }
     // Occupied installation gets a real freestanding stone plinth.
-    const base=box(interactive,1.25,.20,1.25,plinthMat,x,.12,z,true,true);
-    box(interactive,1.27,.014,1.27,brass,x,.227,z);
+    const base=box(interactive,1.46,.20,1.76,plinthMat,x,.12,z,true,true);
+    box(interactive,1.48,.014,1.78,brass,x,.227,z);
     const piece=slot.piece, tint=new THREE.Color(/^#[0-9a-f]{6}$/i.test(piece.floorColor||"")?piece.floorColor:0xb6a893);
     const sculpture=material(tint,.34,.24);
     let top;
@@ -671,17 +706,35 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   }
   function drawInventory(){
     galleryRevision++;
+    premiumExhibits.length=0;
     for(const imported of activeImported)disposeModel(imported);
     activeImported.clear();
     for(const child of [...interactive.children]){interactive.remove(child);
       child.traverse(o=>{if(o.geometry)o.geometry.dispose();});
     }
     clickable.length=0;
-    window.TEM.getSlots().forEach(drawWallSlot);
+    // Four partner bays retain their historical reserved plaques.
+    window.TEM.getSlots().filter(slot=>slot.reservedForAds).forEach(drawWallSlot);
+    // The commercial distribution is now 116 independent frames.
+    (window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots().filter(slot=>!slot.reservedForAds))
+      .forEach(slot=>slot.isCommercial?drawCommercialFrame(slot):drawWallSlot(slot));
     // The pristine ceiling stays free of objects until all original wall
     // exhibitions are occupied. Structure and six future mounts already exist.
     window.TEM.getCeilingSlots().filter(slot=>slot.unlocked || slot.piece).forEach(drawCeilingSlot);
-    window.TEM.getFloorSlots().forEach(platform);
+    window.TEM.getFloorSlots().forEach(slot=>{
+      const firstChild=interactive.children.length;
+      platform(slot);
+      if(slot.piece&&Number.isFinite(slot.piece.maxVisibleDistanceM)){
+        // A separately transformable node lets the rendering engine honor the
+        // chosen view distance without changing the exhibition geometry.
+        const container=new THREE.Group();
+        for(const child of interactive.children.slice(firstChild)){
+          interactive.remove(child);container.add(child);
+        }
+        interactive.add(container);
+        premiumExhibits.push({container,slot});
+      }
+    });
   }
   drawInventory();
 
@@ -704,7 +757,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     }catch{return null;}
   }
   function plannedStops(){
-    return planExhibitionStops(window.TEM.getSlots(),{
+    return planExhibitionStops(window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots(),{
       step:STEP,half:HALF,start:5.7,
       floorSlots:window.TEM.getFloorSlots(),ceilingSlots:window.TEM.getCeilingSlots()
     });
@@ -919,7 +972,13 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     raycaster.setFromCamera(mouse,camera);
     const intersections=raycaster.intersectObjects(clickable,false);
     for(const hit of intersections){
-      if(hit.object.userData.target){
+      // Invisible premium objects must not capture clicks outside their paid
+      // visibility distance; raycasting does not always skip invisible parents.
+      let renderable=true;
+      for(let node=hit.object;node;node=node.parent){
+        if(node.visible===false){renderable=false;break;}
+      }
+      if(renderable&&hit.object.userData.target){
         return hit.object.userData.target;
       }
     }
@@ -1056,8 +1115,15 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       rayTime=time;
       v5.setNear(!input.auto&&Boolean(interactions(0,0)));
     }
+    for(const item of premiumExhibits){
+      const piece=item.slot.piece;
+      const distance=Math.hypot(view.x-item.slot.x,view.z-item.slot.z);
+      const stillActive=!piece.expiresAt||Date.parse(piece.expiresAt)>Date.now();
+      item.container.visible=Boolean(stillActive&&distance<=(piece.maxVisibleDistanceM||0));
+      // Standard depth testing still provides real architectural occlusion.
+    }
     renderer.render(scene,camera);
-    const frees=window.TEM.getSlots().filter(s=>!s.piece&&!s.reservedForAds).length+
+    const frees=(window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots().filter(s=>!s.reservedForAds)).filter(s=>!s.piece).length+
       window.TEM.getCeilingSlots().filter(s=>s.unlocked&&!s.piece).length+
       window.TEM.getFloorSlots().filter(s=>!s.piece).length;
     if(progress)progress.textContent=Math.floor(view.z)+" / "+Math.floor(LENGTH)+" M · "+window.TEM.getPieces().length+" CRÉATIONS · "+frees+" PLACES LIBRES";
@@ -1096,7 +1162,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   document.querySelectorAll("[data-walk-open]").forEach(b=>b.addEventListener("click",open));
   overlay.querySelectorAll("[data-walk-close]").forEach(b=>b.addEventListener("click",close));
   overlay.querySelectorAll("[data-walk-exhibit]").forEach(b=>b.addEventListener("click",()=>{
-    const free=window.TEM.getSlots().find(s=>!s.piece&&!s.reservedForAds);
+    const free=(window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots()).find(s=>!s.piece&&!s.reservedForAds);
     if(free)selected(free);
   }));
   overlay.querySelectorAll("[data-walk-hold]").forEach(b=>{
