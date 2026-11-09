@@ -56,7 +56,7 @@ scene.world=world
 world.use_nodes=True
 bg=world.node_tree.nodes.get("Background")
 bg.inputs["Color"].default_value=(.83,.85,.88,1)
-bg.inputs["Strength"].default_value=.28
+bg.inputs["Strength"].default_value=.15
 
 def material(name,color,roughness=.88,metalness=0):
     m=bpy.data.materials.new(name)
