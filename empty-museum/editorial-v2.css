@@ -2,6 +2,7 @@
 /* THE UNREAL MUSEUM / V2. Exhibition-first editorial art direction.
    Decoration is pure CSS: original fictional artwork, no misleading 3D screenshot. */
 :root{--um-paper:#eeeae0;--um-ink:#20241f;--um-soft:#8c887d;--um-gold:#c0a573;--um-line:rgba(37,39,33,.15)}
+body.museum-editorial ::selection{background:#c8b389;color:#20241f}
 body.museum-editorial{background:var(--um-paper);color:var(--um-ink);font-family:Arial,Helvetica,sans-serif}
 body.museum-editorial .grain{opacity:.015}
 body.museum-editorial a:focus-visible,body.museum-editorial button:focus-visible{outline:3px solid #b39155;outline-offset:3px}
