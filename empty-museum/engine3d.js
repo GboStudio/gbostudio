@@ -972,7 +972,13 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     raycaster.setFromCamera(mouse,camera);
     const intersections=raycaster.intersectObjects(clickable,false);
     for(const hit of intersections){
-      if(hit.object.userData.target){
+      // Invisible premium objects must not capture clicks outside their paid
+      // visibility distance; raycasting does not always skip invisible parents.
+      let renderable=true;
+      for(let node=hit.object;node;node=node.parent){
+        if(node.visible===false){renderable=false;break;}
+      }
+      if(renderable&&hit.object.userData.target){
         return hit.object.userData.target;
       }
     }
