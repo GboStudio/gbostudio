@@ -57,7 +57,7 @@ for(const device of setups){
       return {helpLink:!!document.querySelector('a[href="#how"].editorial-help-link'),
         steps:document.querySelectorAll('#how .exhibit-steps article').length,
         kinds:document.querySelectorAll('#how .exhibit-kind').length,
-        legalDemo:/seulement sur votre appareil/.test(text)&&/ni facturées/.test(text),
+        legalDemo:/restent sur votre appareil/.test(text)&&/ni facturées/.test(text),
         annualProjection:/projection/i.test(document.querySelector('.exhibit-offer-3d')?.textContent||''),
         wall,aisle};
     });
