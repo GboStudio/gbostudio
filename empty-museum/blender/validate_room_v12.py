@@ -41,6 +41,23 @@ for name in ("room-v12-cycles-preview.png","room-v12-floor-detail.png","room-v12
     w,h=struct.unpack(">II",data[16:24])
     assert w>=512 and h>=512
     print("Valid PNG:",name,w,h,len(data),"bytes")
+
+# A syntactically valid GLB is not a visually acceptable gallery.
+# Guard against extreme highlight clipping in the *real Cycles images*.
+from PIL import Image, ImageStat
+for name in ("room-v12-cycles-preview.png","room-v12-floor-detail.png"):
+    with Image.open(out/name) as source:
+        image=source.convert("RGB").resize((104,68))
+    pixels=list(image.getdata())
+    values=[sum(px)/3 for px in pixels]
+    clipped=sum(1 for px in pixels if min(px)>=250)/len(pixels)
+    mean=sum(values)/len(values)
+    spread=max(values)-min(values)
+    assert clipped<.55, f"{name}: highlights clipped across {clipped:.0%} of the image"
+    assert mean<243, f"{name}: mean luminance {mean:.1f} is too bright"
+    assert spread>50, f"{name}: contrast spread {spread:.1f} is implausibly flat"
+    print(f"V12 PHOTOMETRIC ACCEPTANCE: {name} mean={mean:.1f} clipped={clipped:.1%} range={spread:.0f}")
+
 print("VALIDATED V12:",json.dumps({
     "room_dimensions_m":manifest["room_dimensions_m"],
     "glb_bytes":len(binary),
