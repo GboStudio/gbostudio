@@ -58,10 +58,10 @@ for(const device of setups){
         steps:document.querySelectorAll('#how .exhibit-steps article').length,
         kinds:document.querySelectorAll('#how .exhibit-kind').length,
         legalDemo:/restent sur votre appareil/.test(text)&&/ni facturées/.test(text),
-        annualProjection:/projection/i.test(document.querySelector('.exhibit-offer-3d')?.textContent||''),
+        premiumDurations:['1 jour','7 jours','30 jours'].every(term=>(document.querySelector('#aisle-price-table thead')?.textContent||'').includes(term)),
         wall,aisle};
     });
-    assert.ok(catalog.helpLink&&catalog.legalDemo&&catalog.annualProjection,'Exhibition guidance must be truthful and accessible');
+    assert.ok(catalog.helpLink&&catalog.legalDemo&&catalog.premiumDurations,'Exhibition guidance must show the real 1/7/30-day simulated offers');
     assert.equal(catalog.steps,4);
     assert.equal(catalog.kinds,4);
     assert.equal(catalog.wall.length,5);
