@@ -1,0 +1,87 @@
+name: Museum V12 - Cycles reference room
+
+# One pull-request validation of the isolated material/lighting prototype.
+# No scheduled job and no commits from robots: do not spam GitHub notifications.
+on:
+  pull_request:
+    paths:
+      - 'empty-museum/blender/bake_room_reference_v12.py'
+      - 'empty-museum/blender/validate_room_v12.py'
+      - 'empty-museum/blender/reference-room-v12-preview.html'
+      - '.github/scripts/tem-v12-preview.mjs'
+      - '.github/workflows/museum-v12-reference.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v12-reference-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  cycles-reference:
+    name: Build Cycles room, verify and render desktop/mobile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 42
+    steps:
+      - name: Checkout proposed room source
+        uses: actions/checkout@v4
+
+      - name: Validate source syntax before a costly Blender bake
+        run: |
+          python3 -m py_compile \
+            empty-museum/blender/bake_room_reference_v12.py \
+            empty-museum/blender/validate_room_v12.py
+          node --check .github/scripts/tem-v12-preview.mjs
+
+      - name: Install Blender headless with numpy
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy
+          blender --version | head -4
+
+      - name: Produce physical Cycles images and the baked UV atlas
+        run: |
+          mkdir -p empty-museum/assets/v12
+          PYTHONPATH=/usr/lib/python3/dist-packages blender --background --factory-startup \
+            --python empty-museum/blender/bake_room_reference_v12.py \
+            -- --out empty-museum/assets/v12 --size 1024 --samples 16 \
+            > /tmp/museum-v12-cycles.log 2>&1 || {
+              tail -180 /tmp/museum-v12-cycles.log
+              exit 1
+            }
+          tail -38 /tmp/museum-v12-cycles.log
+
+      - name: Verify actual UV-baked GLB and true Cycles PNG files
+        run: python3 empty-museum/blender/validate_room_v12.py --out empty-museum/assets/v12
+
+      - name: Install browser preview tooling
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install chromium --with-deps
+
+      - name: Render actual baked architecture in WebGL desktop and mobile
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/museum-v12-server.log 2>&1 &
+          sleep 2
+          node .github/scripts/tem-v12-preview.mjs
+
+      - name: Attach genuine Blender renders, lightmap, GLB, and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unreal-museum-v12-cycles-room-reference
+          path: |
+            empty-museum/assets/v12/room-v12-cycles-preview.png
+            empty-museum/assets/v12/room-v12-floor-detail.png
+            empty-museum/assets/v12/room-v12-lightbake.png
+            empty-museum/assets/v12/room-v12-baked.glb
+            empty-museum/assets/v12/room-v12-manifest.json
+            /tmp/museum-v12-desktop.png
+            /tmp/museum-v12-mobile.png
+            /tmp/museum-v12-desktop-failure.png
+            /tmp/museum-v12-mobile-failure.png
+            /tmp/museum-v12-cycles.log
+          if-no-files-found: warn
+          retention-days: 14
