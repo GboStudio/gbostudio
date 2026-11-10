@@ -572,8 +572,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       g.fillStyle="#2a2620";g.font="500 60px Georgia, 'Times New Roman', serif";
       g.fillText(String(piece.title||"Sans titre"),44,96,w-88);
       g.fillStyle="#7a6a4f";g.font="600 21px Arial, Helvetica, sans-serif";g.letterSpacing="3px";
-      // No author credited yet: show only the frame number, never an invented name.
-      g.fillText([piece.author,"CADRE M"+String(slot.moduleNumber).padStart(3,"0")].filter(Boolean).join(" · ").toUpperCase(),44,140,w-88);
+      // Credit line: author · creation tool · frame number (empty parts are skipped).
+      g.fillText([piece.author,piece.tools,"CADRE M"+String(slot.moduleNumber).padStart(3,"0")].filter(Boolean).join(" · ").toUpperCase(),44,140,w-88);
       g.letterSpacing="0px";
       g.strokeStyle="rgba(60,52,40,.28)";g.lineWidth=2;
       g.beginPath();g.moveTo(44,166);g.lineTo(w-44,166);g.stroke();

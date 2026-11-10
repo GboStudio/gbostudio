@@ -53,7 +53,8 @@ test('five curated works carry the exact titles and cartel texts, in path order'
     assert.equal(p.imageAsset.webp,`assets/oeuvres/${slug}.webp`);
     assert.equal(p.imageAsset.jpg,`assets/oeuvres/${slug}.jpg`);
     assert.ok(p.id>=1&&p.id<=5,'curated works replace the first five displayed demo IDs');
-    assert.equal(p.author,'','no author is credited until Guillaume confirms it');
+    assert.equal(p.author,'GBO Studio','author confirmed by Guillaume');
+    assert.equal(p.tools,'Grok Imagine','creation tool confirmed by Guillaume');
   }
 });
 
@@ -112,4 +113,16 @@ test('"Le Premier Spectateur" is the first stop of the guided tour',()=>{
   assert.equal(stops[0].piece.title,'Le Premier Spectateur');
   const order=stops.filter(s=>s.piece.curated).map(s=>s.piece.title);
   assert.deepEqual(order,EXPECTED.map(e=>e[0]));
+});
+
+test('Wrong Fruit stays untouched and the 3D cartel / tour credit the confirmed author',()=>{
+  const kept=base.find(p=>p.id===6);
+  assert.deepEqual([kept.title,kept.author,kept.tools],['Wrong Fruit','Pablo','ChatGPT + image generation']);
+  const engine=readFileSync('empty-museum/engine3d.js','utf8');
+  const cartel=engine.match(/function curatedCartelTexture\(slot\)\{[\s\S]*?\n  \}/)?.[0];
+  assert.ok(cartel,'curated cartel renderer exists');
+  assert.match(cartel,/piece\.author/,'3D cartel prints the author');
+  assert.match(cartel,/piece\.tools/,'3D cartel prints the creation tool');
+  const meta=engine.match(/#temTourMeta"\)\.textContent=([\s\S]*?);\n/)?.[1]||'';
+  assert.match(meta,/stop\.piece\.author/);assert.match(meta,/stop\.piece\.tools/);
 });
