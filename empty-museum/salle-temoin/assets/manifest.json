@@ -13,7 +13,7 @@
   "denoiser": "openimagedenoise",
   "daylightK": 5000,
   "pictureK": 3000,
-  "exposure": 1.08,
+  "exposure": 1.12,
   "wallColor": "#7A2E2E",
   "sun": false,
   "worldStrength": 0

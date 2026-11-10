@@ -35,7 +35,7 @@ export const ROOM = Object.freeze({
   endPilasterDepth: 0.09,
   frameDepth: 0.068,
   eye: 1.62,
-  exposure: 1.08,
+  exposure: 1.12,
   daylightK: 5000,
   pictureK: 3000,
   lightmapSize: 4096,
@@ -106,8 +106,8 @@ export function widthBays() {
 function mouldingFor(width, height) {
   // Large canvases take a 14 cm gilt profile (cove, bead, bevel).
   // Smaller cells stay narrower so the painting is not swallowed.
-  const cap = Math.min(width, height) >= 1 ? 0.14 : Math.min(width, height) * 0.18;
-  return Math.max(0.016, Math.min(cap, 0.14));
+  const cap = Math.min(width, height) >= 1 ? 0.16 : Math.min(width, height) * 0.18;
+  return Math.max(0.016, Math.min(cap, 0.16));
 }
 
 function pictureLightFor(width, height) {

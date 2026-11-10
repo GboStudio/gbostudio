@@ -44,7 +44,7 @@ test('frame cells match the commercial subdivision exactly', () => {
   assert.equal(hero.width, sample.widthM);
   assert.equal(hero.height, sample.heightM);
   assert.ok(hero.artWidth > 0.4 && hero.artHeight > 0.4);
-  assert.ok(hero.moulding <= 0.14 && hero.moulding >= 0.12);
+  assert.ok(hero.moulding <= 0.18 && hero.moulding >= 0.14);
 });
 
 test('no frame, moulding or cartel crosses a pilaster, a door or another frame', () => {

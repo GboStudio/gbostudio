@@ -396,22 +396,29 @@ class RoomBuilder:
             uvs.append(wall_uv(along, up, rect, span, height, self.size))
         return uvs
 
+    def plank_uvs(self, pts, tint):
+        """One straight-grain island per board: length along the scan's grain, random offset."""
+        xs = [p[0] for p in pts]
+        ys = [p[1] for p in pts]
+        along_x = (max(xs) - min(xs)) >= (max(ys) - min(ys))
+        rng = random.Random((int(min(xs) * 137) * 13 + int(min(ys) * 91)) ^ int(tint[0] * 1000))
+        u_off = rng.random() * 8
+        v_off = rng.random() * 8
+        flip = 1 if rng.random() > 0.5 else -1
+        grain = 1.8
+        uvs = []
+        for x, y in pts:
+            along, across = (x, y) if along_x else (y, x)
+            uvs.append((across / grain + u_off, along / grain * flip + v_off))
+        return uvs
+
     def packed(self, width_m, height_m, density=100):
         return self.atlas.uvs(self.atlas.alloc(width_m * density, height_m * density))
 
     def floor_quad(self, pts, tint, along_is_x):
         pts = shrink(pts, 0.00035)
         coords = [(x, y, 0.0) for x, y in pts]
-        # One tile is 1.7 m of the scanned veneer. Grain is not squashed into
-        # the 56 mm board width, which is what read as a CG stripe.
-        scale = 1.7
-        shift = (tint[0] - 0.95) * 0.47
-        xs = [p[0] for p in pts]
-        ys = [p[1] for p in pts]
-        if max(xs) - min(xs) >= max(ys) - min(ys):
-            uvs = [(x / scale + shift, y / scale) for x, y in pts]
-        else:
-            uvs = [(y / scale + shift, x / scale) for x, y in pts]
+        uvs = self.plank_uvs(pts, tint)
         self.mesh['parquet'].quad(coords, uvs, self.light_uvs_floor(pts), (0, 0, 1), tint)
         self._board_edge(coords, tint)
     def _board_edge(self, coords, tint):
@@ -456,7 +463,7 @@ class RoomBuilder:
         # The crack mesh is not baked; a flat dark joint reads through the real gaps.
         under.use_nodes = True
         bsdf = under.node_tree.nodes['Principled BSDF']
-        bsdf.inputs['Base Color'].default_value = (*hex_color('#8A6A48'), 1)
+        bsdf.inputs['Base Color'].default_value = (*hex_color('#241810'), 1)
         bsdf.inputs['Roughness'].default_value = 0.92
         mesh = bpy.data.meshes.new('underlay')
         bm = bmesh.new()
@@ -511,7 +518,7 @@ class RoomBuilder:
                     (x + left_fn(nxt), y + nxt),
                 ]
                 if abs(pts[1][0] - pts[0][0]) > 0.008 or abs(pts[2][0] - pts[3][0]) > 0.008:
-                    self.floor_ngon(pts, board_tint(seed + salt + index))
+                    self.floor_ngon(shrink(pts, 0.0008), board_tint(seed + salt + index))
                 cursor = nxt
                 index += 1
 
@@ -649,15 +656,7 @@ class RoomBuilder:
         if len(pts) < 3:
             return
         coords = [(x, y, 0.0) for x, y in pts]
-        uvs = []
-        xs = [p[0] for p in pts]
-        ys = [p[1] for p in pts]
-        if max(xs) - min(xs) >= max(ys) - min(ys):
-            across = max(max(ys) - min(ys), 1e-4)
-            uvs = [((x - min(xs)) / 0.85 + tint[0] * 3, (y - min(ys)) / across) for x, y in pts]
-        else:
-            across = max(max(xs) - min(xs), 1e-4)
-            uvs = [((y - min(ys)) / 0.85 + tint[1] * 3, (x - min(xs)) / across) for x, y in pts]
+        uvs = self.plank_uvs(pts, tint)
         light = self.light_uvs_floor(pts)
         normal = (0, 0, 1)
         coords, uvs, light = order_outward(coords, uvs, light, normal)
@@ -798,7 +797,8 @@ def add_shell(room: RoomBuilder):
             for y0, y1, material in bands:
                 coords = [(x, z0, y0), (x, z1, y0), (x, z1, y1), (x, z0, y1)]
                 light = room.light_uvs_wall(wall, [(z0, y0), (z1, y0), (z1, y1), (z0, y1)])
-                room.mesh[material].quad(coords, planar_uv(coords), light, normal)
+                scale = 0.55 if material == 'pompeian' else 1.85
+                room.mesh[material].quad(coords, planar_uv(coords, scale), light, normal)
         add_base_and_cornice(room, z0, z1, -half, 1)
         add_base_and_cornice(room, z0, z1, half, -1)
     for bay in room.layout['bays']:
@@ -828,27 +828,32 @@ def wall_quad(room, wall, a0, a1, y0, y1, plane, normal, material):
     else:
         coords = [(plane, a0, y0), (plane, a1, y0), (plane, a1, y1), (plane, a0, y1)]
         light = room.light_uvs_wall(wall, [(a0, y0), (a1, y0), (a1, y1), (a0, y1)])
-    room.mesh[material].quad(coords, planar_uv(coords), light, normal)
+    scale = 0.55 if material == 'pompeian' else 1.85
+    room.mesh[material].quad(coords, planar_uv(coords, scale), light, normal)
 
 
 def add_base_and_cornice(room, z0, z1, x, sign):
     r = room.room
-    box_along_y(room, 'stone', x, sign, z0, z1, 0.0, 0.14, 0.05, density=50)
+    # Moulded stone plinth: toe, scotia, torus.
+    box_along_y(room, 'stone', x, sign, z0, z1, 0.0, 0.07, 0.08, density=40)
+    box_along_y(room, 'stone', x, sign, z0, z1, 0.07, 0.13, 0.045, density=36)
+    box_along_y(room, 'stone', x, sign, z0, z1, 0.13, 0.2, 0.065, density=36)
     # Dado cap, under the lowest canvas (0.74 m).
-    box_along_y(room, 'stone', x, sign, z0, z1, 0.46, 0.56, 0.065, density=50)
-    box_along_y(room, 'gilt', x, sign, z0, z1, 0.532, 0.55, 0.072, density=36)
+    box_along_y(room, 'stone', x, sign, z0, z1, 0.46, 0.54, 0.055, density=40)
+    box_along_y(room, 'gilt', x, sign, z0, z1, 0.525, 0.548, 0.07, density=28)
     courses = [
-        (r['corniceY'] - 0.46, r['corniceY'] - 0.32, 0.07),
-        (r['corniceY'] - 0.32, r['corniceY'] - 0.18, 0.15),
-        (r['corniceY'] - 0.18, r['corniceY'] - 0.06, 0.23),
-        (r['corniceY'] - 0.06, r['corniceY'] + 0.02, 0.3),
+        (r['corniceY'] - 0.5, r['corniceY'] - 0.36, 0.08),
+        (r['corniceY'] - 0.36, r['corniceY'] - 0.22, 0.16),
+        (r['corniceY'] - 0.22, r['corniceY'] - 0.08, 0.24),
+        (r['corniceY'] - 0.08, r['corniceY'] + 0.02, 0.32),
     ]
     for y_a, y_b, projection in courses:
-        box_along_y(room, 'stone', x, sign, z0, z1, y_a, y_b, projection, density=48)
-    cursor = z0 + 0.08
-    while cursor < z1 - 0.12:
-        box_along_y(room, 'stone', x, sign, cursor, min(cursor + 0.07, z1 - 0.02), r['corniceY'] - 0.32, r['corniceY'] - 0.2, 0.19, density=28)
-        cursor += 0.16
+        box_along_y(room, 'stone', x, sign, z0, z1, y_a, y_b, projection, density=40)
+    box_along_y(room, 'gilt', x, sign, z0, z1, r['corniceY'] - 0.12, r['corniceY'] - 0.07, 0.27, density=28)
+    cursor = z0 + 0.06
+    while cursor < z1 - 0.14:
+        box_along_y(room, 'gilt', x, sign, cursor, min(cursor + 0.1, z1 - 0.04), r['corniceY'] - 0.34, r['corniceY'] - 0.2, 0.23, density=22)
+        cursor += 0.28
 
 
 def box_along_y(room, material, x, sign, z0, z1, y0, y1, depth, density):
@@ -887,10 +892,23 @@ def add_pilaster(room, x, sign, z0, z1, _axis):
             room.packed(z1 - z0, y1 - y0, 80),
             (sign, 0, 0),
         )
-    room.mesh['gilt'].quad(
-        [(x1 + sign * 0.025, z0, cap0 + 0.02), (x1 + sign * 0.025, z1, cap0 + 0.02), (x1 + sign * 0.025, z1, cap0 + 0.05), (x1 + sign * 0.025, z0, cap0 + 0.05)],
+    # Abacus and a gilt necking so the capital is not a flat stop.
+    room.mesh['stone'].quad(
+        [(x1 + sign * 0.045, z0 - 0.02, cap1 - 0.05), (x1 + sign * 0.045, z1 + 0.02, cap1 - 0.05), (x1 + sign * 0.045, z1 + 0.02, cap1), (x1 + sign * 0.045, z0 - 0.02, cap1)],
         [(0, 0), (1, 0), (1, 1), (0, 1)],
-        room.packed(z1 - z0, 0.03, 80),
+        room.packed(z1 - z0, 0.05, 50),
+        (sign, 0, 0),
+    )
+    room.mesh['gilt'].quad(
+        [(x1 + sign * 0.03, z0, cap0 + 0.015), (x1 + sign * 0.03, z1, cap0 + 0.015), (x1 + sign * 0.03, z1, cap0 + 0.045), (x1 + sign * 0.03, z0, cap0 + 0.045)],
+        [(0, 0), (1, 0), (1, 1), (0, 1)],
+        room.packed(z1 - z0, 0.03, 60),
+        (sign, 0, 0),
+    )
+    room.mesh['gilt'].quad(
+        [(x1 + sign * 0.05, z0 - 0.015, cap1 - 0.02), (x1 + sign * 0.05, z1 + 0.015, cap1 - 0.02), (x1 + sign * 0.05, z1 + 0.015, cap1 - 0.004), (x1 + sign * 0.05, z0 - 0.015, cap1 - 0.004)],
+        [(0, 0), (1, 0), (1, 1), (0, 1)],
+        room.packed(z1 - z0, 0.02, 40),
         (sign, 0, 0),
     )
 
@@ -958,11 +976,43 @@ def add_south_with_door(room, x0, x1):
         )
 
 
+def add_coffer(room, a, b, z0, z1, rect, r, side, step, steps):
+    """One recessed coffer: a frame on the vault surface and a panel set back into it."""
+    p = [(a[0], z0, a[1]), (a[0], z1, a[1]), (b[0], z1, b[1]), (b[0], z0, b[1])]
+    center = tuple(sum(point[i] for point in p) / 4 for i in range(3))
+
+    def inset(point):
+        return tuple(point[i] + (center[i] - point[i]) * 0.22 for i in range(3))
+
+    inner = [inset(point) for point in p]
+    lifted = [(point[0], point[1], point[2] + 0.07) for point in inner]
+
+    def vault_uv(point, along):
+        u = rect['x'] + (along / r['length']) * rect['w']
+        v = rect['y'] + ((step + 0.5) / steps) * (rect['h'] * 0.48) + (0 if side < 0 else rect['h'] * 0.5)
+        return (u / room.size, v / room.size)
+
+    light = [vault_uv(point, point[1]) for point in p]
+    borders = [
+        [p[0], p[1], inner[1], inner[0]],
+        [p[1], p[2], inner[2], inner[1]],
+        [p[2], p[3], inner[3], inner[2]],
+        [p[3], p[0], inner[0], inner[3]],
+    ]
+    for quad in borders:
+        room.mesh['stone'].quad(quad, planar_uv(quad, 2.2), light, (0, 0, -1))
+    room.mesh['stone'].quad(lifted, planar_uv(lifted, 2.2), light, (0, 0, -1))
+    for i in range(4):
+        j = (i + 1) % 4
+        reveal = [inner[i], inner[j], lifted[j], lifted[i]]
+        room.mesh['stone'].quad(reveal, planar_uv(reveal, 2.2), light, (0, 0, -1))
+
+
 def add_vault(room: RoomBuilder):
     r = room.room
     half_light = r['laylightHalfWidth']
     springs = []
-    steps = 7
+    steps = 4
     for side in (-1, 1):
         arc = []
         for step in range(steps + 1):
@@ -988,13 +1038,7 @@ def add_vault(room: RoomBuilder):
                 z1 -= 0.2
             for step in range(steps):
                 a, b = arc[step], arc[step + 1]
-                coords = [(a[0], z0, a[1]), (a[0], z1, a[1]), (b[0], z1, b[1]), (b[0], z0, b[1])]
-                light = []
-                for point, along in ((a, z0), (a, z1), (b, z1), (b, z0)):
-                    u = rect['x'] + (along / r['length']) * rect['w']
-                    v = rect['y'] + ((step + (0 if point is a else 1)) / steps) * (rect['h'] * 0.48) + (0 if side < 0 else rect['h'] * 0.5)
-                    light.append((u / room.size, v / room.size))
-                room.mesh['stone'].quad(coords, planar_uv(coords, 2.2), light, (0, 0, -1))
+                add_coffer(room, a, b, z0, z1, rect, r, side, step, steps)
     # Transverse arches, aligned with the pilasters.
     for bay in room.layout['bays']:
         center = (bay['pilaster']['minZ'] + bay['pilaster']['maxZ']) / 2
@@ -1144,21 +1188,36 @@ def add_frame_y(room, frame, sign):
     add_art_and_light_ns(room, frame, y, (0, sign, 0), opening)
 
 
+def gilt_steps(samples=14):
+    """Smooth profile: bead, deep cove, second bead, sight edge. Sampled, not flat stripes."""
+    keys = [(0.00, 0.18), (0.08, 0.62), (0.16, 1.00), (0.28, 0.48), (0.40, 0.08), (0.52, 0.70), (0.64, 0.22), (0.78, 0.92), (0.90, 0.40), (1.00, 0.16)]
+
+    def at(t):
+        for (a, da), (b, db) in zip(keys, keys[1:]):
+            if a <= t <= b + 1e-6:
+                u = 0 if b == a else (t - a) / (b - a)
+                u = u * u * (3 - 2 * u)
+                return da + (db - da) * u
+        return keys[-1][1]
+
+    steps = []
+    for index in range(samples):
+        t0, t1 = index / samples, (index + 1) / samples
+        depth_k = at((t0 + t1) * 0.5)
+        shade = 0.55 + 0.45 * depth_k
+        steps.append((t0, t1, depth_k, (shade, shade * 0.8, shade * 0.45, 1)))
+    return steps
+
+
+def gilt_face_uv(coords, t0, t1):
+    length = math.dist(coords[0], coords[1])
+    return [(0, t0), (length / 0.08, t0), (length / 0.08, t1), (0, t1)]
+
+
 def place_moulding(room, x, normal, y0, y1, z0, z1, mould):
-    # Outer leaf, dark scotia, sight edge: a real gilt profile, not a flat strip.
-    # Cove, bead and bevel. Depth is proud of the wall; width is the layout moulding.
-    steps = [
-        (0.00, 0.12, 0.45, (0.70, 0.52, 0.26, 1)),
-        (0.12, 0.24, 0.92, (1.00, 0.84, 0.48, 1)),
-        (0.24, 0.42, 0.22, (0.12, 0.07, 0.03, 1)),
-        (0.42, 0.58, 1.00, (1.00, 0.88, 0.52, 1)),
-        (0.58, 0.74, 0.38, (0.22, 0.14, 0.06, 1)),
-        (0.74, 0.88, 0.78, (0.96, 0.78, 0.42, 1)),
-        (0.88, 1.00, 0.48, (1.00, 0.90, 0.58, 1)),
-    ]
-    for start, end, depth_k, tint in steps:
+    for start, end, depth_k, tint in gilt_steps():
         a0, a1 = mould * start, mould * end
-        depth = 0.02 + 0.11 * depth_k
+        depth = 0.012 + 0.13 * depth_k
         oy0, oy1, oz0, oz1 = y0 + a0, y1 - a0, z0 + a0, z1 - a0
         iy0, iy1, iz0, iz1 = y0 + a1, y1 - a1, z0 + a1, z1 - a1
         x1 = x + normal[0] * depth
@@ -1169,7 +1228,7 @@ def place_moulding(room, x, normal, y0, y1, z0, z1, mould):
             [(x1, oy1, oz0), (x1, iy1, iz0), (x1, iy1, iz1), (x1, oy1, oz1)],
         ]
         for coords in quads:
-            room.mesh['gilt'].quad(coords, [(0, 0), (1, 0), (1, 1), (0, 1)], room.packed(max(0.05, abs(y1 - y0)), max(0.02, a1 - a0), 48), normal, tint)
+            room.mesh['gilt'].quad(coords, gilt_face_uv(coords, start, end), room.packed(max(0.05, abs(y1 - y0)), max(0.02, a1 - a0), 36), normal, tint)
     liner_a, art_a = mould * 0.82, mould
     x1 = x + normal[0] * 0.03
     room.mesh['liner'].quad(
@@ -1217,19 +1276,9 @@ def add_art_and_light(room, frame, x, normal, opening):
 
 
 def place_moulding_ns(room, y, normal, x0, x1, z0, z1, mould):
-    # Cove, bead and bevel. Depth is proud of the wall; width is the layout moulding.
-    steps = [
-        (0.00, 0.12, 0.45, (0.70, 0.52, 0.26, 1)),
-        (0.12, 0.24, 0.92, (1.00, 0.84, 0.48, 1)),
-        (0.24, 0.42, 0.22, (0.12, 0.07, 0.03, 1)),
-        (0.42, 0.58, 1.00, (1.00, 0.88, 0.52, 1)),
-        (0.58, 0.74, 0.38, (0.22, 0.14, 0.06, 1)),
-        (0.74, 0.88, 0.78, (0.96, 0.78, 0.42, 1)),
-        (0.88, 1.00, 0.48, (1.00, 0.90, 0.58, 1)),
-    ]
-    for start, end, depth_k, tint in steps:
+    for start, end, depth_k, tint in gilt_steps():
         a0, a1 = mould * start, mould * end
-        depth = 0.02 + 0.11 * depth_k
+        depth = 0.012 + 0.13 * depth_k
         y1 = y + normal[1] * depth
         quads = [
             [(x0 + a1, y1, z1 - a1), (x1 - a1, y1, z1 - a1), (x1 - a0, y1, z1 - a0), (x0 + a0, y1, z1 - a0)],
@@ -1238,7 +1287,7 @@ def place_moulding_ns(room, y, normal, x0, x1, z0, z1, mould):
             [(x1 - a1, y1, z0 + a1), (x1 - a1, y1, z1 - a1), (x1 - a0, y1, z1 - a0), (x1 - a0, y1, z0 + a0)],
         ]
         for coords in quads:
-            room.mesh['gilt'].quad(coords, [(0, 0), (1, 0), (1, 1), (0, 1)], room.packed(max(0.05, x1 - x0), max(0.02, a1 - a0), 48), normal, tint)
+            room.mesh['gilt'].quad(coords, gilt_face_uv(coords, start, end), room.packed(max(0.05, x1 - x0), max(0.02, a1 - a0), 36), normal, tint)
     y1 = y + normal[1] * 0.03
     room.mesh['liner'].quad(
         [(x0 + mould * 0.82, y1, z0 + mould), (x1 - mould * 0.82, y1, z0 + mould), (x1 - mould * 0.82, y1, z1 - mould), (x0 + mould * 0.82, y1, z1 - mould)],
@@ -1328,18 +1377,30 @@ def marble_box(room, x0, x1, y0, y1, z0, z1):
 
 
 def add_bench(room, bench):
-    """Backless museum bench: oak frame, leather cushion. Stays inside the collision box."""
+    """Tufted leather banquette on brass feet. Stays inside the collision box."""
     x, z, w, l, h = bench['x'], bench['z'], bench['w'] / 2, bench['l'] / 2, bench['h']
-    inset_x, inset_z = 0.035, 0.04
-    wood_box(room, x - w + inset_x, x + w - inset_x, z - l, z - l + 0.055, 0.08, h - 0.09, 'benchWood', (1, 1, 1, 1))
-    wood_box(room, x - w + inset_x, x + w - inset_x, z + l - 0.055, z + l, 0.08, h - 0.09, 'benchWood', (1, 1, 1, 1))
-    wood_box(room, x - w + 0.02, x - w + 0.055, z - l + 0.06, z + l - 0.06, 0.16, 0.21, 'benchWood', (1, 1, 1, 1))
-    for end, normal_z in ((z - l + 0.08, -1), (z + l - 0.08, 1)):
-        for side in (-1, 1):
-            leg_x = x + side * (w - 0.055)
-            wood_box(room, leg_x - 0.028, leg_x + 0.028, end - 0.028, end + 0.028, 0.0, h - 0.1, 'benchWood', (1, 1, 1, 1))
-    wood_box(room, x - w + 0.012, x + w - 0.012, z - l + 0.03, z + l - 0.03, h - 0.1, h - 0.045, 'benchWood', (1, 1, 1, 1))
-    wood_box(room, x - w + 0.02, x + w - 0.02, z - l + 0.045, z + l - 0.045, h - 0.05, h, 'benchSeat', (1, 1, 1, 1))
+    for side in (-1, 1):
+        for end in (-1, 1):
+            cx = x + side * (w - 0.055)
+            cz = z + end * (l - 0.07)
+            wood_box(room, cx - 0.03, cx + 0.03, cz - 0.03, cz + 0.03, 0.0, 0.035, 'brass', (1, 1, 1, 1))
+            wood_box(room, cx - 0.018, cx + 0.018, cz - 0.018, cz + 0.018, 0.035, h - 0.14, 'benchWood', (1, 1, 1, 1))
+    wood_box(room, x - w + 0.04, x + w - 0.04, z - l + 0.05, z - l + 0.09, 0.16, h - 0.12, 'benchWood', (1, 1, 1, 1))
+    wood_box(room, x - w + 0.04, x + w - 0.04, z + l - 0.09, z + l - 0.05, 0.16, h - 0.12, 'benchWood', (1, 1, 1, 1))
+    wood_box(room, x - w + 0.02, x - w + 0.055, z - l + 0.08, z + l - 0.08, 0.18, h - 0.12, 'benchWood', (1, 1, 1, 1))
+    # Tufted cushion: a grid of raised cells with a lower button.
+    cols, rows = 3, 8
+    x0, x1 = x - w + 0.025, x + w - 0.025
+    z0, z1 = z - l + 0.04, z + l - 0.04
+    for col in range(cols):
+        for row in range(rows):
+            ax = x0 + (x1 - x0) * col / cols
+            bx = x0 + (x1 - x0) * (col + 1) / cols
+            az = z0 + (z1 - z0) * row / rows
+            bz = z0 + (z1 - z0) * (row + 1) / rows
+            pad = 0.008
+            wood_box(room, ax + pad, bx - pad, az + pad, bz - pad, h - 0.11, h - 0.035, 'benchSeat', (0.92, 0.92, 0.92, 1))
+            wood_box(room, (ax + bx) / 2 - 0.012, (ax + bx) / 2 + 0.012, (az + bz) / 2 - 0.012, (az + bz) / 2 + 0.012, h - 0.11, h - 0.055, 'brass', (0.7, 0.7, 0.7, 1))
 
 
 def wood_box(room, x0, x1, y0, y1, z0, z1, material, tint=(1, 1, 1, 1)):
@@ -1360,7 +1421,7 @@ def add_lights(room, layout):
     lay.shape = 'RECTANGLE'
     lay.size = r['laylightHalfWidth'] * 2 * 0.92
     lay.size_y = r['length'] - 1.2
-    lay.energy = 520
+    lay.energy = 700
     lay.color = kelvin(r['daylightK'])
     obj = bpy.data.objects.new('LaylightKey', lay)
     # Under the ribs, the size of the glass. Nothing between this panel and the floor.
@@ -1411,7 +1472,7 @@ def configure_world():
     background = world.node_tree.nodes['Background']
     # A trace of warm ambient stops pure-black holes. It is not a sun.
     background.inputs[0].default_value = (*kelvin(5000), 1)
-    background.inputs[1].default_value = 0.032
+    background.inputs[1].default_value = 0.016
     scene.view_settings.view_transform = 'AgX'
     scene.view_settings.look = 'AgX - Medium High Contrast'
     scene.view_settings.exposure = 0.0

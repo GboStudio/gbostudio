@@ -524,7 +524,7 @@ async function loadSurface(file, colorSpace) {
 }
 
 try {
-  const [oakA, oakR, oakN, plasterA, plasterR, plasterN, pompeianA, marbleA, marbleR, marbleN, leatherA, leatherR, leatherN, lightmap, gltf, atlas, heroes] = await Promise.all([
+  const [oakA, oakR, oakN, plasterA, plasterR, plasterN, pompeianA, damaskN, giltN, marbleA, marbleR, marbleN, leatherA, leatherR, leatherN, lightmap, gltf, atlas, heroes] = await Promise.all([
     loadSurface('oak-diff.jpg', THREE.SRGBColorSpace),
     loadSurface('oak-rough.jpg', THREE.LinearSRGBColorSpace),
     loadSurface('oak-nor.jpg', THREE.LinearSRGBColorSpace),
@@ -532,6 +532,8 @@ try {
     loadSurface('plaster-rough.jpg', THREE.LinearSRGBColorSpace),
     loadSurface('plaster-nor.jpg', THREE.LinearSRGBColorSpace),
     loadSurface('pompeian-diff.jpg', THREE.SRGBColorSpace),
+    loadSurface('damask-nor.jpg', THREE.LinearSRGBColorSpace),
+    loadSurface('gilt-nor.jpg', THREE.LinearSRGBColorSpace),
     loadSurface('marble-diff.jpg', THREE.SRGBColorSpace),
     loadSurface('marble-rough.jpg', THREE.LinearSRGBColorSpace),
     loadSurface('marble-nor.jpg', THREE.LinearSRGBColorSpace),
@@ -546,21 +548,23 @@ try {
   const wallNormal = new THREE.Vector2(0.55, 0.55);
   const library = {
     parquet: new THREE.MeshPhysicalMaterial({
-      map: oakA, roughnessMap: oakR, normalMap: oakN, normalScale: new THREE.Vector2(0.85, 0.85),
-      roughness: 1, metalness: 0, clearcoat: mobile ? 0.08 : 0.32, clearcoatRoughness: 0.34,
-      envMapIntensity: mobile ? 0.28 : 0.72,
+      map: oakA, roughnessMap: oakR, normalMap: oakN, normalScale: new THREE.Vector2(0.7, 0.7),
+      roughness: 1, metalness: 0, clearcoat: mobile ? 0.05 : 0.18, clearcoatRoughness: 0.38,
+      envMapIntensity: mobile ? 0.22 : 0.45,
     }),
     stone: new THREE.MeshStandardMaterial({
       map: plasterA, roughnessMap: plasterR, normalMap: plasterN, normalScale: wallNormal,
       roughness: 1, metalness: 0, envMapIntensity: 0.16,
     }),
-    pompeian: new THREE.MeshStandardMaterial({
-      map: pompeianA, roughnessMap: plasterR, normalMap: plasterN, normalScale: wallNormal,
-      roughness: 1, metalness: 0, envMapIntensity: 0.12,
+    pompeian: new THREE.MeshPhysicalMaterial({
+      map: pompeianA, roughnessMap: plasterR, normalMap: damaskN, normalScale: new THREE.Vector2(0.45, 0.45),
+      roughness: 0.82, metalness: 0, sheen: 0.55, sheenColor: new THREE.Color('#7A2E2E'), sheenRoughness: 0.42,
+      envMapIntensity: 0.16,
     }),
     gilt: new THREE.MeshStandardMaterial({
-      color: 0xe8c56b, roughness: 0.55, roughnessMap: goldRoughness(), metalness: 1,
-      envMapIntensity: mobile ? 0.55 : 1.2,
+      color: 0xe8c56b, roughness: 0.48, roughnessMap: goldRoughness(), metalness: 1,
+      normalMap: giltN, normalScale: new THREE.Vector2(0.55, 0.55),
+      envMapIntensity: mobile ? 0.55 : 1.15,
     }),
     liner: new THREE.MeshStandardMaterial({color: 0xe7d5ba, roughness: 0.74, metalness: 0}),
     artwork: new THREE.MeshStandardMaterial({
@@ -612,7 +616,8 @@ try {
   // paintings forward so they sit in the rebate instead of behind that plate.
   bringCanvasesForward(gltf.scene);
   addPictureLights();
-  for (const texture of [oakA, oakR, oakN]) unmirror(texture, {rx: 0.42, ry: 0.42, ox: 0, oy: 0});
+  for (const texture of [oakA, oakR, oakN, giltN]) unmirror(texture);
+  unmirror(damaskN, {rx: 8, ry: 8, ox: 0, oy: 0});
   for (const texture of [plasterA, plasterR, plasterN, pompeianA, marbleA, marbleR, marbleN, leatherA, leatherR, leatherN]) {
     unmirror(texture);
   }

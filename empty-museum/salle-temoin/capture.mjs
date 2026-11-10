@@ -41,7 +41,7 @@ for (const [name, shot, tier] of shots) {
   await page.waitForFunction(() => window.__SALLE_TEMOIN__?.ready === true, null, {timeout: 120000});
   await page.waitForTimeout(1200);
   const file = path.join(out, `${name}.png`);
-  await page.screenshot({path: file});
+  await page.screenshot({path: file, timeout: 90000});
   metrics[name] = await page.evaluate(() => ({...window.__SALLE_TEMOIN__}));
   console.log(name, metrics[name].drawCalls, 'draws', metrics[name].triangles, 'tris', metrics[name].textureMegabytes, 'MB');
   await context.close();
