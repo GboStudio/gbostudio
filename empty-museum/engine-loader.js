@@ -1,6 +1,12 @@
 // The Unreal Museum — progressive WebGL enhancement.
 // Keep the legacy canvas renderer as a robust fallback for unsupported browsers and offline/CDN errors.
 (async () => {
+  // Isolated test room. The public immersive visit never reaches this branch,
+  // and the landing page does not download the test-room bake.
+  if(new URLSearchParams(location.search).get("visit")==="salle-temoin"){
+    location.replace(new URL("./salle-temoin.html", location.href).href);
+    return;
+  }
   let fallbackStarted=false;
   function legacy(reason) {
     if(fallbackStarted)return;

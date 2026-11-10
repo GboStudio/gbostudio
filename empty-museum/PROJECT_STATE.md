@@ -36,6 +36,16 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Pour les installations en allée, distinguer trois niveaux de portée (proximité/galerie/monumental) et afficher les tarifs indicatifs d’**une journée** et de **30 jours** du même simulateur ; l’**année** est une simple **projection visuelle (10 × tarif 30 jours)**, non contractualisée, et doit toujours être signalée comme non réservable. Une vraie durée 365 jours nécessitera modèle, inventaire serveur et parcours de réservation adaptés.
 - Les exemples sont fictifs ; les tarifs sont simulés ; absence de paiement, de publication publique et de contrôle serveur : ne jamais présenter ces fonctionnalités comme disponibles avant validation technique et juridique.
 
+## Salle témoin photoréaliste — décision du 10 novembre 2026
+
+- Décision : une **seule salle témoin isolée**, non branchée sur la galerie publique, pour que Guillaume valide le rendu avant toute extension. Elle n’est pas déployée et ne remplace pas `?visit=immersive`.
+- Adresse : `/empty-museum/salle-temoin.html`, aussi ouverte par `?visit=salle-temoin` (redirection, sans charger le moteur public).
+- Approche : **nouvelle scène**, pas la PR #35. Cette PR reste une boîte blanche en microciment, à ~27 px/m, et son script passe `export_colors`, rejeté par Blender 4.2. La salle témoin est une nef de palais du XIXe : voûte vitrée à laylight (5000 K, pas de soleil), champs d’accrochage rouge pompéien `#7A2E2E` entre pilastres de pierre, parquet de compartiments calé sur la trame.
+- Trame : baie de **3,50 m = pilastre 0,50 m + champ 3,00 m** (un module commercial). Parquet : panneaux de **3,50/3 m**, trois par baie. Un mur présente les 5 formats ; un socle S01 fait **1,80 × 1,50 m**, objet sous **2,50 m**. Aucun pilastre ni la porte ne traverse un cadre (test automatique).
+- Éclairage : bake Cycles (diffus direct + indirect, couleur désactivée), débruité OpenImageDenoise, sans soleil et sans monde. Les œuvres louées et l’ombre du socle restent temps réel ; le mobile n’ajoute pas cette ombre dynamique.
+- État : **proposé dans une PR brouillon, pas fusionné, pas déployé.** La galerie publique conserve ses défauts connus jusqu’à validation visuelle.
+- Contrôle local du 10 novembre (Chrome, pas un iPhone) : palier mobile **19 appels de dessin, ~86 000 triangles, ~88 Mo de textures** ; palier bureau ~22 appels et ~248 Mo (HDR 4096). Le bake Cycles fait 4096 px, 160 px/m au sol et 100 px/m sur les murs, débruité OIDN, 48 échantillons. Le rendu web montre la nef, le rouge pompéien, le laylight et le parquet, mais le lightmap reste trop graphique (ombres de cadres dures, flaque claire sous la verrière) et les cadres ne sont pas encore des moulures sculptées. Le parquet livré est un parquet à compartiments (cadre et fil tournant à 90°), pas le losange du parquet de Versailles de la photo de référence.
+
 ## Contradictions à résoudre (pas des fonctions terminées)
 1. L'interface classique `index.html` / `app.js` utilise encore certaines durées et certains prix historiques alors que le nouveau configurateur fonctionne en mensuel/annuel. **Unifier l'offre avant de lancer les ventes.**
 2. Le double joystick de PR #34 a été fusionnée ; les contrôles navigateur CI ont été exercés, mais la validation sur iPhone réel et la correspondance du déploiement exact restent nécessaires.
