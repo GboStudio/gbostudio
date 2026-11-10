@@ -104,10 +104,10 @@ export function widthBays() {
 }
 
 function mouldingFor(width, height) {
-  const slender = Math.min(width, height) * 0.085;
-  // The outer moulding stays inside the rented cell, so neighbours
-  // and pilasters cannot be crossed.
-  return Math.max(0.014, Math.min(slender, 0.09, width * 0.14, height * 0.14));
+  // Large canvases take a 14 cm gilt profile (cove, bead, bevel).
+  // Smaller cells stay narrower so the painting is not swallowed.
+  const cap = Math.min(width, height) >= 1 ? 0.14 : Math.min(width, height) * 0.18;
+  return Math.max(0.016, Math.min(cap, 0.14));
 }
 
 function pictureLightFor(width, height) {

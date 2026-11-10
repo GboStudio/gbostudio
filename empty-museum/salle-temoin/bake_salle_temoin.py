@@ -361,6 +361,7 @@ class RoomBuilder:
             'laylight': emission_material('laylight', kelvin(5000), 1.4),
         }
         self.mesh = {name: Accum(name, material) for name, material in self.mat.items() if name != 'laylight'}
+        self.mesh['vaultRib'] = Accum('vaultRib', self.mat['stone'])
         self.mesh['parquetEdge'] = Accum('parquetEdge', self.mat['parquet'])
         self.laylight_mat = self.mat['laylight']
         self.heroes = []
@@ -487,7 +488,43 @@ class RoomBuilder:
         self.miter(x + outer, y + outer, size - 2 * outer, inner - outer, inner - outer, seed + 50)
         # Compartment parquet: a mitered frame, then a field of real boards
         # whose grain turns 90° from one panel to the next.
-        self.fill_field(x + inner, y + inner, size - 2 * inner, seed + 80, horizontal)
+        self.fill_versailles(x + inner, y + inner, size - 2 * inner, seed + 80)
+
+    def fill_versailles(self, x, y, size, seed):
+        """Diamond on the midpoints of the inner square, plus the four corner triangles.
+
+        Each piece is sliced into boards that share the diamond edge exactly,
+        so the panel has no hole between the diamond and the corners.
+        """
+        m = size * 0.5
+        strip = 0.048
+
+        def boards_between(y0, y1, left_fn, right_fn, salt):
+            cursor = y0
+            index = 0
+            while cursor < y1 - 1e-4:
+                nxt = min(cursor + strip, y1)
+                pts = [
+                    (x + left_fn(cursor), y + cursor),
+                    (x + right_fn(cursor), y + cursor),
+                    (x + right_fn(nxt), y + nxt),
+                    (x + left_fn(nxt), y + nxt),
+                ]
+                if abs(pts[1][0] - pts[0][0]) > 0.008 or abs(pts[2][0] - pts[3][0]) > 0.008:
+                    self.floor_ngon(pts, board_tint(seed + salt + index))
+                cursor = nxt
+                index += 1
+
+        # Diamond. At height h the half-width is the distance to the nearer point.
+        def half_width(h):
+            return min(h, size - h)
+
+        boards_between(0, size, lambda h: m - half_width(h), lambda h: m + half_width(h), 0)
+        # SW and SE sit outside the diamond on the lower half; NW and NE on the upper half.
+        boards_between(0, m, lambda h: 0.0, lambda h: m - h, 80)
+        boards_between(0, m, lambda h: m + h, lambda h: size, 120)
+        boards_between(m, size, lambda h: 0.0, lambda h: h - m, 160)
+        boards_between(m, size, lambda h: size - (h - m), lambda h: size, 200)
 
     def fill_field(self, x, y, size, seed, horizontal):
         strip = 0.056
@@ -993,14 +1030,14 @@ def add_mullions(room, cuts):
     z0, z1 = 0.4, r['length'] - 0.4
     for x in (-half - 0.02, half - 0.16):
         bottom = [(x, z0, y), (x + 0.18, z0, y), (x + 0.18, z1, y), (x, z1, y)]
-        room.mesh['stone'].quad(bottom, planar_uv(bottom, 2.0), room.packed(z1 - z0, 0.18, 28), (0, 0, -1))
+        room.mesh['vaultRib'].quad(bottom, planar_uv(bottom, 2.0), room.packed(z1 - z0, 0.18, 28), (0, 0, -1))
         cheek = [(x, z0, y), (x, z1, y), (x, z1, y + 0.2), (x, z0, y + 0.2)]
-        room.mesh['stone'].quad(cheek, planar_uv(cheek, 2.0), room.packed(z1 - z0, 0.2, 24), (-1 if x < 0 else 1, 0, 0))
+        room.mesh['vaultRib'].quad(cheek, planar_uv(cheek, 2.0), room.packed(z1 - z0, 0.2, 24), (-1 if x < 0 else 1, 0, 0))
     for bay in room.layout['bays']:
         center = (bay['pilaster']['minZ'] + bay['pilaster']['maxZ']) / 2
         a, b = center - 0.08, center + 0.08
         rib = [(-half + 0.02, a, y - 0.03), (half - 0.02, a, y - 0.03), (half - 0.02, b, y - 0.03), (-half + 0.02, b, y - 0.03)]
-        room.mesh['stone'].quad(rib, planar_uv(rib, 2.0), room.packed(half * 2, 0.16, 28), (0, 0, -1))
+        room.mesh['vaultRib'].quad(rib, planar_uv(rib, 2.0), room.packed(half * 2, 0.16, 28), (0, 0, -1))
 
 
 def add_laylight(room):
@@ -1109,10 +1146,19 @@ def add_frame_y(room, frame, sign):
 
 def place_moulding(room, x, normal, y0, y1, z0, z1, mould):
     # Outer leaf, dark scotia, sight edge: a real gilt profile, not a flat strip.
-    steps = [(0.0, 0.42, 0.55, (0.96, 0.78, 0.42, 1)), (0.42, 0.72, 0.28, (0.16, 0.1, 0.05, 1)), (0.72, 1.0, 0.7, (1.0, 0.84, 0.5, 1))]
+    # Cove, bead and bevel. Depth is proud of the wall; width is the layout moulding.
+    steps = [
+        (0.00, 0.12, 0.45, (0.70, 0.52, 0.26, 1)),
+        (0.12, 0.24, 0.92, (1.00, 0.84, 0.48, 1)),
+        (0.24, 0.42, 0.22, (0.12, 0.07, 0.03, 1)),
+        (0.42, 0.58, 1.00, (1.00, 0.88, 0.52, 1)),
+        (0.58, 0.74, 0.38, (0.22, 0.14, 0.06, 1)),
+        (0.74, 0.88, 0.78, (0.96, 0.78, 0.42, 1)),
+        (0.88, 1.00, 0.48, (1.00, 0.90, 0.58, 1)),
+    ]
     for start, end, depth_k, tint in steps:
         a0, a1 = mould * start, mould * end
-        depth = 0.04 + 0.09 * depth_k
+        depth = 0.02 + 0.11 * depth_k
         oy0, oy1, oz0, oz1 = y0 + a0, y1 - a0, z0 + a0, z1 - a0
         iy0, iy1, iz0, iz1 = y0 + a1, y1 - a1, z0 + a1, z1 - a1
         x1 = x + normal[0] * depth
@@ -1171,10 +1217,19 @@ def add_art_and_light(room, frame, x, normal, opening):
 
 
 def place_moulding_ns(room, y, normal, x0, x1, z0, z1, mould):
-    steps = [(0.0, 0.42, 0.55, (0.96, 0.78, 0.42, 1)), (0.42, 0.72, 0.28, (0.16, 0.1, 0.05, 1)), (0.72, 1.0, 0.7, (1.0, 0.84, 0.5, 1))]
+    # Cove, bead and bevel. Depth is proud of the wall; width is the layout moulding.
+    steps = [
+        (0.00, 0.12, 0.45, (0.70, 0.52, 0.26, 1)),
+        (0.12, 0.24, 0.92, (1.00, 0.84, 0.48, 1)),
+        (0.24, 0.42, 0.22, (0.12, 0.07, 0.03, 1)),
+        (0.42, 0.58, 1.00, (1.00, 0.88, 0.52, 1)),
+        (0.58, 0.74, 0.38, (0.22, 0.14, 0.06, 1)),
+        (0.74, 0.88, 0.78, (0.96, 0.78, 0.42, 1)),
+        (0.88, 1.00, 0.48, (1.00, 0.90, 0.58, 1)),
+    ]
     for start, end, depth_k, tint in steps:
         a0, a1 = mould * start, mould * end
-        depth = 0.04 + 0.09 * depth_k
+        depth = 0.02 + 0.11 * depth_k
         y1 = y + normal[1] * depth
         quads = [
             [(x0 + a1, y1, z1 - a1), (x1 - a1, y1, z1 - a1), (x1 - a0, y1, z1 - a0), (x0 + a0, y1, z1 - a0)],
@@ -1269,7 +1324,7 @@ def marble_box(room, x0, x1, y0, y1, z0, z1):
         ([(x0, y0, z0), (x0, y0, z1), (x1, y0, z1), (x1, y0, z0)], (0, -1, 0)),
     ]
     for coords, normal in quads:
-        room.mesh['marble'].quad(coords, planar_uv(coords, 1.45), room.packed(max(0.2, abs(x1 - x0)), max(0.2, abs(z1 - z0)), 70), normal)
+        room.mesh['marble'].quad(coords, planar_uv(coords, 3.2), room.packed(max(0.2, abs(x1 - x0)), max(0.2, abs(z1 - z0)), 70), normal)
 
 
 def add_bench(room, bench):
@@ -1305,10 +1360,11 @@ def add_lights(room, layout):
     lay.shape = 'RECTANGLE'
     lay.size = r['laylightHalfWidth'] * 2 * 0.92
     lay.size_y = r['length'] - 1.2
-    lay.energy = 640
+    lay.energy = 520
     lay.color = kelvin(r['daylightK'])
     obj = bpy.data.objects.new('LaylightKey', lay)
-    obj.location = (0, r['length'] / 2, r['laylightY'] + 0.22)
+    # Under the ribs, the size of the glass. Nothing between this panel and the floor.
+    obj.location = (0, r['length'] / 2, r['laylightY'] - 0.42)
     obj.rotation_euler = (0, 0, 0)
     # Area lights emit along local -Z. The default rotation already looks down? 
     # In Blender an area light's emission is -Z, and default rotation points -Z, i.e. downward. Good.
@@ -1320,7 +1376,7 @@ def add_lights(room, layout):
         spot.shape = 'RECTANGLE'
         spot.size = min(1.05, max(0.42, frame['width'] * 0.62))
         spot.size_y = 0.28
-        spot.energy = 6
+        spot.energy = 3.5
         spot.color = kelvin(r['pictureK'])
         light = bpy.data.objects.new(spot.name, spot)
         if frame['wall'] in ('left', 'right'):
@@ -1447,7 +1503,7 @@ def denoise_image(image):
 
 def bake(layout):
     scene = bpy.context.scene
-    scene.cycles.samples = 72
+    scene.cycles.samples = 48
     scene.cycles.use_denoising = False
     image = bpy.data.images.new('Lightmap', layout['lightmap']['size'], layout['lightmap']['size'], float_buffer=True, alpha=False)
     image.colorspace_settings.name = 'Non-Color'
@@ -1465,11 +1521,13 @@ def bake(layout):
             obj.select_set(obj.name not in ('laylight', 'underlay', 'parquetEdge', 'parquet'))
             if obj.name in ('parquet', 'parquetEdge'):
                 obj.hide_render = True
+            if obj.name == 'vaultRib':
+                obj.visible_shadow = False
     bpy.context.view_layer.objects.active = bpy.data.objects['stone']
     scene.render.bake.use_pass_direct = True
     scene.render.bake.use_pass_indirect = True
     scene.render.bake.use_pass_color = False
-    scene.render.bake.margin = 6
+    scene.render.bake.margin = 16
     scene.render.bake.target = 'IMAGE_TEXTURES'
     print('baking diffuse GI…')
     bpy.ops.object.bake(type='DIFFUSE')
@@ -1526,7 +1584,7 @@ def bake(layout):
         'lightmapSize': [layout['lightmap']['size'], layout['lightmap']['size']],
         'floorPxPerM': layout['room']['floorPxPerM'],
         'wallPxPerM': layout['room']['wallPxPerM'],
-        'samples': 72,
+        'samples': 48,
         'denoiser': 'openimagedenoise',
         'daylightK': layout['room']['daylightK'],
         'pictureK': layout['room']['pictureK'],
@@ -1558,6 +1616,20 @@ def main():
         bm.free()
         area = sum(polygon.area for polygon in parquet.data.polygons)
         print(f'parquet faces {len(parquet.data.polygons)} flipped {down} area {area:.2f} m²')
+        zs = [polygon.normal.z for polygon in parquet.data.polygons]
+        up = sum(1 for z in zs if z > 0.5)
+        print(f'faces pointing up {up} of {len(zs)}')
+        from mathutils.bvhtree import BVHTree
+        tree = BVHTree.FromObject(parquet, bpy.context.evaluated_depsgraph_get())
+        hits = 0
+        total = 0
+        for ix in range(30):
+            for iy in range(30):
+                total += 1
+                origin = (-1.6 + ix * 0.11, 7.2 + iy * 0.11, 0.4)
+                if tree.ray_cast(origin, (0, 0, -1))[0] is not None:
+                    hits += 1
+        print(f'floor coverage {hits}/{total}')
         for obj in bpy.context.scene.objects:
             obj.hide_render = obj.type != 'MESH' or obj.name not in ('parquet', 'underlay')
         background = bpy.context.scene.world.node_tree.nodes['Background']
@@ -1566,7 +1638,7 @@ def main():
         look_camera((0, layout['room']['length'] / 2, 8), (0, layout['room']['length'] / 2, 0), 28)
         bpy.context.scene.camera.data.type = 'ORTHO'
         bpy.context.scene.camera.data.ortho_scale = 4.2
-        render_to(Path('/tmp/salle-preview/pattern.png'), 16, 1000, 1000)
+        render_to(Path('/tmp/salle-preview/pattern.png'), 4, 480, 480)
         return
     if '--bake' in args:
         bake(layout)

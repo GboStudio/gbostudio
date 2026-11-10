@@ -6,6 +6,8 @@ import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {createMuseumV5Navigation} from '../museum-v5.js?v=20261110temoin';
 import {museumCameraMotion} from '../movement3d.js';
 import {buildLayout} from './room-layout.mjs';
+import {atlasCell as sharedAtlasCell, atlasDrawRect, PAINTING_FLIP_Y} from './canvas-orientation.mjs';
+import {RectAreaLightUniformsLib} from 'three/addons/lights/RectAreaLightUniformsLib.js';
 
 const layout = buildLayout();
 const params = new URLSearchParams(location.search);
@@ -56,44 +58,33 @@ function loadTexture(url, colorSpace) {
   });
 }
 
-async function loadLightmap() {
-  if (mobile) {
-    try {
-      const texture = await ktx2.loadAsync(ASSET + 'lightmap-mobile.ktx2');
-      texture.colorSpace = THREE.LinearSRGBColorSpace;
-      texture.channel = 1;
-      lightScale = 1;
-      return texture;
-    } catch (error) {
-      console.warn('KTX2 lightmap unavailable, using the half-resolution HDR bake.', error);
-    }
-    const mobileHdr = await new RGBELoader().loadAsync(ASSET + 'lightmap-mobile.hdr');
-    mobileHdr.colorSpace = THREE.LinearSRGBColorSpace;
-    mobileHdr.channel = 1;
-    return mobileHdr;
-  }
-  const texture = await new RGBELoader().loadAsync(ASSET + 'lightmap.hdr');
+function prepareLightmap(texture) {
   texture.colorSpace = THREE.LinearSRGBColorSpace;
-  texture.channel = 1;
+  texture.generateMipmaps = false;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
   return texture;
 }
 
+async function loadLightmap() {
+  const file = mobile ? 'lightmap-mobile.ktx2' : 'lightmap.ktx2';
+  try {
+    return prepareLightmap(await ktx2.loadAsync(ASSET + file));
+  } catch (error) {
+    console.warn('KTX2 lightmap unavailable', error);
+  }
+  const hdr = await new RGBELoader().loadAsync(ASSET + (mobile ? 'lightmap-mobile.hdr' : 'lightmap.hdr'));
+  return prepareLightmap(hdr);
+}
+
 function atlasCell(index, columns = 8) {
-  const column = index % columns;
-  const row = Math.floor(index / columns);
-  const pad = 0.015 / columns;
-  const step = 1 / columns;
-  return {
-    u0: column * step + pad,
-    v0: row * step + pad,
-    u1: (column + 1) * step - pad,
-    v1: (row + 1) * step - pad,
-  };
+  return sharedAtlasCell(index, columns);
 }
 
 async function paintingAtlas(frames) {
   const columns = 8;
-  const size = mobile ? 1024 : 4096;
+  const size = mobile ? 1024 : 2048;
   const canvasAtlas = document.createElement('canvas');
   canvasAtlas.width = canvasAtlas.height = size;
   const context = canvasAtlas.getContext('2d');
@@ -105,11 +96,11 @@ async function paintingAtlas(frames) {
     const cell = atlasCell(index);
     index += 1;
     const image = await loadImage(ASSET + 'paintings/pd/painting-' + frame.painting + '.webp');
-    const x = cell.u0 * size;
-    // glTF stores V flipped, so the first cell lives at the top of the canvas.
-    const y = cell.v0 * size;
-    const w = (cell.u1 - cell.u0) * size;
-    const h = (cell.v1 - cell.v0) * size;
+    const placed = atlasDrawRect(cell, size);
+    const x = placed.x;
+    const y = placed.y;
+    const w = placed.w;
+    const h = placed.h;
     context.save();
     context.beginPath();
     context.rect(x, y, w, h);
@@ -131,6 +122,7 @@ async function paintingAtlas(frames) {
     context.restore();
   }
   const texture = new THREE.CanvasTexture(canvasAtlas);
+  texture.flipY = PAINTING_FLIP_Y;
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = mobile ? 4 : 8;
   texture.needsUpdate = true;
@@ -148,7 +140,7 @@ function loadImage(url) {
 
 function cartelAtlas(cartels) {
   const columns = 8;
-  const size = mobile ? 1024 : 4096;
+  const size = mobile ? 1024 : 2048;
   const plate = document.createElement('canvas');
   plate.width = plate.height = size;
   const context = plate.getContext('2d');
@@ -203,7 +195,7 @@ function applyLibrary(root, library, lightmap) {
     material.name = name;
     material.vertexColors = true;
     const uv1 = object.geometry?.attributes?.uv1;
-    if (name !== 'laylight' && name !== 'underlay' && name !== 'cartel' && uv1) {
+    if (name !== 'laylight' && name !== 'underlay' && name !== 'cartel' && name !== 'artwork' && uv1) {
       object.geometry.setAttribute('uv2', uv1);
       material.lightMap = lightmap;
       material.lightMap.channel = 2;
@@ -226,6 +218,27 @@ function coverRepeat(imageAspect, frameAspect) {
   return {rx: 1, ry, ox: 0, oy: (1 - ry) / 2};
 }
 
+function addPictureLights() {
+  try {
+    RectAreaLightUniformsLib.init();
+  } catch (error) {
+    console.warn('picture lights unavailable', error);
+    return;
+  }
+  const frames = layout.frames.filter(frame => frame.pictureLight && (!mobile || frame.hero));
+  for (const frame of frames) {
+    const light = new THREE.RectAreaLight(0xffc89a, mobile ? 3.2 : 5.5, Math.min(frame.width * 0.72, 1.6), 0.2);
+    if (frame.wall === 'north' || frame.wall === 'south') {
+      light.position.set(frame.x, frame.y + frame.height * 0.22, frame.z + frame.normal * 0.55);
+      light.lookAt(frame.x, frame.y, frame.z + frame.normal * 0.02);
+    } else {
+      light.position.set(frame.x + frame.normal * 0.55, frame.y + frame.height * 0.22, frame.z);
+      light.lookAt(frame.x + frame.normal * 0.02, frame.y, frame.z);
+    }
+    scene.add(light);
+  }
+}
+
 function bringCanvasesForward(root) {
   root.traverse(object => {
     if (!object.isMesh) return;
@@ -243,6 +256,27 @@ function bringCanvasesForward(root) {
   });
 }
 
+function goldRoughness() {
+  const size = 128;
+  const plate = document.createElement('canvas');
+  plate.width = plate.height = size;
+  const context = plate.getContext('2d');
+  const pixels = context.createImageData(size, size);
+  for (let i = 0; i < size * size; i += 1) {
+    const grain = 48 + ((i * 17) ^ (i >> 3)) % 140;
+    pixels.data[i * 4] = grain;
+    pixels.data[i * 4 + 1] = grain;
+    pixels.data[i * 4 + 2] = grain;
+    pixels.data[i * 4 + 3] = 255;
+  }
+  context.putImageData(pixels, 0, 0);
+  const texture = new THREE.CanvasTexture(plate);
+  texture.colorSpace = THREE.LinearSRGBColorSpace;
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(6, 6);
+  return texture;
+}
+
 function unmirror(texture, cover = {rx: 1, ry: 1, ox: 0, oy: 0}) {
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(-cover.rx, cover.ry);
@@ -256,8 +290,9 @@ async function heroTextures(frames) {
     const texture = await loadTexture(ASSET + 'paintings/pd/painting-' + frame.painting + '.webp', THREE.SRGBColorSpace);
     const image = texture.image;
     const cover = coverRepeat(image.width / image.height, frame.artWidth / frame.artHeight);
-    if (mobile && Math.max(image.width, image.height) > 1024) {
-      const scale = 1024 / Math.max(image.width, image.height);
+    const maxEdge = mobile ? 1024 : 1600;
+    if (Math.max(image.width, image.height) > maxEdge) {
+      const scale = maxEdge / Math.max(image.width, image.height);
       const plate = document.createElement('canvas');
       plate.width = Math.round(image.width * scale);
       plate.height = Math.round(image.height * scale);
@@ -464,16 +499,15 @@ async function loadSurface(file, colorSpace) {
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
     return texture;
   }
-  if (mobile) {
-    try {
-      const texture = await ktx2.loadAsync(ASSET + 'pbr/' + file.replace(/\.jpg$/, '.ktx2'));
-      texture.colorSpace = colorSpace;
-      texture.anisotropy = 4;
-      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-      return texture;
-    } catch (error) {
-      console.warn('KTX2 surface unavailable', file, error);
-    }
+  try {
+    const texture = await ktx2.loadAsync(ASSET + 'pbr/' + file.replace(/\.jpg$/, '.ktx2'));
+    texture.colorSpace = colorSpace;
+    texture.anisotropy = mobile ? 4 : 8;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.generateMipmaps = true;
+    return texture;
+  } catch (error) {
+    console.warn('KTX2 surface unavailable', file, error);
   }
   const texture = await loadTexture(ASSET + 'pbr/' + file, colorSpace);
   const image = texture.image;
@@ -524,9 +558,15 @@ try {
       map: pompeianA, roughnessMap: plasterR, normalMap: plasterN, normalScale: wallNormal,
       roughness: 1, metalness: 0, envMapIntensity: 0.12,
     }),
-    gilt: new THREE.MeshStandardMaterial({color: 0xe8c56b, roughness: 0.22, metalness: 1, envMapIntensity: mobile ? 0.55 : 1.15}),
+    gilt: new THREE.MeshStandardMaterial({
+      color: 0xe8c56b, roughness: 0.55, roughnessMap: goldRoughness(), metalness: 1,
+      envMapIntensity: mobile ? 0.55 : 1.2,
+    }),
     liner: new THREE.MeshStandardMaterial({color: 0xe7d5ba, roughness: 0.74, metalness: 0}),
-    artwork: new THREE.MeshStandardMaterial({map: atlas, roughness: 0.72, metalness: 0, envMapIntensity: 0.08, side: THREE.DoubleSide}),
+    artwork: new THREE.MeshStandardMaterial({
+      map: atlas, emissiveMap: atlas, emissive: 0xfff4e4, emissiveIntensity: 0.42,
+      roughness: 0.78, metalness: 0, envMapIntensity: 0.25, side: THREE.DoubleSide,
+    }),
     cartel: (() => {
       const plate = cartelAtlas(layout.cartels);
       return new THREE.MeshStandardMaterial({
@@ -554,9 +594,14 @@ try {
   gltf.scene.traverse(object => {
     if (!object.isMesh || !object.name.startsWith('Hero_')) return;
     object.material = object.material.clone();
-    object.material.map = heroes[heroIndex] || atlas;
+    const painting = heroes[heroIndex] || atlas;
+    object.material.map = painting;
+    object.material.emissiveMap = painting;
+    object.material.emissive.set(0xfff4e4);
+    object.material.emissiveIntensity = 0.42;
     object.material.color.set(0xffffff);
     object.material.roughness = 0.78;
+    object.material.lightMap = null;
     heroIndex += 1;
   });
   // Blender's Y-up glTF conversion stores the hall depth on -Z.
@@ -566,7 +611,9 @@ try {
   // The linen liner is a plate 6 mm in front of the canvas. Bring the
   // paintings forward so they sit in the rebate instead of behind that plate.
   bringCanvasesForward(gltf.scene);
-  for (const texture of [oakA, oakR, oakN, plasterA, plasterR, plasterN, pompeianA, marbleA, marbleR, marbleN, leatherA, leatherR, leatherN]) {
+  addPictureLights();
+  for (const texture of [oakA, oakR, oakN]) unmirror(texture, {rx: 0.42, ry: 0.42, ox: 0, oy: 0});
+  for (const texture of [plasterA, plasterR, plasterN, pompeianA, marbleA, marbleR, marbleN, leatherA, leatherR, leatherN]) {
     unmirror(texture);
   }
   scene.add(gltf.scene);
