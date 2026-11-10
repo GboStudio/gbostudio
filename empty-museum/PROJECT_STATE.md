@@ -67,3 +67,10 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Vérifier le contrat des deux joysticks + zoom, la priorité des commandes manuelles et la présence des tests de sécurité dans les pipelines.
 - Exécuter des jeux de tests positifs **et négatifs** du garde-fou : un contrôle qui ne sait pas échouer lors d'une rupture simulée ne fournit aucune garantie.
 - Les tests statiques ne prouvent ni la qualité visuelle ni le succès de publication. Utiliser séparément Playwright et la vérification du déploiement GitHub Pages correspondant au SHA exact.
+
+## Proposition d’accueil « grand musée » — 10 novembre 2026 (proposée, non fusionnée)
+- Branche `proposal/landing-premium` : refonte de `empty-museum/index.html` (typographie Cormorant Garamond + Inter auto-hébergées, menu mobile accessible, emplacements visuels réservés « Visuel de la salle témoin à venir », offre créateurs, parcours en 4 étapes, mentions DÉMO conservées).
+- Aucun visuel inventé : seuls les rendus validés de la salle témoin rempliront les emplacements réservés. Le mur d’exemples fictifs de la démo est replié par défaut.
+- Corrections incluses : débordement horizontal mobile des tableaux de tarifs, balises og:/twitter:, canonical, favicon, entrée sitemap, nom « Empty Museum » visible retiré (carte d’accueil du studio, nom du fichier téléchargé), libellés anglais traduits, logo unifié, aria-label des tuiles.
+- Plafond : les prix 9,95 / 14,95 / 20 € (absents du modèle commercial) sont remplacés par « Tarif à définir » sur l’accueil ; `app.js` conserve ses prix historiques (contradiction n° 1 toujours ouverte).
+- État : **proposé** — ni fusionné, ni déployé ; validation visuelle de Guillaume requise.
