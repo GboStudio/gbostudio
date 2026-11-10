@@ -9,7 +9,7 @@
   ],
   "floorPxPerM": 160,
   "wallPxPerM": 100,
-  "samples": 48,
+  "samples": 72,
   "denoiser": "openimagedenoise",
   "daylightK": 5000,
   "pictureK": 3000,

@@ -46,56 +46,25 @@ export const ROOM = Object.freeze({
 const LEFT_FORMATS = ['large', 'very_large', 'normal', 'medium', 'small'];
 const RIGHT_FORMATS = ['large', 'normal', 'very_large', 'normal', 'large'];
 
-const TITLES = [
-  ['Après l’orage', 'Maya'],
-  ['La chambre haute', 'Niko'],
-  ['Champ de lin', 'Léa'],
-  ['Portrait au gant', 'Sami'],
-  ['Nature morte aux poires', 'Ana'],
-  ['Le quai, le soir', 'Pablo'],
-  ['Étude de ciel', 'Eli'],
-  ['La lettre', 'June'],
-  ['Forêt claire', 'Rina'],
-  ['Buste d’atelier', 'Hugo'],
-  ['Le bassin', 'Mina'],
-  ['Fenêtre sur cour', 'Sol'],
-  ['Les toits rouges', 'Noah'],
-  ['Figure assise', 'Ari'],
-  ['Branche de laurier', 'Lou'],
-  ['Marine grise', 'Kian'],
-  ['Le modèle', 'Eva'],
-  ['Allée de platanes', 'Iris'],
-  ['Cruche et linge', 'Maël'],
-  ['Autoportrait à la lampe', 'Inès'],
-  ['Le pont de bois', 'Oscar'],
-  ['Tête d’étude', 'Chloé'],
-  ['Jardin d’hiver', 'Basile'],
-  ['La robe noire', 'Nadia'],
-  ['Nuages sur la plaine', 'Armand'],
-  ['Le violon', 'Hélène'],
-  ['Rue après la pluie', 'Jules'],
-  ['Pivoines', 'Amina'],
-  ['Le lecteur', 'Simon'],
-  ['Colline d’octobre', 'Vera'],
-  ['Profil à la fenêtre', 'Adam'],
-  ['La nappe blanche', 'Lina'],
-  ['Soir sur l’eau', 'Marc'],
-  ['Étude de mains', 'Noor'],
-  ['Le sentier', 'Paul'],
-  ['Bouquet sec', 'Rita'],
-  ['Jeune homme au col', 'Théo'],
-  ['La grange', 'Yaël'],
-  ['Reflet dans un miroir', 'Emma'],
-  ['Cimes', 'Ivan'],
-  ['La couturière', 'Jade'],
-  ['Orage lointain', 'Kenji'],
-  ['Coupe de fruits', 'Lila'],
-  ['Le garde', 'Mathis'],
-  ['Brume sur le fleuve', 'Nina'],
-  ['Tête penchée', 'Omar'],
-  ['Le salon rouge', 'Pia'],
-  ['Chemin creux', 'Robin']
+// Public-domain works, files in assets/paintings/pd/. Heroes are chosen so a
+// landscape canvas is not a stretched portrait. See credits.json.
+const WORKS = [
+  {title: 'La laitière', author: 'Johannes Vermeer', painting: 0},
+  {title: 'La jeune fille à la perle', author: 'Johannes Vermeer', painting: 1},
+  {title: 'Autoportrait', author: 'Rembrandt van Rijn', painting: 2},
+  {title: 'L’allée de Middelharnis', author: 'Meindert Hobbema', painting: 3},
+  {title: 'Paysage de dunes', author: 'Jacob van Ruisdael', painting: 4},
+  {title: 'Portrait de Claes Duyst van Voorhout', author: 'Frans Hals', painting: 5},
+  {title: 'Nature morte à la corne', author: 'Willem Kalf', painting: 6},
+  {title: 'Détail, La laitière', author: 'Johannes Vermeer', painting: 7}
 ];
+
+const HERO_PAINTING = {
+  'M001-large-1': 1,
+  'M002-very_large-1': 6,
+  'M008-very_large-1': 2,
+  'M011-very_large-1': 3
+};
 
 function aabb(box) {
   return {
@@ -146,10 +115,13 @@ function pictureLightFor(width, height) {
 }
 
 let titleCursor = 0;
-function nextTitle() {
-  const pair = TITLES[titleCursor % TITLES.length];
+function nextWork(frameId) {
+  if (Object.prototype.hasOwnProperty.call(HERO_PAINTING, frameId)) {
+    return WORKS[HERO_PAINTING[frameId]];
+  }
+  const work = WORKS[titleCursor % WORKS.length];
   titleCursor += 1;
-  return {title: pair[0], author: pair[1]};
+  return work;
 }
 
 function pushFrames(frames, cartels, wall, fieldMin, fieldMax, axis, moduleNumber, format) {
@@ -158,7 +130,7 @@ function pushFrames(frames, cartels, wall, fieldMin, fieldMax, axis, moduleNumbe
     const along = fieldMin + slot.xM + slot.widthM / 2;
     const y = ROOM.bandBottom + slot.yM + slot.heightM / 2;
     const mould = mouldingFor(slot.widthM, slot.heightM);
-    const meta = nextTitle();
+    const meta = nextWork(slot.id);
     const hero = format === 'very_large' || (format === 'large' && slot.ordinal === 1 && wall === 'left');
     const frame = {
       id: slot.id,
@@ -173,6 +145,7 @@ function pushFrames(frames, cartels, wall, fieldMin, fieldMax, axis, moduleNumbe
       artHeight: slot.heightM - 2 * mould,
       pictureLight: pictureLightFor(slot.widthM, slot.heightM),
       hero,
+      painting: meta.painting,
       title: meta.title,
       author: meta.author,
       demo: true
@@ -206,8 +179,12 @@ function pushFrames(frames, cartels, wall, fieldMin, fieldMax, axis, moduleNumbe
         maxZ: Math.max(z, z + sign * ROOM.frameDepth)
       });
     }
-    const cartelH = slot.heightM > 1.4 ? 0.058 : (slot.heightM > 0.8 ? 0.04 : 0.02);
-    const cartelW = Math.min(slot.widthM * 0.72, slot.heightM > 0.8 ? 0.2 : 0.11);
+    // Single-row canvases have room for a readable brass plate. Stacked
+    // cells only have the 4.5 cm gap, so their plates stay inside it.
+    const cartelH = slot.heightM > 1.4 ? 0.105 : (slot.heightM > 0.8 ? 0.028 : 0.018);
+    const cartelW = slot.heightM > 1.4
+      ? Math.min(0.46, slot.widthM * 0.34)
+      : Math.min(slot.widthM * 0.72, slot.heightM > 0.8 ? 0.18 : 0.1);
     const below = frame.box.minY - 0.01 - cartelH;
     const cartel = {
       id: slot.id + '-cartel',

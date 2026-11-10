@@ -1,0 +1,58 @@
+[
+  {
+    "title": "La laitière",
+    "author": "Johannes Vermeer",
+    "source": "Rijksmuseum / Wikimedia Commons",
+    "wikimedia": "File:Johannes Vermeer - Het melkmeisje - Google Art Project.jpg",
+    "file": "painting-0.webp"
+  },
+  {
+    "title": "La jeune fille à la perle",
+    "author": "Johannes Vermeer",
+    "source": "Mauritshuis / Wikimedia Commons",
+    "wikimedia": "File:1665 Girl with a Pearl Earring.jpg",
+    "file": "painting-1.webp"
+  },
+  {
+    "title": "Autoportrait",
+    "author": "Rembrandt van Rijn",
+    "source": "Wikimedia Commons, domaine public",
+    "wikimedia": "File:Rembrandt van Rijn - Self-Portrait - Google Art Project.jpg",
+    "file": "painting-2.webp"
+  },
+  {
+    "title": "L’allée de Middelharnis",
+    "author": "Meindert Hobbema",
+    "source": "National Gallery / Wikimedia Commons",
+    "wikimedia": "File:Meindert Hobbema - The Alley at Middelharnis - WGA11427.jpg",
+    "file": "painting-3.webp"
+  },
+  {
+    "title": "Paysage de dunes",
+    "author": "Jacob van Ruisdael",
+    "source": "Wikimedia Commons, domaine public",
+    "wikimedia": "File:Jacob van Ruisdael - Dune Landscape.jpg",
+    "file": "painting-4.webp"
+  },
+  {
+    "title": "Portrait de Claes Duyst van Voorhout",
+    "author": "Frans Hals",
+    "source": "Wikimedia Commons, domaine public",
+    "wikimedia": "File:Frans Hals - Claes Duyst van Voorhout.jpg",
+    "file": "painting-5.webp"
+  },
+  {
+    "title": "Nature morte à la corne",
+    "author": "Willem Kalf",
+    "source": "National Gallery / Wikimedia Commons",
+    "wikimedia": "File:Willem Kalf, Still Life with Drinking-Horn, c. 1653, oil on canvas, National Gallery.png",
+    "file": "painting-6.webp"
+  },
+  {
+    "title": "Détail, La laitière",
+    "author": "Johannes Vermeer",
+    "source": "Wikimedia Commons, domaine public",
+    "wikimedia": "File:Johannes Vermeer - The Milkmaid (detail) - WGA24626.jpg",
+    "file": "painting-7.webp"
+  }
+]

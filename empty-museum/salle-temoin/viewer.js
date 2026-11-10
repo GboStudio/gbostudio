@@ -32,10 +32,8 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = layout.room.exposure;
 renderer.setClearColor(0x14110e, 1);
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mobile ? 1.35 : 1.75));
-if (!mobile) {
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-}
+// Illumination comes from the Cycles lightmap. A second shadow map
+// reintroduced the hard stripes the bake is meant to soften.
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(mobile ? 58 : 46, 1, 0.08, 80);
@@ -64,7 +62,7 @@ async function loadLightmap() {
       const texture = await ktx2.loadAsync(ASSET + 'lightmap-mobile.ktx2');
       texture.colorSpace = THREE.LinearSRGBColorSpace;
       texture.channel = 1;
-      lightScale = 4;
+      lightScale = 1;
       return texture;
     } catch (error) {
       console.warn('KTX2 lightmap unavailable, using the half-resolution HDR bake.', error);
@@ -95,7 +93,7 @@ function atlasCell(index, columns = 8) {
 
 async function paintingAtlas(frames) {
   const columns = 8;
-  const size = mobile ? 2048 : 4096;
+  const size = mobile ? 1024 : 4096;
   const canvasAtlas = document.createElement('canvas');
   canvasAtlas.width = canvasAtlas.height = size;
   const context = canvasAtlas.getContext('2d');
@@ -106,12 +104,31 @@ async function paintingAtlas(frames) {
     if (frame.hero) continue;
     const cell = atlasCell(index);
     index += 1;
-    const image = await loadImage(ASSET + 'paintings/' + frame.id + '.webp');
+    const image = await loadImage(ASSET + 'paintings/pd/painting-' + frame.painting + '.webp');
     const x = cell.u0 * size;
-    const y = (1 - cell.v1) * size;
+    // glTF stores V flipped, so the first cell lives at the top of the canvas.
+    const y = cell.v0 * size;
     const w = (cell.u1 - cell.u0) * size;
     const h = (cell.v1 - cell.v0) * size;
-    context.drawImage(image, x, y, w, h);
+    context.save();
+    context.beginPath();
+    context.rect(x, y, w, h);
+    context.clip();
+    const imageAspect = image.width / image.height;
+    const cellAspect = w / h;
+    let dw = w;
+    let dh = h;
+    let dx = x;
+    let dy = y;
+    if (imageAspect > cellAspect) {
+      dw = h * imageAspect;
+      dx = x - (dw - w) / 2;
+    } else {
+      dh = w / imageAspect;
+      dy = y - (dh - h) / 2;
+    }
+    context.drawImage(image, dx, dy, dw, dh);
+    context.restore();
   }
   const texture = new THREE.CanvasTexture(canvasAtlas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -131,36 +148,43 @@ function loadImage(url) {
 
 function cartelAtlas(cartels) {
   const columns = 8;
-  const size = 2048;
+  const size = mobile ? 1024 : 4096;
   const plate = document.createElement('canvas');
   plate.width = plate.height = size;
   const context = plate.getContext('2d');
   cartels.forEach((cartel, index) => {
     const cell = atlasCell(index);
     const x = cell.u0 * size;
-    const y = (1 - cell.v1) * size;
+    const y = cell.v0 * size;
     const w = (cell.u1 - cell.u0) * size;
     const h = (cell.v1 - cell.v0) * size;
-    const gradient = context.createLinearGradient(x, y, x + w, y + h);
+    context.save();
+    context.translate(x, y + h);
+    context.scale(1, -1);
+    const gradient = context.createLinearGradient(0, 0, w, h);
     gradient.addColorStop(0, '#f4e7c8');
     gradient.addColorStop(0.45, '#d9c08a');
     gradient.addColorStop(1, '#b89a62');
     context.fillStyle = gradient;
-    context.fillRect(x, y, w, h);
+    context.fillRect(0, 0, w, h);
     context.strokeStyle = '#6d542c';
     context.lineWidth = Math.max(2, size / 400);
-    context.strokeRect(x + 8, y + 8, w - 16, h - 16);
+    context.strokeRect(8, 8, w - 16, h - 16);
     context.fillStyle = '#3a2c18';
     context.textAlign = 'left';
     context.textBaseline = 'top';
-    const titleSize = Math.max(18, h * 0.22);
+    const padX = w * 0.08;
+    const titleSize = Math.max(15, h * 0.3);
     context.font = `500 ${titleSize}px Georgia, "Liberation Serif", serif`;
-    context.fillText(cartel.title, x + 18, y + h * 0.16, w - 36);
-    context.font = `600 ${titleSize * 0.62}px Arial, sans-serif`;
+    context.fillText(cartel.title, padX, h * 0.1, w - padX * 2);
+    context.font = `600 ${titleSize * 0.46}px Arial, sans-serif`;
     context.fillStyle = '#5c4728';
-    context.fillText(cartel.author.toUpperCase(), x + 18, y + h * 0.48, w - 36);
-    context.font = `600 ${titleSize * 0.48}px Arial, sans-serif`;
-    context.fillText('DÉMO · PAS UNE VENTE', x + 18, y + h * 0.72, w - 36);
+    context.fillText(cartel.author, padX, h * 0.44, w - padX * 2);
+    context.font = `600 ${titleSize * 0.36}px Arial, sans-serif`;
+    context.fillText('DOMAINE PUBLIC', padX, h * 0.66, w - padX * 2);
+    context.font = `600 ${titleSize * 0.28}px Arial, sans-serif`;
+    context.fillText('DÉMO · PAS UNE VENTE', padX, h * 0.84, w - padX * 2);
+    context.restore();
   });
   const texture = new THREE.CanvasTexture(plate);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -178,11 +202,14 @@ function applyLibrary(root, library, lightmap) {
     const material = base.clone();
     material.name = name;
     material.vertexColors = true;
-    if (name !== 'laylight' && name !== 'underlay' && object.geometry?.attributes) {
+    const uv1 = object.geometry?.attributes?.uv1;
+    if (name !== 'laylight' && name !== 'underlay' && name !== 'cartel' && uv1) {
+      object.geometry.setAttribute('uv2', uv1);
       material.lightMap = lightmap;
-      material.lightMap.channel = object.geometry.attributes.uv2 ? 2 : 1;
+      material.lightMap.channel = 2;
       // Cycles stores the Lambert result (irradiance / π). Three divides by π again.
-      material.lightMapIntensity = Math.PI * lightScale * 0.72;
+      const gain = name === 'artwork' ? 1.45 : 1.0;
+      material.lightMapIntensity = Math.PI * lightScale * gain;
     }
     object.material = material;
     object.castShadow = !mobile && (name === 'sculpture');
@@ -190,61 +217,97 @@ function applyLibrary(root, library, lightmap) {
   });
 }
 
+function coverRepeat(imageAspect, frameAspect) {
+  if (imageAspect > frameAspect) {
+    const rx = frameAspect / imageAspect;
+    return {rx, ry: 1, ox: (1 - rx) / 2, oy: 0};
+  }
+  const ry = imageAspect / frameAspect;
+  return {rx: 1, ry, ox: 0, oy: (1 - ry) / 2};
+}
+
+function bringCanvasesForward(root) {
+  root.traverse(object => {
+    if (!object.isMesh) return;
+    const matName = (object.material?.name || '').replace(/\.\d+$/, '');
+    if (matName !== 'artwork' && !object.name.startsWith('Hero_')) return;
+    const position = object.geometry.attributes.position;
+    for (let i = 0; i < position.count; i += 1) {
+      const x = position.getX(i);
+      const z = position.getZ(i);
+      if (x < -4.5) position.setX(i, x + 0.022);
+      else if (x > 4.5) position.setX(i, x - 0.022);
+      else if (z < -16) position.setZ(i, z + 0.022);
+    }
+    position.needsUpdate = true;
+  });
+}
+
+function unmirror(texture, cover = {rx: 1, ry: 1, ox: 0, oy: 0}) {
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(-cover.rx, cover.ry);
+  texture.offset.set(cover.ox + cover.rx, cover.oy);
+}
+
 async function heroTextures(frames) {
   const textures = [];
   for (const frame of frames) {
     if (!frame.hero) continue;
-    const texture = await loadTexture(ASSET + 'paintings/' + frame.id + '.webp', THREE.SRGBColorSpace);
+    const texture = await loadTexture(ASSET + 'paintings/pd/painting-' + frame.painting + '.webp', THREE.SRGBColorSpace);
+    const image = texture.image;
+    const cover = coverRepeat(image.width / image.height, frame.artWidth / frame.artHeight);
+    if (mobile && Math.max(image.width, image.height) > 1024) {
+      const scale = 1024 / Math.max(image.width, image.height);
+      const plate = document.createElement('canvas');
+      plate.width = Math.round(image.width * scale);
+      plate.height = Math.round(image.height * scale);
+      plate.getContext('2d').drawImage(image, 0, 0, plate.width, plate.height);
+      texture.image = plate;
+      texture.needsUpdate = true;
+    }
+    texture.flipY = false;
     texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.repeat.set(cover.rx, cover.ry);
+    texture.offset.set(cover.ox, cover.oy);
     textures.push(texture);
   }
   return textures;
 }
 
-function addSculpture() {
+async function addSculpture() {
   const plinth = layout.plinth;
-  const points = [];
-  const profile = [0.22, 0.34, 0.28, 0.16, 0.2, 0.18, 0.11, 0.08];
-  profile.forEach((radius, index) => {
-    points.push(new THREE.Vector2(radius, (index / (profile.length - 1)) * plinth.sculptureHeight));
+  const bustFile = await gltfLoader.loadAsync(ASSET + 'pbr/bust/marble_bust_01.gltf');
+  const bust = bustFile.scene;
+  bust.name = 'sculpture';
+  const measured = new THREE.Box3().setFromObject(bust);
+  const height = Math.max(0.2, measured.max.y - measured.min.y);
+  const scale = 1.05 / height;
+  bust.scale.setScalar(scale);
+  const fitted = new THREE.Box3().setFromObject(bust);
+  bust.position.set(
+    plinth.x - (fitted.min.x + fitted.max.x) / 2,
+    plinth.height - fitted.min.y,
+    plinth.z - (fitted.min.z + fitted.max.z) / 2,
+  );
+  bust.traverse(object => {
+    if (!object.isMesh) return;
+    object.castShadow = false;
+    object.receiveShadow = false;
+    if (object.material) {
+      object.material.envMapIntensity = mobile ? 0.45 : 0.9;
+      object.material.roughness = Math.min(object.material.roughness ?? 0.35, 0.42);
+    }
   });
-  const geometry = new THREE.LatheGeometry(points, mobile ? 20 : 32);
-  const material = new THREE.MeshStandardMaterial({
-    color: 0xd9d3cc,
-    roughness: 0.28,
-    metalness: 0.04,
-    envMapIntensity: 0.6,
-  });
-  const urn = new THREE.Mesh(geometry, material);
-  urn.name = 'sculpture';
-  urn.position.set(plinth.x, plinth.height, plinth.z);
-  urn.castShadow = !mobile;
-  urn.receiveShadow = !mobile;
-  scene.add(urn);
+  scene.add(bust);
   const shadow = new THREE.Mesh(
-    new THREE.CircleGeometry(0.46, 24),
-    new THREE.MeshBasicMaterial({color: 0x000000, transparent: true, opacity: mobile ? 0.28 : 0.12, depthWrite: false}),
+    new THREE.CircleGeometry(0.34, 24),
+    new THREE.MeshBasicMaterial({color: 0x000000, transparent: true, opacity: 0.18, depthWrite: false}),
   );
   shadow.rotation.x = -Math.PI / 2;
-  shadow.position.set(plinth.x, 0.012, plinth.z);
+  shadow.position.set(plinth.x, plinth.height + 0.004, plinth.z);
   shadow.renderOrder = 2;
   scene.add(shadow);
-  if (!mobile) {
-    const light = new THREE.DirectionalLight(0xfff3e2, 0.55);
-    light.position.set(plinth.x - 1.4, 5.2, plinth.z + 1.1);
-    light.target.position.set(plinth.x, plinth.height, plinth.z);
-    light.castShadow = true;
-    light.shadow.mapSize.set(1024, 1024);
-    light.shadow.camera.near = 0.4;
-    light.shadow.camera.far = 8;
-    light.shadow.camera.left = -1.6;
-    light.shadow.camera.right = 1.6;
-    light.shadow.camera.top = 1.6;
-    light.shadow.camera.bottom = -1.6;
-    light.shadow.bias = -0.0008;
-    scene.add(light, light.target);
-  }
-  return urn;
+  return bust;
 }
 
 const halfW = layout.room.width / 2;
@@ -276,12 +339,13 @@ function applyCamera() {
 function frameShot() {
   const hero = layout.frames.find(frame => frame.wall === 'left' && frame.format === 'very_large');
   return {
-    x: hero.x + 1.55,
-    y: hero.y,
-    z: hero.z,
-    yaw: Math.PI / 2,
-    pitch: 0,
-    fov: 32,
+    // yaw 0 looks down the nave (+Z). Negative yaw turns toward the left wall (-X).
+    x: hero.x + 4.05,
+    y: 1.5,
+    z: hero.z - 0.15,
+    yaw: -Math.PI / 2 + 0.02,
+    pitch: 0.02,
+    fov: 42,
   };
 }
 
@@ -391,41 +455,99 @@ const report = {
 };
 window.__SALLE_TEMOIN__ = report;
 
+async function loadSurface(file, colorSpace) {
+  if (mobile && (file.includes('-nor.') || file.includes('-rough.'))) {
+    const flat = file.includes('-nor.') ? [128, 128, 255, 255] : [210, 210, 210, 255];
+    const texture = new THREE.DataTexture(new Uint8Array(flat), 1, 1);
+    texture.colorSpace = colorSpace;
+    texture.needsUpdate = true;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+  }
+  if (mobile) {
+    try {
+      const texture = await ktx2.loadAsync(ASSET + 'pbr/' + file.replace(/\.jpg$/, '.ktx2'));
+      texture.colorSpace = colorSpace;
+      texture.anisotropy = 4;
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      return texture;
+    } catch (error) {
+      console.warn('KTX2 surface unavailable', file, error);
+    }
+  }
+  const texture = await loadTexture(ASSET + 'pbr/' + file, colorSpace);
+  const image = texture.image;
+  if (mobile && image && Math.max(image.width, image.height) > 1024) {
+    const scale = 1024 / Math.max(image.width, image.height);
+    const plate = document.createElement('canvas');
+    plate.width = Math.round(image.width * scale);
+    plate.height = Math.round(image.height * scale);
+    plate.getContext('2d').drawImage(image, 0, 0, plate.width, plate.height);
+    texture.image = plate;
+    texture.needsUpdate = true;
+  }
+  return texture;
+}
+
 try {
-  const [oakA, oakR, oakN, stoneA, stoneN, marbleA, marbleR, lightmap, gltf, atlas, heroes] = await Promise.all([
-    loadTexture(ASSET + 'oak-albedo.png', THREE.SRGBColorSpace),
-    loadTexture(ASSET + 'oak-roughness.png', THREE.LinearSRGBColorSpace),
-    loadTexture(ASSET + 'oak-normal.png', THREE.LinearSRGBColorSpace),
-    loadTexture(ASSET + 'stone-albedo.png', THREE.SRGBColorSpace),
-    loadTexture(ASSET + 'stone-normal.png', THREE.LinearSRGBColorSpace),
-    loadTexture(ASSET + 'marble-albedo.png', THREE.SRGBColorSpace),
-    loadTexture(ASSET + 'marble-roughness.png', THREE.LinearSRGBColorSpace),
+  const [oakA, oakR, oakN, plasterA, plasterR, plasterN, pompeianA, marbleA, marbleR, marbleN, leatherA, leatherR, leatherN, lightmap, gltf, atlas, heroes] = await Promise.all([
+    loadSurface('oak-diff.jpg', THREE.SRGBColorSpace),
+    loadSurface('oak-rough.jpg', THREE.LinearSRGBColorSpace),
+    loadSurface('oak-nor.jpg', THREE.LinearSRGBColorSpace),
+    loadSurface('plaster-diff.jpg', THREE.SRGBColorSpace),
+    loadSurface('plaster-rough.jpg', THREE.LinearSRGBColorSpace),
+    loadSurface('plaster-nor.jpg', THREE.LinearSRGBColorSpace),
+    loadSurface('pompeian-diff.jpg', THREE.SRGBColorSpace),
+    loadSurface('marble-diff.jpg', THREE.SRGBColorSpace),
+    loadSurface('marble-rough.jpg', THREE.LinearSRGBColorSpace),
+    loadSurface('marble-nor.jpg', THREE.LinearSRGBColorSpace),
+    loadSurface('leather-diff.jpg', THREE.SRGBColorSpace),
+    loadSurface('leather-rough.jpg', THREE.LinearSRGBColorSpace),
+    loadSurface('leather-nor.jpg', THREE.LinearSRGBColorSpace),
     loadLightmap(),
     gltfLoader.loadAsync(ASSET + 'salle-temoin.glb'),
     paintingAtlas(layout.frames),
     heroTextures(layout.frames),
   ]);
-  oakA.wrapS = oakA.wrapT = THREE.RepeatWrapping;
+  const wallNormal = new THREE.Vector2(0.55, 0.55);
   const library = {
     parquet: new THREE.MeshPhysicalMaterial({
-      map: oakA, roughnessMap: oakR, normalMap: oakN,
-      roughness: 0.42, metalness: 0, clearcoat: mobile ? 0.04 : 0.18, clearcoatRoughness: 0.38,
-      envMapIntensity: mobile ? 0.25 : 0.45,
+      map: oakA, roughnessMap: oakR, normalMap: oakN, normalScale: new THREE.Vector2(0.85, 0.85),
+      roughness: 1, metalness: 0, clearcoat: mobile ? 0.08 : 0.32, clearcoatRoughness: 0.34,
+      envMapIntensity: mobile ? 0.28 : 0.72,
     }),
-    stone: new THREE.MeshStandardMaterial({map: stoneA, normalMap: stoneN, roughness: 0.68, metalness: 0, envMapIntensity: 0.12}),
-    pompeian: new THREE.MeshStandardMaterial({color: layout.room.wallColor, roughness: 0.8, metalness: 0, envMapIntensity: 0.08}),
-    gilt: new THREE.MeshStandardMaterial({color: 0xe0c27a, roughness: 0.34, metalness: 1, envMapIntensity: mobile ? 0.45 : 0.85}),
+    stone: new THREE.MeshStandardMaterial({
+      map: plasterA, roughnessMap: plasterR, normalMap: plasterN, normalScale: wallNormal,
+      roughness: 1, metalness: 0, envMapIntensity: 0.16,
+    }),
+    pompeian: new THREE.MeshStandardMaterial({
+      map: pompeianA, roughnessMap: plasterR, normalMap: plasterN, normalScale: wallNormal,
+      roughness: 1, metalness: 0, envMapIntensity: 0.12,
+    }),
+    gilt: new THREE.MeshStandardMaterial({color: 0xe8c56b, roughness: 0.22, metalness: 1, envMapIntensity: mobile ? 0.55 : 1.15}),
     liner: new THREE.MeshStandardMaterial({color: 0xe7d5ba, roughness: 0.74, metalness: 0}),
-    artwork: new THREE.MeshStandardMaterial({map: atlas, roughness: 0.62, metalness: 0, envMapIntensity: 0.12}),
-    cartel: new THREE.MeshStandardMaterial({map: cartelAtlas(layout.cartels), roughness: 0.48, metalness: 0.22}),
-    mullion: new THREE.MeshStandardMaterial({color: 0xe7e1d6, roughness: 0.38, metalness: 0.55}),
-    benchWood: new THREE.MeshStandardMaterial({map: oakA, roughnessMap: oakR, roughness: 0.5, metalness: 0}),
-    benchSeat: new THREE.MeshStandardMaterial({color: 0x3e3028, roughness: 0.72, metalness: 0}),
-    marble: new THREE.MeshStandardMaterial({map: marbleA, roughnessMap: marbleR, roughness: 0.2, metalness: 0.04, envMapIntensity: 0.55}),
-    door: new THREE.MeshStandardMaterial({map: oakA, roughnessMap: oakR, roughness: 0.46, metalness: 0, color: 0x8a6238}),
-    brass: new THREE.MeshStandardMaterial({color: 0xc4a36a, roughness: 0.32, metalness: 1, emissive: 0x3a2a12, emissiveIntensity: 0.15}),
-    laylight: new THREE.MeshStandardMaterial({color: 0xfff6ea, emissive: 0xfff4e6, emissiveIntensity: mobile ? 2.2 : 3.4, roughness: 1, side: THREE.DoubleSide}),
-    underlay: new THREE.MeshStandardMaterial({color: 0x120e0b, roughness: 0.95}),
+    artwork: new THREE.MeshStandardMaterial({map: atlas, roughness: 0.72, metalness: 0, envMapIntensity: 0.08, side: THREE.DoubleSide}),
+    cartel: (() => {
+      const plate = cartelAtlas(layout.cartels);
+      return new THREE.MeshStandardMaterial({
+        map: plate, emissiveMap: plate, emissive: 0xffffff, emissiveIntensity: 0.65,
+        roughness: 0.55, metalness: 0.12, envMapIntensity: 0.2,
+      });
+    })(),
+    mullion: new THREE.MeshStandardMaterial({map: plasterA, roughnessMap: plasterR, normalMap: plasterN, roughness: 1, metalness: 0}),
+    benchWood: new THREE.MeshStandardMaterial({map: oakA, roughnessMap: oakR, normalMap: oakN, roughness: 0.72, metalness: 0}),
+    benchSeat: new THREE.MeshStandardMaterial({
+      map: leatherA, roughnessMap: leatherR, normalMap: leatherN, normalScale: new THREE.Vector2(0.7, 0.7),
+      roughness: 0.92, metalness: 0, envMapIntensity: 0.2,
+    }),
+    marble: new THREE.MeshStandardMaterial({
+      map: marbleA, roughnessMap: marbleR, normalMap: marbleN,
+      roughness: 0.85, metalness: 0.02, envMapIntensity: mobile ? 0.35 : 0.7,
+    }),
+    door: new THREE.MeshStandardMaterial({map: oakA, roughnessMap: oakR, normalMap: oakN, roughness: 0.7, metalness: 0, color: 0x8a6238}),
+    brass: new THREE.MeshStandardMaterial({color: 0xc4a36a, roughness: 0.3, metalness: 1, envMapIntensity: 0.8}),
+    laylight: new THREE.MeshStandardMaterial({color: 0xf4efe4, emissive: 0xf7f1e6, emissiveIntensity: mobile ? 0.75 : 1.05, roughness: 1, side: THREE.DoubleSide}),
+    underlay: new THREE.MeshStandardMaterial({color: 0x3a2c22, roughness: 0.95}),
   };
   applyLibrary(gltf.scene, library, lightmap);
   let heroIndex = 0;
@@ -434,18 +556,34 @@ try {
     object.material = object.material.clone();
     object.material.map = heroes[heroIndex] || atlas;
     object.material.color.set(0xffffff);
+    object.material.roughness = 0.78;
     heroIndex += 1;
   });
   // Blender's Y-up glTF conversion stores the hall depth on -Z.
   // Flip it back so yaw 0 walks toward the far wall, and un-mirror images.
+  // Hero canvases already carry their own cover-crop flip.
   gltf.scene.scale.z = -1;
-  for (const texture of [atlas, ...heroes, library.cartel.map, oakA, stoneA, marbleA]) {
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.repeat.x = -1;
-    texture.offset.x = 1;
+  // The linen liner is a plate 6 mm in front of the canvas. Bring the
+  // paintings forward so they sit in the rebate instead of behind that plate.
+  bringCanvasesForward(gltf.scene);
+  for (const texture of [oakA, oakR, oakN, plasterA, plasterR, plasterN, pompeianA, marbleA, marbleR, marbleN, leatherA, leatherR, leatherN]) {
+    unmirror(texture);
   }
   scene.add(gltf.scene);
-  addSculpture();
+  await addSculpture();
+  if (!mobile) {
+    try {
+      const cubeTarget = new THREE.WebGLCubeRenderTarget(128);
+      const probe = new THREE.CubeCamera(0.3, 26, cubeTarget);
+      probe.position.set(0, 2.15, layout.room.length * 0.42);
+      probe.update(renderer, scene);
+      scene.environment = pmrem.fromCubemap(cubeTarget.texture).texture;
+      scene.environmentIntensity = 0.7;
+      cubeTarget.dispose();
+    } catch (error) {
+      console.warn('reflection probe skipped', error);
+    }
+  }
   statusEl.remove();
   report.ready = true;
 } catch (error) {
