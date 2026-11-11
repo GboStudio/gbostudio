@@ -303,13 +303,12 @@ def clip_rect(poly, x0, y0, x1, y1):
 
 
 def board_tint(seed):
+    """A slight board-to-board shift. Not the dark distressed planks of pass 4."""
     random.seed(seed)
-    warmth = random.uniform(0.78, 1.14)
-    if random.random() < 0.09:
-        warmth *= random.uniform(0.55, 0.72)
-    red = warmth * random.uniform(0.96, 1.08)
-    blue = warmth * random.uniform(0.86, 1.0)
-    return (red, warmth * 0.98, blue, 1)
+    warmth = random.uniform(0.96, 1.04)
+    red = warmth * random.uniform(0.99, 1.02)
+    blue = warmth * random.uniform(0.98, 1.02)
+    return (red, warmth, blue, 1)
 
 
 class RoomBuilder:
@@ -357,6 +356,8 @@ class RoomBuilder:
                                    pbr / 'marble-diff.jpg', pbr / 'marble-rough.jpg', pbr / 'marble-nor.jpg'),
             'door': new_material('door', hex_color('#6A4A30'), 0.46, 0.0,
                                  pbr / 'oak-diff.jpg', pbr / 'oak-rough.jpg', pbr / 'oak-nor.jpg'),
+            'coffer': new_material('coffer', hex_color('#E8E0D0'), 0.92, 0.0,
+                                   pbr / 'coffer-diff.jpg', pbr / 'plaster-rough.jpg', pbr / 'plaster-nor.jpg'),
             'brass': new_material('brass', hex_color('#C4A36A'), 0.28, 1.0),
             'laylight': emission_material('laylight', kelvin(5000), 1.4),
         }
@@ -397,19 +398,37 @@ class RoomBuilder:
         return uvs
 
     def plank_uvs(self, pts, tint):
-        """One straight-grain island per board: length along the scan's grain, random offset."""
+        """One straight-grain island per board.
+
+        The texture is Poly Haven white_oak_veneer, warmed to oak: a 0.50 m
+        square of fine straight grain. It repeats, so a long board keeps the
+        real scale. The 1.6 mm joint stays the geometric gap.
+        """
+        # Poly Haven white_oak_veneer is a 0.50 m square of fine straight grain.
+        across_m = 0.50
+        along_m = 0.50
         xs = [p[0] for p in pts]
         ys = [p[1] for p in pts]
         along_x = (max(xs) - min(xs)) >= (max(ys) - min(ys))
-        rng = random.Random((int(min(xs) * 137) * 13 + int(min(ys) * 91)) ^ int(tint[0] * 1000))
-        u_off = rng.random() * 8
-        v_off = rng.random() * 8
-        flip = 1 if rng.random() > 0.5 else -1
-        grain = 1.8
-        uvs = []
+        samples = []
         for x, y in pts:
             along, across = (x, y) if along_x else (y, x)
-            uvs.append((across / grain + u_off, along / grain * flip + v_off))
+            samples.append((along, across))
+        along_vals = [s[0] for s in samples]
+        across_vals = [s[1] for s in samples]
+        min_along, max_along = min(along_vals), max(along_vals)
+        min_across, max_across = min(across_vals), max(across_vals)
+        span_u = (max_across - min_across) / across_m
+        span_v = (max_along - min_along) / along_m
+        rng = random.Random((int(min(xs) * 137) * 13 + int(min(ys) * 91)) ^ int(tint[0] * 1000))
+        flip = 1 if rng.random() > 0.5 else -1
+        u0 = rng.random()
+        v0 = rng.random()
+        uvs = []
+        for along, across in samples:
+            u = u0 + (across - min_across) / across_m
+            v = v0 + ((along - min_along) if flip > 0 else (max_along - along)) / along_m
+            uvs.append((u, v))
         return uvs
 
     def packed(self, width_m, height_m, density=100):
@@ -976,23 +995,50 @@ def add_south_with_door(room, x0, x1):
         )
 
 
+def unit(v):
+    length = math.sqrt(dot(v, v)) or 1.0
+    return (v[0] / length, v[1] / length, v[2] / length)
+
+
 def add_coffer(room, a, b, z0, z1, rect, r, side, step, steps):
-    """One recessed coffer: a frame on the vault surface and a panel set back into it."""
+    """Plaster coffer, recessed along the vault normal, with a gilt fillet.
+
+    Pass 4 lifted the panel on world Z and forced every quad, including the
+    vertical reveals, to face (0, 0, -1). Those reveals were back-faces, which
+    is the broken black line on the ceiling. The panel now steps back along
+    the real normal and each quad carries that face's own normal.
+    """
     p = [(a[0], z0, a[1]), (a[0], z1, a[1]), (b[0], z1, b[1]), (b[0], z0, b[1])]
+    n = unit(cross(sub(p[1], p[0]), sub(p[2], p[0])))
+    if n[2] > 0:
+        n = tuple(-c for c in n)
+        p = [p[0], p[3], p[2], p[1]]
     center = tuple(sum(point[i] for point in p) / 4 for i in range(3))
 
-    def inset(point):
-        return tuple(point[i] + (center[i] - point[i]) * 0.22 for i in range(3))
+    def towards(point, factor):
+        return tuple(point[i] + (center[i] - point[i]) * factor for i in range(3))
 
-    inner = [inset(point) for point in p]
-    lifted = [(point[0], point[1], point[2] + 0.07) for point in inner]
+    def shift(points, vector, distance):
+        return [tuple(point[i] + vector[i] * distance for i in range(3)) for point in points]
 
-    def vault_uv(point, along):
-        u = rect['x'] + (along / r['length']) * rect['w']
+    inner = [towards(point, 0.16) for point in p]
+    lip = [towards(point, 0.23) for point in p]
+    depth = 0.09
+    sunk = shift(lip, n, -depth)
+    proud = 0.005
+    gilt_outer = shift(inner, n, proud)
+    gilt_inner = shift(lip, n, proud)
+
+    def vault_uv(point):
+        u = rect['x'] + (point[1] / r['length']) * rect['w']
         v = rect['y'] + ((step + 0.5) / steps) * (rect['h'] * 0.48) + (0 if side < 0 else rect['h'] * 0.5)
         return (u / room.size, v / room.size)
 
-    light = [vault_uv(point, point[1]) for point in p]
+    light = [vault_uv(point) for point in p]
+
+    def put(mesh_name, quad, hint):
+        room.mesh[mesh_name].quad(quad, planar_uv(quad, 1.6), light, hint)
+
     borders = [
         [p[0], p[1], inner[1], inner[0]],
         [p[1], p[2], inner[2], inner[1]],
@@ -1000,12 +1046,22 @@ def add_coffer(room, a, b, z0, z1, rect, r, side, step, steps):
         [p[3], p[0], inner[0], inner[3]],
     ]
     for quad in borders:
-        room.mesh['stone'].quad(quad, planar_uv(quad, 2.2), light, (0, 0, -1))
-    room.mesh['stone'].quad(lifted, planar_uv(lifted, 2.2), light, (0, 0, -1))
+        put('coffer', quad, n)
+    gilt = [
+        [gilt_outer[0], gilt_outer[1], gilt_inner[1], gilt_inner[0]],
+        [gilt_outer[1], gilt_outer[2], gilt_inner[2], gilt_inner[1]],
+        [gilt_outer[2], gilt_outer[3], gilt_inner[3], gilt_inner[2]],
+        [gilt_outer[3], gilt_outer[0], gilt_inner[0], gilt_inner[3]],
+    ]
+    for quad in gilt:
+        put('gilt', quad, n)
     for i in range(4):
         j = (i + 1) % 4
-        reveal = [inner[i], inner[j], lifted[j], lifted[i]]
-        room.mesh['stone'].quad(reveal, planar_uv(reveal, 2.2), light, (0, 0, -1))
+        reveal = [lip[i], lip[j], sunk[j], sunk[i]]
+        mid = tuple(sum(point[k] for point in reveal) / 4 for k in range(3))
+        hint = unit(tuple(center[k] - mid[k] for k in range(3)))
+        put('coffer', reveal, hint)
+    put('coffer', sunk, n)
 
 
 def add_vault(room: RoomBuilder):
@@ -1032,26 +1088,28 @@ def add_vault(room: RoomBuilder):
             z0, z1 = cuts[index], cuts[index + 1]
             if z1 - z0 < 0.2:
                 continue
-            # Leave the pier width for the transverse arch.
+            # The rib is exactly this wide, so the coffer meets it with no crack.
+            rib = 0.20
             if index not in (0, len(cuts) - 2):
-                z0 += 0.2
-                z1 -= 0.2
+                z0 += rib
+                z1 -= rib
             for step in range(steps):
                 a, b = arc[step], arc[step + 1]
                 add_coffer(room, a, b, z0, z1, rect, r, side, step, steps)
-    # Transverse arches, aligned with the pilasters.
+    # Transverse arches, aligned with the pilasters. They sit proud of the
+    # coffer plane (into the room) so the two surfaces never share a polygon.
     for bay in room.layout['bays']:
         center = (bay['pilaster']['minZ'] + bay['pilaster']['maxZ']) / 2
         for side, arc in zip((-1, 1), springs):
             for step in range(steps):
                 a, b = arc[step], arc[step + 1]
-                z0, z1 = center - 0.19, center + 0.19
-                room.mesh['stone'].quad(
-                    [(a[0], z0, a[1] - 0.16), (a[0], z1, a[1] - 0.16), (b[0], z1, b[1] - 0.16), (b[0], z0, b[1] - 0.16)],
-                    [(0, 0), (1, 0), (1, 1), (0, 1)],
-                    room.packed(0.5, 0.4, 60),
-                    (0, 0, -1),
-                )
+                z0, z1 = center - 0.20, center + 0.20
+                drop = 0.11
+                soffit = [(a[0], z0, a[1] - drop), (a[0], z1, a[1] - drop), (b[0], z1, b[1] - drop), (b[0], z0, b[1] - drop)]
+                room.mesh['coffer'].quad(soffit, planar_uv(soffit, 1.6), room.packed(0.5, 0.4, 60), (0, 0, -1))
+                # Gilt arris on the room side of the rib.
+                edge = [(a[0], z0, a[1] - drop), (a[0], z1, a[1] - drop), (a[0], z1, a[1] - drop - 0.012), (a[0], z0, a[1] - drop - 0.012)]
+                room.mesh['gilt'].quad(edge, planar_uv(edge, 1.2), room.packed(0.4, 0.02, 40), (-side, 0, 0))
     add_mullions(room, cuts)
     # Close the barrel. Without these lunettes the near end of the vault is a
     # hole onto the black world, which reads as a missing ceiling.
@@ -1377,30 +1435,47 @@ def marble_box(room, x0, x1, y0, y1, z0, z1):
 
 
 def add_bench(room, bench):
-    """Tufted leather banquette on brass feet. Stays inside the collision box."""
+    """Tufted leather banquette. The cushion is one surface of diamonds, not loose pads.
+
+    Everything stays inside the collision box (0.46 × 1.85 × 0.45). The buttons
+    are pulled down far enough to read from the entrance, and the leather is
+    the mid-brown map rather than a near-black slab.
+    """
     x, z, w, l, h = bench['x'], bench['z'], bench['w'] / 2, bench['l'] / 2, bench['h']
     for side in (-1, 1):
         for end in (-1, 1):
             cx = x + side * (w - 0.055)
             cz = z + end * (l - 0.07)
             wood_box(room, cx - 0.03, cx + 0.03, cz - 0.03, cz + 0.03, 0.0, 0.035, 'brass', (1, 1, 1, 1))
-            wood_box(room, cx - 0.018, cx + 0.018, cz - 0.018, cz + 0.018, 0.035, h - 0.14, 'benchWood', (1, 1, 1, 1))
-    wood_box(room, x - w + 0.04, x + w - 0.04, z - l + 0.05, z - l + 0.09, 0.16, h - 0.12, 'benchWood', (1, 1, 1, 1))
-    wood_box(room, x - w + 0.04, x + w - 0.04, z + l - 0.09, z + l - 0.05, 0.16, h - 0.12, 'benchWood', (1, 1, 1, 1))
-    wood_box(room, x - w + 0.02, x - w + 0.055, z - l + 0.08, z + l - 0.08, 0.18, h - 0.12, 'benchWood', (1, 1, 1, 1))
-    # Tufted cushion: a grid of raised cells with a lower button.
-    cols, rows = 3, 8
-    x0, x1 = x - w + 0.025, x + w - 0.025
-    z0, z1 = z - l + 0.04, z + l - 0.04
+            wood_box(room, cx - 0.018, cx + 0.018, cz - 0.018, cz + 0.018, 0.035, h - 0.16, 'benchWood', (1, 1, 1, 1))
+    wood_box(room, x - w + 0.04, x + w - 0.04, z - l + 0.05, z - l + 0.09, 0.16, h - 0.14, 'benchWood', (1, 1, 1, 1))
+    wood_box(room, x - w + 0.04, x + w - 0.04, z + l - 0.09, z + l - 0.05, 0.16, h - 0.14, 'benchWood', (1, 1, 1, 1))
+    wood_box(room, x - w + 0.02, x - w + 0.055, z - l + 0.08, z + l - 0.08, 0.18, h - 0.14, 'benchWood', (1, 1, 1, 1))
+    # Solid cushion, then the tufted top sitting on it so the diamonds share edges.
+    wood_box(room, x - w + 0.02, x + w - 0.02, z - l + 0.03, z + l - 0.03, h - 0.16, h - 0.09, 'benchSeat', (1, 1, 1, 1))
+    cols, rows = 2, 7
+    x0, x1 = x - w + 0.02, x + w - 0.02
+    z0, z1 = z - l + 0.03, z + l - 0.03
+    peak, dip = h - 0.012, h - 0.078
     for col in range(cols):
         for row in range(rows):
             ax = x0 + (x1 - x0) * col / cols
             bx = x0 + (x1 - x0) * (col + 1) / cols
             az = z0 + (z1 - z0) * row / rows
             bz = z0 + (z1 - z0) * (row + 1) / rows
-            pad = 0.008
-            wood_box(room, ax + pad, bx - pad, az + pad, bz - pad, h - 0.11, h - 0.035, 'benchSeat', (0.92, 0.92, 0.92, 1))
-            wood_box(room, (ax + bx) / 2 - 0.012, (ax + bx) / 2 + 0.012, (az + bz) / 2 - 0.012, (az + bz) / 2 + 0.012, h - 0.11, h - 0.055, 'brass', (0.7, 0.7, 0.7, 1))
+            cx, cz = (ax + bx) / 2, (az + bz) / 2
+            corners = [(ax, az, peak), (bx, az, peak), (bx, bz, peak), (ax, bz, peak)]
+            button = (cx, cz, dip)
+            for i in range(4):
+                a, b = corners[i], corners[(i + 1) % 4]
+                quad = [a, b, button, button]
+                # A zero-area quad is skipped. Use a short edge at the button instead.
+                quad = [a, b, (b[0] * 0.2 + cx * 0.8, b[1] * 0.2 + cz * 0.8, dip), (a[0] * 0.2 + cx * 0.8, a[1] * 0.2 + cz * 0.8, dip)]
+                normal = unit(cross(sub(quad[1], quad[0]), sub(quad[2], quad[0])))
+                if normal[2] < 0:
+                    normal = tuple(-c for c in normal)
+                room.mesh['benchSeat'].quad(quad, planar_uv(quad, 0.8), room.packed(0.2, 0.25, 40), normal)
+            wood_box(room, cx - 0.01, cx + 0.01, cz - 0.01, cz + 0.01, dip - 0.004, dip + 0.004, 'brass', (0.85, 0.85, 0.85, 1))
 
 
 def wood_box(room, x0, x1, y0, y1, z0, z1, material, tint=(1, 1, 1, 1)):
@@ -1562,6 +1637,28 @@ def denoise_image(image):
     return True
 
 
+def neutralize_lightmap(image):
+    """Store luminance only.
+
+    The diffuse colour pass is already off, but the indirect pass still carries
+    the red wall and the 3000 K picture lights. Multiplied again by the pompeian
+    albedo that orange cast is what turned the walls crimson and the oak orange.
+    The albedo, not the lightmap, is what should carry the colour.
+    """
+    try:
+        import numpy as np
+    except ImportError:
+        print('numpy missing, lightmap left coloured')
+        return
+    flat = np.array(image.pixels[:], dtype=np.float32).reshape(-1, 4)
+    luma = 0.2126 * flat[:, 0] + 0.7152 * flat[:, 1] + 0.0722 * flat[:, 2]
+    flat[:, 0] = luma
+    flat[:, 1] = luma
+    flat[:, 2] = luma
+    image.pixels.foreach_set(flat.reshape(-1))
+    print('lightmap neutralized', float(luma.min()), float(np.median(luma)), float(luma.max()))
+
+
 def bake(layout):
     scene = bpy.context.scene
     scene.cycles.samples = 48
@@ -1590,28 +1687,32 @@ def bake(layout):
     scene.render.bake.use_pass_color = False
     scene.render.bake.margin = 16
     scene.render.bake.target = 'IMAGE_TEXTURES'
-    print('baking diffuse GI…')
-    bpy.ops.object.bake(type='DIFFUSE')
-    denoise_image(image)
-    try:
-        import numpy as np
-        samples = np.array(image.pixels[:], dtype=np.float32)
-        rgb = samples.reshape(-1, 4)[:, :3]
-        print('lightmap min/p50/p95/max', float(rgb.min()), float(np.median(rgb)), float(np.percentile(rgb, 95)), float(rgb.max()))
-    except Exception as error:
-        print('lightmap stats skipped', error)
-    hdr = ASSETS / 'lightmap.hdr'
-    image.filepath_raw = str(hdr)
-    image.file_format = 'HDR'
-    image.save()
-    print('saved', hdr, hdr.stat().st_size)
-    mobile = image.copy()
-    mobile.scale(2048, 2048)
-    mobile_path = ASSETS / 'lightmap-mobile.hdr'
-    mobile.filepath_raw = str(mobile_path)
-    mobile.file_format = 'HDR'
-    mobile.save()
-    print('saved', mobile_path, mobile_path.stat().st_size)
+    if os.environ.get('TEMOIN_MESH_ONLY') == '1':
+        print('mesh only; keeping the neutralized lightmap')
+    else:
+        print('baking diffuse GI…')
+        bpy.ops.object.bake(type='DIFFUSE')
+        denoise_image(image)
+        neutralize_lightmap(image)
+        try:
+            import numpy as np
+            samples = np.array(image.pixels[:], dtype=np.float32)
+            rgb = samples.reshape(-1, 4)[:, :3]
+            print('lightmap min/p50/p95/max', float(rgb.min()), float(np.median(rgb)), float(np.percentile(rgb, 95)), float(rgb.max()))
+        except Exception as error:
+            print('lightmap stats skipped', error)
+        hdr = ASSETS / 'lightmap.hdr'
+        image.filepath_raw = str(hdr)
+        image.file_format = 'HDR'
+        image.save()
+        print('saved', hdr, hdr.stat().st_size)
+        mobile = image.copy()
+        mobile.scale(2048, 2048)
+        mobile_path = ASSETS / 'lightmap-mobile.hdr'
+        mobile.filepath_raw = str(mobile_path)
+        mobile.file_format = 'HDR'
+        mobile.save()
+        print('saved', mobile_path, mobile_path.stat().st_size)
     shell = bpy.data.objects.get('floorShell')
     if shell:
         bpy.data.objects.remove(shell, do_unlink=True)
@@ -1700,6 +1801,15 @@ def main():
         bpy.context.scene.camera.data.type = 'ORTHO'
         bpy.context.scene.camera.data.ortho_scale = 4.2
         render_to(Path('/tmp/salle-preview/pattern.png'), 4, 480, 480)
+        return
+    if '--uvcheck' in args:
+        coffer = bpy.data.objects['coffer']
+        uv = coffer.data.uv_layers['Lightmap'].data
+        us = [loop.uv[0] for loop in uv]
+        vs = [loop.uv[1] for loop in uv]
+        print(f'coffer polys {len(coffer.data.polygons)} uv u {min(us):.3f}-{max(us):.3f} v {min(vs):.3f}-{max(vs):.3f}')
+        downs = sum(1 for p in coffer.data.polygons if p.normal.z < -0.2)
+        print(f'coffer faces down {downs} of {len(coffer.data.polygons)}')
         return
     if '--bake' in args:
         bake(layout)

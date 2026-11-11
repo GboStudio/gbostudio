@@ -59,7 +59,9 @@ function loadTexture(url, colorSpace) {
 }
 
 function prepareLightmap(texture) {
-  texture.colorSpace = THREE.LinearSRGBColorSpace;
+  // Irradiance is linear. NoColorSpace keeps the GPU from applying an sRGB decode.
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.needsUpdate = true;
   texture.generateMipmaps = false;
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
@@ -203,6 +205,26 @@ function applyLibrary(root, library, lightmap) {
       const gain = name === 'artwork' ? 1.45 : 1.0;
       material.lightMapIntensity = Math.PI * lightScale * gain;
     }
+    if (name === 'coffer') {
+      // The vault island of the lightmap is unlit (the laylight does not see
+      // those faces), which turned the cream plaster brown. Light the plaster
+      // from the laylight directly, and darken the reveal walls so the recess reads.
+      const sky = new THREE.DataTexture(new Uint8Array([168, 168, 168, 255]), 1, 1);
+      sky.colorSpace = THREE.NoColorSpace;
+      sky.needsUpdate = true;
+      material.lightMap = sky;
+      material.lightMapIntensity = Math.PI * 1.05;
+      const colors = object.geometry.attributes.color;
+      const normals = object.geometry.attributes.normal;
+      if (colors && normals) {
+        for (let i = 0; i < normals.count; i += 1) {
+          const down = Math.max(0, -normals.getY(i));
+          const shade = 0.38 + 0.62 * down;
+          colors.setXYZW(i, shade, shade, shade, 1);
+        }
+        colors.needsUpdate = true;
+      }
+    }
     object.material = material;
     object.castShadow = !mobile && (name === 'sculpture');
     object.receiveShadow = !mobile && (name === 'parquet' || name === 'marble');
@@ -271,7 +293,7 @@ function goldRoughness() {
   }
   context.putImageData(pixels, 0, 0);
   const texture = new THREE.CanvasTexture(plate);
-  texture.colorSpace = THREE.LinearSRGBColorSpace;
+  texture.colorSpace = THREE.NoColorSpace;
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(6, 6);
   return texture;
@@ -478,7 +500,7 @@ if (matchMedia('(pointer:coarse)').matches) {
 }
 v5.enter();
 
-let lightScale = 1;
+let lightScale = 1.35;
 const report = {
   tier,
   ready: false,
@@ -490,18 +512,24 @@ const report = {
 };
 window.__SALLE_TEMOIN__ = report;
 
+function tagColorSpace(texture, colorSpace) {
+  // KTX2Loader picks a space from the file's transfer function. Override it
+  // and reupload: albedo is sRGB, normals / roughness / AO are non-color data.
+  texture.colorSpace = colorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 async function loadSurface(file, colorSpace) {
   if (mobile && (file.includes('-nor.') || file.includes('-rough.'))) {
     const flat = file.includes('-nor.') ? [128, 128, 255, 255] : [210, 210, 210, 255];
     const texture = new THREE.DataTexture(new Uint8Array(flat), 1, 1);
-    texture.colorSpace = colorSpace;
-    texture.needsUpdate = true;
+    tagColorSpace(texture, colorSpace);
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
     return texture;
   }
   try {
-    const texture = await ktx2.loadAsync(ASSET + 'pbr/' + file.replace(/\.jpg$/, '.ktx2'));
-    texture.colorSpace = colorSpace;
+    const texture = tagColorSpace(await ktx2.loadAsync(ASSET + 'pbr/' + file.replace(/\.jpg$/, '.ktx2')), colorSpace);
     texture.anisotropy = mobile ? 4 : 8;
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
     texture.generateMipmaps = true;
@@ -524,22 +552,23 @@ async function loadSurface(file, colorSpace) {
 }
 
 try {
-  const [oakA, oakR, oakN, plasterA, plasterR, plasterN, pompeianA, damaskN, giltN, marbleA, marbleR, marbleN, leatherA, leatherR, leatherN, lightmap, gltf, atlas, heroes] = await Promise.all([
+  const [oakA, oakR, oakN, plasterA, plasterR, plasterN, pompeianA, damaskN, giltN, marbleA, marbleR, marbleN, leatherA, leatherR, leatherN, cofferA, lightmap, gltf, atlas, heroes] = await Promise.all([
     loadSurface('oak-diff.jpg', THREE.SRGBColorSpace),
-    loadSurface('oak-rough.jpg', THREE.LinearSRGBColorSpace),
-    loadSurface('oak-nor.jpg', THREE.LinearSRGBColorSpace),
+    loadSurface('oak-rough.jpg', THREE.NoColorSpace),
+    loadSurface('oak-nor.jpg', THREE.NoColorSpace),
     loadSurface('plaster-diff.jpg', THREE.SRGBColorSpace),
-    loadSurface('plaster-rough.jpg', THREE.LinearSRGBColorSpace),
-    loadSurface('plaster-nor.jpg', THREE.LinearSRGBColorSpace),
+    loadSurface('plaster-rough.jpg', THREE.NoColorSpace),
+    loadSurface('plaster-nor.jpg', THREE.NoColorSpace),
     loadSurface('pompeian-diff.jpg', THREE.SRGBColorSpace),
-    loadSurface('damask-nor.jpg', THREE.LinearSRGBColorSpace),
-    loadSurface('gilt-nor.jpg', THREE.LinearSRGBColorSpace),
+    loadSurface('damask-nor.jpg', THREE.NoColorSpace),
+    loadSurface('gilt-nor.jpg', THREE.NoColorSpace),
     loadSurface('marble-diff.jpg', THREE.SRGBColorSpace),
-    loadSurface('marble-rough.jpg', THREE.LinearSRGBColorSpace),
-    loadSurface('marble-nor.jpg', THREE.LinearSRGBColorSpace),
+    loadSurface('marble-rough.jpg', THREE.NoColorSpace),
+    loadSurface('marble-nor.jpg', THREE.NoColorSpace),
     loadSurface('leather-diff.jpg', THREE.SRGBColorSpace),
-    loadSurface('leather-rough.jpg', THREE.LinearSRGBColorSpace),
-    loadSurface('leather-nor.jpg', THREE.LinearSRGBColorSpace),
+    loadSurface('leather-rough.jpg', THREE.NoColorSpace),
+    loadSurface('leather-nor.jpg', THREE.NoColorSpace),
+    loadSurface('coffer-diff.jpg', THREE.SRGBColorSpace),
     loadLightmap(),
     gltfLoader.loadAsync(ASSET + 'salle-temoin.glb'),
     paintingAtlas(layout.frames),
@@ -549,17 +578,21 @@ try {
   const library = {
     parquet: new THREE.MeshPhysicalMaterial({
       map: oakA, roughnessMap: oakR, normalMap: oakN, normalScale: new THREE.Vector2(0.7, 0.7),
-      roughness: 1, metalness: 0, clearcoat: mobile ? 0.05 : 0.18, clearcoatRoughness: 0.38,
-      envMapIntensity: mobile ? 0.22 : 0.45,
+      roughness: 1, metalness: 0, clearcoat: mobile ? 0.04 : 0.14, clearcoatRoughness: 0.42,
+      envMapIntensity: mobile ? 0.12 : 0.22,
     }),
     stone: new THREE.MeshStandardMaterial({
       map: plasterA, roughnessMap: plasterR, normalMap: plasterN, normalScale: wallNormal,
-      roughness: 1, metalness: 0, envMapIntensity: 0.16,
+      roughness: 1, metalness: 0, envMapIntensity: 0.08,
     }),
     pompeian: new THREE.MeshPhysicalMaterial({
-      map: pompeianA, roughnessMap: plasterR, normalMap: damaskN, normalScale: new THREE.Vector2(0.45, 0.45),
-      roughness: 0.82, metalness: 0, sheen: 0.55, sheenColor: new THREE.Color('#7A2E2E'), sheenRoughness: 0.42,
-      envMapIntensity: 0.16,
+      map: pompeianA, roughnessMap: plasterR, normalMap: damaskN, normalScale: new THREE.Vector2(0.28, 0.28),
+      roughness: 0.86, metalness: 0, sheen: 0.12, sheenColor: new THREE.Color('#7A2E2E'), sheenRoughness: 0.6,
+      envMapIntensity: 0.08,
+    }),
+    coffer: new THREE.MeshStandardMaterial({
+      map: cofferA, roughnessMap: plasterR, normalMap: plasterN, normalScale: new THREE.Vector2(0.12, 0.12),
+      color: 0xffffff, roughness: 0.94, metalness: 0, envMapIntensity: 0.06,
     }),
     gilt: new THREE.MeshStandardMaterial({
       color: 0xe8c56b, roughness: 0.48, roughnessMap: goldRoughness(), metalness: 1,
@@ -617,8 +650,9 @@ try {
   bringCanvasesForward(gltf.scene);
   addPictureLights();
   for (const texture of [oakA, oakR, oakN, giltN]) unmirror(texture);
-  unmirror(damaskN, {rx: 8, ry: 8, ox: 0, oy: 0});
-  for (const texture of [plasterA, plasterR, plasterN, pompeianA, marbleA, marbleR, marbleN, leatherA, leatherR, leatherN]) {
+  // One damask motif per UV tile. The wall UV is 55 cm, so repeat 8 was a 7 cm diamond.
+  unmirror(damaskN, {rx: 1, ry: 1, ox: 0, oy: 0});
+  for (const texture of [plasterA, plasterR, plasterN, pompeianA, cofferA, marbleA, marbleR, marbleN, leatherA, leatherR, leatherN]) {
     unmirror(texture);
   }
   scene.add(gltf.scene);
@@ -630,7 +664,7 @@ try {
       probe.position.set(0, 2.15, layout.room.length * 0.42);
       probe.update(renderer, scene);
       scene.environment = pmrem.fromCubemap(cubeTarget.texture).texture;
-      scene.environmentIntensity = 0.7;
+      scene.environmentIntensity = 0.32;
       cubeTarget.dispose();
     } catch (error) {
       console.warn('reflection probe skipped', error);
