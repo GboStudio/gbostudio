@@ -205,12 +205,12 @@ function applyLibrary(root, library, lightmap) {
     const material = base.clone();
     material.name = name;
     const uv = object.geometry?.attributes?.uv1 || object.geometry?.attributes?.uv2;
-    const lit = uv && !['laylight', 'bulb', 'iron', 'gilt'].includes(name);
+    const lit = uv && !['laylight', 'bulb', 'iron', 'gilt', 'skirting'].includes(name);
     if (lit) {
       object.geometry.setAttribute('uv2', uv);
       material.lightMap = lightmap;
       material.lightMap.channel = 2;
-      const gain = name === 'parquet' ? 1.05 : name === 'bordeaux' ? 1.15 : name === 'artwork' ? 1.15 : name === 'ceiling' ? 4.2 : name === 'stone' ? 1.7 : 1;
+      const gain = name === 'parquet' ? 0.92 : name === 'bordeaux' ? 2.15 : name === 'artwork' ? 1.2 : name === 'ceiling' ? 5.5 : name === 'stone' ? 2.1 : 1;
       material.lightMapIntensity = Math.PI * LIGHT_GAIN * gain;
     }
     object.material = material;
@@ -236,7 +236,7 @@ function blocked(x, z) {
 const state = {
   x: 0,
   y: layout.room.eye,
-  z: 1.05,
+  z: layout.room.cameraZ,
   yaw: 0,
   pitch: 0,
   fov: mobile ? layout.room.mobileFov : layout.room.fov,
@@ -245,8 +245,8 @@ const state = {
 };
 
 const shots = {
-  axis: {x: 0, y: layout.room.eye, z: 1.05, yaw: 0, pitch: 0, fov: layout.room.fov},
-  mobile: {x: 0, y: layout.room.eye, z: 1.05, yaw: 0, pitch: 0, fov: layout.room.mobileFov},
+  axis: {x: 0, y: layout.room.eye, z: layout.room.cameraZ, yaw: 0, pitch: -0.02, fov: layout.room.fov},
+  mobile: {x: 0, y: layout.room.eye, z: layout.room.cameraZ, yaw: 0, pitch: -0.02, fov: layout.room.mobileFov},
   frame: {x: -2.05, y: 1.64, z: 4.65, yaw: Math.PI / 2, pitch: 0.02, fov: 36},
   ceiling: {x: 0, y: 1.58, z: 2.8, yaw: 0, pitch: 0.92, fov: 48},
   floor: {x: 0.15, y: 0.62, z: 2.15, yaw: 0.04, pitch: -0.82, fov: 46},
@@ -418,10 +418,17 @@ try {
     }),
     ceiling: new THREE.MeshStandardMaterial({
       map: stoneA,
-      color: new THREE.Color(layout.room.ceilingColor),
-      roughness: 0.9,
+      color: new THREE.Color('#F3E6D2'),
+      emissive: new THREE.Color('#E8D4B4'),
+      emissiveIntensity: 0.2,
+      roughness: 0.88,
       metalness: 0,
-      envMapIntensity: 0.08,
+      envMapIntensity: 0.06,
+    }),
+    skirting: new THREE.MeshStandardMaterial({
+      color: 0x3c3832,
+      roughness: 0.78,
+      metalness: 0.04,
     }),
     plaster: new THREE.MeshStandardMaterial({
       color: new THREE.Color(layout.room.endColor),
@@ -433,6 +440,8 @@ try {
     }),
     gilt: new THREE.MeshStandardMaterial({
       color: 0xf0d48a,
+      emissive: 0xd4b36a,
+      emissiveIntensity: 0.22,
       roughness: 0.3,
       metalness: 1,
       normalMap: giltN,
@@ -476,7 +485,7 @@ try {
     map: sky,
     emissiveMap: sky,
     emissive: 0xffffff,
-    emissiveIntensity: mobile ? 1.15 : 1.45,
+    emissiveIntensity: mobile ? 1.8 : 2.4,
     roughness: 0.82,
     metalness: 0,
     side: THREE.DoubleSide,
@@ -508,8 +517,8 @@ try {
   scene.add(gltf.scene);
   const floorSpan = layout.room.length - layout.room.backZ;
   const reflector = new Reflector(new THREE.PlaneGeometry(layout.room.width, floorSpan), {
-    textureWidth: mobile ? 256 : 512,
-    textureHeight: mobile ? 256 : 512,
+    textureWidth: mobile ? 160 : 320,
+    textureHeight: mobile ? 160 : 320,
     clipBias: 0.003,
     color: 0xfff1e2,
   });
@@ -517,13 +526,23 @@ try {
   reflector.position.set(0, 0.018, layout.room.backZ + floorSpan / 2);
   reflector.material.transparent = true;
   reflector.material.depthWrite = false;
-  reflector.material.fragmentShader = reflector.material.fragmentShader.replace(
-    'gl_FragColor = vec4( blendOverlay( base.rgb, color ), 1.0 );',
-    'gl_FragColor = vec4( base.rgb * color, 0.18 );',
-  );
+  reflector.material.uniforms.uResolution = {value: new THREE.Vector2(1920, 1080)};
+  reflector.material.fragmentShader = reflector.material.fragmentShader
+    .replace('uniform vec3 color;', 'uniform vec3 color;\nuniform vec2 uResolution;')
+    .replace(
+      'gl_FragColor = vec4( blendOverlay( base.rgb, color ), 1.0 );',
+      `float y = gl_FragCoord.y / max(uResolution.y, 1.0);
+       float fres = smoothstep(0.02, 0.62, y);
+       gl_FragColor = vec4(base.rgb * color, mix(0.05, 0.36, fres));`,
+    );
+  const fitReflector = () => {
+    reflector.material.uniforms.uResolution.value.set(renderer.domElement.width, renderer.domElement.height);
+  };
+  fitReflector();
+  window.addEventListener('resize', fitReflector);
   scene.add(reflector);
   for (const frame of layout.frames) {
-    const spot = new THREE.SpotLight(0xffc49a, mobile ? 6 : 14, 4.2, 0.42, 0.92, 2);
+    const spot = new THREE.SpotLight(0xffd7a4, mobile ? 22 : 48, 5.5, 0.58, 0.95, 1.6);
     const side = frame.wall === 'left' || frame.wall === 'endLeft' ? 1 : frame.wall === 'right' || frame.wall === 'endRight' ? -1 : 0;
     spot.position.set(frame.x + side * 0.9, 4.25, frame.wall === 'north' ? frame.z - 0.75 : frame.z);
     spot.target.position.set(frame.x, frame.y, frame.z);

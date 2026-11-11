@@ -308,6 +308,7 @@ class Room:
             'parquet': new_material('parquet', hex_color('#A07850'), 0.42),
             'bordeaux': new_material('bordeaux', hex_color(colors['wallColor']), 0.9),
             'stone': new_material('stone', hex_color(colors['stoneColor']), 0.72),
+            'skirting': new_material('skirting', hex_color('#4A453E'), 0.7),
             'plaster': new_material('plaster', hex_color(colors['endColor']), 0.84),
             'gilt': new_material('gilt', hex_color('#C6A15A'), 0.38, 1.0),
             'liner': new_material('liner', hex_color('#E6D3B4'), 0.7),
@@ -403,6 +404,17 @@ class Room:
         coords = [(-self.half, yb, 0), (-self.half, yb, z1), (self.half, yb, z1), (self.half, yb, 0)]
         luvs = self.pack.for_quad(coords)
         self.add_wall_quad('bordeaux', coords, luvs, (0, 1, 0))
+        # Dark stone skirting, proud of the wall so it reads as a baseboard.
+        for x_wall, inward in ((-self.half, 1), (self.half, -1)):
+            self.add_box(
+                'skirting',
+                x_wall,
+                x_wall + inward * 0.045,
+                self.back,
+                self.hall,
+                0.0,
+                0.16,
+            )
 
     def add_end_room(self):
         ph = self.room['portalHalf']
@@ -517,6 +529,16 @@ class Room:
                 # Plinth.
                 self.add_box('stone', x_wall + inward * 0.004, x_wall + inward * (depth + 0.08), y0 - 0.06, y1 + 0.06, 0.008, 0.28)
                 self.add_box('stone', x_wall + inward * 0.004, x_wall + inward * depth, y0, y1, 0.28, self.cornice - 0.42)
+                # A narrower inner panel so the shaft reads as layered stone, not a plain post.
+                self.add_box(
+                    'stone',
+                    x_wall + inward * (depth * 0.35),
+                    x_wall + inward * (depth + 0.025),
+                    y0 + width * 0.12,
+                    y1 - width * 0.12,
+                    0.42,
+                    self.cornice - 0.55,
+                )
                 base = self.cornice - 0.42
                 courses = [(0.06, 0.10, 0.04), (0.08, 0.16, 0.08), (0.05, 0.22, 0.12)]
                 z = base

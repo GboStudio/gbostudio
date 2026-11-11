@@ -6,7 +6,7 @@
     "endDepth": 5,
     "length": 18.4,
     "eye": 1.6,
-    "exposure": 0.96,
+    "exposure": 1.12,
     "wallColor": "#4A1E1F",
     "stoneColor": "#E4D8C8",
     "endColor": "#F7F1E8",
@@ -14,10 +14,10 @@
     "corniceY": 4.52,
     "soffitY": 5.02,
     "skylightY": 5.58,
-    "skylightHalf": 1.18,
+    "skylightHalf": 1.65,
     "skylightZ0": 1.15,
     "skylightZ1": 12.55,
-    "portalHalf": 1.62,
+    "portalHalf": 1.05,
     "portalHeight": 3.42,
     "daylightK": 4700,
     "pictureK": 3000,
@@ -26,8 +26,9 @@
     "endPower": 2200,
     "lightmapSize": 2048,
     "floorTileM": 5.4,
-    "fov": 44,
-    "mobileFov": 78
+    "fov": 56,
+    "mobileFov": 70,
+    "cameraZ": 1.15
   },
   "frames": [
     {
@@ -35,23 +36,23 @@
       "wall": "left",
       "x": -3.6,
       "y": 1.7,
-      "z": 4.65,
-      "artWidth": 1.58,
-      "artHeight": 1.08,
-      "moulding": 0.175,
-      "width": 1.9300000000000002,
-      "height": 1.4300000000000002,
+      "z": 7.55,
+      "artWidth": 1.48,
+      "artHeight": 1.02,
+      "moulding": 0.16,
+      "width": 1.8,
+      "height": 1.34,
       "normal": 1,
       "painting": "pd/painting-3.webp",
       "hero": true,
       "pictureLight": true
     },
     {
-      "id": "left-7.15",
+      "id": "left-9.15",
       "wall": "left",
       "x": -3.6,
       "y": 1.7,
-      "z": 7.15,
+      "z": 9.15,
       "artWidth": 0.56,
       "artHeight": 0.72,
       "moulding": 0.09,
@@ -63,11 +64,11 @@
       "pictureLight": true
     },
     {
-      "id": "left-8.4",
+      "id": "left-10.05",
       "wall": "left",
       "x": -3.6,
       "y": 1.7,
-      "z": 8.4,
+      "z": 10.05,
       "artWidth": 0.56,
       "artHeight": 0.72,
       "moulding": 0.09,
@@ -79,11 +80,11 @@
       "pictureLight": true
     },
     {
-      "id": "left-9.65",
+      "id": "left-10.95",
       "wall": "left",
       "x": -3.6,
       "y": 1.7,
-      "z": 9.65,
+      "z": 10.95,
       "artWidth": 0.56,
       "artHeight": 0.72,
       "moulding": 0.09,
@@ -99,7 +100,7 @@
       "wall": "left",
       "x": -3.6,
       "y": 1.7,
-      "z": 11.85,
+      "z": 12.45,
       "artWidth": 0.5,
       "artHeight": 0.64,
       "moulding": 0.055,
@@ -115,23 +116,23 @@
       "wall": "right",
       "x": 3.6,
       "y": 1.7,
-      "z": 4.65,
-      "artWidth": 1.05,
-      "artHeight": 1.38,
+      "z": 7.55,
+      "artWidth": 1.42,
+      "artHeight": 0.98,
       "moulding": 0.16,
-      "width": 1.37,
-      "height": 1.7,
+      "width": 1.74,
+      "height": 1.3,
       "normal": -1,
-      "painting": "pd/painting-0.webp",
+      "painting": "pd/painting-6.webp",
       "hero": true,
       "pictureLight": true
     },
     {
-      "id": "right-7.15",
+      "id": "right-9.15",
       "wall": "right",
       "x": 3.6,
       "y": 1.7,
-      "z": 7.15,
+      "z": 9.15,
       "artWidth": 0.56,
       "artHeight": 0.72,
       "moulding": 0.09,
@@ -143,11 +144,11 @@
       "pictureLight": true
     },
     {
-      "id": "right-8.4",
+      "id": "right-10.05",
       "wall": "right",
       "x": 3.6,
       "y": 1.7,
-      "z": 8.4,
+      "z": 10.05,
       "artWidth": 0.56,
       "artHeight": 0.72,
       "moulding": 0.09,
@@ -159,11 +160,11 @@
       "pictureLight": true
     },
     {
-      "id": "right-9.65",
+      "id": "right-10.95",
       "wall": "right",
       "x": 3.6,
       "y": 1.7,
-      "z": 9.65,
+      "z": 10.95,
       "artWidth": 0.56,
       "artHeight": 0.72,
       "moulding": 0.09,
@@ -179,7 +180,7 @@
       "wall": "right",
       "x": 3.6,
       "y": 1.7,
-      "z": 11.85,
+      "z": 12.45,
       "artWidth": 0.5,
       "artHeight": 0.64,
       "moulding": 0.055,
@@ -193,7 +194,7 @@
     {
       "id": "endLeft",
       "wall": "endLeft",
-      "x": -1.62,
+      "x": -1.05,
       "y": 1.68,
       "z": 14.950000000000001,
       "artWidth": 0.52,
@@ -209,7 +210,7 @@
     {
       "id": "endRight",
       "wall": "endRight",
-      "x": 1.62,
+      "x": 1.05,
       "y": 1.68,
       "z": 14.950000000000001,
       "artWidth": 0.52,
@@ -259,19 +260,14 @@
   ],
   "pilasters": [
     {
-      "z": 2.05,
-      "width": 0.7,
-      "depth": 0.22
+      "z": 5.85,
+      "width": 0.62,
+      "depth": 0.2
     },
     {
-      "z": 6.25,
-      "width": 0.7,
-      "depth": 0.22
-    },
-    {
-      "z": 10.85,
-      "width": 0.7,
-      "depth": 0.22
+      "z": 11.7,
+      "width": 0.62,
+      "depth": 0.2
     }
   ],
   "obstacles": [

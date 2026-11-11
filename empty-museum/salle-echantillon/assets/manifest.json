@@ -7,13 +7,13 @@
     2048,
     2048
   ],
-  "samples": 24,
+  "samples": 20,
   "denoiser": "openimagedenoise",
   "lightmapMode": "luminance",
-  "scale": 0.05926627256159775,
+  "scale": 0.07744537411691024,
   "daylightK": 4700,
   "pictureK": 3000,
-  "exposure": 0.96,
+  "exposure": 1.12,
   "wallColor": "#4A1E1F",
   "sun": false,
   "worldStrength": 0
