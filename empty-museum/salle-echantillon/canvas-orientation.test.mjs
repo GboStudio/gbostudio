@@ -1,6 +1,27 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+
+test('the real-time viewer does not mirror the room', () => {
+  const source = readFileSync(new URL('./viewer.js', import.meta.url), 'utf8');
+  assert.equal(source.includes('scale.z = -1'), false);
+  assert.equal(source.includes('scale.set(-1'), false);
+});
+
+test('Le Dernier Bal is the left-hand frame', () => {
+  const data = readFileSync(new URL('./assets/salle-echantillon.glb', import.meta.url));
+  const jsonLength = data.readUInt32LE(12);
+  const json = JSON.parse(data.subarray(20, 20 + jsonLength).toString('utf8'));
+  const left = json.nodes.find(node => node.name === 'giltframe-left-front');
+  const right = json.nodes.find(node => node.name === 'giltframe-right-front');
+  assert.ok(left && right, 'both front frames are in the glTF');
+  assert.ok(left.translation[0] < -1, 'left frame is on the negative X wall');
+  assert.ok(right.translation[0] > 1, 'right frame is on the positive X wall');
+  const layout = JSON.parse(readFileSync(new URL('./layout.json', import.meta.url), 'utf8'));
+  const hung = layout.frames.find(frame => frame.id === 'left-front');
+  assert.equal(hung.painting, 'cc0/oeuvres/le-dernier-bal.jpg');
+  assert.equal(hung.wall, 'left');
+});
 import {orientationErrors, topBandMatches, wallOf} from '../salle-temoin/canvas-orientation.mjs';
 
 function readGlb(path) {
@@ -43,13 +64,16 @@ function readGlb(path) {
       faces.push(ids.slice(0, 4).map(id => ({
         x: pos[id][0],
         y: pos[id][1],
-        z: -pos[id][2],
+        // The viewer no longer mirrors Z. glTF Z is the world Z.
+        z: pos[id][2],
         u: uv[id][0],
         v: uv[id][1],
       })));
     }
     return faces;
   }
+  const canvases = json.meshes.filter(mesh => mesh.name.startsWith('Canvas_')).flatMap(mesh => quads(mesh.name));
+  if (canvases.length >= 10) return canvases;
   const heroes = json.meshes.filter(mesh => mesh.name.startsWith('Hero_')).flatMap(mesh => quads(mesh.name));
   return [...heroes, ...quads('artwork')];
 }

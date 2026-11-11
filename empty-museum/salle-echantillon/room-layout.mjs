@@ -10,7 +10,7 @@ export const ROOM = {
   endDepth: 5.0,
   length: 18.4,
   eye: 1.6,
-  exposure: 0.98,
+  exposure: 0.78,
   openSky: true,
   wallColor: '#E4E0DA',
   stoneColor: '#E7E4DE',
@@ -42,15 +42,21 @@ function sideFrames(wall) {
   const sign = wall === 'left' ? -1 : 1;
   const x = sign * ROOM.width / 2;
   const normal = -sign;
-  const hang = 1.7;
+  const hang = 1.78;
   const large = wall === 'left'
-    ? {artW: 1.48, artH: 1.02, mould: 0.16, painting: 'pd/painting-3.webp', hero: true}
-    : {artW: 1.42, artH: 0.98, mould: 0.16, painting: 'pd/painting-6.webp', hero: true};
-  const medium = [
-    ['pd/painting-4.webp', 9.15],
-    ['pd/painting-2.webp', 10.05],
-    ['pd/painting-5.webp', 10.95],
-  ];
+    ? {artW: 1.02, artH: 1.36, mould: 0.14, painting: 'cc0/oeuvres/le-dernier-bal.jpg', hero: true}
+    : {artW: 1.02, artH: 1.36, mould: 0.14, painting: 'cc0/oeuvres/le-premier-spectateur.jpg', hero: true};
+  const medium = wall === 'left'
+    ? [
+      ['cc0/oeuvres/kintsugi.jpg', 9.15],
+      ['cc0/oeuvres/le-gamin-de-1987.jpg', 10.05],
+      ['pd/painting-5.webp', 10.95],
+    ]
+    : [
+      ['cc0/oeuvres/lundi-8h12.jpg', 9.15],
+      ['pd/painting-2.webp', 10.05],
+      ['pd/painting-4.webp', 10.95],
+    ];
   const frames = [{
     id: `${wall}-front`,
     wall,
@@ -68,9 +74,9 @@ function sideFrames(wall) {
     pictureLight: true,
   }];
   for (const [painting, z] of medium) {
-    const artW = 0.56;
-    const artH = 0.72;
-    const mould = 0.09;
+    const artW = 0.5;
+    const artH = 0.67;
+    const mould = 0.08;
     frames.push({
       id: `${wall}-${z}`,
       wall,
@@ -88,8 +94,8 @@ function sideFrames(wall) {
       pictureLight: true,
     });
   }
-  const smallW = 0.5;
-  const smallH = 0.64;
+  const smallW = 0.42;
+  const smallH = 0.56;
   const smallM = 0.055;
   frames.push({
     id: `${wall}-far`,

@@ -1,0 +1,56 @@
+{
+  "stopId": "white-room-axis",
+  "camera": [
+    0,
+    1.9,
+    1.6
+  ],
+  "note": "Changer l\u2019image ne demande pas un nouveau rendu. Changer la taille ou le ratio d\u2019un cadre, oui.",
+  "frames": [
+    {
+      "id": "left-front",
+      "slotId": "left-front",
+      "painting": "cc0/oeuvres/le-dernier-bal.jpg",
+      "cornersWorldFromCamera": [
+        [
+          -3.46451,
+          5.233,
+          -0.36022
+        ],
+        [
+          -3.46451,
+          6.0671,
+          -0.36022
+        ],
+        [
+          -3.46451,
+          6.0671,
+          0.70258
+        ],
+        [
+          -3.46451,
+          5.233,
+          0.70258
+        ]
+      ],
+      "cornersEquirectUV": [
+        [
+          0.266489,
+          0.186936
+        ],
+        [
+          0.266489,
+          0.165892
+        ],
+        [
+          0.25,
+          0.167931
+        ],
+        [
+          0.25,
+          0.189111
+        ]
+      ]
+    }
+  ]
+}

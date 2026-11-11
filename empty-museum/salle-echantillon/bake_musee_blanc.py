@@ -20,6 +20,13 @@ from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parent
 ASSETS = ROOT / 'assets'
+CC0 = ASSETS / 'cc0'
+MARBLE_COLOR = CC0 / 'marble-vein.jpg'
+MARBLE_NORMAL = CC0 / 'Marble001_4K-JPG_NormalGL.jpg'
+MARBLE_ROUGH = CC0 / 'Marble001_4K-JPG_Roughness.jpg'
+HDRI = CC0 / 'kloofendal_48d_partly_cloudy_puresky_4k.hdr'
+PAINTINGS = ROOT.parent / 'salle-temoin' / 'assets' / 'paintings'
+ROCK_SOURCES = ['boulder_01', 'rock_07', 'rock_09', 'namaqualand_boulder_03']
 LAYOUT = json.loads((ROOT / 'layout.json').read_text())
 ROOM = LAYOUT['room']
 SIZE = 2048
@@ -171,6 +178,55 @@ def sky_material(sky_path):
     return material
 
 
+def load_image(path, colorspace):
+    image = bpy.data.images.load(str(path))
+    image.colorspace_settings.name = colorspace
+    return image
+
+
+def marble_material(name, roughness, normal_strength, rough_scale=None, metallic=0.0):
+    material = bpy.data.materials.new(name)
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    bsdf = nodes['Principled BSDF']
+    bsdf.inputs['Roughness'].default_value = roughness
+    bsdf.inputs['Metallic'].default_value = metallic
+    if MARBLE_COLOR.exists():
+        color = nodes.new('ShaderNodeTexImage')
+        color.image = load_image(MARBLE_COLOR, 'sRGB')
+        links.new(color.outputs['Color'], bsdf.inputs['Base Color'])
+    if MARBLE_NORMAL.exists() and normal_strength > 0:
+        normal = nodes.new('ShaderNodeTexImage')
+        normal.image = load_image(MARBLE_NORMAL, 'Non-Color')
+        nmap = nodes.new('ShaderNodeNormalMap')
+        nmap.inputs['Strength'].default_value = normal_strength
+        links.new(normal.outputs['Color'], nmap.inputs['Color'])
+        links.new(nmap.outputs['Normal'], bsdf.inputs['Normal'])
+    if rough_scale and MARBLE_ROUGH.exists():
+        rough = nodes.new('ShaderNodeTexImage')
+        rough.image = load_image(MARBLE_ROUGH, 'Non-Color')
+        scale = nodes.new('ShaderNodeMath')
+        scale.operation = 'MULTIPLY'
+        scale.inputs[1].default_value = rough_scale
+        links.new(rough.outputs['Color'], scale.inputs[0])
+        links.new(scale.outputs['Value'], bsdf.inputs['Roughness'])
+    return material
+
+
+def painting_material(index, frame):
+    material = new_material(f'canvas-{index:02d}', (0.45, 0.4, 0.34), 0.55)
+    rel = frame['painting']
+    path = (ASSETS / rel) if rel.startswith('cc0/') else (PAINTINGS / rel)
+    if not path.exists():
+        print('missing painting', path)
+        return material
+    tex = material.node_tree.nodes.new('ShaderNodeTexImage')
+    tex.image = load_image(path, 'sRGB')
+    material.node_tree.links.new(tex.outputs['Color'], material.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
+    return material
+
+
 def new_material(name, color, roughness=0.4, metallic=0.0):
     material = bpy.data.materials.new(name)
     material.use_nodes = True
@@ -201,6 +257,158 @@ def box(accum, pack, x0, x1, y0, y1, z0, z1, uv_scale=1.4):
         accum.quad(coords, uvs, luvs, normal)
 
 
+
+def place_rocks(material):
+    """Scanned CC0 boulders, scaled and repeated, wearing the marble."""
+    sources = []
+    for name in ROCK_SOURCES:
+        path = CC0 / 'rocks' / f'{name}.gltf'
+        if not path.exists():
+            print('missing rock', path)
+            continue
+        before = set(bpy.data.objects)
+        bpy.ops.import_scene.gltf(filepath=str(path))
+        imported = [obj for obj in bpy.data.objects if obj not in before and obj.type == 'MESH']
+        if not imported:
+            print('no mesh in', path)
+            continue
+        bpy.ops.object.select_all(action='DESELECT')
+        for obj in imported:
+            obj.select_set(True)
+        bpy.context.view_layer.objects.active = imported[0]
+        if len(imported) > 1:
+            bpy.ops.object.join()
+        src = bpy.context.view_layer.objects.active
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+        longest = max(src.dimensions)
+        if longest > 0:
+            src.scale = (1.0 / longest, 1.0 / longest, 1.0 / longest)
+            bpy.ops.object.transform_apply(scale=True)
+        src.name = f'src-{name}'
+        src.data.materials.clear()
+        src.data.materials.append(material)
+        src.hide_render = True
+        src.hide_set(True)
+        sources.append(src)
+        print('rock source', src.name, 'faces', len(src.data.polygons))
+    if not sources:
+        raise RuntimeError('no CC0 rocks imported')
+    placements = [
+        (0.05, 7.6, 6.2, 1.35),
+        (-1.15, 6.2, 4.7, 0.72),
+        (1.2, 6.8, 4.1, 0.55),
+        (0.4, 9.0, 7.0, 1.05),
+        (-0.85, 9.6, 5.0, 0.62),
+        (0.95, 10.4, 5.8, 0.82),
+        (-0.25, 11.2, 4.3, 0.42),
+        (1.35, 8.4, 3.5, 0.36),
+        (-1.3, 11.8, 6.4, 0.7),
+        (0.15, 12.8, 5.3, 0.9),
+        (0.75, 13.8, 3.9, 0.48),
+        (-0.55, 7.4, 7.4, 0.4),
+        (0.55, 10.0, 3.3, 0.34),
+        (-1.0, 13.2, 5.6, 0.58),
+        (0.3, 14.8, 6.6, 0.78),
+    ]
+    for index, (rx, ry, rz, radius) in enumerate(placements):
+        src = sources[index % len(sources)]
+        obj = src.copy()
+        obj.data = src.data
+        obj.name = f'rock-{index:02d}'
+        obj.location = (rx, ry, rz)
+        obj.rotation_euler = (index * 0.9, index * 1.3, index * 0.45)
+        obj.scale = (
+            radius * (1.5 + 0.9 * abs(math.sin(index * 1.7))),
+            radius * (1.2 + 1.0 * abs(math.cos(index * 0.8))),
+            radius * (1.4 + 0.8 * abs(math.sin(index * 2.2))),
+        )
+        obj.hide_render = False
+        obj.hide_set(False)
+        bpy.context.scene.collection.objects.link(obj)
+
+
+def apply_grade(exposure):
+    view = bpy.context.scene.view_settings
+    view.view_transform = 'AgX'
+    view.look = 'AgX - Medium High Contrast'
+    view.exposure = exposure
+
+
+def collapse_mesh(obj, target_faces):
+    """One shared low mesh. Instances keep this data; the draw count is faces × copies."""
+    for _ in range(4):
+        faces = len(obj.data.polygons)
+        if faces <= target_faces * 1.15:
+            print('collapse skip', obj.name, faces)
+            return
+        if obj.data.users > 1:
+            obj.data = obj.data.copy()
+        obj.hide_set(False)
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        mod = obj.modifiers.new('Decimate', 'DECIMATE')
+        mod.decimate_type = 'COLLAPSE'
+        ratio = max(0.008, min(1.0, target_faces / faces))
+        mod.ratio = ratio
+        bpy.ops.object.modifier_apply(modifier=mod.name)
+        print('collapsed', obj.name, faces, '->', len(obj.data.polygons), 'ratio', round(ratio, 4))
+        if len(obj.data.polygons) > faces * 0.85:
+            # This mesh stops early. A second, smaller ratio reaches the target.
+            continue
+
+
+def decimate_rocks(target=1200):
+    seen = set()
+    for src in [obj for obj in bpy.data.objects if obj.type == 'MESH' and obj.name.startswith('src-')]:
+        if src.data in seen:
+            continue
+        seen.add(src.data)
+        users = [obj for obj in bpy.data.objects if obj.data == src.data]
+        collapse_mesh(src, int(target))
+        for user in users:
+            user.data = src.data
+        print('rock instances', src.name, len(users), 'faces', len(src.data.polygons))
+
+
+def rock_lightmaps():
+    meshes = []
+    for obj in bpy.data.objects:
+        if obj.type == 'MESH' and obj.name.startswith('src-') and obj.data not in meshes:
+            meshes.append(obj.data)
+    pack = Pack()
+    for mesh in meshes:
+        if not mesh.uv_layers.get('Lightmap'):
+            mesh.uv_layers.new(name='Lightmap')
+        obj = next(o for o in bpy.data.objects if o.data == mesh and o.name.startswith('src-'))
+        obj.hide_set(False)
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        mesh.uv_layers['Lightmap'].active = True
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.uv.smart_project(angle_limit=1.15, island_margin=0.03)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        island = pack.uvs(pack.alloc(80, 160))
+        luv = mesh.uv_layers['Lightmap'].data
+        us = [loop.uv[0] for loop in luv]
+        vs = [loop.uv[1] for loop in luv]
+        minu, maxu = min(us), max(us)
+        minv, maxv = min(vs), max(vs)
+        x, y, w, h = None, None, None, None
+        # island is four corners of the packed rect, in 0-1 of the lightmap.
+        # Scale the smart-projected island into that rect.
+        u0, v0 = island[0]
+        u1, v1 = island[2]
+        for loop in luv:
+            u = 0 if maxu == minu else (loop.uv[0] - minu) / (maxu - minu)
+            v = 0 if maxv == minv else (loop.uv[1] - minv) / (maxv - minv)
+            loop.uv[0] = u0 + u * (u1 - u0)
+            loop.uv[1] = v0 + v * (v1 - v0)
+        obj.hide_set(True)
+
+
 def build():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
@@ -209,68 +417,108 @@ def build():
     scene.cycles.samples = int(os.environ.get('BLANC_SAMPLES', '24'))
     scene.cycles.use_adaptive_sampling = True
     scene.cycles.adaptive_threshold = 0.03
-    scene.cycles.max_bounces = 6
-    scene.cycles.diffuse_bounces = 3
-    scene.cycles.sample_clamp_indirect = 6
-    scene.view_settings.view_transform = 'AgX'
+    scene.cycles.max_bounces = 8
+    scene.cycles.diffuse_bounces = 4
+    scene.cycles.glossy_bounces = 4
+    scene.cycles.volume_bounces = 0
+    scene.cycles.sample_clamp_indirect = 0
+    scene.cycles.caustics_reflective = False
+    scene.cycles.caustics_refractive = False
+    apply_grade(float(os.environ.get('BLANC_EXPOSURE', '0.15')))
     world = bpy.data.worlds.new('Sky')
     scene.world = world
     world.use_nodes = True
-    bg = world.node_tree.nodes['Background']
-    sky_path = ASSETS / 'pbr' / 'sky-dome.jpg'
-    if sky_path.exists():
-        image = bpy.data.images.load(str(sky_path))
-        tex = world.node_tree.nodes.new('ShaderNodeTexEnvironment')
-        tex.image = image
-        world.node_tree.links.new(tex.outputs['Color'], bg.inputs['Color'])
+    nodes = world.node_tree.nodes
+    links = world.node_tree.links
+    bg = nodes['Background']
+    if HDRI.exists():
+        env = nodes.new('ShaderNodeTexEnvironment')
+        env.image = bpy.data.images.load(str(HDRI))
+        for space in ('Linear Rec.709', 'Linear', 'Non-Color'):
+            try:
+                env.image.colorspace_settings.name = space
+                break
+            except TypeError:
+                continue
+        geo = nodes.new('ShaderNodeNewGeometry')
+        if os.environ.get('BLANC_SKY_ROT'):
+            mapping = nodes.new('ShaderNodeMapping')
+            mapping.inputs['Rotation'].default_value[2] = math.radians(float(os.environ['BLANC_SKY_ROT']))
+            links.new(geo.outputs['Incoming'], mapping.inputs['Vector'])
+            links.new(mapping.outputs['Vector'], env.inputs['Vector'])
+        mix = nodes.new('ShaderNodeMixRGB')
+        mix.blend_type = 'MIX'
+        mix.inputs['Fac'].default_value = 0.55
+        mix.inputs['Color2'].default_value = (1.0, 0.985, 0.96, 1)
+        links.new(env.outputs['Color'], mix.inputs['Color1'])
+        links.new(mix.outputs['Color'], bg.inputs['Color'])
     else:
-        bg.inputs['Color'].default_value = (0.85, 0.9, 0.95, 1)
-    bg.inputs['Strength'].default_value = 0.72
+        bg.inputs['Color'].default_value = (0.9, 0.88, 0.82, 1)
+    bg.inputs['Strength'].default_value = float(os.environ.get('BLANC_SKY_STRENGTH', '1.7'))
 
-    white = tuple(srgb_to_linear(c) for c in (0.90, 0.90, 0.88))
     mats = {
-        'marble': new_material('marble', white, 0.32),
-        'floor': new_material('floor', white, 0.08),
-        'gilt': new_material('gilt', tuple(srgb_to_linear(c) for c in (0.86, 0.68, 0.32)), 0.3, 1),
-        'artwork': new_material('artwork', (0.4, 0.32, 0.24), 0.6),
+        'marble': marble_material('marble', 0.34, 0.55, rough_scale=0.42),
+        'floor': marble_material('floor', 0.04, 0.05),
+        'gilt': new_material('gilt', tuple(srgb_to_linear(c) for c in (0.86, 0.68, 0.32)), 0.28, 1),
+        'artwork': new_material('artwork', (0.4, 0.32, 0.24), 0.55),
         'iron': new_material('iron', (0.02, 0.02, 0.02), 0.35, 0.8),
         'bulb': new_material('bulb', kelvin(3000), 0.3),
-        'rock': new_material('rock', white, 0.72),
-        'sky': sky_material(sky_path),
+        'rock': marble_material('rock', 0.72, 0.15),
+        'sky': sky_material(ASSETS / 'pbr' / 'sky-dome.jpg'),
     }
     meshes = {name: Accum(name, material) for name, material in mats.items()}
     pack = Pack()
     half = ROOM['width'] / 2
     back = ROOM['backZ']
     end = ROOM['length'] - 1.2
-    height = 6.4
-    tile = 6.3
+    height = 7.8
+    floor_tile = 3.2
 
     # Floor, open at the far end. No back wall.
     floor = [(-half, back, 0), (half, back, 0), (half, end + 4, 0), (-half, end + 4, 0)]
     meshes['floor'].quad(
         floor,
-        [(c[0] / tile, c[1] / tile) for c in floor],
+        [(c[0] / floor_tile, c[1] / floor_tile) for c in floor],
         [rect_uv('floor', (c[1] - back) / (end + 4 - back), (c[0] + half) / ROOM['width']) for c in floor],
         (0, 0, 1),
     )
 
     # Stepped marble slabs. Adjacent bays sit deeper and mirror the vein, bookmatched.
     pilasters = LAYOUT['pilasters']
-    cuts = [back, 3.4, 6.9, 10.4, end]
+    cuts = [back, 2.4, 5.2, 8.3, 11.4, end]
+    recesses = [0.0, 0.1, 0.0, 0.14, 0.04]
     for index in range(len(cuts) - 1):
         y0, y1 = cuts[index], cuts[index + 1]
-        recess = 0.0 if index % 2 == 0 else 0.26
+        recess = recesses[index]
+        span = max(y1 - y0, 0.01)
         for sign, name in ((-1, 'left'), (1, 'right')):
             x = sign * (half + recess)
             coords = [(x, y0, 0), (x, y1, 0), (x, y1, height), (x, y0, height)]
             if sign > 0:
                 coords = [coords[0], coords[3], coords[2], coords[1]]
             luvs = [rect_uv(name, (c[1] - back) / (end - back), c[2] / height) for c in coords]
-            uvs = [(c[1] / tile, c[2] / tile) for c in coords]
-            if (sign > 0) != (index % 2 == 1):
-                uvs = [(-u, v) for u, v in uvs]
+            # One photographed tile per slab, mirrored on the next slab (bookmatch).
+            uvs = []
+            for corner in coords:
+                # A narrow vertical strip of the scan, stretched across the slab, mirrored on the next one.
+                u = 0.18 + 0.22 * (corner[1] - y0) / span
+                if index % 2 == 1:
+                    u = 0.58 - (u - 0.18)
+                v = corner[2] / height
+                uvs.append((u, v))
             meshes['marble'].quad(coords, uvs, luvs, (-sign, 0, 0))
+        # Thin joint, a few millimetres deep, so the slabs read as separate stones.
+        if index < len(cuts) - 2:
+            y = y1
+            for sign in (-1, 1):
+                x_face = sign * (half + recess - 0.012)
+                coords = [
+                    (x_face, y - 0.008, 0),
+                    (x_face, y + 0.008, 0),
+                    (x_face, y + 0.008, height),
+                    (x_face, y - 0.008, height),
+                ]
+                meshes['marble'].quad(coords, [(0, 0), (0.02, 0), (0.02, 1), (0, 1)], pack.for_quad(coords), (-sign, 0, 0))
         # Return wall of the step, so the offset reads as a real slab.
         if recess:
             y = y0
@@ -315,7 +563,7 @@ def build():
     # Frames. Wider gilt profile. Layout is in Three.js space (x, up, depth).
     heroes = []
     nonhero = 0
-    profile = [0.0, 0.018, 0.046, 0.028, 0.07, 0.04, 0.058, 0.02]
+    profile = []
     for frame in LAYOUT['frames']:
         if frame['wall'] not in ('left', 'right'):
             continue
@@ -344,28 +592,18 @@ def build():
         art_y0, art_y1 = y0 + mould, y1 - mould
         art_z0, art_z1 = z0 + mould, z1 - mould
         x_art = x_wall + sign * 0.016
-        # Left wall (negative X, normal toward +X): visitor's right is -Y.
-        uvs = [(1, 0), (0, 0), (0, 1), (1, 1)] if sign > 0 else [(0, 0), (1, 0), (1, 1), (0, 1)]
+        # The viewer keeps glTF axes (no scale.z = -1). On the left wall the
+        # visitor's right is further down the hall, which is the larger Y here.
+        uvs = [(0, 0), (1, 0), (1, 1), (0, 1)] if sign > 0 else [(1, 0), (0, 0), (0, 1), (1, 1)]
         coords = [(x_art, art_y0, art_z0), (x_art, art_y1, art_z0), (x_art, art_y1, art_z1), (x_art, art_y0, art_z1)]
-        if frame['hero']:
-            hero = Accum(f"Hero_{len(heroes):02d}", mats['artwork'])
-            hero.quad(coords, uvs, pack.for_quad(coords), (sign, 0, 0))
-            heroes.append(hero)
-        else:
-            columns = 4
-            column, row = nonhero % columns, nonhero // columns
-            nonhero += 1
-            step = 1 / columns
-            pad = 0.01
-            u0, v0 = column * step + pad, row * step + pad
-            u1, v1 = (column + 1) * step - pad, (row + 1) * step - pad
-            mapped = [(u0 + u * (u1 - u0), v0 + v * (v1 - v0)) for u, v in uvs]
-            meshes['artwork'].quad(coords, mapped, pack.for_quad(coords), (sign, 0, 0))
+        canvas = Accum(f"Canvas_{len(heroes):02d}", painting_material(len(heroes), frame))
+        canvas.quad(coords, uvs, pack.for_quad(coords), (sign, 0, 0))
+        heroes.append(canvas)
         # Spot aimed at the marble around the frame.
         spot = bpy.data.lights.new(f"spot-{frame['id']}", 'SPOT')
-        spot.energy = 140
+        spot.energy = 220
         spot.color = kelvin(3000)
-        spot.spot_size = math.radians(58)
+        spot.spot_size = math.radians(52)
         spot.spot_blend = 0.85
         spot.shadow_soft_size = 0.25
         obj = bpy.data.objects.new(f"spot-{frame['id']}", spot)
@@ -386,72 +624,7 @@ def build():
         hx = frame['x'] + sign * 0.42
         box(meshes['iron'], pack, hx - 0.045, hx + 0.045, frame['z'] - 0.04, frame['z'] + 0.04, height - 0.58, height - 0.36)
 
-    # Rough floating blocks. Displaced, not smooth primitives.
-    # (x, depth, height, radius) in Blender space. About fifteen, along the axis.
-    rocks = [
-        (0.15, 8.4, 7.6, 1.28),
-        (-0.85, 6.1, 6.2, 0.82),
-        (1.05, 6.8, 5.2, 0.66),
-        (0.35, 10.6, 8.5, 1.12),
-        (-1.15, 11.0, 4.6, 0.52),
-        (0.95, 12.3, 7.0, 0.9),
-        (-0.25, 9.1, 9.1, 0.58),
-        (1.35, 5.2, 4.1, 0.42),
-        (-0.7, 13.4, 6.6, 0.74),
-        (0.45, 14.4, 5.0, 0.4),
-        (-1.25, 7.8, 8.0, 0.48),
-        (0.1, 15.6, 7.4, 1.02),
-        (1.15, 16.1, 4.5, 0.55),
-        (-0.4, 6.6, 9.3, 0.34),
-        (0.65, 11.7, 3.7, 0.46),
-    ]
-    for index, (rx, ry, rz, radius) in enumerate(rocks):
-        center = (rx, ry, rz)
-        bpy.ops.mesh.primitive_cube_add(size=1.0, location=center)
-        rock = bpy.context.active_object
-        rock.name = f'rock-{index:02d}'
-        rock.scale = (
-            radius * (1.25 + 0.4 * math.sin(index * 2.1)),
-            radius * (0.8 + 0.45 * math.cos(index * 1.3)),
-            radius * (1.1 + 0.5 * math.sin(index * 0.7)),
-        )
-        rock.rotation_euler = (index * 0.7, index * 1.1, index * 0.4)
-        bpy.ops.object.transform_apply(scale=True, rotation=True)
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.subdivide(number_cuts=3)
-        bpy.ops.object.mode_set(mode='OBJECT')
-        mesh = rock.data
-        rng = __import__('random').Random(20 + index)
-        for vertex in mesh.vertices:
-            vertex.co += vertex.normal * radius * rng.uniform(-0.05, 0.55)
-            vertex.co.x += rng.uniform(-0.12, 0.12) * radius
-            vertex.co.y += rng.uniform(-0.12, 0.12) * radius
-            vertex.co.z += rng.uniform(-0.12, 0.12) * radius
-        for polygon in mesh.polygons:
-            polygon.use_smooth = False
-        rock.data.materials.append(mats['rock'])
-        if not mesh.uv_layers.get('UVMap'):
-            mesh.uv_layers.new(name='UVMap')
-        mesh.uv_layers.new(name='Lightmap')
-        bm = bmesh.new()
-        bm.from_mesh(mesh)
-        uv = bm.loops.layers.uv[mesh.uv_layers['UVMap'].name]
-        for face in bm.faces:
-            for loop in face.loops:
-                co = loop.vert.co
-                axis = face.normal
-                if abs(axis.z) >= abs(axis.x) and abs(axis.z) >= abs(axis.y):
-                    loop[uv].uv = (co.x * 0.42, co.y * 0.42)
-                elif abs(axis.x) >= abs(axis.y):
-                    loop[uv].uv = (co.y * 0.42, co.z * 0.42)
-                else:
-                    loop[uv].uv = (co.x * 0.42, co.z * 0.42)
-        bm.to_mesh(mesh)
-        bm.free()
-        luv = mesh.uv_layers['Lightmap'].data
-        island = pack.uvs(pack.alloc(28, 28))
-        for loop_index in range(len(luv)):
-            luv[loop_index].uv = island[loop_index % 4]
+    place_rocks(mats['rock'])
 
     # Sky dome, emissive in the viewer, hidden from the bake.
     bpy.ops.mesh.primitive_uv_sphere_add(segments=48, ring_count=24, radius=40, location=(0, end * 0.5, 2))
@@ -467,18 +640,136 @@ def build():
     dome.hide_render = True
 
     sun = bpy.data.lights.new('sun', 'SUN')
-    sun.energy = 2.2
-    sun.color = kelvin(5600)
-    sun.angle = math.radians(14)
+    sun.energy = 16.0
+    sun.color = kelvin(5200)
+    sun.angle = math.radians(2.2)
     sun_obj = bpy.data.objects.new('sun', sun)
-    sun_obj.rotation_euler = (math.radians(38), 0, math.radians(4))
+    # Down the centre axis, slightly from behind the camera, so the shaft falls toward the clouds.
+    sun_obj.rotation_euler = Vector((0.0, 0.5, -1.0)).to_track_quat('-Z', 'Y').to_euler()
     bpy.context.scene.collection.objects.link(sun_obj)
 
     for hero in heroes:
         hero.finish()
     for accum in meshes.values():
         accum.finish(smooth=False)
+    place_fancy_frames()
     return scene
+
+
+def place_fancy_frames():
+    """Ornate gilt frames. The scanned frame keeps its carved border; its canvas takes the painting."""
+    for obj in bpy.data.objects:
+        if obj.name.startswith('Canvas_'):
+            obj.hide_render = True
+    templates = {}
+    for key, filename in (
+        ('ornate', 'fancy_picture_frame_02.gltf'),
+        ('bead', 'fancy_picture_frame_01.gltf'),
+    ):
+        path = CC0 / 'frames' / filename
+        if not path.exists():
+            print('missing frame', path)
+            continue
+        before = set(bpy.data.objects)
+        bpy.ops.import_scene.gltf(filepath=str(path))
+        imported = [obj for obj in bpy.data.objects if obj not in before and obj.type == 'MESH']
+        frame_obj = next((obj for obj in imported if 'canvas' not in obj.name.lower()), None)
+        canvas_src = next((obj for obj in imported if 'canvas' in obj.name.lower()), None)
+        if frame_obj is None:
+            print('no frame mesh', filename)
+            continue
+        if frame_obj.data.materials:
+            bsdf = frame_obj.data.materials[0].node_tree.nodes.get('Principled BSDF')
+            if bsdf:
+                bsdf.inputs['Metallic'].default_value = 1.0
+                bsdf.inputs['Roughness'].default_value = 0.34
+        for piece in (frame_obj, canvas_src):
+            if piece is None:
+                continue
+            bpy.ops.object.select_all(action='DESELECT')
+            piece.hide_set(False)
+            piece.select_set(True)
+            bpy.context.view_layer.objects.active = piece
+            if piece.parent:
+                bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        # The frame texture often carries the opening in its alpha.
+        for material in frame_obj.data.materials:
+            if not material or not material.use_nodes:
+                continue
+            material.blend_method = 'HASHED'
+            try:
+                material.shadow_method = 'HASHED'
+            except Exception:
+                pass
+            bsdf = material.node_tree.nodes.get('Principled BSDF')
+            image = next((node for node in material.node_tree.nodes if node.type == 'TEX_IMAGE' and node.image), None)
+            if bsdf and image:
+                material.node_tree.links.new(image.outputs['Alpha'], bsdf.inputs['Alpha'])
+        print('FRAME', filename, [round(v, 3) for v in frame_obj.dimensions], 'canvas', bool(canvas_src), 'faces', len(frame_obj.data.polygons))
+        collapse_mesh(frame_obj, int(os.environ.get('BLANC_FRAME_FACES', '2500')))
+        if canvas_src and len(canvas_src.data.polygons) > 80:
+            collapse_mesh(canvas_src, 40)
+        frame_obj.hide_render = True
+        frame_obj.hide_set(True)
+        if canvas_src:
+            canvas_src.parent = frame_obj
+            canvas_src.matrix_parent_inverse = frame_obj.matrix_world.inverted()
+            canvas_src.hide_render = True
+            canvas_src.hide_set(True)
+        templates[key] = (frame_obj, canvas_src)
+    if not templates:
+        return
+    for frame in LAYOUT['frames']:
+        if frame['wall'] not in ('left', 'right'):
+            continue
+        src, src_canvas = templates['ornate']
+        obj = src.copy()
+        obj.data = src.data
+        bpy.context.scene.collection.objects.link(obj)
+        obj.hide_render = False
+        obj.hide_set(False)
+        obj.rotation_mode = 'XYZ'
+        sign = 1 if frame['x'] < 0 else -1
+        dims = src.dimensions
+        thin = min(range(3), key=lambda axis: dims[axis])
+        # Broad face onto the wall. Thin axis must end up along world X.
+        if thin == 1:
+            obj.rotation_euler = (0, 0, math.radians(90))
+        elif thin == 2:
+            obj.rotation_euler = (math.radians(90), 0, 0)
+        else:
+            obj.rotation_euler = (0, math.radians(90), 0)
+        if sign < 0:
+            obj.rotation_euler.z += math.pi
+        tall = max(src.dimensions)
+        scale = frame['height'] / tall if tall else 1
+        obj.scale = (scale, scale, scale)
+        depth = min(src.dimensions) * scale
+        obj.location = (frame['x'] + sign * (depth * 0.5 + 0.02), frame['z'], frame['y'])
+        obj.name = f"giltframe-{frame['id']}"
+        if src_canvas is None:
+            continue
+        painted = src_canvas.copy()
+        painted.data = src_canvas.data.copy()
+        painted.parent = obj
+        painted.matrix_parent_inverse = src_canvas.matrix_parent_inverse.copy()
+        bpy.context.scene.collection.objects.link(painted)
+        painted.hide_render = False
+        painted.hide_set(False)
+        painted.name = f"framed-canvas-{frame['id']}"
+        rel = frame['painting']
+        image_path = (ASSETS / rel) if str(rel).startswith('cc0/') else (PAINTINGS / rel)
+        if not image_path.exists() or not painted.data.materials:
+            continue
+        material = painted.data.materials[0].copy()
+        painted.data.materials[0] = material
+        bsdf = material.node_tree.nodes.get('Principled BSDF')
+        tex = material.node_tree.nodes.new('ShaderNodeTexImage')
+        tex.image = load_image(image_path, 'sRGB')
+        if bsdf:
+            material.node_tree.links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])
+            bsdf.inputs['Roughness'].default_value = 0.55
 
 
 def neutralize(image):
@@ -498,6 +789,9 @@ def neutralize(image):
 
 
 def export_glb():
+    for obj in list(bpy.data.objects):
+        if obj.name.startswith('src-') or obj.name.startswith('fancy_picture_frame') or obj.name in ('haze', 'shaft'):
+            bpy.data.objects.remove(obj, do_unlink=True)
     for obj in bpy.context.scene.objects:
         if obj.type == 'MESH' and obj.data.uv_layers.get('UVMap'):
             obj.data.uv_layers['UVMap'].active = True
@@ -531,7 +825,7 @@ def bake():
         if obj.type != 'MESH':
             continue
         has = obj.data.uv_layers.get('Lightmap') is not None and len(obj.data.polygons)
-        obj.select_set(has and obj.name != 'sky')
+        obj.select_set(has and obj.name != 'sky' and not obj.hide_render)
         if has:
             obj.data.uv_layers['Lightmap'].active = True
     bpy.context.view_layer.objects.active = bpy.data.objects['marble']
@@ -586,43 +880,78 @@ def bake():
     (ASSETS / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
 
 
-def denoise_local(image):
-    try:
-        import numpy as np
-        import ctypes
-    except ImportError:
-        return
+def _oidn():
+    import ctypes
     lib = Path(bpy.app.binary_path).parent / 'lib' / 'libOpenImageDenoise.so'
     if not lib.exists():
         print('no oidn')
-        return
+        return None
     for extra in ('libOpenImageDenoise_core.so.2', 'libOpenImageDenoise_device_cpu.so.2'):
         path = Path(bpy.app.binary_path).parent / 'lib' / extra
         if path.exists():
             ctypes.CDLL(str(path))
     oidn = ctypes.CDLL(str(lib))
-    width, height = image.size
-    pixels = np.array(image.pixels[:], dtype=np.float32).reshape(height, width, 4)
-    color = np.ascontiguousarray(pixels[:, :, :3])
-    output = np.empty_like(color)
     oidn.oidnNewDevice.restype = ctypes.c_void_p
     oidn.oidnNewDevice.argtypes = [ctypes.c_int]
-    device = oidn.oidnNewDevice(1)
     oidn.oidnCommitDevice.argtypes = [ctypes.c_void_p]
-    oidn.oidnCommitDevice(device)
     oidn.oidnNewFilter.restype = ctypes.c_void_p
     oidn.oidnNewFilter.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
-    filt = oidn.oidnNewFilter(device, b'RT')
-    oidn.oidnSetSharedFilterImage.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_size_t]
-    oidn.oidnSetSharedFilterImage(filt, b'color', color.ctypes.data, 3, width, height, 0, 0, 0)
-    oidn.oidnSetSharedFilterImage(filt, b'output', output.ctypes.data, 3, width, height, 0, 0, 0)
+    oidn.oidnSetSharedFilterImage.argtypes = [
+        ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p, ctypes.c_int,
+        ctypes.c_size_t, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_size_t,
+    ]
     oidn.oidnSetFilterBool.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_bool]
-    oidn.oidnSetFilterBool(filt, b'hdr', True)
     oidn.oidnCommitFilter.argtypes = [ctypes.c_void_p]
-    oidn.oidnCommitFilter(filt)
     oidn.oidnExecuteFilter.argtypes = [ctypes.c_void_p]
+    oidn.oidnGetDeviceError.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_char_p)]
+    oidn.oidnGetDeviceError.restype = ctypes.c_int
+    return oidn
+
+
+def denoise_array(color, albedo=None, normal=None):
+    """OIDN RT. color is HxWx3 HDR. albedo and normal are the Cycles guide passes."""
+    import ctypes
+    import numpy as np
+    oidn = _oidn()
+    if oidn is None:
+        return color
+    height, width = color.shape[:2]
+    beauty = np.ascontiguousarray(color[:, :, :3], dtype=np.float32)
+    output = np.empty_like(beauty)
+    held = [beauty, output]
+    device = oidn.oidnNewDevice(1)
+    oidn.oidnCommitDevice(device)
+    filt = oidn.oidnNewFilter(device, b'RT')
+    oidn.oidnSetSharedFilterImage(filt, b'color', beauty.ctypes.data, 3, width, height, 0, 0, 0)
+    oidn.oidnSetSharedFilterImage(filt, b'output', output.ctypes.data, 3, width, height, 0, 0, 0)
+    if albedo is not None:
+        alb = np.ascontiguousarray(albedo[:, :, :3], dtype=np.float32)
+        held.append(alb)
+        oidn.oidnSetSharedFilterImage(filt, b'albedo', alb.ctypes.data, 3, width, height, 0, 0, 0)
+    if normal is not None:
+        nrm = np.ascontiguousarray(normal[:, :, :3], dtype=np.float32)
+        held.append(nrm)
+        oidn.oidnSetSharedFilterImage(filt, b'normal', nrm.ctypes.data, 3, width, height, 0, 0, 0)
+    oidn.oidnSetFilterBool(filt, b'hdr', True)
+    oidn.oidnCommitFilter(filt)
     oidn.oidnExecuteFilter(filt)
-    pixels[:, :, :3] = output
+    message = ctypes.c_char_p()
+    code = oidn.oidnGetDeviceError(device, ctypes.byref(message))
+    if code:
+        print('oidn error', code, message.value)
+        return color
+    print('denoised', width, height, 'albedo', albedo is not None, 'normal', normal is not None)
+    return output
+
+
+def denoise_local(image):
+    try:
+        import numpy as np
+    except ImportError:
+        return
+    width, height = image.size
+    pixels = np.array(image.pixels[:], dtype=np.float32).reshape(height, width, 4)
+    pixels[:, :, :3] = denoise_array(pixels[:, :, :3])
     image.pixels.foreach_set(pixels.reshape(-1))
     print('denoised')
 
@@ -669,64 +998,430 @@ def dress_for_photo():
         background.inputs['Strength'].default_value = 1.15
 
 
+def add_haze():
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, ROOM['length'] * 0.5, 4.2))
+    cube = bpy.context.active_object
+    cube.name = 'haze'
+    cube.scale = (8, ROOM['length'] * 0.7, 9)
+    material = bpy.data.materials.new('haze')
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+    geo = nodes.new('ShaderNodeNewGeometry')
+    separate = nodes.new('ShaderNodeSeparateXYZ')
+    span = nodes.new('ShaderNodeMapRange')
+    span.inputs['From Min'].default_value = 8.0
+    span.inputs['From Max'].default_value = ROOM['length'] + 2
+    span.inputs['To Min'].default_value = 0.0015
+    span.inputs['To Max'].default_value = 0.016
+    scatter = nodes.new('ShaderNodeVolumeScatter')
+    scatter.inputs['Anisotropy'].default_value = 0.82
+    scatter.inputs['Color'].default_value = (1.0, 0.97, 0.9, 1)
+    output = nodes.new('ShaderNodeOutputMaterial')
+    links.new(geo.outputs['Position'], separate.inputs['Vector'])
+    links.new(separate.outputs['Y'], span.inputs['Value'])
+    links.new(span.outputs['Result'], scatter.inputs['Density'])
+    links.new(scatter.outputs['Volume'], output.inputs['Volume'])
+    cube.data.materials.append(material)
+    cube.visible_shadow = False
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, ROOM['length'] * 0.42, 6.2))
+    shaft = bpy.context.active_object
+    shaft.name = 'shaft'
+    shaft.scale = (1.15, ROOM['length'] * 0.48, 5.5)
+    beam = bpy.data.materials.new('shaft')
+    beam.use_nodes = True
+    beam.node_tree.nodes.clear()
+    scatter = beam.node_tree.nodes.new('ShaderNodeVolumeScatter')
+    scatter.inputs['Density'].default_value = 0.045
+    scatter.inputs['Anisotropy'].default_value = 0.9
+    scatter.inputs['Color'].default_value = (1.0, 0.96, 0.88, 1)
+    output = beam.node_tree.nodes.new('ShaderNodeOutputMaterial')
+    beam.node_tree.links.new(scatter.outputs['Volume'], output.inputs['Volume'])
+    shaft.data.materials.append(beam)
+    shaft.visible_shadow = False
+    if hasattr(bpy.context.scene.cycles, 'volume_step_rate'):
+        bpy.context.scene.cycles.volume_step_rate = 2
+
+
+def render_photo(path, width, height, samples):
+    scene = bpy.context.scene
+    apply_grade(float(os.environ.get('BLANC_EXPOSURE', '0.15')))
+    scene.cycles.samples = samples
+    scene.cycles.use_adaptive_sampling = True
+    scene.cycles.adaptive_threshold = float(os.environ.get('BLANC_THRESHOLD', '0.01'))
+    if hasattr(scene.cycles, 'adaptive_min_samples'):
+        scene.cycles.adaptive_min_samples = int(os.environ.get('BLANC_MIN_SAMPLES', '64'))
+    scene.cycles.use_denoising = True
+    scene.cycles.denoiser = 'OPENIMAGEDENOISE'
+    if not bpy.data.objects.get('haze'):
+        add_haze()
+    scene.render.resolution_x = width
+    scene.render.resolution_y = height
+    scene.render.image_settings.file_format = 'JPEG'
+    scene.render.image_settings.quality = 92
+    scene.render.filepath = str(path)
+    print('rendering', path.name, width, height, 'samples', samples)
+    bpy.ops.render.render(write_still=True)
+    print('saved', path, path.stat().st_size)
+
+
+def aim(cam, target):
+    direction = Vector(target) - Vector(cam.location)
+    cam.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
+
+
+def review():
+    scene = bpy.context.scene
+    folder = ASSETS / 'review-renders'
+    folder.mkdir(exist_ok=True)
+    shots = [
+        ('axis', (0, 1.9, 1.6), (0, 12, 2.4), 44),
+        ('frames', (-2.15, 6.5, 1.78), (-3.55, 7.55, 1.78), 34),
+        ('sky', (0.1, 3.6, 1.15), (0.0, 11.5, 5.4), 48),
+    ]
+    samples = int(os.environ.get('BLANC_STILL_SAMPLES', '64'))
+    for name, location, target, fov in shots:
+        cam_data = bpy.data.cameras.new(name)
+        cam_data.sensor_fit = 'VERTICAL'
+        cam_data.angle = math.radians(fov)
+        cam = bpy.data.objects.new(name, cam_data)
+        cam.location = location
+        scene.collection.objects.link(cam)
+        aim(cam, target)
+        scene.camera = cam
+        render_photo(folder / f'{name}.jpg', 960, 540, samples)
+        bpy.data.objects.remove(cam, do_unlink=True)
+
+
+def neutral_varnish(obj, roughness=0.42):
+    """White canvas whose diffuse and glossy passes add up.
+
+    Principled puts most of a rough white surface into both passes at once, so
+    artwork × diffuse + glossy came out as a white veil. A diffuse lobe plus a
+    small varnish lobe keeps the two passes separable.
+    """
+    material = bpy.data.materials.new(f'{obj.name}-neutral')
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+    diffuse = nodes.new('ShaderNodeBsdfDiffuse')
+    diffuse.inputs['Color'].default_value = (1, 1, 1, 1)
+    diffuse.inputs['Roughness'].default_value = 1.0
+    glossy = nodes.new('ShaderNodeBsdfGlossy')
+    glossy.inputs['Color'].default_value = (1, 1, 1, 1)
+    glossy.inputs['Roughness'].default_value = roughness
+    mix = nodes.new('ShaderNodeMixShader')
+    mix.inputs['Fac'].default_value = 0.06
+    output = nodes.new('ShaderNodeOutputMaterial')
+    links.new(diffuse.outputs['BSDF'], mix.inputs[1])
+    links.new(glossy.outputs['BSDF'], mix.inputs[2])
+    links.new(mix.outputs['Shader'], output.inputs['Surface'])
+    obj.data.materials[0] = material
+    obj.pass_index = 7
+
+
+def canvas_corners(obj):
+    mesh = obj.data
+    uv_layer = mesh.uv_layers.active
+    loops = []
+    if uv_layer:
+        for poly in mesh.polygons:
+            for loop_index in poly.loop_indices:
+                uv = uv_layer.data[loop_index].uv
+                world = obj.matrix_world @ mesh.vertices[mesh.loops[loop_index].vertex_index].co
+                loops.append((uv.x, uv.y, world.copy()))
+    if len(loops) < 4:
+        return []
+    # One representative for each UV corner of the canvas.
+    keys = [(0, 0), (1, 0), (1, 1), (0, 1)]
+    ordered = []
+    for u, v in keys:
+        best = min(loops, key=lambda item: (item[0] - u) ** 2 + (item[1] - v) ** 2)
+        ordered.append(best[2])
+    return ordered
+
+
+def write_slot_manifest(cam, corners_by_id):
+    """Camera-relative world corners and equirect UV for the guided-tour stop."""
+    import json as _json
+    pano_loc = Vector((0, ROOM.get('cameraZ', 1.9), ROOM.get('eye', 1.6)))
+    pano = bpy.data.objects.new('manifest-pano', bpy.data.cameras.new('manifest-pano'))
+    pano.location = pano_loc
+    pano.rotation_euler = (math.radians(96), 0, 0)
+    bpy.context.scene.collection.objects.link(pano)
+    rotation = pano.matrix_world.to_3x3().inverted()
+    slots = []
+    for frame in LAYOUT['frames']:
+        if frame['id'] not in corners_by_id:
+            continue
+        relative = []
+        equirect = []
+        for corner in corners_by_id[frame['id']]:
+            delta = Vector(corner) - pano_loc
+            relative.append([round(float(v), 5) for v in delta])
+            local = rotation @ delta.normalized()
+            forward = max(1e-6, -local.z)
+            u = math.atan2(local.x, forward) / (2 * math.pi) + 0.5
+            v = 0.5 - math.asin(max(-1, min(1, local.y))) / math.pi
+            equirect.append([round(u, 6), round(v, 6)])
+        slots.append({
+            'id': frame['id'],
+            'slotId': frame['id'],
+            'painting': frame['painting'],
+            'cornersWorldFromCamera': relative,
+            'cornersEquirectUV': equirect,
+        })
+    bpy.data.objects.remove(pano, do_unlink=True)
+    payload = {
+        'stopId': 'white-room-axis',
+        'camera': [0, ROOM.get('cameraZ', 1.9), ROOM.get('eye', 1.6)],
+        'note': 'Changer l’image ne demande pas un nouveau rendu. Changer la taille ou le ratio d’un cadre, oui.',
+        'frames': slots,
+    }
+    path = ASSETS / 'review-renders' / 'stop-manifest.json'
+    path.parent.mkdir(exist_ok=True)
+    path.write_text(_json.dumps(payload, indent=2) + '\n')
+    print('manifest', path)
+
+
+def proof():
+    """One frame layered from passes, beside the same frame baked into the render."""
+    import numpy as np
+    from bpy_extras.object_utils import world_to_camera_view
+    scene = bpy.context.scene
+    folder = ASSETS / 'review-renders'
+    folder.mkdir(exist_ok=True)
+    for stale in folder.glob('*.exr'):
+        stale.unlink()
+    target_name = 'framed-canvas-left-front'
+    painted = bpy.data.objects.get(target_name)
+    if painted is None:
+        raise RuntimeError('left front canvas missing')
+    cam_data = bpy.data.cameras.new('proof')
+    cam_data.sensor_fit = 'VERTICAL'
+    cam_data.angle = math.radians(34)
+    cam = bpy.data.objects.new('proof', cam_data)
+    cam.location = (-2.15, 6.5, 1.78)
+    scene.collection.objects.link(cam)
+    aim(cam, (-3.55, 7.55, 1.78))
+    scene.camera = cam
+    width, height = 960, 540
+    samples = int(os.environ.get('BLANC_PROOF_SAMPLES', '48'))
+    render_photo(folder / 'proof-baked.jpg', width, height, samples)
+    corners = canvas_corners(painted)
+    write_slot_manifest(cam, {'left-front': corners})
+    neutral_varnish(painted, 0.4)
+    painted.pass_index = 7
+    layer = scene.view_layers[0]
+    layer.use_pass_diffuse_direct = True
+    layer.use_pass_diffuse_indirect = True
+    layer.use_pass_glossy_direct = True
+    layer.use_pass_glossy_indirect = True
+    layer.use_pass_object_index = True
+    try:
+        layer.cycles.use_denoising = True
+        layer.cycles.denoising_store_passes = True
+    except Exception as error:
+        print('denoising passes unavailable', error)
+    scene.use_nodes = True
+    tree = scene.node_tree
+    tree.nodes.clear()
+    layers = tree.nodes.new('CompositorNodeRLayers')
+    names = [socket.name for socket in layers.outputs]
+    print('PASS SOCKETS', names)
+    wanted = {
+        'Image': 'beauty',
+        'DiffDir': 'diff-direct',
+        'DiffInd': 'diff-indirect',
+        'GlossDir': 'gloss-direct',
+        'GlossInd': 'gloss-indirect',
+        'IndexOB': 'index',
+        'Denoising Albedo': 'denoise-albedo',
+        'Denoising Normal': 'denoise-normal',
+    }
+    for socket_name, stem in wanted.items():
+        socket = next((item for item in layers.outputs if item.name == socket_name), None)
+        if socket is None:
+            print('missing socket', socket_name)
+            continue
+        node = tree.nodes.new('CompositorNodeOutputFile')
+        node.base_path = str(folder)
+        node.format.file_format = 'OPEN_EXR'
+        node.format.color_depth = '32'
+        node.file_slots[0].path = stem
+        tree.links.new(socket, node.inputs[0])
+    composite = tree.nodes.new('CompositorNodeComposite')
+    image_socket = next((item for item in layers.outputs if item.name == 'Image'), None)
+    if image_socket:
+        tree.links.new(image_socket, composite.inputs[0])
+    scene.render.use_compositing = True
+    render_photo(folder / 'proof-neutral.jpg', width, height, samples)
+    composite_layered(folder, corners, cam, width, height)
+    print('proof renders saved')
+
+
+def composite_layered(folder, corners, cam, width, height):
+    """Artwork × lighting pass + glossy, inside the canvas quad. Compared with the baked frame."""
+    import numpy as np
+    from bpy_extras.object_utils import world_to_camera_view
+    scene = bpy.context.scene
+
+    def load_layer(stem):
+        matches = sorted(folder.glob(f'{stem}*.exr'))
+        if not matches:
+            print('missing pass', stem)
+            return None
+        image = bpy.data.images.load(str(matches[-1]))
+        w, h = image.size
+        array = np.array(image.pixels[:], dtype=np.float32).reshape(h, w, image.channels)
+        return array[::-1]
+
+    beauty = load_layer('beauty')
+    diff = load_layer('diff-direct')
+    indi = load_layer('diff-indirect')
+    gloss_d = load_layer('gloss-direct')
+    gloss_i = load_layer('gloss-indirect')
+    if beauty is None or diff is None or indi is None:
+        print('passes not written, layered proof skipped')
+        return
+    light = diff[:, :, :3] + indi[:, :, :3]
+    gloss = np.zeros_like(light)
+    if gloss_d is not None:
+        gloss += gloss_d[:, :, :3]
+    if gloss_i is not None:
+        gloss += gloss_i[:, :, :3]
+    albedo = load_layer('denoise-albedo')
+    normal = load_layer('denoise-normal')
+    # OIDN reads the buffer from the top. The EXR loader already flipped to image order.
+    light = denoise_array(light[::-1], None if albedo is None else albedo[::-1, :, :3], None if normal is None else normal[::-1, :, :3])[::-1]
+    gloss = denoise_array(gloss[::-1], None if albedo is None else albedo[::-1, :, :3], None if normal is None else normal[::-1, :, :3])[::-1]
+    art_image = bpy.data.images.load(str(ASSETS / 'cc0' / 'oeuvres' / 'le-dernier-bal.jpg'))
+    aw, ah = art_image.size
+    art = np.array(art_image.pixels[:], dtype=np.float32).reshape(ah, aw, art_image.channels)[::-1, :, :3]
+    pixels = []
+    depths = []
+    for corner in corners:
+        projected = world_to_camera_view(scene, cam, corner)
+        pixels.append((projected.x * width, (1 - projected.y) * height))
+        depths.append(1.0 / max(float(projected.z), 1e-4))
+    if len(pixels) < 4:
+        print('canvas corners missing')
+        return
+    xs = np.arange(width)
+    ys = np.arange(height)
+    grid_x, grid_y = np.meshgrid(xs, ys)
+    quad = np.array(pixels, dtype=np.float32)
+    # Two triangles: 0-1-2 and 0-2-3. UV corners (0,0),(1,0),(1,1),(0,1).
+    triangles = [(0, 1, 2, (0, 0), (1, 0), (1, 1)), (0, 2, 3, (0, 0), (1, 1), (0, 1))]
+    warped = np.zeros((height, width, 3), np.float32)
+    mask = np.zeros((height, width), np.bool_)
+    for i, j, k, uvi, uvj, uvk in triangles:
+        p0, p1, p2 = quad[i], quad[j], quad[k]
+        denom = (p1[1] - p2[1]) * (p0[0] - p2[0]) + (p2[0] - p1[0]) * (p0[1] - p2[1])
+        if abs(denom) < 1e-6:
+            continue
+        w0 = ((p1[1] - p2[1]) * (grid_x - p2[0]) + (p2[0] - p1[0]) * (grid_y - p2[1])) / denom
+        w1 = ((p2[1] - p0[1]) * (grid_x - p2[0]) + (p0[0] - p2[0]) * (grid_y - p2[1])) / denom
+        w2 = 1 - w0 - w1
+        inside = (w0 >= -0.002) & (w1 >= -0.002) & (w2 >= -0.002)
+        mask |= inside
+        # Perspective-correct: screen barycentrics weighted by 1/depth.
+        c0 = np.maximum(w0, 0) * depths[i]
+        c1 = np.maximum(w1, 0) * depths[j]
+        c2 = np.maximum(w2, 0) * depths[k]
+        norm = np.maximum(c0 + c1 + c2, 1e-8)
+        u = (c0 * uvi[0] + c1 * uvj[0] + c2 * uvk[0]) / norm
+        v = (c0 * uvi[1] + c1 * uvj[1] + c2 * uvk[1]) / norm
+        sx = np.clip((u * (aw - 1)).astype(np.int32), 0, aw - 1)
+        sy = np.clip(((1 - v) * (ah - 1)).astype(np.int32), 0, ah - 1)
+        warped[inside] = art[sy[inside], sx[inside]]
+    index = load_layer('index')
+    if index is not None:
+        id_mask = index[:, :, 0] > 6.5
+        if int(id_mask.sum()) > 100:
+            mask &= id_mask
+            print('index mask', int(id_mask.sum()))
+    layered = beauty[:, :, :3].copy()
+    layered[mask] = np.clip(warped[mask] * light[mask] + gloss[mask], 0, 8)
+    image = bpy.data.images.new('layered-proof', width, height, float_buffer=True, alpha=True)
+    stored = np.ones((height, width, 4), np.float32)
+    stored[:, :, :3] = layered
+    image.pixels.foreach_set(stored[::-1].reshape(-1))
+    image.filepath_raw = str(folder / 'proof-layered.jpg')
+    image.file_format = 'JPEG'
+    try:
+        image.save_render(str(folder / 'proof-layered.jpg'), scene=scene)
+    except Exception as error:
+        print('save_render failed', error)
+        image.save()
+    print('layered proof', folder / 'proof-layered.jpg', 'masked', int(mask.sum()))
+
+
+def still():
+    scene = bpy.context.scene
+    cam_data = bpy.data.cameras.new('Still')
+    cam_data.sensor_fit = 'VERTICAL'
+    cam_data.angle = math.radians(ROOM.get('fov', 44))
+    cam = bpy.data.objects.new('Still', cam_data)
+    cam.location = (0, ROOM.get('cameraZ', 1.9), ROOM.get('eye', 1.6))
+    cam.rotation_euler = (math.radians(96), 0, 0)
+    scene.collection.objects.link(cam)
+    scene.camera = cam
+    render_photo(
+        ASSETS / os.environ.get('BLANC_STILL_NAME', 'still.jpg'),
+        int(os.environ.get('BLANC_STILL_W', '1280')),
+        int(os.environ.get('BLANC_STILL_H', '720')),
+        int(os.environ.get('BLANC_STILL_SAMPLES', '48')),
+    )
+
+
 def pano():
     scene = bpy.context.scene
-    dress_for_photo()
-    scene.cycles.samples = int(os.environ.get('BLANC_PANO_SAMPLES', '32'))
     cam_data = bpy.data.cameras.new('Pano')
     cam_data.type = 'PANO'
     cam_data.panorama_type = 'EQUIRECTANGULAR'
     cam = bpy.data.objects.new('Pano', cam_data)
-    # Tour stop: the centred eye-height camera, Three.js z = cameraZ.
-    cam.location = (0, ROOM.get('cameraZ', 1.15), ROOM.get('eye', 1.6))
-    # Cycles looks down local -Z. This aims +Y (down the hall) with +Z up.
-    cam.rotation_euler = (math.radians(90), 0, 0)
-    bpy.context.scene.collection.objects.link(cam)
+    # Tour stop: centred, eye height. Cycles looks down local -Z, so +Y is down the hall.
+    cam.location = (0, ROOM.get('cameraZ', 1.9), ROOM.get('eye', 1.6))
+    cam.rotation_euler = (math.radians(96), 0, 0)
+    scene.collection.objects.link(cam)
     scene.camera = cam
+    # The dome is for the walk viewer. The photograph sees the HDRI world.
     sky = bpy.data.objects.get('sky')
     if sky:
-        sky.hide_render = False
-    # A light volume so the shaft is in the photograph. Kept out of the bake.
-    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, ROOM['length'] * 0.45, 4))
-    cube = bpy.context.active_object
-    cube.scale = (6, ROOM['length'] * 0.7, 8)
-    vol = bpy.data.materials.new('volume')
-    vol.use_nodes = True
-    vol.node_tree.nodes.clear()
-    scatter = vol.node_tree.nodes.new('ShaderNodeVolumeScatter')
-    scatter.inputs['Density'].default_value = 0.012
-    scatter.inputs['Anisotropy'].default_value = 0.55
-    scatter.inputs['Color'].default_value = (1, 0.98, 0.94, 1)
-    out = vol.node_tree.nodes.new('ShaderNodeOutputMaterial')
-    vol.node_tree.links.new(scatter.outputs['Volume'], out.inputs['Volume'])
-    cube.data.materials.append(vol)
-    cube.display_type = 'WIRE'
-    cube.visible_shadow = False
-    if hasattr(scene.cycles, 'volume_step_rate'):
-        scene.cycles.volume_step_rate = 4
-    path = ASSETS / os.environ.get('BLANC_PANO_NAME', 'pano-360.jpg')
-    scene.render.resolution_x = int(os.environ.get('BLANC_PANO_W', '6144'))
-    scene.render.resolution_y = int(os.environ.get('BLANC_PANO_H', '3072'))
-    scene.render.image_settings.file_format = 'JPEG'
-    scene.render.image_settings.quality = 90
-    scene.render.filepath = str(path)
-    scene.cycles.use_denoising = True
-    scene.cycles.denoiser = 'OPENIMAGEDENOISE'
-    print('rendering equirect…')
-    bpy.ops.render.render(write_still=True)
-    print('saved', path, path.stat().st_size)
+        sky.hide_render = True
+    render_photo(
+        ASSETS / os.environ.get('BLANC_PANO_NAME', 'pano-360.jpg'),
+        int(os.environ.get('BLANC_PANO_W', '6144')),
+        int(os.environ.get('BLANC_PANO_H', '3072')),
+        int(os.environ.get('BLANC_PANO_SAMPLES', '512')),
+    )
 
 
 def main():
     import sys
     args = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
     build()
-    if '--mesh' in args:
+    if '--review' in args:
+        review()
+        return
+    if '--proof' in args or '--mesh' in args:
+        # Phone-sized copies. The lightmap is not rebaked; rocks take the sky instead.
+        decimate_rocks(int(os.environ.get('BLANC_ROCK_FACES', '1200')))
+        if '--proof' in args:
+            proof()
         export_glb()
+        return
+    if '--still' in args:
+        still()
         return
     if '--pano' in args:
         pano()
         return
+    decimate_rocks(int(os.environ.get('BLANC_ROCK_FACES', '1200')))
+    rock_lightmaps()
     bake()
 
 
