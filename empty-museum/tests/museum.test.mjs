@@ -7,6 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {availableWholeWalls,isSlotInsideWall,PARTNER_BAYS} from '../museum-inventory.mjs';
+import {DEFAULT_COMMERCE_CONFIG,WALL_FORMATS,DISTANCE_LEVELS,AISLE_DURATIONS,normalizeCommerceConfig,wallPrice,aislePrice} from '../commerce-model.mjs';
 
 const here=dirname(fileURLToPath(import.meta.url)),root=join(here,'..');
 const file=p=>readFileSync(join(root,p),'utf8');
@@ -125,4 +126,41 @@ test('V11 lighting preserves real limestone geometry and avoids painted fake gro
   // progressive loader. Do not pin their query strings to one historical build.
   assert.match(loader,/await import\("\.\/engine3d\.js\?v=[a-zA-Z0-9_-]+"\)/);
   assert.match(file('index.html'),/src="engine-loader\.js\?v=[a-zA-Z0-9_-]+"/);
+});
+
+test('the #pricing section shows frame sizes and alley 3D spots at the commerce-model prices',()=>{
+  const index=file('index.html');
+  const offers=file('exhibit-offers.mjs');
+  const pricing=index.slice(index.indexOf('id="pricing"'),index.indexOf('id="wall"'));
+  assert.match(pricing,/id="exhibit-wall-prices"/);
+  assert.match(pricing,/id="aisle-price-table"/);
+  assert.match(pricing,/id="exhibit-aisle-prices"/);
+  assert.match(pricing,/Dans l’allée/);
+  assert.match(pricing,/S01 à S04/);
+  assert.match(pricing,/1 jour/);
+  assert.match(pricing,/1 semaine/);
+  assert.match(pricing,/30 jours/);
+  assert.doesNotMatch(pricing,/Mur total|mur entier|whole-wall-price|id="mur-total"/i);
+  assert.match(offers,/config\.wall\.pricing/);
+  assert.match(offers,/config\.aisle\.pricing\[tier\.id\]/);
+  assert.match(offers,/euros\(prices\['1'\]\)/);
+  assert.match(offers,/euros\(prices\['7'\]\)/);
+  assert.match(offers,/euros\(prices\['30'\]\)/);
+  assert.doesNotMatch(offers,/wholeWallPrice/);
+  const config=normalizeCommerceConfig(DEFAULT_COMMERCE_CONFIG);
+  const frames={small:[4.5,45],medium:[9.5,95],normal:[19.5,195],large:[34.5,345],very_large:[59.5,595]};
+  for(const format of WALL_FORMATS){
+    assert.equal(wallPrice(config,format.id,'monthly').amount,frames[format.id][0]);
+    assert.equal(wallPrice(config,format.id,'annual').amount,frames[format.id][1]);
+    assert.equal(DEFAULT_COMMERCE_CONFIG.wall.pricing[format.id].monthly,frames[format.id][0]);
+    assert.equal(DEFAULT_COMMERCE_CONFIG.wall.pricing[format.id].annual,frames[format.id][1]);
+  }
+  const aisle={near:{1:145,7:645,30:1995},gallery:{1:295,7:1245,30:3995},landmark:{1:495,7:2495,30:7950}};
+  assert.deepEqual(DEFAULT_COMMERCE_CONFIG.aisle.stations,['S01','S02','S03','S04']);
+  for(const tier of DISTANCE_LEVELS)for(const duration of AISLE_DURATIONS){
+    assert.equal(aislePrice(config,tier.id,duration.days).amount,aisle[tier.id][duration.days]);
+    assert.equal(DEFAULT_COMMERCE_CONFIG.aisle.pricing[tier.id][String(duration.days)],aisle[tier.id][duration.days]);
+  }
+  const ceiling=pricing.slice(pricing.indexOf('id="ceiling-offers"'));
+  assert.doesNotMatch(ceiling,/€|tarif/i);
 });

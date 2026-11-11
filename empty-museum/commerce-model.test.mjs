@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   DEFAULT_COMMERCE_CONFIG,WALL_FORMATS,AISLE_DURATIONS,DISTANCE_LEVELS,
-  normalizeCommerceConfig,makeWallSlots,wallPrice,wholeWallPrice,aislePrice,
+  normalizeCommerceConfig,makeWallSlots,wallPrice,aislePrice,
   createPreviewReservation,canReserveWall,canReserveAisle,isActive,aisleVisibility
 } from './commerce-model.mjs';
 
@@ -100,27 +100,6 @@ test('Quatre stations de 1,80 × 1,50 m et hauteur de 2,50 m',()=>{
   assert.equal(config.aisle.footprintWidthM,1.5);
   assert.equal(config.aisle.maxHeightM,2.5);
   assert.throws(()=>createPreviewReservation({config,reservations:[],type:'aisle',stationId:'S05',objectType:'sculpture',distanceId:'near',days:1},start));
-});
-test('Le mur total égale la somme des cadres qu’il couvre, hors plafond',()=>{
-  const formats=['normal','very_large','large'];
-  for(const term of ['monthly','annual']){
-    const result=wholeWallPrice(config,formats,term);
-    const sum=formats.reduce((total,id)=>{
-      const count=WALL_FORMATS.find(format=>format.id===id).count;
-      return total+count*wallPrice(config,id,term).amount;
-    },0);
-    assert.equal(result.amount,sum);
-    assert.equal(result.frameCount,formats.reduce((count,id)=>count+WALL_FORMATS.find(format=>format.id===id).count,0));
-  }
-  const raised=normalizeCommerceConfig({...config,wall:{...config.wall,pricing:{...config.wall.pricing,normal:{monthly:20,annual:200}}}});
-  const raisedSum=['normal','very_large','large'].reduce((total,id)=>{
-    const count=WALL_FORMATS.find(format=>format.id===id).count;
-    return total+count*wallPrice(raised,id,'monthly').amount;
-  },0);
-  assert.equal(wholeWallPrice(raised,formats,'monthly').amount,raisedSum);
-  assert.notEqual(wholeWallPrice(raised,formats,'monthly').amount,wholeWallPrice(config,formats,'monthly').amount);
-  assert.throws(()=>wholeWallPrice(config,['ceiling-mini','ceiling-medium','ceiling-large'],'annual'));
-  assert.throws(()=>wholeWallPrice(config,['normal','large'],'monthly'));
 });
 test('Tous les prix muraux et premium ont été exactement divisés par 2',()=>{
   const originals={very_large:[119,1190],large:[69,690],normal:[39,390],medium:[19,190],small:[9,90]};

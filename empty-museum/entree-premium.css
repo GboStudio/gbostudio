@@ -173,7 +173,7 @@ body.um .um-honest strong{color:var(--gold-text);font-weight:600}
 
 /* ——— III. Offre ——— */
 body.um .um-offer{background:var(--paper)}
-body.um .um-pillars{list-style:none;margin:0 0 clamp(80px,8vw,120px);padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+body.um .um-pillars{list-style:none;margin:0 0 clamp(80px,8vw,120px);padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
 body.um .um-pillars li{min-width:0;padding:28px 28px 0 0;display:grid;align-content:start;gap:16px;border-top:1px solid var(--gold)}
 body.um .um-pillars li+li{padding-left:28px;border-left:1px solid var(--line)}
 body.um .um-pillars b{font:400 clamp(60px,5.4vw,84px)/.9 var(--serif);color:var(--ink)}

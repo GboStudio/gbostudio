@@ -118,27 +118,6 @@ export function wallPrice(config,formatId,term){
   if(!WALL_FORMATS.some(f=>f.id===formatId)||!['monthly','annual'].includes(term))throw new Error('Tarification inconnue.');
   return {amount:c.wall.pricing[formatId][term],currency:'EUR',term,termMonths:term==='monthly'?1:12};
 }
-/**
- * Mur total: three contiguous wall modules on one side.
- * Price = sum of the frame prices those modules already carry.
- * No extra wall discount. Annual amounts follow each frame's annual price
- * (10 × monthly in the default catalogue), not 12 × monthly.
- * Ceiling spots are not wall frames and are rejected.
- */
-export function wholeWallPrice(config,formatIds,term){
-  const c=normalizeCommerceConfig(config);
-  if(!['monthly','annual'].includes(term))throw new Error('Tarification inconnue.');
-  if(!Array.isArray(formatIds)||formatIds.length!==3)throw new Error('Un mur total couvre trois modules.');
-  let amount=0,frameCount=0;
-  for(const formatId of formatIds){
-    if(typeof formatId!=='string'||formatId.startsWith('ceiling'))throw new Error('Le plafond n’entre pas dans le mur total.');
-    const format=WALL_FORMATS.find(item=>item.id===formatId);
-    if(!format)throw new Error('Format mural inconnu.');
-    amount+=wallPrice(c,formatId,term).amount*format.count;
-    frameCount+=format.count;
-  }
-  return {amount,currency:'EUR',term,termMonths:term==='annual'?12:1,frameCount,modules:formatIds.slice()};
-}
 export function aislePrice(config,distanceId,days){
   const c=normalizeCommerceConfig(config);
   if(!DISTANCE_LEVELS.some(d=>d.id===distanceId)||![1,7,30].includes(Number(days)))throw new Error('Option premium inconnue.');

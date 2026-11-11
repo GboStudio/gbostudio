@@ -5,9 +5,8 @@
  */
 import {
   DEFAULT_COMMERCE_CONFIG,normalizeCommerceConfig,
-  WALL_FORMATS,DISTANCE_LEVELS,euros,wholeWallPrice
+  WALL_FORMATS,DISTANCE_LEVELS,euros
 } from './commerce-model.mjs';
-import {availableWholeWalls} from './museum-inventory.mjs';
 
 const config=normalizeCommerceConfig(DEFAULT_COMMERCE_CONFIG);
 const wallRoot=document.getElementById('exhibit-wall-prices');
@@ -50,15 +49,4 @@ if(aisleRoot){
     cell(row,euros(prices['30']));
     aisleRoot.append(row);
   }
-}
-const wholeWall=document.getElementById('whole-wall-price');
-const mix=window.TUM_GALLERY_MIX;
-if(wholeWall&&mix){
-  const walls=availableWholeWalls(mix.MODULE_COUNT);
-  const span=term=>{
-    const amounts=walls.map(wall=>wholeWallPrice(config,wall.slots.map(id=>mix.formatForBay(id)),term).amount);
-    const min=Math.min(...amounts),max=Math.max(...amounts);
-    return min===max?euros(min):euros(min)+' – '+euros(max);
-  };
-  wholeWall.textContent=span('monthly')+' / mois · '+span('annual')+' / 12 mois';
 }
