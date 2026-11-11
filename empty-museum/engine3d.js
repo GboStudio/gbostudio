@@ -1160,12 +1160,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     const walking=Math.abs(velX)+Math.abs(velZ)>.12;
     view.y=1.72+(walking&&!input.auto?Math.sin(time*.008)*.003:0);
     orient();
-    overlay.dataset.tourCameraZ=view.z.toFixed(3);
-    overlay.dataset.tourCameraX=view.x.toFixed(3);
-    overlay.dataset.tourCameraYaw=yaw.toFixed(4);
-    overlay.dataset.tourCameraPitch=pitch.toFixed(4);
-    overlay.dataset.museumCameraFov=camera.fov.toFixed(2);
-    overlay.dataset.tourAutoWalking=String(walkTo!==null);
+    publishCameraDiagnostics();
     if(tourState.started && time-lastTourSnapshot>1750){
       lastTourSnapshot=time;saveTourSession();
     }
@@ -1201,6 +1196,14 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     if(loc)loc.textContent=view.z<46?"ORIGINAL GALLERY · 2026":view.z<95?"THE EXPANSION · 02":"THE LONG HALL · 03";
     frame=requestAnimationFrame(tick);
   }
+  function publishCameraDiagnostics(){
+    overlay.dataset.tourCameraZ=view.z.toFixed(3);
+    overlay.dataset.tourCameraX=view.x.toFixed(3);
+    overlay.dataset.tourCameraYaw=yaw.toFixed(4);
+    overlay.dataset.tourCameraPitch=pitch.toFixed(4);
+    overlay.dataset.museumCameraFov=camera.fov.toFixed(2);
+    overlay.dataset.tourAutoWalking=String(walkTo!==null);
+  }
   function open(){
     if(active)return;
     focusBefore=document.activeElement;
@@ -1211,6 +1214,10 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     clearTourSession();
     overlay.hidden=false;document.body.classList.add("walk-is-open");
     resize();orient();
+    // Publish the entrance pose before the ready flag. The first animation
+    // frame is what used to write these coordinates, so a check that runs in
+    // the same turn as ready could observe a missing tourCameraZ.
+    publishCameraDiagnostics();
     frame=requestAnimationFrame(tick);
     window.__TUM_PREMIUM_READY=true;
     overlay.querySelector(".walk-close")?.focus({preventScroll:true});

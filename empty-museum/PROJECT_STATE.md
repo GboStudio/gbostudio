@@ -51,6 +51,7 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - **Auteur et outil confirmés par Guillaume (11 novembre 2026)** : auteur « GBO Studio », créé avec « Grok Imagine » pour les 5 œuvres ; affichés dans le panneau de visite guidée et sur le cartel 3D. **Wrong Fruit conservée telle quelle** (décision confirmée).
 - **Contre-ordre de Guillaume (11 novembre 2026)** : la version de « Le Dernier Bal » avec des enfants est annulée. L’image et le cartel reviennent à la version précédente, sans enfants. Cartel exact : « Dans un monde qui s’efface, l’amour qui dure finit par rallumer les autres. » Le panneau de visite et le cartel 3D lisent ce texte depuis `app.js`. Étiquette de cache `20261111oeuvres4`, pour qu’aucun navigateur ne conserve la version avec enfants.
 - **État** : branche `feat/museum-oeuvres-guillaume-5`, PR #51 toujours en **brouillon**. **Non fusionnée, non déployée. Aucune fusion sur `main`.**
+- **Diagnostic caméra (11 novembre 2026)** : le drapeau `__TUM_PREMIUM_READY` est posé dans `open()` avant la première image, alors que `tourCameraZ` n’était écrit que dans la boucle d’animation. La course existe déjà sur `main` (`e3d76ab`) ; le correctif publie la pose d’entrée avant le drapeau. Le contrôle de staging n’est pas assoupli.
 
 ## Contradictions à résoudre (pas des fonctions terminées)
 1. L'interface classique `index.html` / `app.js` utilise encore certaines durées et certains prix historiques alors que le nouveau configurateur fonctionne en mensuel/annuel. **Unifier l'offre avant de lancer les ventes.**
