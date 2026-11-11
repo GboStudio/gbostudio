@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#100e0c">
+<title>Salle échantillon lumière — The Unreal Museum</title>
+<link rel="stylesheet" href="museum-v5.css?v=20261111ech">
+<link rel="stylesheet" href="dual-joystick-v1.css?v=20261109dualstick2">
+<link rel="stylesheet" href="museum-mobile-v12.css?v=20261104c">
+<link rel="stylesheet" href="salle-echantillon/salle-echantillon.css?v=20261111ech">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+</head>
+<body>
+<section id="walkOverlay" class="walk-overlay" aria-label="Salle échantillon lumière, visite libre">
+  <p class="sample-status" id="sampleStatus">Ouverture de la salle échantillon…</p>
+  <canvas id="walkCanvas" aria-label="Salle échantillon. Joystick gauche pour regarder, joystick droit pour marcher."></canvas>
+  <p class="sample-banner">SALLE ÉCHANTILLON · DÉMONSTRATION<br>Lumière validée en cible · aucun paiement</p>
+  <a class="sample-quit" href="./">× QUITTER</a>
+  <p class="walk-guide">Salle isolée. Elle ne remplace pas la galerie.</p>
+</section>
+<script type="module" src="salle-echantillon/viewer.js?v=20261111ech"></script>
+</body>
+</html>

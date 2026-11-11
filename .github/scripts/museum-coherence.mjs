@@ -52,6 +52,8 @@ const tests=[
     assert.equal(read('empty-museum/engine3d.js').includes('salle-temoin'), false);
     assert.ok(loader.includes('salle-temoin.html'));
     assert.ok(loader.includes('engine3d.js'));
+    assert.equal(entry.includes('salle-echantillon'), false);
+    assert.equal(read('empty-museum/engine3d.js').includes('salle-echantillon'), false);
   }],
   ['Security tests remain enforced in CI and public health checks',()=>{
     const ci=read('.github/workflows/museum-3d-checks.yml');

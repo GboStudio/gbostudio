@@ -1,0 +1,232 @@
+/**
+ * Lighting sample room. Dimensions are in the viewer's space:
+ * X across the nave, Y up, Z down the axis toward the bright room.
+ * The public gallery does not import this module.
+ */
+export const ROOM = {
+  width: 7.2,
+  backZ: -0.45,
+  hallLength: 13.4,
+  endDepth: 5.0,
+  length: 18.4,
+  eye: 1.58,
+  exposure: 1.04,
+  wallColor: '#5A2C28',
+  stoneColor: '#E3D9CB',
+  endColor: '#F3EEE6',
+  ceilingColor: '#E6DED0',
+  corniceY: 4.52,
+  soffitY: 5.02,
+  skylightY: 5.16,
+  skylightHalf: 1.18,
+  skylightZ0: 1.15,
+  skylightZ1: 12.55,
+  portalHalf: 1.62,
+  portalHeight: 3.42,
+  daylightK: 4700,
+  pictureK: 3000,
+  skylightPower: 4600,
+  spotPower: 1600,
+  endPower: 1100,
+  lightmapSize: 2048,
+  floorTileM: 6.3,
+  fov: 52,
+  mobileFov: 96,
+};
+
+const PAINT = 'salle-temoin/assets/paintings/';
+
+function sideFrames(wall) {
+  const sign = wall === 'left' ? -1 : 1;
+  const x = sign * ROOM.width / 2;
+  const normal = -sign;
+  const hang = 1.7;
+  const large = wall === 'left'
+    ? {artW: 1.66, artH: 1.14, mould: 0.135, painting: 'pd/painting-3.webp', hero: true}
+    : {artW: 1.12, artH: 1.46, mould: 0.125, painting: 'pd/painting-0.webp', hero: true};
+  const medium = [
+    ['pd/painting-4.webp', 7.15],
+    ['pd/painting-2.webp', 8.4],
+    ['pd/painting-5.webp', 9.65],
+  ];
+  const frames = [{
+    id: `${wall}-front`,
+    wall,
+    x,
+    y: hang,
+    z: 4.65,
+    artWidth: large.artW,
+    artHeight: large.artH,
+    moulding: large.mould,
+    width: large.artW + large.mould * 2,
+    height: large.artH + large.mould * 2,
+    normal,
+    painting: large.painting,
+    hero: true,
+    pictureLight: true,
+  }];
+  for (const [painting, z] of medium) {
+    const artW = 0.58;
+    const artH = 0.74;
+    const mould = 0.062;
+    frames.push({
+      id: `${wall}-${z}`,
+      wall,
+      x,
+      y: hang,
+      z,
+      artWidth: artW,
+      artHeight: artH,
+      moulding: mould,
+      width: artW + mould * 2,
+      height: artH + mould * 2,
+      normal,
+      painting,
+      hero: false,
+      pictureLight: true,
+    });
+  }
+  const smallW = 0.5;
+  const smallH = 0.64;
+  const smallM = 0.055;
+  frames.push({
+    id: `${wall}-far`,
+    wall,
+    x,
+    y: hang,
+    z: 11.85,
+    artWidth: smallW,
+    artHeight: smallH,
+    moulding: smallM,
+    width: smallW + smallM * 2,
+    height: smallH + smallM * 2,
+    normal,
+    painting: wall === 'left' ? 'pd/painting-7.webp' : 'pd/painting-6.webp',
+    hero: false,
+    pictureLight: true,
+  });
+  return frames;
+}
+
+function endFrames() {
+  const hang = 1.68;
+  const artW = 0.52;
+  const artH = 0.66;
+  const mould = 0.05;
+  const z = ROOM.hallLength + 1.55;
+  const side = (wall, x, normal, painting) => ({
+    id: wall,
+    wall,
+    x,
+    y: hang,
+    z,
+    artWidth: artW,
+    artHeight: artH,
+    moulding: mould,
+    width: artW + mould * 2,
+    height: artH + mould * 2,
+    normal,
+    painting,
+    hero: false,
+    pictureLight: true,
+  });
+  const farW = 0.62;
+  const farH = 0.78;
+  const farM = 0.058;
+  return [
+    side('endLeft', -ROOM.portalHalf, 1, 'pd/painting-1.webp'),
+    side('endRight', ROOM.portalHalf, -1, 'pd/painting-2.webp'),
+    {
+      id: 'far',
+      wall: 'north',
+      x: 0,
+      y: 1.72,
+      z: ROOM.length - 0.04,
+      artWidth: farW,
+      artHeight: farH,
+      moulding: farM,
+      width: farW + farM * 2,
+      height: farH + farM * 2,
+      normal: -1,
+      painting: 'pd/painting-7.webp',
+      hero: true,
+      pictureLight: true,
+    },
+  ];
+}
+
+export function buildLayout() {
+  const frames = [...sideFrames('left'), ...sideFrames('right'), ...endFrames()];
+  const benches = [
+    {wall: 'left', x: -ROOM.width / 2 + 0.28, z0: 6.62, z1: 9.2, height: 0.46, depth: 0.44},
+    {wall: 'right', x: ROOM.width / 2 - 0.28, z0: 6.62, z1: 9.2, height: 0.46, depth: 0.44},
+  ];
+  const pilasters = [2.15, 6.2, 10.85].map(z => ({z, width: 0.5, depth: 0.13}));
+  const obstacles = benches.map(bench => ({
+    minX: bench.x - bench.depth / 2,
+    maxX: bench.x + bench.depth / 2,
+    minZ: bench.z0,
+    maxZ: bench.z1,
+  }));
+  return {
+    room: ROOM,
+    frames,
+    benches,
+    pilasters,
+    obstacles,
+    paintingsRoot: PAINT,
+  };
+}
+
+export function frameRect(frame) {
+  if (frame.wall === 'north') {
+    return {
+      minX: frame.x - frame.width / 2,
+      maxX: frame.x + frame.width / 2,
+      minZ: frame.z - 0.2,
+      maxZ: frame.z + 0.2,
+    };
+  }
+  if (frame.wall === 'endLeft' || frame.wall === 'endRight') {
+    return {
+      minX: frame.x - 0.2,
+      maxX: frame.x + 0.2,
+      minZ: frame.z - frame.width / 2,
+      maxZ: frame.z + frame.width / 2,
+    };
+  }
+  return {
+    minX: frame.x - 0.2,
+    maxX: frame.x + 0.2,
+    minZ: frame.z - frame.width / 2,
+    maxZ: frame.z + frame.width / 2,
+  };
+}
+
+export function findArchitectureConflicts(layout = buildLayout()) {
+  const hits = [];
+  const frames = layout.frames.filter(frame => frame.wall === 'left' || frame.wall === 'right');
+  for (const frame of frames) {
+    const rect = frameRect(frame);
+    for (const pilaster of layout.pilasters) {
+      const minZ = pilaster.z - pilaster.width / 2;
+      const maxZ = pilaster.z + pilaster.width / 2;
+      if (rect.maxZ > minZ + 0.02 && rect.minZ < maxZ - 0.02) {
+        hits.push(`${frame.id} crosses pilaster at ${pilaster.z}`);
+      }
+    }
+    if (rect.maxZ > layout.room.hallLength - 0.15) hits.push(`${frame.id} crosses the portal`);
+    if (rect.minZ < 0.4) hits.push(`${frame.id} crosses the entrance`);
+  }
+  for (let i = 0; i < frames.length; i += 1) {
+    for (let j = i + 1; j < frames.length; j += 1) {
+      if (frames[i].wall !== frames[j].wall) continue;
+      const a = frameRect(frames[i]);
+      const b = frameRect(frames[j]);
+      if (a.maxZ > b.minZ + 0.02 && b.maxZ > a.minZ + 0.02) {
+        hits.push(`${frames[i].id} overlaps ${frames[j].id}`);
+      }
+    }
+  }
+  return hits;
+}

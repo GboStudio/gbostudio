@@ -1,0 +1,20 @@
+{
+  "generator": "blender-4.2.11-cycles",
+  "export": "export_vertex_color",
+  "lightmap": "lightmap.hdr",
+  "mesh": "salle-echantillon.glb",
+  "lightmapSize": [
+    2048,
+    2048
+  ],
+  "samples": 28,
+  "denoiser": "openimagedenoise",
+  "lightmapMode": "luminance",
+  "scale": 0.0960833740612107,
+  "daylightK": 4700,
+  "pictureK": 3000,
+  "exposure": 1.04,
+  "wallColor": "#5A2C28",
+  "sun": false,
+  "worldStrength": 0
+}

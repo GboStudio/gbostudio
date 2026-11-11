@@ -49,6 +49,18 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Ce n’est pas encore au critère « on hésite entre la photo et le rendu ». Le damas est dessiné, pas une soie photographiée. Les caissons sont des panneaux de plâtre, pas des caissons sculptés et dorés. Le cadre reste une extrusion, avec une normale d’ornement sur la gorge. Le mur reste plus sombre et plus saturé que le nuancier `#7A2E2E` une fois passé dans ACES.
 - Contrôle local (Chrome SwiftShader, pas un iPhone) : bureau **12 à 21 appels, 145,1 Mo**. Mobile **18 appels, 56,8 Mo**. Bake 48 échantillons. Sol du lightmap : médiane 0,44, maximum 0,57.
 
+## Salle échantillon lumière — 11 novembre 2026
+
+- Décision de Guillaume : une **salle échantillon isolée** qui reproduit la cible `cible-v3-02` (éclairage validé), sans l'étendre au musée et **sans pull request** tant qu'il ne l'a pas demandé.
+- Branche : `feat/salle-echantillon-lumiere`, partie de la salle témoin (`cursor/salle-temoin-photoreal-f93e`). Elle ne modifie pas `main`, ni la PR #50, ni la PR #51.
+- Adresse : `/empty-museum/salle-echantillon.html`, aussi `?visit=salle-echantillon`. La galerie publique (`index.html`, `engine3d.js`) ne la charge pas.
+- La pièce est modélisée dans Blender 4.2 (corniche profilée, pilastres, cove, lanterneau à meneaux, rails et spots, cadres dorés à gorge, banquettes de pierre), éclairée en Cycles (lanterneau ~4700 K, un spot 3000 K par cadre, salle blanche au fond) puis réduite à une **lightmap de luminance**. Les albédos KTX2 restent en sRGB ; normales, rugosité et lightmap en `NoColorSpace`.
+- Le parquet est un point de Hongrie continu à 45°, assemblé depuis le scan CC0 Poly Haven `wood_floor` (tuile unique de 6,3 m, KTX2). Les murs sont un bordeaux mat `#5A2C28`, sans damas. La lightmap est en luminance (rebond Cycles 2, spots 64° à 3000 K, lanterneau 4700 K), ACES dans le viewer.
+- Contrôle local Chrome SwiftShader, pas un iPhone : bureau **14 appels, 7020 triangles, 183,2 Mo** de textures décodées (le sol 4096 UASTC compte en RGBA sur SwiftShader ; sur un téléphone qui garde l'UASTC le sol reste compressé). Mobile 390 px : **12 appels, 7016 triangles, 67,7 Mo**.
+- Écart assumé avec la cible et avec une photo d'Orsay : les halos de spots sont plus doux que la cible, le dégradé du lanterneau au sol est réel mais moins tranché, le reflet du lanterneau sur le parquet reste discret, les pilastres et les cadres sont modelés mais moins sculptés qu'une boiserie dorée du XIXe.
+- **Pas déployé. Pas fusionné. Pas une PR.** La commercialisation reste en démonstration.
+- Le critère « on est dans la pièce » se juge sur les captures de la branche, pas sur un test unitaire.
+
 ## Contradictions à résoudre (pas des fonctions terminées)
 1. L'interface classique `index.html` / `app.js` utilise encore certaines durées et certains prix historiques alors que le nouveau configurateur fonctionne en mensuel/annuel. **Unifier l'offre avant de lancer les ventes.**
 2. Le double joystick de PR #34 a été fusionnée ; les contrôles navigateur CI ont été exercés, mais la validation sur iPhone réel et la correspondance du déploiement exact restent nécessaires.

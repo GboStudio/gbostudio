@@ -83,6 +83,15 @@
   },
   "commerceDefaultPricingVersion": 2,
   "commerceReleaseStatus": "draft-pr-not-deployed",
+  "sampleRoom": {
+    "status": "branch-only-no-pr",
+    "path": "/empty-museum/salle-echantillon.html",
+    "visitQuery": "visit=salle-echantillon",
+    "branch": "feat/salle-echantillon-lumiere",
+    "isolatedFromPublicGallery": true,
+    "lightmap": "luminance",
+    "commerce": "demo-no-live-payments"
+  },
   "testRoom": {
     "status": "draft-pr-not-deployed",
     "path": "/empty-museum/salle-temoin.html",

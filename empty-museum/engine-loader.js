@@ -7,6 +7,11 @@
     location.replace(new URL("./salle-temoin.html", location.href).href);
     return;
   }
+  // Lighting sample. Same isolation rule: the public immersive visit never loads it.
+  if(new URLSearchParams(location.search).get("visit")==="salle-echantillon"){
+    location.replace(new URL("./salle-echantillon.html", location.href).href);
+    return;
+  }
   let fallbackStarted=false;
   function legacy(reason) {
     if(fallbackStarted)return;

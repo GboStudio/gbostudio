@@ -1,0 +1,57 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {ROOM, buildLayout, findArchitectureConflicts} from './room-layout.mjs';
+
+const layout = buildLayout();
+
+test('the sample room stays a single gallery with a bright room beyond the portal', () => {
+  assert.equal(ROOM.width, 7.2);
+  assert.ok(ROOM.hallLength > 10 && ROOM.hallLength < ROOM.length);
+  assert.ok(ROOM.corniceY > 4 && ROOM.corniceY < ROOM.soffitY);
+  assert.ok(ROOM.skylightHalf * 2 < ROOM.width * 0.6);
+  assert.equal(ROOM.daylightK, 4700);
+  assert.equal(ROOM.pictureK, 3000);
+});
+
+test('large frames are in front and smaller frames recede on both walls', () => {
+  for (const wall of ['left', 'right']) {
+    const frames = layout.frames.filter(frame => frame.wall === wall);
+    assert.ok(frames.length >= 5, wall);
+    assert.equal(frames[0].hero, true);
+    assert.ok(frames[0].width > frames[1].width);
+    const depths = frames.map(frame => frame.z);
+    const sorted = [...depths].sort((a, b) => a - b);
+    assert.deepEqual(depths, sorted);
+  }
+  assert.equal(layout.frames.filter(frame => frame.pictureLight).length, layout.frames.length);
+  assert.ok(layout.frames.some(frame => frame.wall === 'north'));
+});
+
+test('frames do not cross a pilaster or the portal', () => {
+  assert.deepEqual(findArchitectureConflicts(layout), []);
+});
+
+test('the public gallery does not load the sample room', () => {
+  const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const engine = readFileSync(new URL('../engine3d.js', import.meta.url), 'utf8');
+  const loader = readFileSync(new URL('../engine-loader.js', import.meta.url), 'utf8');
+  const baker = readFileSync(new URL('./bake_salle_echantillon.py', import.meta.url), 'utf8');
+  assert.equal(index.includes('salle-echantillon'), false);
+  assert.equal(engine.includes('salle-echantillon'), false);
+  assert.match(loader, /salle-echantillon\.html/);
+  assert.match(loader, /salle-temoin\.html/);
+  assert.match(loader, /engine3d\.js/);
+  assert.doesNotMatch(baker, /export_colors\s*=/);
+  assert.match(baker, /export_vertex_color=/);
+  assert.match(baker, /use_pass_color = False/);
+  assert.match(baker, /def neutralize_and_scale/);
+});
+
+test('commerce stays a demonstration', () => {
+  const contract = JSON.parse(readFileSync(new URL('../project-contract.json', import.meta.url), 'utf8'));
+  assert.equal(contract.commercialState, 'demo-no-live-payments');
+  assert.equal(contract.sampleRoom.commerce, 'demo-no-live-payments');
+  assert.equal(contract.sampleRoom.isolatedFromPublicGallery, true);
+  assert.equal(contract.sampleRoom.lightmap, 'luminance');
+});
