@@ -384,7 +384,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
         mat.map?.dispose?.();mat.map=t;mat.roughness=.9;mat.needsUpdate=true;
       };
       const loader=new THREE.TextureLoader();
-      loader.load(asset.webp,apply,undefined,()=>loader.load(asset.jpg,apply,undefined,()=>{}));
+      const bust=url=>url+"?v=20261111oeuvres3";
+      loader.load(bust(asset.webp),apply,undefined,()=>loader.load(bust(asset.jpg),apply,undefined,()=>{}));
       return mat;
     }
     if(piece.image && piece.image.startsWith("data:image/")){

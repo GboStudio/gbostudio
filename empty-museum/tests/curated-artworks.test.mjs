@@ -18,7 +18,7 @@ const curated=base.filter(p=>p.curated);
 
 const EXPECTED=[
   ['Le Premier Spectateur','le-premier-spectateur','Toute création mérite son public. Parfois, un seul regard suffit à en faire un chef-d’œuvre.'],
-  ['Le Dernier Bal','le-dernier-bal','Dans un monde qui s’efface, l’amour qui dure finit par rallumer les autres.'],
+  ['Le Dernier Bal','le-dernier-bal','Ils dansent ensemble depuis toujours. Dans un monde qui s’efface, l’amour qui dure finit par rallumer les autres.'],
   ['Le Gamin de 1987','le-gamin-de-1987','On nous montre l’adulte qu’on devrait devenir. Lui, il a choisi de rester heureux.'],
   ['Kintsugi','kintsugi','On ne répare pas un cœur pour cacher ses fêlures, mais pour en faire de l’or.'],
   ['Lundi, 8h12','lundi-8h12','Les héros sont partout. Il suffit de ne pas encore avoir perdu ses yeux d’enfant pour les voir.']
