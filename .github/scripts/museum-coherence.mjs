@@ -47,6 +47,12 @@ const tests=[
     assert.match(engine,/v5\.takeControl\(\)/);
     assert.match(engine,/v5\.releaseInputs\(\)/);
   }],
+  ['Isolated test room is not wired into the public immersive engine',()=>{
+    assert.equal(entry.includes('salle-temoin'), false);
+    assert.equal(read('empty-museum/engine3d.js').includes('salle-temoin'), false);
+    assert.ok(loader.includes('salle-temoin.html'));
+    assert.ok(loader.includes('engine3d.js'));
+  }],
   ['Security tests remain enforced in CI and public health checks',()=>{
     const ci=read('.github/workflows/museum-3d-checks.yml');
     const smoke=read('.github/workflows/tem-smoke.yml');

@@ -1,0 +1,20 @@
+{
+  "generator": "blender-4.2.11-cycles",
+  "export": "export_vertex_color",
+  "lightmap": "lightmap.hdr",
+  "mesh": "salle-temoin.glb",
+  "lightmapSize": [
+    4096,
+    4096
+  ],
+  "floorPxPerM": 160,
+  "wallPxPerM": 100,
+  "samples": 48,
+  "denoiser": "openimagedenoise",
+  "daylightK": 5000,
+  "pictureK": 3000,
+  "exposure": 1.12,
+  "wallColor": "#7A2E2E",
+  "sun": false,
+  "worldStrength": 0
+}

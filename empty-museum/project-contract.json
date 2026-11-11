@@ -82,5 +82,17 @@
     "maxHeight": 2.5
   },
   "commerceDefaultPricingVersion": 2,
-  "commerceReleaseStatus": "draft-pr-not-deployed"
+  "commerceReleaseStatus": "draft-pr-not-deployed",
+  "testRoom": {
+    "status": "draft-pr-not-deployed",
+    "path": "/empty-museum/salle-temoin.html",
+    "visitQuery": "visit=salle-temoin",
+    "bayPitchM": 3.5,
+    "pilasterM": 0.5,
+    "hangingFieldM": 3,
+    "parquetPanelM": 1.1666666666666667,
+    "panelsPerBay": 3,
+    "wallColor": "#7A2E2E",
+    "isolatedFromPublicGallery": true
+  }
 }

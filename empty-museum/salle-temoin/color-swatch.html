@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="c" width="64" height="32"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
+
+const EXPOSURE = 1.12;
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias: false, alpha: false});
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = EXPOSURE;
+renderer.setSize(64, 32, false);
+
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+camera.position.z = 2;
+
+// Lambert cancels the 1/π term, so a white ambient of π leaves the linear albedo.
+scene.add(new THREE.AmbientLight(0xffffff, Math.PI));
+
+function flatPatch(color, x) {
+  const material = new THREE.MeshStandardMaterial({
+    color, roughness: 1, metalness: 0, specularIntensity: 0, envMapIntensity: 0,
+  });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 2), material);
+  mesh.position.x = x;
+  scene.add(mesh);
+}
+
+flatPatch(0x7A2E2E, -0.5);
+
+const ktx2 = new KTX2Loader().setTranscoderPath('basis/');
+ktx2.detectSupport(renderer);
+let textureSpace = 'missing';
+try {
+  const loaded = await ktx2.loadAsync('assets/pbr/pompeian-diff.ktx2');
+  textureSpace = loaded.colorSpace;
+  // Same rule as the viewer: albedo is sRGB even if the file was tagged otherwise.
+  loaded.colorSpace = THREE.SRGBColorSpace;
+  loaded.needsUpdate = true;
+  const material = new THREE.MeshStandardMaterial({
+    map: loaded, roughness: 1, metalness: 0, specularIntensity: 0, envMapIntensity: 0,
+  });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 2), material);
+  mesh.position.x = 0.5;
+  scene.add(mesh);
+} catch (error) {
+  textureSpace = 'error:' + error.message;
+}
+
+renderer.render(scene, camera);
+const gl = renderer.getContext();
+const pixels = new Uint8Array(64 * 32 * 4);
+gl.readPixels(0, 0, 64, 32, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+function region(x0, x1) {
+  const acc = [0, 0, 0];
+  let n = 0;
+  for (let y = 8; y < 24; y += 1) {
+    for (let x = x0; x < x1; x += 1) {
+      const i = (y * 64 + x) * 4;
+      acc[0] += pixels[i];
+      acc[1] += pixels[i + 1];
+      acc[2] += pixels[i + 2];
+      n += 1;
+    }
+  }
+  return acc.map(v => Math.round(v / n));
+}
+
+window.__SWATCH__ = {
+  exposure: EXPOSURE,
+  textureSpace,
+  flat: region(8, 24),
+  texture: region(40, 56),
+};
+</script>
+</body>
+</html>
