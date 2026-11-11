@@ -251,8 +251,6 @@
       if(w>65&&h>38){
         ctx.fillStyle='#647364';ctx.font='600 '+Math.max(8,Math.min(14,w*.065))+'px Arial';
         ctx.fillText(slot.format.name.toUpperCase(),mid,y+h*.52,w*.85);
-        ctx.fillStyle='#273c2f';ctx.font='700 '+Math.max(9,Math.min(16,w*.077))+'px Arial';
-        ctx.fillText(window.TEM.priceLabel?.(slot)||'TARIF À DÉFINIR',mid,y+h*.75,w*.9);
       }
     }
     ctx.restore();

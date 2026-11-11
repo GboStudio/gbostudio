@@ -71,7 +71,8 @@ const grid=$('#grid'),viewport=$('#viewport');
 // Tarifs : une seule source de vérité, commerce-model.mjs.
 // - cadres muraux : miroir synchrone window.TUM_GALLERY_MIX.PRICES (gallery-mix.js), vérifié égal au modèle par test ;
 // - installations au sol : chiffrées par floor.js via aislePrice() du modèle ;
-// - plafond et anciens formats (mini, portrait, paysage…) : aucun tarif arrêté, affichés « Tarif à définir ».
+// - plafond C01–C03 : aucun prix et aucune mention de tarif ;
+// - anciens formats (mini, portrait, paysage…) : aucun tarif arrêté, affichés « Tarif à définir ».
 // Aucun montant ne doit être écrit en dur ici.
 const FORMATS={
   mini:{name:'Petit portrait',dimensions:'20 × 30 cm',ratio:2/3},
@@ -153,7 +154,7 @@ function getCeilingStatus(){
 }
 function getCeilingSlots(){
   const {unlocked}=getCeilingStatus();
-  return CEILING_POSITIONS.map(s=>({...s,price:null,format:FORMATS[s.size],
+  return CEILING_POSITIONS.map(s=>({...s,format:FORMATS[s.size],
     piece:pieces.slice().reverse().find(p=>p.slot===s.id&&(!p.expiresAt||Date.parse(p.expiresAt)>Date.now()))||null,unlocked}));
 }
 function refreshCeilingOffers(){
@@ -193,15 +194,15 @@ function openExhibit(size='landscape',price=null,slot=null){
   selectedSlot=slot;
   const isFloor=typeof slot==='string' && slot.startsWith('S');
   const isCeiling=typeof slot==='string' && slot.startsWith('P');
-  $('#durationLabel').textContent=commercial?'EXPOSITION · 1 MOIS':'EXPOSITION · 12 MOIS';
+  $('#durationLabel').textContent=isCeiling?'EMPLACEMENT PLAFOND':commercial?'EXPOSITION · 1 MOIS':'EXPOSITION · 12 MOIS';
   const reserveTerm=document.querySelector('.reserve-pay small');
-  if(reserveTerm)reserveTerm.textContent=commercial?'1 MOIS':'12 MOIS';
+  if(reserveTerm)reserveTerm.textContent=isCeiling?'':commercial?'1 MOIS':'12 MOIS';
   const name=commercial?'MODULE '+String(commercial.moduleNumber).padStart(3,'0')+' · '+commercial.format.name.toUpperCase()+' · CADRE '+commercial.ordinal:isCeiling?'PLAFOND · '+slot:isFloor?'ESPACE AU SOL N°'+slot.slice(1):(Number.isInteger(slot)?'MUR '+(slot%2?'DROIT':'GAUCHE')+' · CADRE N°'+String(slot+1).padStart(2,'0'):'EMPLACEMENT LIBRE');
   $('#slotName').textContent=name;
   $('#formatName').textContent=chosen.name;
   $('#dimensions').textContent=chosen.dimensions;
-  $('#reservePrice').textContent=euros(plan.price);
-  $('#price').textContent=euros(plan.price);
+  $('#reservePrice').textContent=isCeiling?'':euros(plan.price);
+  $('#price').textContent=isCeiling?'':euros(plan.price);
   $('#reservePreview').style.setProperty('--frame-ratio',String(chosen.ratio));
   $('#reservePreview').classList.toggle('is-floor',isFloor);
   $('#reservePreview').classList.toggle('is-ceiling',isCeiling);
