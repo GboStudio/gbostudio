@@ -10,10 +10,16 @@ export const WALL_FORMATS = Object.freeze([
   {id:'medium',label:'Moyen',count:8,columns:4,rows:2,spanX:1,spanY:2},
   {id:'small',label:'Petit',count:16,columns:4,rows:4,spanX:1,spanY:1}
 ]);
+// near / gallery / landmark stay the 15 m / 35 m / 75 m ids so the floor studio
+// and any stored reservation can keep those values. The 3D engine does not
+// read these ids. The approved grid adds 25 m, 45 m and 55 m.
 export const DISTANCE_LEVELS = Object.freeze([
-  {id:'near',label:'Proximité',meters:15},
-  {id:'gallery',label:'Galerie',meters:35},
-  {id:'landmark',label:'Monumental',meters:75}
+  {id:'near',label:'15 m',meters:15},
+  {id:'m25',label:'25 m',meters:25},
+  {id:'gallery',label:'35 m',meters:35},
+  {id:'m45',label:'45 m',meters:45},
+  {id:'m55',label:'55 m',meters:55},
+  {id:'landmark',label:'75 m',meters:75}
 ]);
 export const AISLE_DURATIONS = Object.freeze([
   {days:1,label:'1 journée'},
@@ -38,10 +44,13 @@ export const DEFAULT_COMMERCE_CONFIG = Object.freeze({
       medium:{monthly:9.5,annual:95},
       small:{monthly:4.5,annual:45}
     }},
-  aisle:{stations:['S01','S02','S03','S04'],footprintWidthM:1.5,footprintLengthM:1.8,maxHeightM:2.5,distanceMetres:{near:15,gallery:35,landmark:75},
+  aisle:{stations:['S01','S02','S03','S04'],footprintWidthM:1.5,footprintLengthM:1.8,maxHeightM:2.5,distanceMetres:{near:15,m25:25,gallery:35,m45:45,m55:55,landmark:75},
     pricing:{
       near:{'1':145,'7':645,'30':1995},
-      gallery:{'1':295,'7':1245,'30':3995},
+      m25:{'1':195,'7':895,'30':2695},
+      gallery:{'1':245,'7':1095,'30':3395},
+      m45:{'1':295,'7':1295,'30':3995},
+      m55:{'1':345,'7':1545,'30':4795},
       landmark:{'1':495,'7':2495,'30':7950}
     }}
 });
@@ -84,7 +93,8 @@ export function normalizeCommerceConfig(input=DEFAULT_COMMERCE_CONFIG){
       aisle.pricing[level.id][key]=numeric(a.pricing?.[level.id]?.[key]??defaultA.pricing[level.id][key],0,10000000);
     }
   }
-  if(aisle.distanceMetres.near>=aisle.distanceMetres.gallery||aisle.distanceMetres.gallery>=aisle.distanceMetres.landmark)throw new Error('Les portées doivent être croissantes.');
+  const reaches=DISTANCE_LEVELS.map(level=>aisle.distanceMetres[level.id]);
+  if(reaches.some((metres,index)=>index>0&&metres<=reaches[index-1]))throw new Error('Les portées doivent être croissantes.');
   return {schemaVersion:1,wall,aisle};
 }
 

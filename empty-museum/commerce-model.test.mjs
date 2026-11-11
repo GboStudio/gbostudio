@@ -70,11 +70,33 @@ test('La distance de visibilité est configurable et figée à la réservation',
   assert.equal(aisleVisibility(config,r,15,start).alpha,1);
   assert.equal(aisleVisibility(config,r,74,start).visible,true);
   assert.equal(aisleVisibility(config,r,75,start).visible,false);
-  const changed=normalizeCommerceConfig({...config,aisle:{...config.aisle,distanceMetres:{near:10,gallery:25,landmark:100}}});
+  const changed=normalizeCommerceConfig({...config,aisle:{...config.aisle,distanceMetres:{near:10,m25:20,gallery:25,m45:40,m55:60,landmark:100}}});
   assert.equal(aislePrice(changed,'landmark',7).maxVisibleDistanceM,100);
   assert.equal(aisleVisibility(changed,r,85,start).visible,false);
   assert.equal(aisleVisibility(config,r,10,Date.parse(r.endsAt)).visible,false);
   assert.throws(()=>normalizeCommerceConfig({...config,aisle:{...config.aisle,distanceMetres:{near:50,gallery:25,landmark:100}}}));
+});
+test('La grille 3D validée a exactement 18 tarifs',()=>{
+  const grid={
+    near:[145,645,1995],
+    m25:[195,895,2695],
+    gallery:[245,1095,3395],
+    m45:[295,1295,3995],
+    m55:[345,1545,4795],
+    landmark:[495,2495,7950]
+  };
+  assert.deepEqual(DISTANCE_LEVELS.map(level=>level.meters),[15,25,35,45,55,75]);
+  assert.equal(DISTANCE_LEVELS.length*AISLE_DURATIONS.length,18);
+  let count=0;
+  for(const level of DISTANCE_LEVELS){
+    const prices=grid[level.id];
+    assert.equal(config.aisle.distanceMetres[level.id],level.meters);
+    AISLE_DURATIONS.forEach((duration,index)=>{
+      assert.equal(aislePrice(config,level.id,duration.days).amount,prices[index]);
+      count++;
+    });
+  }
+  assert.equal(count,18);
 });
 
 test('Le catalogue divisé par deux et les quatre stations 3D sont cohérents',()=>{
@@ -84,12 +106,7 @@ test('Le catalogue divisé par deux et les quatre stations 3D sont cohérents',(
   assert.equal(config.aisle.footprintLengthM,1.8);
   assert.equal(config.aisle.maxHeightM,2.5);
   assert.equal(aislePrice(config,'near',1).amount,145);
-  assert.equal(aislePrice(config,'near',7).amount,645);
-  assert.equal(aislePrice(config,'near',30).amount,1995);
-  assert.equal(aislePrice(config,'gallery',1).amount,295);
-  assert.equal(aislePrice(config,'gallery',7).amount,1245);
-  assert.equal(aislePrice(config,'gallery',30).amount,3995);
-  assert.equal(aislePrice(config,'landmark',1).amount,495);
+  assert.equal(aislePrice(config,'gallery',7).amount,1095);
   assert.equal(aislePrice(config,'landmark',30).amount,7950);
   assert.throws(()=>createPreviewReservation({config,reservations:[],type:'aisle',stationId:'S05',objectType:'sculpture',distanceId:'near',days:1},start));
 });
@@ -106,8 +123,5 @@ test('Tous les prix muraux et premium ont été exactement divisés par 2',()=>{
   for(const [format,[monthly,annual]] of Object.entries(originals)){
     assert.equal(wallPrice(config,format,'monthly').amount,monthly/2);
     assert.equal(wallPrice(config,format,'annual').amount,annual/2);
-  }
-  for(const [distance,prices] of Object.entries({near:[290,1290,3990],gallery:[590,2490,7990],landmark:[990,4990,15900]})){
-    for(const [index,days] of [1,7,30].entries())assert.equal(aislePrice(config,distance,days).amount,prices[index]/2);
   }
 });

@@ -155,7 +155,11 @@ test('the #pricing section shows frame sizes and alley 3D spots at the commerce-
     assert.equal(DEFAULT_COMMERCE_CONFIG.wall.pricing[format.id].monthly,frames[format.id][0]);
     assert.equal(DEFAULT_COMMERCE_CONFIG.wall.pricing[format.id].annual,frames[format.id][1]);
   }
-  const aisle={near:{1:145,7:645,30:1995},gallery:{1:295,7:1245,30:3995},landmark:{1:495,7:2495,30:7950}};
+  const aisle={
+    near:{1:145,7:645,30:1995},m25:{1:195,7:895,30:2695},gallery:{1:245,7:1095,30:3395},
+    m45:{1:295,7:1295,30:3995},m55:{1:345,7:1545,30:4795},landmark:{1:495,7:2495,30:7950}
+  };
+  assert.equal(DISTANCE_LEVELS.length,6);
   assert.deepEqual(DEFAULT_COMMERCE_CONFIG.aisle.stations,['S01','S02','S03','S04']);
   for(const tier of DISTANCE_LEVELS)for(const duration of AISLE_DURATIONS){
     assert.equal(aislePrice(config,tier.id,duration.days).amount,aisle[tier.id][duration.days]);

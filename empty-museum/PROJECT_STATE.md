@@ -85,7 +85,7 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 
 ## Décision du 11 novembre 2026 — cadres, allée 3D, plafond, pas de mur entier (PR brouillon #52, non fusionnée)
 - Décision de Guillaume : « Ils peuvent pas acheter le mur mais les différentes tailles de cadres » ; « Les œuvres 3D aussi à mettre dans l'allée » ; « On vend ça aussi » ; « On vend les œuvres 3 d aussi » ; « Les prix étaient sur la page qui présente les prix ».
-- On vend les cinq tailles de cadres et les quatre emplacements 3D S01–S04 dans l’allée. Les prix restent ceux de `commerce-model.mjs`, affichés dans la section `#pricing` (mêmes ancres `exhibit-wall-prices` et `exhibit-aisle-prices` que le site en ligne). Aucun montant n’est recalculé.
+- On vend les cinq tailles de cadres et les quatre emplacements 3D S01–S04 dans l’allée. Les cadres gardent la grille du site en ligne. Les spots 3D passent à la grille à six portées validée par Guillaume (15, 25, 35, 45, 55 et 75 m), lue uniquement dans `commerce-model.mjs` et affichée dans `#pricing`. Les identifiants `near`, `gallery` et `landmark` restent ceux de 15, 35 et 75 m. Le site en ligne a encore l’ancienne grille à trois portées.
 - Il n’y a plus d’offre « Mur total » sur l’accueil, ni de fonction `wholeWallPrice`. Le site en ligne (`main`) affiche encore cette offre avec « prix sur proposition » ; elle est retirée seulement dans cette PR.
 - Plafond C01, C02 et C03 : emplacements conservés, sans prix. Le site en ligne affiche encore 9,95 €, 14,95 € et 20 €, absents du modèle ; cet écart n’est pas recopié ici.
 - La marque ™ est conservée. L’image d’accueil n’est pas modifiée ; le master HD attend le rendu réel du moteur 3D.
