@@ -369,8 +369,25 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       g.fillText("CURATED SPACE · THE UNREAL MUSEUM",w/2,h*.67,w*.86);
     },1024,690);
   }
+  // Curated demo works ship as same-origin static files (WebP first, JPG fallback).
+  const CURATED_ASSET=/^assets\/oeuvres\/[a-z0-9-]+\.(?:webp|jpg)$/;
+  function curatedAsset(piece){
+    const a=piece?.imageAsset;
+    return a&&CURATED_ASSET.test(a.webp||"")&&CURATED_ASSET.test(a.jpg||"")?a:null;
+  }
   function pictureMaterial(piece){
     const mat=new THREE.MeshStandardMaterial({map:artworkTexture(piece),roughness:.85,side:THREE.DoubleSide});
+    const asset=curatedAsset(piece);
+    if(asset){
+      const apply=t=>{
+        t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=mobile?4:8;
+        mat.map?.dispose?.();mat.map=t;mat.roughness=.9;mat.needsUpdate=true;
+      };
+      const loader=new THREE.TextureLoader();
+      const bust=url=>url+"?v=20261111oeuvres4";
+      loader.load(bust(asset.webp),apply,undefined,()=>loader.load(bust(asset.jpg),apply,undefined,()=>{}));
+      return mat;
+    }
     if(piece.image && piece.image.startsWith("data:image/")){
       new THREE.TextureLoader().load(piece.image, t=>{
         t.colorSpace=THREE.SRGBColorSpace;
@@ -544,10 +561,60 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   const modularFrameMat=new THREE.MeshStandardMaterial({
     color:0x655c50,roughness:.48,metalness:.34
   });
+  // Small matte museum cartel for curated works: title, statement, collection line.
+  function curatedCartelTexture(slot){
+    const piece=slot.piece;
+    return canvasTexture((g,W,H)=>{
+      // Layout is authored at 880 × 560 and scaled down on phones.
+      const w=880,h=560;g.scale(W/w,H/h);
+      g.fillStyle="#f3f0e8";g.fillRect(0,0,w,h);
+      g.strokeStyle="rgba(60,52,40,.18)";g.lineWidth=3;g.strokeRect(10,10,w-20,h-20);
+      g.textAlign="left";g.textBaseline="alphabetic";
+      g.fillStyle="#2a2620";g.font="500 60px Georgia, 'Times New Roman', serif";
+      g.fillText(String(piece.title||"Sans titre"),44,96,w-88);
+      g.fillStyle="#7a6a4f";g.font="600 21px Arial, Helvetica, sans-serif";g.letterSpacing="3px";
+      // Credit line: author · creation tool · frame number (empty parts are skipped).
+      g.fillText([piece.author,piece.tools,"CADRE M"+String(slot.moduleNumber).padStart(3,"0")].filter(Boolean).join(" · ").toUpperCase(),44,140,w-88);
+      g.letterSpacing="0px";
+      g.strokeStyle="rgba(60,52,40,.28)";g.lineWidth=2;
+      g.beginPath();g.moveTo(44,166);g.lineTo(w-44,166);g.stroke();
+      g.fillStyle="#3b342a";g.font="italic 40px Georgia, 'Times New Roman', serif";
+      wrappedText(g,piece.description||"",w-88,5).forEach((ln,i)=>g.fillText(ln,44,226+i*54,w-88));
+      g.fillStyle="#8a7b62";g.font="600 18px Arial, Helvetica, sans-serif";g.letterSpacing="2px";
+      g.fillText("THE UNREAL MUSEUM · DÉMO",44,h-30,w-88);
+    },mobile?640:880,mobile?408:560);
+  }
+  // A 3:4 (or any fixed-aspect) curated work keeps its exact proportions inside
+  // its saleable cell: full width, top-aligned, with its cartel in the free band below.
+  function drawCuratedFrame(unit,slot,w,h){
+    const aspect=slot.piece.aspect;
+    const cartelH=.252,cartelW=.396,gap=.075;
+    const fw=Math.min(w,(h-cartelH-gap-.02)*aspect),fh=fw/aspect;
+    const fy=h/2-fh/2;
+    box(unit,fw+.035,fh+.035,.05,modularFrameMat,0,fy,-.025);
+    box(unit,fw+.012,fh+.012,.055,modularMountMat,0,fy,.012);
+    const art=surface(unit,fw-.015,fh-.015,pictureMaterial(slot.piece),0,fy,.047);
+    markInteractive(art,slot);
+    const cy=fy-fh/2-gap-cartelH/2,cx=-fw/2+cartelW/2;
+    // Mounted flush on the bay wall (≈9.4 cm behind the float-mount plane).
+    box(unit,cartelW+.012,cartelH+.012,.012,champagneGold,cx,cy,-.088);
+    const cartel=surface(unit,cartelW,cartelH,new THREE.MeshStandardMaterial({
+      map:curatedCartelTexture(slot),roughness:.9,metalness:0
+    }),cx,cy,-.0805);
+    markInteractive(cartel,slot);
+    return art;
+  }
   function drawCommercialFrame(slot){
     const side=slot.side;
     const x=side*(HALF-.39),z=slot.z+side*(slot.xM+slot.widthM/2-1.5);
     const y=slot.y,w=slot.widthM,h=slot.heightM;
+    if(slot.piece&&Number.isFinite(slot.piece.aspect)&&curatedAsset(slot.piece)){
+      const unit=new THREE.Group();
+      unit.position.set(x,y,z);unit.rotation.y=side<0?Math.PI/2:-Math.PI/2;
+      interactive.add(unit);
+      drawCuratedFrame(unit,slot,w,h);
+      return;
+    }
     const rot=side<0?Math.PI/2:-Math.PI/2;
     const unit=new THREE.Group();
     unit.position.set(x,y,z);unit.rotation.y=rot;
@@ -810,7 +877,9 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     story.querySelector("#temTourNumber").textContent=String(tourState.index+1).padStart(2,"0")+" / "+String(total).padStart(2,"0")+"   ·   "+stop.label+" "+stop.side;
     story.querySelector("#temTourTitle").textContent=stop.piece.title||"Sans titre";
     story.querySelector("#temTourDescription").textContent=stop.piece.description||"Une création à découvrir dans le musée.";
-    story.querySelector("#temTourMeta").textContent=(stop.piece.author||"Créateur") +"   ·   "+(stop.piece.tools||"Création assistée");
+    story.querySelector("#temTourMeta").textContent=stop.piece.curated
+      ?([stop.piece.author,stop.piece.tools].filter(Boolean).join("   ·   ")||"Collection de démonstration")
+      :(stop.piece.author||"Créateur") +"   ·   "+(stop.piece.tools||"Création assistée");
     const progress=story.querySelector("#temTourProgress");progress.textContent="";
     for(let i=0;i<total;i++){const marker=document.createElement("i");if(i<=tourState.index)marker.className="done";progress.appendChild(marker);}
     story.querySelector("#temTourNext").textContent=tourState.index===total-1?"RECOMMENCER LA VISITE ↺":"ŒUVRE SUIVANTE →";
@@ -1091,12 +1160,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     const walking=Math.abs(velX)+Math.abs(velZ)>.12;
     view.y=1.72+(walking&&!input.auto?Math.sin(time*.008)*.003:0);
     orient();
-    overlay.dataset.tourCameraZ=view.z.toFixed(3);
-    overlay.dataset.tourCameraX=view.x.toFixed(3);
-    overlay.dataset.tourCameraYaw=yaw.toFixed(4);
-    overlay.dataset.tourCameraPitch=pitch.toFixed(4);
-    overlay.dataset.museumCameraFov=camera.fov.toFixed(2);
-    overlay.dataset.tourAutoWalking=String(walkTo!==null);
+    publishCameraDiagnostics();
     if(tourState.started && time-lastTourSnapshot>1750){
       lastTourSnapshot=time;saveTourSession();
     }
@@ -1132,6 +1196,14 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     if(loc)loc.textContent=view.z<46?"ORIGINAL GALLERY · 2026":view.z<95?"THE EXPANSION · 02":"THE LONG HALL · 03";
     frame=requestAnimationFrame(tick);
   }
+  function publishCameraDiagnostics(){
+    overlay.dataset.tourCameraZ=view.z.toFixed(3);
+    overlay.dataset.tourCameraX=view.x.toFixed(3);
+    overlay.dataset.tourCameraYaw=yaw.toFixed(4);
+    overlay.dataset.tourCameraPitch=pitch.toFixed(4);
+    overlay.dataset.museumCameraFov=camera.fov.toFixed(2);
+    overlay.dataset.tourAutoWalking=String(walkTo!==null);
+  }
   function open(){
     if(active)return;
     focusBefore=document.activeElement;
@@ -1142,6 +1214,10 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     clearTourSession();
     overlay.hidden=false;document.body.classList.add("walk-is-open");
     resize();orient();
+    // Publish the entrance pose before the ready flag. The first animation
+    // frame is what used to write these coordinates, so a check that runs in
+    // the same turn as ready could observe a missing tourCameraZ.
+    publishCameraDiagnostics();
     frame=requestAnimationFrame(tick);
     window.__TUM_PREMIUM_READY=true;
     overlay.querySelector(".walk-close")?.focus({preventScroll:true});

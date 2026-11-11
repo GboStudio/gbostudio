@@ -15,7 +15,7 @@
       oldCanvas.replaceWith(fresh);
     }
     const script=document.createElement("script");
-    script.src="walk.js?v=20261104fallback";
+    script.src="walk.js?v=20261111oeuvres4";
     script.onerror=()=>console.error("[The Unreal Museum] Canvas fallback could not be loaded.");
     document.body.appendChild(script);
   }
@@ -29,7 +29,7 @@
       const {fitMuseumVisualViewport}=await import("./visual-viewport-v1.js?v=20261106v2");
       fitMobile=fitMuseumVisualViewport();
     }
-    await import("./engine3d.js?v=20261109wallmix2");
+    await import("./engine3d.js?v=20261111oeuvres4");
     // The 3D engine mounts the joystick and dock asynchronously during import.
     fitMobile();
   }catch(error){legacy(error);}

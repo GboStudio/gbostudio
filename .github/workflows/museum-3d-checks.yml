@@ -77,6 +77,8 @@ jobs:
         run: node --test empty-museum/commerce-model.test.mjs
       - name: Validate gallery size distribution and four premium aisle stations
         run: node --test empty-museum/tests/gallery-mix.test.mjs
+      - name: Validate the five curated demo works (3:4 images, cartels, frames, tour order)
+        run: node --test empty-museum/tests/curated-artworks.test.mjs
 
   browser-preview:
     name: Architectural staging render (desktop and mobile)

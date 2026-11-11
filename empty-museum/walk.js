@@ -83,11 +83,13 @@
     return g;
   }
   function artImage(piece) {
-    if (!piece.image || !piece.image.startsWith("data:image/")) return null;
+    // Uploaded data URLs, or the curated demo collection's same-origin JPG.
+    const curated = piece.imageAsset && /^assets\/oeuvres\/[a-z0-9-]+\.jpg$/.test(piece.imageAsset.jpg || "") ? piece.imageAsset.jpg : "";
+    if (!curated && (!piece.image || !piece.image.startsWith("data:image/"))) return null;
     if (!imageCache.has(piece.id)) {
       const img = new Image();
       img.onload = () => { if (active) draw(); };
-      img.src = piece.image;
+      img.src = curated ? curated+"?v=20261111oeuvres4" : piece.image;
       imageCache.set(piece.id, img);
     }
     const img = imageCache.get(piece.id);
