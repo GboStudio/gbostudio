@@ -1,4 +1,4 @@
-html, body { margin: 0; height: 100%; background: #100e0c; overflow: hidden; }
+html, body { margin: 0; height: 100%; background: #f4f2ee; overflow: hidden; }
 #walkOverlay { position: fixed; inset: 0; display: block; }
 #walkCanvas { width: 100%; height: 100%; display: block; touch-action: none; }
 .sample-banner {
@@ -11,9 +11,15 @@ html, body { margin: 0; height: 100%; background: #100e0c; overflow: hidden; }
   border: 1px solid rgba(248, 241, 221, .4); border-radius: 40px; padding: 9px 14px;
   font: 650 10px Arial, sans-serif; letter-spacing: .14em; background: rgba(24, 22, 18, .45);
 }
-body.is-shot .sample-banner, body.is-shot .sample-quit, body.is-shot .museum-v5-shell,
+.sample-pano {
+  position: absolute; z-index: 12; left: 50%; bottom: 18px; transform: translateX(-50%);
+  color: #2a2824; background: rgba(255, 252, 247, .82); border: 1px solid rgba(42, 40, 36, .28);
+  border-radius: 40px; padding: 10px 16px; letter-spacing: .14em; cursor: pointer;
+  font: 650 11px Arial, sans-serif;
+}
+body.is-shot .sample-banner, body.is-shot .sample-quit, body.is-shot .sample-pano, body.is-shot .museum-v5-shell,
 body.is-shot .walk-guide { display: none !important; }
 .sample-status {
   position: absolute; inset: 0; display: grid; place-items: center; z-index: 20;
-  color: #f3ecdf; font: 500 14px/1.5 Georgia, serif; letter-spacing: .06em; background: #100e0c;
+  color: #3a3834; font: 500 14px/1.5 Georgia, serif; letter-spacing: .06em; background: #f4f2ee;
 }

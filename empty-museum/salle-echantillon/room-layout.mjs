@@ -1,7 +1,7 @@
 /**
- * Lighting sample room. Dimensions are in the viewer's space:
- * X across the nave, Y up, Z down the axis toward the bright room.
- * The public gallery does not import this module.
+ * White open-sky sample room. Dimensions are in the viewer's space:
+ * X across the nave, Y up, Z down the axis toward the cloud haze.
+ * There is no ceiling and no back wall. The public gallery does not import this module.
  */
 export const ROOM = {
   width: 7.2,
@@ -10,11 +10,12 @@ export const ROOM = {
   endDepth: 5.0,
   length: 18.4,
   eye: 1.6,
-  exposure: 1.12,
-  wallColor: '#4A1E1F',
-  stoneColor: '#E4D8C8',
-  endColor: '#F7F1E8',
-  ceilingColor: '#E7D3B8',
+  exposure: 0.98,
+  openSky: true,
+  wallColor: '#E4E0DA',
+  stoneColor: '#E7E4DE',
+  endColor: '#F7F5F2',
+  ceilingColor: '#F4F7FB',
   corniceY: 4.52,
   soffitY: 5.02,
   skylightY: 5.58,
@@ -23,16 +24,16 @@ export const ROOM = {
   skylightZ1: 12.55,
   portalHalf: 1.05,
   portalHeight: 3.42,
-  daylightK: 4700,
+  daylightK: 5600,
   pictureK: 3000,
   skylightPower: 5400,
   spotPower: 2400,
   endPower: 2200,
   lightmapSize: 2048,
   floorTileM: 5.4,
-  fov: 56,
-  mobileFov: 70,
-  cameraZ: 1.15,
+  fov: 44,
+  mobileFov: 58,
+  cameraZ: 1.9,
 };
 
 const PAINT = 'salle-temoin/assets/paintings/';
@@ -109,55 +110,8 @@ function sideFrames(wall) {
   return frames;
 }
 
-function endFrames() {
-  const hang = 1.68;
-  const artW = 0.52;
-  const artH = 0.66;
-  const mould = 0.05;
-  const z = ROOM.hallLength + 1.55;
-  const side = (wall, x, normal, painting) => ({
-    id: wall,
-    wall,
-    x,
-    y: hang,
-    z,
-    artWidth: artW,
-    artHeight: artH,
-    moulding: mould,
-    width: artW + mould * 2,
-    height: artH + mould * 2,
-    normal,
-    painting,
-    hero: false,
-    pictureLight: true,
-  });
-  const farW = 0.62;
-  const farH = 0.78;
-  const farM = 0.058;
-  return [
-    side('endLeft', -ROOM.portalHalf, 1, 'pd/painting-1.webp'),
-    side('endRight', ROOM.portalHalf, -1, 'pd/painting-2.webp'),
-    {
-      id: 'far',
-      wall: 'north',
-      x: 0,
-      y: 1.72,
-      z: ROOM.length - 0.04,
-      artWidth: farW,
-      artHeight: farH,
-      moulding: farM,
-      width: farW + farM * 2,
-      height: farH + farM * 2,
-      normal: -1,
-      painting: 'pd/painting-7.webp',
-      hero: true,
-      pictureLight: true,
-    },
-  ];
-}
-
 export function buildLayout() {
-  const frames = [...sideFrames('left'), ...sideFrames('right'), ...endFrames()];
+  const frames = [...sideFrames('left'), ...sideFrames('right')];
   const benches = [
     {wall: 'left', x: -ROOM.width / 2 + 0.28, z0: 6.62, z1: 9.2, height: 0.46, depth: 0.44},
     {wall: 'right', x: ROOM.width / 2 - 0.28, z0: 6.62, z1: 9.2, height: 0.46, depth: 0.44},

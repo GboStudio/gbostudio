@@ -1,5 +1,5 @@
 {
-  "generator": "blender-4.2.11-cycles",
+  "generator": "blender-4.2-cycles",
   "export": "export_vertex_color",
   "lightmap": "lightmap.hdr",
   "mesh": "salle-echantillon.glb",
@@ -7,14 +7,15 @@
     2048,
     2048
   ],
-  "samples": 20,
+  "samples": 16,
   "denoiser": "openimagedenoise",
   "lightmapMode": "luminance",
-  "scale": 0.07744537411691024,
-  "daylightK": 4700,
   "pictureK": 3000,
-  "exposure": 1.12,
-  "wallColor": "#4A1E1F",
-  "sun": false,
-  "worldStrength": 0
+  "daylightK": 5600,
+  "exposure": 0.98,
+  "wallColor": "#E4E0DA",
+  "openSky": true,
+  "sun": true,
+  "worldStrength": 0.72,
+  "pano": "pano-360.jpg"
 }

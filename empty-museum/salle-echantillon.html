@@ -4,22 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#100e0c">
-<title>Salle échantillon lumière — The Unreal Museum</title>
+<meta name="theme-color" content="#f4f2ee">
+<title>Salle blanche — The Unreal Museum</title>
 <link rel="stylesheet" href="museum-v5.css?v=20261111ech">
 <link rel="stylesheet" href="dual-joystick-v1.css?v=20261109dualstick2">
 <link rel="stylesheet" href="museum-mobile-v12.css?v=20261104c">
-<link rel="stylesheet" href="salle-echantillon/salle-echantillon.css?v=20261111ech">
+<link rel="stylesheet" href="salle-echantillon/salle-echantillon.css?v=20261111blanc">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
 </head>
 <body>
-<section id="walkOverlay" class="walk-overlay" aria-label="Salle échantillon lumière, visite libre">
-  <p class="sample-status" id="sampleStatus">Ouverture de la salle échantillon…</p>
-  <canvas id="walkCanvas" aria-label="Salle échantillon. Joystick gauche pour regarder, joystick droit pour marcher."></canvas>
-  <p class="sample-banner">SALLE ÉCHANTILLON · DÉMONSTRATION<br>Lumière validée en cible · aucun paiement</p>
+<section id="walkOverlay" class="walk-overlay" aria-label="Salle blanche, visite libre">
+  <p class="sample-status" id="sampleStatus">Ouverture de la salle blanche…</p>
+  <canvas id="walkCanvas" aria-label="Salle blanche. Joystick gauche pour regarder, joystick droit pour marcher."></canvas>
+  <p class="sample-banner">SALLE ÉCHANTILLON · DÉMONSTRATION<br>Marbre blanc, ciel ouvert · aucun paiement</p>
+  <button type="button" class="sample-pano" id="panoToggle">PHOTO 360</button>
   <a class="sample-quit" href="./">× QUITTER</a>
-  <p class="walk-guide">Salle isolée. Elle ne remplace pas la galerie.</p>
+  <p class="walk-guide">Un seul arrêt passe en photo 360. La galerie publique ne change pas.</p>
 </section>
-<script type="module" src="salle-echantillon/viewer.js?v=20261111ech"></script>
+<script type="module" src="salle-echantillon/viewer.js?v=20261111blanc"></script>
 </body>
 </html>

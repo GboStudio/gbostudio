@@ -22,7 +22,7 @@ const PAINT = 'salle-temoin/assets/paintings/';
 const canvas = document.getElementById('walkCanvas');
 const overlay = document.getElementById('walkOverlay');
 const statusEl = document.getElementById('sampleStatus');
-if (shot) document.body.classList.add('is-shot');
+if (shot && shot !== 'switch') document.body.classList.add('is-shot');
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -34,7 +34,7 @@ const renderer = new THREE.WebGLRenderer({
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = Number(params.get('expo')) || layout.room.exposure;
-renderer.setClearColor(0x100e0c, 1);
+renderer.setClearColor(0xf4f2ee, 1);
 renderer.setPixelRatio(shot ? 1 : Math.min(devicePixelRatio || 1, mobile ? 1.5 : 2));
 
 const scene = new THREE.Scene();
@@ -201,18 +201,19 @@ function applyLibrary(root, library, lightmap) {
   root.traverse(object => {
     if (!object.isMesh) return;
     const name = (object.material?.name || object.name || '').replace(/\.\d+$/, '');
-    const base = library[name] || library.stone;
+    const base = library[name] || library.marble;
     const material = base.clone();
     material.name = name;
     const uv = object.geometry?.attributes?.uv1 || object.geometry?.attributes?.uv2;
-    const lit = uv && !['laylight', 'bulb', 'iron', 'gilt', 'skirting'].includes(name);
+    const lit = uv && !['sky', 'bulb', 'iron', 'gilt'].includes(name);
     if (lit) {
       object.geometry.setAttribute('uv2', uv);
       material.lightMap = lightmap;
       material.lightMap.channel = 2;
-      const gain = name === 'parquet' ? 0.92 : name === 'bordeaux' ? 2.15 : name === 'artwork' ? 1.2 : name === 'ceiling' ? 5.5 : name === 'stone' ? 2.1 : 1;
+      const gain = name === 'floor' ? 0.7 : name === 'marble' ? 1.32 : name === 'artwork' ? 1.12 : name === 'rock' ? 1.2 : 1;
       material.lightMapIntensity = Math.PI * LIGHT_GAIN * gain;
     }
+    if (name === 'sky') material.fog = false;
     object.material = material;
     object.castShadow = false;
     object.receiveShadow = false;
@@ -245,8 +246,8 @@ const state = {
 };
 
 const shots = {
-  axis: {x: 0, y: layout.room.eye, z: layout.room.cameraZ, yaw: 0, pitch: -0.02, fov: layout.room.fov},
-  mobile: {x: 0, y: layout.room.eye, z: layout.room.cameraZ, yaw: 0, pitch: -0.02, fov: layout.room.mobileFov},
+  axis: {x: 0, y: layout.room.eye, z: layout.room.cameraZ, yaw: 0, pitch: 0.05, fov: layout.room.fov},
+  mobile: {x: 0, y: layout.room.eye, z: layout.room.cameraZ, yaw: 0, pitch: 0.04, fov: layout.room.mobileFov},
   frame: {x: -2.05, y: 1.64, z: 4.65, yaw: Math.PI / 2, pitch: 0.02, fov: 36},
   ceiling: {x: 0, y: 1.58, z: 2.8, yaw: 0, pitch: 0.92, fov: 48},
   floor: {x: 0.15, y: 0.62, z: 2.15, yaw: 0.04, pitch: -0.82, fov: 46},
@@ -359,107 +360,176 @@ const report = {
 };
 window.__SALLE_ECHANTILLON__ = report;
 
-const floorFile = mobile ? 'herringbone-diff-mobile.jpg' : 'herringbone-diff.jpg';
-const floorRough = mobile ? 'herringbone-rough-mobile.jpg' : 'herringbone-rough.jpg';
-const floorNor = mobile ? 'herringbone-nor-mobile.jpg' : 'herringbone-nor.jpg';
+const marbleFile = mobile ? 'carrara-diff-mobile.jpg' : 'carrara-diff.jpg';
+
+let panoMesh = null;
+let panoTexture = null;
+const panoButton = document.getElementById('panoToggle');
+const savedTone = {
+  mapping: renderer.toneMapping,
+  exposure: renderer.toneMappingExposure,
+};
+
+async function loadPanoTexture() {
+  const started = performance.now();
+  const response = await fetch(ASSET + 'pano-360.jpg');
+  if (!response.ok) throw new Error('photo 360 absente');
+  const buffer = await response.arrayBuffer();
+  report.panoBytes = buffer.byteLength;
+  report.panoMegabytes = Math.round(buffer.byteLength / (1024 * 1024) * 10) / 10;
+  const bitmap = await createImageBitmap(new Blob([buffer], {type: 'image/jpeg'}));
+  const texture = new THREE.Texture(bitmap);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+  report.panoLoadMs = Math.round(performance.now() - started);
+  return texture;
+}
+
+function attachPano(texture) {
+  if (panoMesh || !texture) return;
+  const geo = new THREE.SphereGeometry(5, 80, 48);
+  geo.scale(-1, 1, 1);
+  panoMesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({map: texture, fog: false}));
+  panoMesh.rotation.order = 'YXZ';
+  panoMesh.rotation.y = Number(params.get('panoSpin') ?? (Math.PI * 1.5));
+  panoMesh.rotation.x = Number(params.get('panoTilt') ?? Math.PI);
+  panoMesh.visible = false;
+  camera.add(panoMesh);
+  scene.add(camera);
+}
+
+function setPano(on) {
+  if (!panoMesh) return;
+  report.pano = on;
+  panoMesh.visible = on;
+  if (on) {
+    state.x = 0;
+    state.y = layout.room.eye;
+    state.z = layout.room.cameraZ;
+    state.yaw = Number(params.get('panoYaw') || 0);
+    state.pitch = 0.08;
+    state.fov = shot === 'pano' ? layout.room.fov : (mobile ? layout.room.mobileFov : layout.room.fov);
+    renderer.toneMapping = THREE.NoToneMapping;
+    renderer.toneMappingExposure = 1;
+    if (panoButton) panoButton.textContent = 'RETOUR';
+    if (matchMedia('(pointer:coarse)').matches) enableGyro();
+  } else {
+    renderer.toneMapping = savedTone.mapping;
+    renderer.toneMappingExposure = savedTone.exposure;
+    if (panoButton) panoButton.textContent = 'PHOTO 360';
+  }
+}
+
+let gyroOn = false;
+function enableGyro() {
+  if (gyroOn) return;
+  gyroOn = true;
+  const orientation = window.DeviceOrientationEvent;
+  if (orientation?.requestPermission) {
+    orientation.requestPermission().catch(() => {});
+  }
+  window.addEventListener('deviceorientation', event => {
+    if (!report.pano || event.beta == null) return;
+    state.pitch = Math.max(-1.15, Math.min(1.15, (event.beta - 78) * Math.PI / 180));
+    if (event.alpha != null) state.yaw = event.alpha * Math.PI / 180;
+  });
+}
+
+panoButton?.addEventListener('click', async () => {
+  if (report.pano) {
+    setPano(false);
+    return;
+  }
+  if (await ensurePano()) setPano(true);
+});
+
+async function ensurePano() {
+  if (panoMesh) return true;
+  try {
+    attachPano(await loadPanoTexture());
+    return true;
+  } catch (error) {
+    console.warn(error);
+    return false;
+  }
+}
 
 try {
-  const [floorA, floorR, floorN, wallA, wallR, wallN, stoneA, stoneR, stoneN, giltN, sky, lightmap, gltf, atlas, heroes] = await Promise.all([
-    loadSurface(floorFile, THREE.SRGBColorSpace),
-    loadSurface(floorRough, THREE.NoColorSpace),
-    loadSurface(floorNor, THREE.NoColorSpace),
-    loadSurface('bordeaux-diff.jpg', THREE.SRGBColorSpace),
-    loadSurface('bordeaux-rough.jpg', THREE.NoColorSpace),
-    loadSurface('bordeaux-nor.jpg', THREE.NoColorSpace),
-    loadSurface('limestone-diff.jpg', THREE.SRGBColorSpace),
-    loadSurface('limestone-rough.jpg', THREE.NoColorSpace),
-    loadSurface('limestone-nor.jpg', THREE.NoColorSpace),
+  const [marbleA, marbleR, marbleN, giltN, sky, lightmap, gltf, atlas, heroes] = await Promise.all([
+    loadSurface(marbleFile, THREE.SRGBColorSpace),
+    loadSurface('carrara-rough.jpg', THREE.NoColorSpace),
+    loadSurface('carrara-nor.jpg', THREE.NoColorSpace),
     loadSurface('gilt-nor.jpg', THREE.NoColorSpace),
-    loadSurface('skylight.jpg', THREE.SRGBColorSpace),
+    loadSurface('sky-dome.jpg', THREE.SRGBColorSpace),
     loadLightmap(),
     gltfLoader.loadAsync(ASSET + 'salle-echantillon.glb'),
     paintingAtlas(layout.frames),
     heroTextures(layout.frames),
   ]);
-  for (const texture of [floorA, floorR, floorN, wallA, wallR, wallN, stoneA, stoneR, stoneN, giltN]) unmirror(texture);
-  giltN.repeat.set(giltN.repeat.x * 8, giltN.repeat.y * 2);
+  giltN.repeat.set(8, 2);
+  sky.wrapS = sky.wrapT = THREE.ClampToEdgeWrapping;
+  const floorMap = marbleA.clone();
+  const floorRough = marbleR.clone();
+  floorMap.repeat.set(1.65, 1.65);
+  floorRough.repeat.set(1.65, 1.65);
+  floorMap.needsUpdate = true;
+  floorRough.needsUpdate = true;
+  const envSrc = sky.clone();
+  envSrc.mapping = THREE.EquirectangularReflectionMapping;
+  const env = pmrem.fromEquirectangular(envSrc).texture;
+  scene.environment = env;
+  scene.environmentIntensity = mobile ? 0.42 : 0.62;
   const library = {
-    parquet: new THREE.MeshPhysicalMaterial({
-      map: floorA,
-      roughnessMap: floorR,
-      normalMap: mobile ? null : floorN,
-      normalScale: new THREE.Vector2(0.45, 0.45),
-      roughness: 0.55,
+    floor: new THREE.MeshPhysicalMaterial({
+      map: floorMap,
+      roughnessMap: floorRough,
+      normalMap: mobile ? null : marbleN,
+      normalScale: new THREE.Vector2(0.22, 0.22),
+      roughness: 0.24,
+      metalness: 0.02,
+      clearcoat: mobile ? 0.2 : 0.42,
+      clearcoatRoughness: 0.18,
+      envMapIntensity: mobile ? 0.45 : 0.7,
+    }),
+    marble: new THREE.MeshPhysicalMaterial({
+      map: marbleA,
+      roughnessMap: marbleR,
+      normalMap: mobile ? null : marbleN,
+      normalScale: new THREE.Vector2(0.28, 0.28),
+      roughness: 0.38,
       metalness: 0,
-      clearcoat: mobile ? 0.08 : 0.16,
-      clearcoatRoughness: 0.22,
-      envMapIntensity: mobile ? 0.35 : 0.55,
+      envMapIntensity: mobile ? 0.18 : 0.28,
     }),
-    bordeaux: new THREE.MeshPhysicalMaterial({
-      map: wallA,
-      roughnessMap: wallR,
-      normalMap: mobile ? null : wallN,
-      normalScale: new THREE.Vector2(0.12, 0.12),
-      roughness: 1,
-      metalness: 0,
-      sheen: 0.05,
-      sheenColor: new THREE.Color(layout.room.wallColor),
-      sheenRoughness: 0.82,
-      envMapIntensity: 0.035,
-    }),
-    stone: new THREE.MeshStandardMaterial({
-      map: stoneA,
-      roughnessMap: stoneR,
-      normalMap: mobile ? null : stoneN,
-      normalScale: new THREE.Vector2(0.35, 0.35),
-      roughness: 0.82,
-      metalness: 0,
-      envMapIntensity: 0.12,
-    }),
-    ceiling: new THREE.MeshStandardMaterial({
-      map: stoneA,
-      color: new THREE.Color('#F3E6D2'),
-      emissive: new THREE.Color('#E8D4B4'),
-      emissiveIntensity: 0.2,
-      roughness: 0.88,
-      metalness: 0,
-      envMapIntensity: 0.06,
-    }),
-    skirting: new THREE.MeshStandardMaterial({
-      color: 0x3c3832,
-      roughness: 0.78,
-      metalness: 0.04,
-    }),
-    plaster: new THREE.MeshStandardMaterial({
-      color: new THREE.Color(layout.room.endColor),
-      emissive: new THREE.Color(0xf3eadc),
-      emissiveIntensity: 0.22,
+    rock: new THREE.MeshStandardMaterial({
+      map: marbleA,
+      roughnessMap: marbleR,
+      normalMap: mobile ? null : marbleN,
+      normalScale: new THREE.Vector2(0.85, 0.85),
       roughness: 0.86,
       metalness: 0,
-      envMapIntensity: 0.08,
+      envMapIntensity: 0.2,
     }),
     gilt: new THREE.MeshStandardMaterial({
       color: 0xf0d48a,
       emissive: 0xd4b36a,
-      emissiveIntensity: 0.22,
+      emissiveIntensity: 0.16,
       roughness: 0.3,
       metalness: 1,
       normalMap: giltN,
       normalScale: new THREE.Vector2(1.1, 1.1),
       envMapIntensity: mobile ? 1.1 : 2.1,
     }),
-    liner: new THREE.MeshStandardMaterial({color: 0xe7d5ba, roughness: 0.74, metalness: 0}),
     artwork: new THREE.MeshStandardMaterial({
       map: atlas,
       emissiveMap: atlas,
       emissive: 0xfff1df,
-      emissiveIntensity: 0.18,
+      emissiveIntensity: 0.14,
       roughness: 0.72,
       metalness: 0,
       envMapIntensity: 0.12,
     }),
     iron: new THREE.MeshStandardMaterial({
-      color: 0x1a1714,
+      color: 0x141210,
       roughness: 0.32,
       metalness: 0.9,
       envMapIntensity: mobile ? 0.25 : 0.45,
@@ -467,29 +537,17 @@ try {
     bulb: new THREE.MeshStandardMaterial({
       color: 0xffc38a,
       emissive: 0xffb27a,
-      emissiveIntensity: mobile ? 1.6 : 2.4,
+      emissiveIntensity: mobile ? 1.4 : 2.0,
       roughness: 0.35,
       metalness: 0,
     }),
-    };
-  library.bordeaux.onBeforeCompile = (shader) => {
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying float vWallH;')
-      .replace('#include <project_vertex>', '#include <project_vertex>\nvWallH = (modelMatrix * vec4(transformed, 1.0)).y;');
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying float vWallH;')
-      .replace('#include <color_fragment>', `#include <color_fragment>
-        diffuseColor.rgb *= mix(1.0, 0.42, smoothstep(0.8, 4.4, vWallH));`);
+    sky: new THREE.MeshBasicMaterial({
+      map: sky,
+      side: THREE.DoubleSide,
+      fog: false,
+      toneMapped: false,
+    }),
   };
-  library.laylight = new THREE.MeshStandardMaterial({
-    map: sky,
-    emissiveMap: sky,
-    emissive: 0xffffff,
-    emissiveIntensity: mobile ? 1.8 : 2.4,
-    roughness: 0.82,
-    metalness: 0,
-    side: THREE.DoubleSide,
-  });
   applyLibrary(gltf.scene, library, lightmap);
   const heroObjects = [];
   gltf.scene.traverse(object => {
@@ -517,10 +575,10 @@ try {
   scene.add(gltf.scene);
   const floorSpan = layout.room.length - layout.room.backZ;
   const reflector = new Reflector(new THREE.PlaneGeometry(layout.room.width, floorSpan), {
-    textureWidth: mobile ? 160 : 320,
-    textureHeight: mobile ? 160 : 320,
+    textureWidth: mobile ? 192 : 512,
+    textureHeight: mobile ? 192 : 288,
     clipBias: 0.003,
-    color: 0xfff1e2,
+    color: 0xf4f1ea,
   });
   reflector.rotation.x = -Math.PI / 2;
   reflector.position.set(0, 0.018, layout.room.backZ + floorSpan / 2);
@@ -533,7 +591,7 @@ try {
       'gl_FragColor = vec4( blendOverlay( base.rgb, color ), 1.0 );',
       `float y = gl_FragCoord.y / max(uResolution.y, 1.0);
        float fres = smoothstep(0.02, 0.62, y);
-       gl_FragColor = vec4(base.rgb * color, mix(0.05, 0.36, fres));`,
+       gl_FragColor = vec4(base.rgb * color, mix(0.08, 0.46, fres));`,
     );
   const fitReflector = () => {
     reflector.material.uniforms.uResolution.value.set(renderer.domElement.width, renderer.domElement.height);
@@ -542,37 +600,72 @@ try {
   window.addEventListener('resize', fitReflector);
   scene.add(reflector);
   for (const frame of layout.frames) {
-    const spot = new THREE.SpotLight(0xffd7a4, mobile ? 22 : 48, 5.5, 0.58, 0.95, 1.6);
-    const side = frame.wall === 'left' || frame.wall === 'endLeft' ? 1 : frame.wall === 'right' || frame.wall === 'endRight' ? -1 : 0;
-    spot.position.set(frame.x + side * 0.9, 4.25, frame.wall === 'north' ? frame.z - 0.75 : frame.z);
-    spot.target.position.set(frame.x, frame.y, frame.z);
+    const spot = new THREE.SpotLight(0xffc992, mobile ? 30 : 78, 6.4, 0.78, 0.88, 1.35);
+    const side = frame.wall === 'left' ? 1 : -1;
+    spot.position.set(frame.x + side * 0.85, 4.55, frame.z);
+    spot.target.position.set(frame.x + side * 0.05, frame.y + frame.height * 0.15, frame.z);
     scene.add(spot, spot.target);
   }
-  if (!mobile) {
-    try {
-      const cubeTarget = new THREE.WebGLCubeRenderTarget(256);
-      const probe = new THREE.CubeCamera(0.25, 40, cubeTarget);
-      probe.position.set(0, 1.15, layout.room.hallLength * 0.42);
-      probe.update(renderer, scene);
-      const env = pmrem.fromCubemap(cubeTarget.texture).texture;
-      scene.environment = env;
-      scene.environmentIntensity = 0.34;
-      gltf.scene.traverse(object => {
-        if (object.isMesh && object.material?.name === 'parquet') {
-          object.material.envMap = env;
-          object.material.envMapIntensity = 0.7;
-        }
-      });
-      cubeTarget.dispose();
-    } catch (error) {
-      console.warn('reflection probe skipped', error);
-    }
+  scene.fog = new THREE.Fog(0xf3f5f8, 9.5, 18.5);
+  const shaftTex = shaftTexture();
+  for (const [x, y, z, w, h, spin] of [[0.05, 6.4, 9.2, 1.8, 8.2, 0.08], [-0.45, 5.6, 12.2, 1.15, 6.4, -0.2], [0.5, 6.8, 14.6, 1.35, 7.2, 0.25]]) {
+    const shaft = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({
+      map: shaftTex,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      opacity: mobile ? 0.16 : 0.22,
+      fog: false,
+      side: THREE.DoubleSide,
+    }));
+    shaft.position.set(x, y, z);
+    shaft.rotation.y = spin;
+    scene.add(shaft);
   }
+  for (const [z, opacity] of [[16.4, 0.1], [17.8, 0.22]]) {
+    const haze = new THREE.Mesh(new THREE.PlaneGeometry(12, 9), new THREE.MeshBasicMaterial({
+      color: 0xf7f8fa,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+      fog: false,
+      side: THREE.DoubleSide,
+    }));
+    haze.position.set(0, 3.6, z);
+    scene.add(haze);
+  }
+  if (shot === 'pano' || params.get('view') === 'pano' || shot === 'switch') {
+    await ensurePano();
+  }
+  if (shot === 'pano' || params.get('view') === 'pano') setPano(true);
   statusEl.remove();
   report.ready = true;
 } catch (error) {
   console.error(error);
   statusEl.textContent = 'La salle échantillon n’a pas pu s’ouvrir. ' + error.message;
+}
+
+function shaftTexture() {
+  const plate = document.createElement('canvas');
+  plate.width = 128;
+  plate.height = 512;
+  const context = plate.getContext('2d');
+  const horizontal = context.createLinearGradient(0, 0, 128, 0);
+  horizontal.addColorStop(0, 'rgba(255,255,255,0)');
+  horizontal.addColorStop(0.5, 'rgba(255,250,242,1)');
+  horizontal.addColorStop(1, 'rgba(255,255,255,0)');
+  context.fillStyle = horizontal;
+  context.fillRect(0, 0, 128, 512);
+  const vertical = context.createLinearGradient(0, 0, 0, 512);
+  vertical.addColorStop(0, 'rgba(255,255,255,0.15)');
+  vertical.addColorStop(0.35, 'rgba(255,255,255,1)');
+  vertical.addColorStop(1, 'rgba(255,255,255,0)');
+  context.globalCompositeOperation = 'destination-in';
+  context.fillStyle = vertical;
+  context.fillRect(0, 0, 128, 512);
+  const texture = new THREE.CanvasTexture(plate);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
 }
 
 function pressed(...names) {
@@ -604,7 +697,21 @@ function tick(now) {
     }
     Object.assign(state, span);
     report.videoTime = elapsed;
-  } else if (!shot) {
+  } else if (shot === 'switch') {
+    if (!videoStart) videoStart = now;
+    const elapsed = window.__SAMPLE_T != null
+      ? Math.min(8, Number(window.__SAMPLE_T))
+      : Math.min(8, (now - videoStart) / 1000);
+    report.videoTime = elapsed;
+    if (elapsed < 2.8) {
+      Object.assign(state, shots.axis);
+    } else if (!report.pano && panoMesh) {
+      setPano(true);
+    } else if (report.pano) {
+      state.yaw = Math.sin((elapsed - 2.8) * 0.7) * 0.65;
+      state.pitch = -0.04 + Math.sin((elapsed - 2.8) * 0.45) * 0.16;
+    }
+  } else if (!shot && !report.pano) {
     let forward = (pressed('ArrowUp', 'KeyW', 'KeyZ') ? 1 : 0) - (pressed('ArrowDown', 'KeyS') ? 1 : 0) + input.forward;
     let strafe = (pressed('KeyD') ? 1 : 0) - (pressed('KeyQ', 'KeyA') ? 1 : 0) + input.strafe;
     overlay.dataset.museumInputForward = forward.toFixed(3);
@@ -634,10 +741,11 @@ function tick(now) {
       if (!material) return;
       for (const key of ['map', 'normalMap', 'roughnessMap', 'lightMap', 'emissiveMap']) {
         const texture = material[key];
-        if (!texture || seen.has(texture)) continue;
+        const image = texture?.image;
+        if (!texture || seen.has(texture) || (image && seen.has(image))) continue;
         seen.add(texture);
-        const image = texture.image;
         if (!image) continue;
+        seen.add(image);
         if (image.data?.byteLength) bytes += image.data.byteLength;
         else if (image.width && image.height) bytes += image.width * image.height * 4;
       }

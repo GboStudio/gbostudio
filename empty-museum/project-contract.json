@@ -87,7 +87,8 @@
     "status": "branch-only-no-pr",
     "path": "/empty-museum/salle-echantillon.html",
     "visitQuery": "visit=salle-echantillon",
-    "branch": "feat/salle-echantillon-lumiere",
+    "branch": "feat/musee-blanc-nolimit",
+    "openSky": true,
     "isolatedFromPublicGallery": true,
     "lightmap": "luminance",
     "commerce": "demo-no-live-payments"

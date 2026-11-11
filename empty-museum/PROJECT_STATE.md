@@ -62,6 +62,17 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - **Pas déployé. Pas fusionné. Pas une PR.** La commercialisation reste en démonstration.
 - Le critère « on est dans la pièce » se juge sur les captures de la branche, pas sur un test unitaire.
 
+## Salle blanche « no limit » — 11 novembre 2026
+
+- Décision de Guillaume : la salle bordeaux est abandonnée pour l’échantillon. Une salle de marbre de Carrare, sans plafond et sans mur du fond, la remplace. Le musée entier ne change pas. **Pas de pull request**, pas de fusion, `main` et les PR #50 / #51 ne sont pas touchés.
+- Branche : `feat/musee-blanc-nolimit`, partie de `feat/salle-echantillon-lumiere`. Adresse inchangée : `/empty-museum/salle-echantillon.html` et `?visit=salle-echantillon`. La galerie publique ne la charge pas.
+- La pièce s’ouvre sur un ciel de nuages. Des blocs de marbre brut flottent dans l’axe. Les cadres dorés, les banquettes et les rails de spots restent aux mêmes places ; les banquettes sont en marbre blanc. Le sol est un marbre poli avec un reflet planaire. Le fond se dissout dans la brume. La lightmap Cycles est en luminance ; les halos 3000 K viennent des spots temps réel. Le ciel du viewer est le dôme peint, pas la lightmap.
+- Un seul arrêt de visite (la caméra centrée, œil à 1,6 m) peut passer sur une photo 360° équirectangulaire Cycles, au moins 6144×3072, puis revenir à la marche.
+- Textures peintes pour l’échantillon (veines, ciel). Aucun asset payant.
+- Contrôle local Chrome SwiftShader, pas un iPhone. Marche bureau : **23 appels, 3964 triangles, 166,1 Mo** décodés, reflet planaire 512×288. Mobile 390 px : **21 appels, 3960 triangles, 55,8 Mo**, reflet 192 px. La photo 360 est un JPEG **6144×3072, 564 Ko**, 8 échantillons, débruitée, chargée en **62 ms** dans ce contrôle. Vidéo de marche 12,3 s (1,4 Mo) et passage en 360 (8,3 s).
+- Écart qui reste, dit clairement : le ciel temps réel est un dôme peint, plus pâle que les nuages de la cible, et le rayon est une carte additive, pas un volume. Les blocs sont des cubes déplacés : ils se lisent comme des pierres à facettes, pas comme du marbre brut taillé. Le reflet du sol est planaire et basse définition ; le premier plan reste très clair. Les veines sont générées, larges et douces, pas une dalle bookmatch photographiée. Dans la photo 360, les deux grands cadres portent leur toile ; les petits cadres restent vides parce qu’ils partagent un atlas peint seulement par le viewer. Un marbre photographié, des rochers sculptés et un reflet flou haute définition rapprocheraient encore. Le temps réel actuel ne le fait pas tout seul.
+- **Pas déployé. Pas fusionné. Pas une PR.** La commercialisation reste en démonstration.
+
 ## Contradictions à résoudre (pas des fonctions terminées)
 1. L'interface classique `index.html` / `app.js` utilise encore certaines durées et certains prix historiques alors que le nouveau configurateur fonctionne en mensuel/annuel. **Unifier l'offre avant de lancer les ventes.**
 2. Le double joystick de PR #34 a été fusionnée ; les contrôles navigateur CI ont été exercés, mais la validation sur iPhone réel et la correspondance du déploiement exact restent nécessaires.

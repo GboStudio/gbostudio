@@ -5,13 +5,14 @@ import {ROOM, buildLayout, findArchitectureConflicts} from './room-layout.mjs';
 
 const layout = buildLayout();
 
-test('the sample room stays a single gallery with a bright room beyond the portal', () => {
+test('the sample room is one open marble gallery with no back wall', () => {
   assert.equal(ROOM.width, 7.2);
+  assert.equal(ROOM.openSky, true);
+  assert.equal(ROOM.wallColor, '#E4E0DA');
   assert.ok(ROOM.hallLength > 10 && ROOM.hallLength < ROOM.length);
-  assert.ok(ROOM.corniceY > 4 && ROOM.corniceY < ROOM.soffitY);
-  assert.ok(ROOM.skylightHalf * 2 < ROOM.width * 0.6);
-  assert.equal(ROOM.daylightK, 4700);
+  assert.equal(ROOM.daylightK, 5600);
   assert.equal(ROOM.pictureK, 3000);
+  assert.equal(layout.frames.some(frame => frame.wall === 'north' || frame.wall === 'endLeft' || frame.wall === 'endRight'), false);
 });
 
 test('large frames are in front and smaller frames recede on both walls', () => {
@@ -25,7 +26,7 @@ test('large frames are in front and smaller frames recede on both walls', () => 
     assert.deepEqual(depths, sorted);
   }
   assert.equal(layout.frames.filter(frame => frame.pictureLight).length, layout.frames.length);
-  assert.ok(layout.frames.some(frame => frame.wall === 'north'));
+  assert.equal(layout.frames.filter(frame => frame.hero).length, 2);
 });
 
 test('frames do not cross a pilaster or the portal', () => {
@@ -37,6 +38,7 @@ test('the public gallery does not load the sample room', () => {
   const engine = readFileSync(new URL('../engine3d.js', import.meta.url), 'utf8');
   const loader = readFileSync(new URL('../engine-loader.js', import.meta.url), 'utf8');
   const baker = readFileSync(new URL('./bake_salle_echantillon.py', import.meta.url), 'utf8');
+  const blanc = readFileSync(new URL('./bake_musee_blanc.py', import.meta.url), 'utf8');
   assert.equal(index.includes('salle-echantillon'), false);
   assert.equal(engine.includes('salle-echantillon'), false);
   assert.match(loader, /salle-echantillon\.html/);
@@ -46,6 +48,11 @@ test('the public gallery does not load the sample room', () => {
   assert.match(baker, /export_vertex_color=/);
   assert.match(baker, /use_pass_color = False/);
   assert.match(baker, /def neutralize_and_scale/);
+  assert.doesNotMatch(blanc, /export_colors\s*=/);
+  assert.match(blanc, /export_vertex_color=/);
+  assert.match(blanc, /use_pass_color = False/);
+  assert.match(blanc, /def neutralize/);
+  assert.match(blanc, /hide_render = True/);
 });
 
 test('commerce stays a demonstration', () => {
