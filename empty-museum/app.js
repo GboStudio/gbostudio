@@ -176,8 +176,9 @@ function bg(p){if(p.image?.startsWith('data:'))return `url("${p.image}")`;return
 const ASSET_RE=/^assets\/oeuvres\/[a-z0-9-]+\.(?:webp|jpg)$/;
 function paintCurated(el,p){
   const a=p.imageAsset;if(!a||!ASSET_RE.test(a.jpg||'')||!ASSET_RE.test(a.webp||''))return false;
-  el.style.backgroundImage=`url("${a.jpg}")`;
-  el.style.backgroundImage=`image-set(url("${a.webp}") type("image/webp"), url("${a.jpg}") type("image/jpeg"))`;
+  const v="?v=20261111oeuvres4";
+  el.style.backgroundImage=`url("${a.jpg}${v}")`;
+  el.style.backgroundImage=`image-set(url("${a.webp}${v}") type("image/webp"), url("${a.jpg}${v}") type("image/jpeg"))`;
   el.style.backgroundSize='contain';el.style.backgroundRepeat='no-repeat';el.style.backgroundPosition='center';el.style.backgroundColor='#1d1c1a';
   return true;
 }
