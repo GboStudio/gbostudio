@@ -89,7 +89,7 @@
     if (!imageCache.has(piece.id)) {
       const img = new Image();
       img.onload = () => { if (active) draw(); };
-      img.src = curated ? curated+"?v=20261111oeuvres3" : piece.image;
+      img.src = curated || piece.image;
       imageCache.set(piece.id, img);
     }
     const img = imageCache.get(piece.id);

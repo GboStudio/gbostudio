@@ -5,7 +5,7 @@ const $=q=>document.querySelector(q), $$=q=>[...document.querySelectorAll(q)];
 // with « Grok Imagine » (confirmed by Guillaume). ID 6 (Wrong Fruit) is kept as is.
 const base=[
 {id:1,title:'Le Premier Spectateur',author:'GBO Studio',category:'image',tools:'Grok Imagine',description:'Toute création mérite son public. Parfois, un seul regard suffit à en faire un chef-d’œuvre.',size:'large',slot:'M006-large-1',aspect:3/4,imageAsset:{webp:'assets/oeuvres/le-premier-spectateur.webp',jpg:'assets/oeuvres/le-premier-spectateur.jpg'},image:'',curated:true,date:'Nov. 2026'},
-{id:2,title:'Le Dernier Bal',author:'GBO Studio',category:'image',tools:'Grok Imagine',description:'Ils dansent ensemble depuis toujours. Dans un monde qui s’efface, l’amour qui dure finit par rallumer les autres.',size:'large',slot:'M008-large-1',aspect:3/4,imageAsset:{webp:'assets/oeuvres/le-dernier-bal.webp',jpg:'assets/oeuvres/le-dernier-bal.jpg'},image:'',curated:true,date:'Nov. 2026'},
+{id:2,title:'Le Dernier Bal',author:'GBO Studio',category:'image',tools:'Grok Imagine',description:'Dans un monde qui s’efface, l’amour qui dure finit par rallumer les autres.',size:'large',slot:'M008-large-1',aspect:3/4,imageAsset:{webp:'assets/oeuvres/le-dernier-bal.webp',jpg:'assets/oeuvres/le-dernier-bal.jpg'},image:'',curated:true,date:'Nov. 2026'},
 {id:3,title:'Le Gamin de 1987',author:'GBO Studio',category:'image',tools:'Grok Imagine',description:'On nous montre l’adulte qu’on devrait devenir. Lui, il a choisi de rester heureux.',size:'large',slot:'M011-large-1',aspect:3/4,imageAsset:{webp:'assets/oeuvres/le-gamin-de-1987.webp',jpg:'assets/oeuvres/le-gamin-de-1987.jpg'},image:'',curated:true,date:'Nov. 2026'},
 {id:4,title:'Kintsugi',author:'GBO Studio',category:'image',tools:'Grok Imagine',description:'On ne répare pas un cœur pour cacher ses fêlures, mais pour en faire de l’or.',size:'large',slot:'M016-large-1',aspect:3/4,imageAsset:{webp:'assets/oeuvres/kintsugi.webp',jpg:'assets/oeuvres/kintsugi.jpg'},image:'',curated:true,date:'Nov. 2026'},
 {id:5,title:'Lundi, 8h12',author:'GBO Studio',category:'image',tools:'Grok Imagine',description:'Les héros sont partout. Il suffit de ne pas encore avoir perdu ses yeux d’enfant pour les voir.',size:'large',slot:'M025-large-1',aspect:3/4,imageAsset:{webp:'assets/oeuvres/lundi-8h12.webp',jpg:'assets/oeuvres/lundi-8h12.jpg'},image:'',curated:true,date:'Nov. 2026'},
@@ -176,9 +176,8 @@ function bg(p){if(p.image?.startsWith('data:'))return `url("${p.image}")`;return
 const ASSET_RE=/^assets\/oeuvres\/[a-z0-9-]+\.(?:webp|jpg)$/;
 function paintCurated(el,p){
   const a=p.imageAsset;if(!a||!ASSET_RE.test(a.jpg||'')||!ASSET_RE.test(a.webp||''))return false;
-  const v="?v=20261111oeuvres3";
-  el.style.backgroundImage=`url("${a.jpg}${v}")`;
-  el.style.backgroundImage=`image-set(url("${a.webp}${v}") type("image/webp"), url("${a.jpg}${v}") type("image/jpeg"))`;
+  el.style.backgroundImage=`url("${a.jpg}")`;
+  el.style.backgroundImage=`image-set(url("${a.webp}") type("image/webp"), url("${a.jpg}") type("image/jpeg"))`;
   el.style.backgroundSize='contain';el.style.backgroundRepeat='no-repeat';el.style.backgroundPosition='center';el.style.backgroundColor='#1d1c1a';
   return true;
 }
