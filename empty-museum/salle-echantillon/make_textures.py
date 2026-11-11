@@ -22,9 +22,9 @@ SCAN = Path('/tmp/downloads/wood_diff.jpg')
 SCAN_N = Path('/tmp/downloads/wood_nor.jpg')
 SCAN_R = Path('/tmp/downloads/wood_rough.jpg')
 TOKTX = Path('/tmp/downloads/KTX-Software-4.3.2-Linux-x86_64/bin/toktx')
-TILE_M = 6.3
-PLANK_W = 0.075
-PLANK_L = 0.45
+TILE_M = 5.4
+PLANK_W = 0.09
+PLANK_L = 0.60
 
 
 def srgb_to_linear(c):
@@ -66,8 +66,8 @@ def herringbone(size, albedo_src, normal_src, rough_src):
     rough_luma = rough_src.mean(axis=2, keepdims=True)
     strips_r = plank_strips(np.repeat(rough_luma, 3, axis=2), across)[:, :, :, 0]
     along_px = strips_a.shape[1]
-    length = 0.315
-    width = 0.07
+    length = 0.60
+    width = 0.09
     advance = length
     row = width * 2
     ys, xs = np.mgrid[0:size, 0:size]
@@ -119,28 +119,27 @@ def herringbone(size, albedo_src, normal_src, rough_src):
     ny = normal[:, :, 1].copy()
     normal[:, :, 0] = np.where(slanted, ny, nx)
     normal[:, :, 1] = np.where(slanted, 255.0 - nx, ny)
-    gain = 0.90 + (np.abs(ident) % 9) * 0.025
+    gain = 0.72 + (np.abs(ident) % 11) * 0.055
     color *= gain[:, :, None]
-    joint = (u_across < 0.045) | (u_across > 0.955) | (u_along < 0.015) | (u_along > 0.985)
-    color = np.where(joint[:, :, None], color * 0.62, color)
-    # Warm honey oak, still photographic. Linear lift so the lit floor is not chocolate.
+    joint = (u_across < 0.035) | (u_across > 0.965) | (u_along < 0.012) | (u_along > 0.988)
+    color = np.where(joint[:, :, None], color * 0.84, color)
     linear = srgb_to_linear(np.clip(color, 0, 255) / 255.0)
-    linear = np.clip(linear * 1.22 + 0.015, 0, 1)
-    linear[:, :, 0] *= 1.04
-    linear[:, :, 2] *= 0.90
+    # Darker varnished honey, not the pale orange of the first pass.
+    target = srgb_to_linear(np.array([112, 68, 40], np.float32) / 255.0)
+    mean = np.maximum(linear.mean(axis=(0, 1)), 1e-4)
+    linear = np.clip(linear * (target / mean), 0, 1)
     graded = linear_to_srgb(linear) * 255.0
     rough = rough / 255.0
-    rough = np.clip(rough * 0.28 + 0.16, 0.14, 0.55)
-    rough = np.where(joint, np.clip(rough + 0.28, 0, 0.92), rough)
-    # Worn centre of each board takes a softer reflection of the skylight.
-    centre = np.clip(1.0 - np.abs(u_across - 0.5) * 2.2, 0, 1)
-    rough = np.clip(rough - centre * 0.08, 0.16, 0.92)
+    rough = np.clip(rough * 0.18 + 0.08, 0.06, 0.28)
+    rough = np.where(joint, np.clip(rough + 0.22, 0, 0.55), rough)
+    centre = np.clip(1.0 - np.abs(u_across - 0.5) * 1.6, 0, 1)
+    rough = np.clip(rough - centre * 0.04, 0.05, 0.55)
     return graded, normal, np.repeat((rough * 255.0)[:, :, None], 3, axis=2)
 
 
 def bordeaux(size=1024):
     rng = np.random.default_rng(7)
-    base = np.array([90, 44, 40], np.float32)
+    base = np.array([74, 30, 31], np.float32)
     noise = rng.normal(0, 1, (size // 4, size // 4)).astype(np.float32)
     noise = np.array(Image.fromarray(noise, mode='F').resize((size, size), Image.Resampling.BICUBIC), dtype=np.float32, copy=True)
     noise -= noise.mean()
@@ -148,7 +147,7 @@ def bordeaux(size=1024):
     fiber = rng.normal(0, 1, (size, size // 8)).astype(np.float32)
     fiber = np.array(Image.fromarray(fiber, mode='F').resize((size, size), Image.Resampling.BILINEAR), dtype=np.float32, copy=True)
     fiber -= fiber.mean()
-    color = base + noise[:, :, None] * np.array([3.2, 1.6, 1.8]) + fiber[:, :, None] * 1.4
+    color = base + noise[:, :, None] * np.array([2.2, 1.1, 1.1]) + fiber[:, :, None] * 0.8
     color = np.clip(color, 0, 255)
     rough = np.clip(196 + noise * 8 + fiber * 4, 170, 230)
     # A whisper of weave, not a drawn damask.
@@ -192,6 +191,39 @@ def skylight(width=1024, height=512):
     return np.clip(image, 0, 255)
 
 
+def limestone(size=1024):
+    rng = np.random.default_rng(11)
+    y, x = np.mgrid[0:size, 0:size]
+    vein = np.sin(x * 0.02 + np.sin(y * 0.008) * 6) * 0.5 + np.sin(y * 0.015 + x * 0.004) * 0.5
+    grain = rng.normal(0, 1, (size // 2, size // 2)).astype(np.float32)
+    grain = np.array(Image.fromarray(grain, mode='F').resize((size, size), Image.Resampling.BICUBIC), dtype=np.float32, copy=True)
+    grain = (grain - grain.mean()) / max(float(grain.std()), 1e-3)
+    base = np.array([214, 204, 188], np.float32)
+    color = base + vein[:, :, None] * np.array([10, 8, 6]) + grain[:, :, None] * np.array([6, 5, 4])
+    normal = np.zeros((size, size, 3), np.float32)
+    normal[:, :, 0] = 128 + vein * 10
+    normal[:, :, 1] = 128 + grain * 8
+    normal[:, :, 2] = 248
+    rough = np.clip(168 + grain * 12, 140, 200)
+    return np.clip(color, 0, 255), normal, np.repeat(rough[:, :, None], 3, axis=2)
+
+
+def gilt_normal(size=1024):
+    image = np.zeros((size, size, 3), np.float32)
+    image[:, :, 0] = 128
+    image[:, :, 1] = 128
+    image[:, :, 2] = 255
+    # Bead and leaf along the moulding so the gold catches the spot.
+    period = size // 8
+    xs = np.arange(size)
+    ys = np.arange(size)
+    bead = np.sin(xs[None, :] / period * math.pi * 2)
+    leaf = np.sin(ys[:, None] / (period * 0.65) * math.pi * 2)
+    image[:, :, 0] = 128 + bead * 28 + leaf * 10
+    image[:, :, 1] = 128 + leaf * 22
+    return np.clip(image, 0, 255)
+
+
 def encode(src, dest, color):
     if not TOKTX.exists():
         print('toktx missing, skipped', dest.name)
@@ -230,11 +262,16 @@ def main():
     Image.fromarray(np.clip(wall_r, 0, 255).astype(np.uint8), 'RGB').save(PBR / 'bordeaux-rough.jpg', quality=92)
     sky = skylight()
     save_rgb(PBR / 'skylight.jpg', sky)
+    stone, stone_n, stone_r = limestone()
+    save_rgb(PBR / 'limestone-diff.jpg', stone)
+    Image.fromarray(np.clip(stone_n, 0, 255).astype(np.uint8), 'RGB').save(PBR / 'limestone-nor.jpg', quality=92)
+    Image.fromarray(np.clip(stone_r, 0, 255).astype(np.uint8), 'RGB').save(PBR / 'limestone-rough.jpg', quality=92)
+    Image.fromarray(np.clip(gilt_normal(), 0, 255).astype(np.uint8), 'RGB').save(PBR / 'gilt-nor.jpg', quality=92)
     (PBR / 'surfaces.json').write_text(json.dumps({
         'floorTileM': TILE_M,
         'plankM': [PLANK_W, PLANK_L],
         'source': 'Poly Haven wood_floor 2k CC0',
-        'wallColor': '#5A2C28',
+        'wallColor': '#4A1E1F',
     }, indent=2))
     jobs = [
         ('herringbone-diff.jpg', 'herringbone-diff.ktx2', True),
@@ -244,6 +281,10 @@ def main():
         ('bordeaux-nor.jpg', 'bordeaux-nor.ktx2', False),
         ('bordeaux-rough.jpg', 'bordeaux-rough.ktx2', False),
         ('skylight.jpg', 'skylight.ktx2', True),
+        ('limestone-diff.jpg', 'limestone-diff.ktx2', True),
+        ('limestone-nor.jpg', 'limestone-nor.ktx2', False),
+        ('limestone-rough.jpg', 'limestone-rough.ktx2', False),
+        ('gilt-nor.jpg', 'gilt-nor.ktx2', False),
     ]
     for src, dest, color in jobs:
         encode(PBR / src, PBR / dest, color)

@@ -1,9 +1,9 @@
 {
-  "floorTileM": 6.3,
+  "floorTileM": 5.4,
   "plankM": [
-    0.075,
-    0.45
+    0.09,
+    0.6
   ],
   "source": "Poly Haven wood_floor 2k CC0",
-  "wallColor": "#5A2C28"
+  "wallColor": "#4A1E1F"
 }

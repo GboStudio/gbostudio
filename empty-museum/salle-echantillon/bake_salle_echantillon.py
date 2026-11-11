@@ -54,16 +54,17 @@ CORNICE = [
     (0.018, 0.278),
 ]
 
+# inset fraction of the moulding width, depth in metres from the wall.
 FRAME_PROFILE = [
-    (0.00, 0.012),
-    (0.06, 0.028),
-    (0.14, 0.062),
-    (0.24, 0.040),
-    (0.36, 0.086),
-    (0.50, 0.058),
-    (0.64, 0.078),
-    (0.78, 0.034),
-    (0.90, 0.022),
+    (0.00, 0.014),
+    (0.07, 0.032),
+    (0.15, 0.058),
+    (0.26, 0.034),
+    (0.40, 0.074),
+    (0.54, 0.042),
+    (0.68, 0.062),
+    (0.82, 0.030),
+    (0.93, 0.018),
     (1.00, 0.012),
 ]
 
@@ -275,7 +276,7 @@ def configure_world():
     scene.cycles.adaptive_threshold = 0.025
     scene.cycles.adaptive_min_samples = 8
     scene.cycles.max_bounces = 6
-    scene.cycles.diffuse_bounces = 2
+    scene.cycles.diffuse_bounces = 3
     scene.cycles.glossy_bounces = 1
     scene.cycles.transmission_bounces = 0
     scene.cycles.sample_clamp_indirect = 8.0
@@ -316,7 +317,8 @@ class Room:
             'laylight': new_material('laylight', hex_color('#F4EFE4'), 0.6),
         }
         self.mesh = {name: Accum(name, material) for name, material in self.mat.items()}
-        self.cornice_mesh = Accum('cornice', self.mat['stone'])
+        self.mat['ceiling'] = new_material('ceiling', hex_color(self.room.get('ceilingColor', '#E7D3B8')), 0.78)
+        self.cornice_mesh = Accum('cornice', self.mat['ceiling'])
         self.heroes = []
         self.nonhero = 0
         self.tile = self.room['floorTileM']
@@ -330,9 +332,8 @@ class Room:
         return rect_uv('floor', u, v, self.size)
 
     def floor_muv(self, x, depth):
-        c = math.cos(math.pi / 4)
-        s = math.sin(math.pi / 4)
-        return ((x * c + depth * s) / self.tile, (-x * s + depth * c) / self.tile)
+        # Axis-aligned so the long herringbone runs down the nave, not as a rotated chevron.
+        return (x / self.tile + 0.5, depth / self.tile)
 
     def wall_luv(self, name, along, up, along0, along1, up1):
         u = (along - along0) / max(1e-4, along1 - along0)
@@ -514,12 +515,10 @@ class Room:
                 y1 = pilaster['z'] + width / 2
                 depth = pilaster['depth']
                 # Plinth.
-                self.add_box('stone', x_wall + inward * 0.004, x_wall + inward * (depth + 0.05), y0 - 0.04, y1 + 0.04, 0.008, 0.22)
-                # Shaft.
-                self.add_box('stone', x_wall + inward * 0.004, x_wall + inward * depth, y0, y1, 0.22, self.cornice - 0.34)
-                # Capital, three courses.
-                base = self.cornice - 0.34
-                courses = [(0.04, 0.08, 0.02), (0.07, 0.12, 0.05), (0.03, 0.16, 0.08)]
+                self.add_box('stone', x_wall + inward * 0.004, x_wall + inward * (depth + 0.08), y0 - 0.06, y1 + 0.06, 0.008, 0.28)
+                self.add_box('stone', x_wall + inward * 0.004, x_wall + inward * depth, y0, y1, 0.28, self.cornice - 0.42)
+                base = self.cornice - 0.42
+                courses = [(0.06, 0.10, 0.04), (0.08, 0.16, 0.08), (0.05, 0.22, 0.12)]
                 z = base
                 for height, extra_w, extra_d in courses:
                     self.add_box(
@@ -544,10 +543,9 @@ class Room:
                 x0 = x1 - depth
             y0, y1 = bench['z0'], bench['z1']
             h = bench['height']
-            self.add_box('stone', x0, x1, y0, y1, 0.012, h)
-            # A slightly inset plinth so the block is not a raw cube.
-            inset = 0.025
-            self.add_box('stone', x0 + inset, x1 - inset, y0 + inset, y1 - inset, 0.0, 0.012)
+            self.add_box('stone', x0, x1, y0, y1, 0.018, h - 0.07)
+            self.add_box('stone', x0 + 0.035, x1 - 0.035, y0 + 0.04, y1 - 0.04, h - 0.07, h)
+            self.add_box('stone', x0 + 0.02, x1 - 0.02, y0 + 0.025, y1 - 0.025, 0.004, 0.018)
 
     def ceiling_luv(self, coords):
         return [
@@ -592,7 +590,7 @@ class Room:
             coords = [(-hx - 0.03, ya, flat), (hx + 0.03, ya, flat), (hx + 0.03, yb, flat), (-hx - 0.03, yb, flat)]
             self.cornice_mesh.quad(coords, [(0, 0), (1, 0), (1, 1), (0, 1)], self.ceiling_luv(coords), (0, 0, -1))
         # Curb around the opening, then glass above it so the mullions read against the sky.
-        curb = 0.06
+        curb = 0.42
         for sign in (-1, 1):
             x = sign * hx
             coords = [(x, y0, flat), (x, y1, flat), (x, y1, flat + curb), (x, y0, flat + curb)]
@@ -606,8 +604,8 @@ class Room:
         coords = [(-hx, y0, gz), (hx, y0, gz), (hx, y1, gz), (-hx, y1, gz)]
         self.q('laylight', coords, [(0, 0), (1, 0), (1, 1), (0, 1)], self.pack.for_quad(coords), (0, 0, -1))
         cols, rows = 4, 8
-        mz0 = gz - 0.05
-        mz1 = gz - 0.012
+        mz0 = gz - 0.16
+        mz1 = gz - 0.02
         for c in range(cols + 1):
             x = -hx + (2 * hx) * c / cols
             self.add_box('iron', x - 0.015, x + 0.015, y0, y1, mz0, mz1)
@@ -704,7 +702,7 @@ class Room:
         rings = []
         for inset_k, depth_k in FRAME_PROFILE:
             inset = mould * inset_k
-            depth = 0.008 + mould * 0.85 * depth_k
+            depth = 0.01 + depth_k
             rings.append([
                 (x + normal_x * depth, y0 + inset, z0 + inset),
                 (x + normal_x * depth, y1 - inset, z0 + inset),
@@ -762,7 +760,7 @@ class Room:
         rings = []
         for inset_k, depth_k in FRAME_PROFILE:
             inset = mould * inset_k
-            depth = 0.008 + mould * 0.85 * depth_k
+            depth = 0.01 + depth_k
             rings.append([
                 (x0 + inset, y - depth, z0 + inset),
                 (x1 - inset, y - depth, z0 + inset),
@@ -928,10 +926,15 @@ def neutralize_and_scale(image):
     import numpy as np
     flat = np.array(image.pixels[:], dtype=np.float32).reshape(-1, 4)
     luma = 0.2126 * flat[:, 0] + 0.7152 * flat[:, 1] + 0.0722 * flat[:, 2]
-    lit = luma[luma > 0.002]
-    p92 = float(np.percentile(lit, 92)) if lit.size else 1.0
-    scale = 0.92 / max(p92, 1e-4)
+    height, width = image.size[1], image.size[0]
+    pic = luma.reshape(height, width)
+    fx, fy, fw, fh = REGIONS['floor']
+    floor = pic[fy + 12:fy + fh - 12, fx + 12:fx + fw - 12]
+    lit_floor = floor[floor > 0.004]
+    p90 = float(np.percentile(lit_floor, 90)) if lit_floor.size else 1.0
+    scale = 1.15 / max(p90, 1e-4)
     luma *= scale
+    luma = np.minimum(luma, 3.2)
     flat[:, 0] = luma
     flat[:, 1] = luma
     flat[:, 2] = luma
@@ -1060,6 +1063,25 @@ def main():
     Room(layout).build()
     if '--check' in args:
         report_check()
+        return
+    if '--mesh' in args:
+        for obj in bpy.context.scene.objects:
+            if obj.type == 'MESH' and obj.data.uv_layers.get('UVMap'):
+                obj.data.uv_layers['UVMap'].active = True
+        bpy.ops.export_scene.gltf(
+            filepath=str(ASSETS / 'salle-echantillon.glb'),
+            export_format='GLB',
+            export_apply=True,
+            export_texcoords=True,
+            export_normals=True,
+            export_materials='EXPORT',
+            export_yup=True,
+            export_image_format='NONE',
+            export_vertex_color='ACTIVE',
+            export_lights=False,
+            export_cameras=False,
+        )
+        print('mesh exported')
         return
     if '--bake' in args:
         bake(layout)

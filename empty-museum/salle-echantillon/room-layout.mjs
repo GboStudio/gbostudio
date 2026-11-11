@@ -9,15 +9,15 @@ export const ROOM = {
   hallLength: 13.4,
   endDepth: 5.0,
   length: 18.4,
-  eye: 1.58,
-  exposure: 1.04,
-  wallColor: '#5A2C28',
-  stoneColor: '#E3D9CB',
-  endColor: '#F3EEE6',
-  ceilingColor: '#E6DED0',
+  eye: 1.6,
+  exposure: 0.96,
+  wallColor: '#4A1E1F',
+  stoneColor: '#E4D8C8',
+  endColor: '#F7F1E8',
+  ceilingColor: '#E7D3B8',
   corniceY: 4.52,
   soffitY: 5.02,
-  skylightY: 5.16,
+  skylightY: 5.58,
   skylightHalf: 1.18,
   skylightZ0: 1.15,
   skylightZ1: 12.55,
@@ -25,13 +25,13 @@ export const ROOM = {
   portalHeight: 3.42,
   daylightK: 4700,
   pictureK: 3000,
-  skylightPower: 4600,
-  spotPower: 1600,
-  endPower: 1100,
+  skylightPower: 5400,
+  spotPower: 2400,
+  endPower: 2200,
   lightmapSize: 2048,
-  floorTileM: 6.3,
-  fov: 52,
-  mobileFov: 96,
+  floorTileM: 5.4,
+  fov: 44,
+  mobileFov: 78,
 };
 
 const PAINT = 'salle-temoin/assets/paintings/';
@@ -42,8 +42,8 @@ function sideFrames(wall) {
   const normal = -sign;
   const hang = 1.7;
   const large = wall === 'left'
-    ? {artW: 1.66, artH: 1.14, mould: 0.135, painting: 'pd/painting-3.webp', hero: true}
-    : {artW: 1.12, artH: 1.46, mould: 0.125, painting: 'pd/painting-0.webp', hero: true};
+    ? {artW: 1.58, artH: 1.08, mould: 0.175, painting: 'pd/painting-3.webp', hero: true}
+    : {artW: 1.05, artH: 1.38, mould: 0.16, painting: 'pd/painting-0.webp', hero: true};
   const medium = [
     ['pd/painting-4.webp', 7.15],
     ['pd/painting-2.webp', 8.4],
@@ -66,9 +66,9 @@ function sideFrames(wall) {
     pictureLight: true,
   }];
   for (const [painting, z] of medium) {
-    const artW = 0.58;
-    const artH = 0.74;
-    const mould = 0.062;
+    const artW = 0.56;
+    const artH = 0.72;
+    const mould = 0.09;
     frames.push({
       id: `${wall}-${z}`,
       wall,
@@ -161,7 +161,7 @@ export function buildLayout() {
     {wall: 'left', x: -ROOM.width / 2 + 0.28, z0: 6.62, z1: 9.2, height: 0.46, depth: 0.44},
     {wall: 'right', x: ROOM.width / 2 - 0.28, z0: 6.62, z1: 9.2, height: 0.46, depth: 0.44},
   ];
-  const pilasters = [2.15, 6.2, 10.85].map(z => ({z, width: 0.5, depth: 0.13}));
+  const pilasters = [2.05, 6.25, 10.85].map(z => ({z, width: 0.7, depth: 0.22}));
   const obstacles = benches.map(bench => ({
     minX: bench.x - bench.depth / 2,
     maxX: bench.x + bench.depth / 2,
