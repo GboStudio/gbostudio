@@ -18,7 +18,7 @@ const base=[
 {id:16,title:'Bench 01',author:'Kian',category:'build',tools:'ChatGPT + SketchUp',description:'Un banc produit après avoir demandé comment faire tenir trois personnes sans créer trois places séparées.',size:'large',image:'linear-gradient(150deg,#85796e,#d7cec2 50%,#3d3935)',date:'Oct. 2026'},
 {id:17,title:'Signal',author:'Eva',category:'design',tools:'ChatGPT + Figma',description:'Identité visuelle pour un projet qui n’existera probablement jamais.',size:'standard',image:'linear-gradient(135deg,#161616 0 45%,#d1ff39 45% 58%,#f0eee5 58%)',date:'Oct. 2026'},
 {id:18,title:'Tomorrow, Maybe',author:'Iris',category:'image',tools:'ChatGPT + image generation',description:'Une image produite à partir d’une phrase : demain, mais sans certitude.',size:'xl',image:'linear-gradient(165deg,#d9d6cf,#b7c6d3 45%,#f1c1a6 70%,#393f49)',date:'Oct. 2026'}];
-let pieces=base.slice(0,6), filter='all', plan={size:'standard',price:4.95}, upload='', selectedSlot=null;
+let pieces=base.slice(0,6), filter='all', plan={size:'standard',price:null}, upload='', selectedSlot=null;
 // Treat locally persisted exhibits as untrusted input (browser extensions and other code
 // running on the same origin can modify localStorage). Keep only known, bounded fields.
 function safeStoredPiece(item){
@@ -68,17 +68,22 @@ try{
   }
 }catch(e){}
 const grid=$('#grid'),viewport=$('#viewport');
+// Tarifs : une seule source de vérité, commerce-model.mjs.
+// - cadres muraux : miroir synchrone window.TUM_GALLERY_MIX.PRICES (gallery-mix.js), vérifié égal au modèle par test ;
+// - installations au sol : chiffrées par floor.js via aislePrice() du modèle ;
+// - plafond et anciens formats (mini, portrait, paysage…) : aucun tarif arrêté, affichés « Tarif à définir ».
+// Aucun montant ne doit être écrit en dur ici.
 const FORMATS={
-  mini:{name:'Petit portrait',dimensions:'20 × 30 cm',ratio:2/3,price:4.95},
-  portrait:{name:'Portrait',dimensions:'40 × 60 cm',ratio:2/3,price:9.95},
-  landscape:{name:'Paysage',dimensions:'60 × 40 cm',ratio:3/2,price:9.95},
-  tall:{name:'Grand portrait',dimensions:'60 × 90 cm',ratio:2/3,price:15},
-  wide:{name:'Grand paysage',dimensions:'90 × 60 cm',ratio:3/2,price:15},
-  panorama:{name:'Panoramique',dimensions:'100 × 40 cm',ratio:5/2,price:15},
-  floor:{name:'Emplacement au sol',dimensions:'1,80 × 1,50 m',ratio:1.2,price:249.50},
-  'ceiling-mini':{name:'Cadre suspendu',dimensions:'20 × 30 cm',ratio:2/3,price:9.95},
-  'ceiling-medium':{name:'Caisson lumineux',dimensions:'60 × 40 cm',ratio:3/2,price:14.95},
-  'ceiling-large':{name:'Bannière aérienne',dimensions:'90 × 60 cm',ratio:3/2,price:20}
+  mini:{name:'Petit portrait',dimensions:'20 × 30 cm',ratio:2/3},
+  portrait:{name:'Portrait',dimensions:'40 × 60 cm',ratio:2/3},
+  landscape:{name:'Paysage',dimensions:'60 × 40 cm',ratio:3/2},
+  tall:{name:'Grand portrait',dimensions:'60 × 90 cm',ratio:2/3},
+  wide:{name:'Grand paysage',dimensions:'90 × 60 cm',ratio:3/2},
+  panorama:{name:'Panoramique',dimensions:'100 × 40 cm',ratio:5/2},
+  floor:{name:'Emplacement au sol',dimensions:'1,80 × 1,50 m',ratio:1.2},
+  'ceiling-mini':{name:'Cadre suspendu',dimensions:'20 × 30 cm',ratio:2/3},
+  'ceiling-medium':{name:'Caisson lumineux',dimensions:'60 × 40 cm',ratio:3/2},
+  'ceiling-large':{name:'Bannière aérienne',dimensions:'90 × 60 cm',ratio:3/2}
 };
 // Deux premiers cadres à gauche (0, 2) et à droite (1, 3) : espaces publicitaires hors vente.
 const AD_RESERVED_SLOTS=new Set([0,1,2,3]);
@@ -99,7 +104,10 @@ const CEILING_POSITIONS=[
  {id:'P05',z:109,size:'ceiling-medium',style:'lightbox'},
  {id:'P06',z:132,size:'ceiling-large',style:'banner'}
 ];
-const euros=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+const hasPrice=n=>n!==null&&n!==undefined&&n!==''&&Number.isFinite(Number(n));
+const euros=n=>hasPrice(n)?Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €':'Tarif à définir';
+// Libellé commun aux moteurs 3D (engine3d.js, walk.js) : tarif mensuel du modèle ou « tarif à définir ».
+const priceLabel=slot=>hasPrice(slot?.price)?Number(slot.price).toLocaleString('fr-FR',{maximumFractionDigits:2})+' € / MOIS':'TARIF À DÉFINIR';
 const normalizeSize=s=>({standard:'landscape',large:'wide',xl:'panorama'}[s]||s);
 function getSlots(){
   const placements=new Map();
@@ -112,7 +120,7 @@ function getSlots(){
   const highest=Math.max(17,...placements.keys()),total=Math.max(38,highest+5);
   return Array.from({length:total},(_,id)=>{
     const piece=placements.get(id)||null,size=piece&&piece.id>18?normalizeSize(piece.size):SLOT_SIZES[id%SLOT_SIZES.length];
-    return{id,size,price:FORMATS[size]?.price||9.95,format:FORMATS[size]||FORMATS.landscape,piece,reservedForAds:AD_RESERVED_SLOTS.has(id)};
+    return{id,size,price:null,format:FORMATS[size]||FORMATS.landscape,piece,reservedForAds:AD_RESERVED_SLOTS.has(id)};
   });
 }
 function getWallDisplaySlots(){
@@ -137,7 +145,7 @@ function getWallDisplaySlots(){
   });
 }
 function getFloorSlots(){
-  return FLOOR_POSITIONS.map(s=>({...s,size:'floor',price:249.5,format:FORMATS.floor,piece:[...pieces].reverse().find(p=>p.slot===s.id && (!p.expiresAt || Date.parse(p.expiresAt)>Date.now()))||null}));
+  return FLOOR_POSITIONS.map(s=>({...s,size:'floor',price:null,format:FORMATS.floor,piece:[...pieces].reverse().find(p=>p.slot===s.id && (!p.expiresAt || Date.parse(p.expiresAt)>Date.now()))||null}));
 }
 function getCeilingStatus(){
   const occupied=getWallDisplaySlots().filter(s=>!!s.piece).length;
@@ -145,7 +153,7 @@ function getCeilingStatus(){
 }
 function getCeilingSlots(){
   const {unlocked}=getCeilingStatus();
-  return CEILING_POSITIONS.map(s=>({...s,price:FORMATS[s.size].price,format:FORMATS[s.size],
+  return CEILING_POSITIONS.map(s=>({...s,price:null,format:FORMATS[s.size],
     piece:pieces.slice().reverse().find(p=>p.slot===s.id&&(!p.expiresAt||Date.parse(p.expiresAt)>Date.now()))||null,unlocked}));
 }
 function refreshCeilingOffers(){
@@ -181,7 +189,7 @@ function openExhibit(size='landscape',price=null,slot=null){
   const commercial=typeof slot==='string'&&slot.startsWith('M')?getWallDisplaySlots().find(p=>p.id===slot&&!p.piece):null;
   if(typeof slot==='string'&&slot.startsWith('M')&&!commercial)return;
   const chosen=commercial?.format||FORMATS[size]||FORMATS.landscape;
-  plan={size,price:price===null?(commercial?.price??chosen.price):Number(price)};
+  plan={size,price:price==null?(commercial?.price??null):Number(price)};
   selectedSlot=slot;
   const isFloor=typeof slot==='string' && slot.startsWith('S');
   const isCeiling=typeof slot==='string' && slot.startsWith('P');
@@ -211,7 +219,7 @@ function firstVacantCeiling(size=null){return getCeilingSlots().find(s=>s.unlock
 $$('[data-open]').forEach(b=>b.onclick=()=>{const s=firstVacantWall();if(s)openExhibit(s.size,s.price,s.id);});
 $$('[data-plan]').forEach(b=>b.onclick=()=>{
   const size=b.dataset.plan;
-  if(size==='floor'){const x=getFloorSlots().find(s=>!s.piece);if(x)openExhibit('floor',249.5,x.id);}
+  if(size==='floor'){const x=getFloorSlots().find(s=>!s.piece);if(x)openExhibit('floor',null,x.id);}
   else if(size.startsWith('ceiling-')){const x=firstVacantCeiling(size);if(x)openExhibit(x.size,x.price,x.id);}
   else{const x=firstVacantWall(size);if(x)openExhibit(x.size,x.price,x.id);}
 });
@@ -270,4 +278,4 @@ function publishFloor(spec){
   return true;
 }
 // Browser-local demo bridge for the immersive gallery and floor studio.
-window.TEM = { getPieces: () => pieces, getSlots, getWallDisplaySlots, getFloorSlots, getCeilingSlots, getCeilingStatus, openPiece, openExhibit, publishFloor };
+window.TEM = { getPieces: () => pieces, priceLabel, getSlots, getWallDisplaySlots, getFloorSlots, getCeilingSlots, getCeilingStatus, openPiece, openExhibit, publishFloor };
