@@ -280,6 +280,20 @@ function artworkCompositeMaterial(painting, lightmap) {
 function applyLibrary(root, library, lightmap) {
   root.traverse(object => {
     if (!object.isMesh) return;
+    if ((object.name || '') === 'endwall') {
+      object.material = new THREE.MeshPhysicalMaterial({
+        color: 0xf4f6f8,
+        roughness: 0.42,
+        metalness: 0,
+        transmission: 0.82,
+        thickness: 0.2,
+        transparent: true,
+        opacity: 1,
+        envMapIntensity: 1.1,
+        side: THREE.DoubleSide,
+      });
+      return;
+    }
     if ((object.name || '').startsWith('giltframe')) {
       const uv = object.geometry?.attributes?.uv;
       if (uv && !object.geometry.attributes.uv2) object.geometry.setAttribute('uv2', uv);
@@ -707,10 +721,18 @@ try {
       painting.wrapS = painting.wrapT = THREE.ClampToEdgeWrapping;
       painting.repeat.set(cover.rx, cover.ry);
       painting.offset.set(cover.ox, cover.oy);
-      const lightUv = object.geometry.attributes.uv1 || object.geometry.attributes.uv2;
-      if (lightUv) object.geometry.setAttribute('uv2', lightUv);
-      else if (object.geometry.attributes.uv) object.geometry.setAttribute('uv2', object.geometry.attributes.uv);
-      object.material = artworkCompositeMaterial(painting, lightmap);
+      // The lightmap islands do not cover this canvas, so sampling them drew black bands.
+      // Daylight plus a small lift keeps the picture near the Cycles brightness.
+      object.material = new THREE.MeshStandardMaterial({
+        map: painting,
+        color: 0xffffff,
+        roughness: 0.52,
+        metalness: 0,
+        emissive: 0xfff7ef,
+        emissiveMap: painting,
+        emissiveIntensity: 0.28,
+        envMapIntensity: 0.55,
+      });
     });
   }
   // The mesh stays right-handed. A negative Z scale mirrored the paintings

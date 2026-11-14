@@ -13,7 +13,7 @@ export const ROOM = {
   endDepth: 5.0,
   length: 18.4,
   eye: 1.6,
-  exposure: 0.78,
+  exposure: 1.2,
   openSky: true,
   wallColor: '#E4E0DA',
   stoneColor: '#E7E4DE',

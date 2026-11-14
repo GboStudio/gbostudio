@@ -24,7 +24,7 @@ CC0 = ASSETS / 'cc0'
 MARBLE_COLOR = ASSETS / 'pbr' / 'carrara-diff.jpg'
 MARBLE_NORMAL = ASSETS / 'pbr' / 'carrara-nor.jpg'
 MARBLE_ROUGH = ASSETS / 'pbr' / 'carrara-rough.jpg'
-HDRI = CC0 / 'kloofendal_48d_partly_cloudy_puresky_1k.hdr'
+HDRI = CC0 / 'kloppenheim_06_puresky_1k.hdr'
 PAINTINGS = ROOT.parent / 'salle-temoin' / 'assets' / 'paintings'
 ROCK_SOURCES = ['boulder_01', 'rock_07', 'rock_09', 'namaqualand_boulder_03']
 LAYOUT = json.loads((ROOT / 'layout.json').read_text())
@@ -196,7 +196,12 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
         color = nodes.new('ShaderNodeTexImage')
         color.extension = 'REPEAT'
         color.image = load_image(MARBLE_COLOR, 'sRGB')
-        links.new(color.outputs['Color'], bsdf.inputs['Base Color'])
+        grade = nodes.new('ShaderNodeBrightContrast')
+        # Pull the grey veins out of the white stone so they read at the far end of the hall.
+        grade.inputs['Contrast'].default_value = 10 if name == 'floor' else 20
+        grade.inputs['Bright'].default_value = 0
+        links.new(color.outputs['Color'], grade.inputs['Color'])
+        links.new(grade.outputs['Color'], bsdf.inputs['Base Color'])
     if MARBLE_NORMAL.exists() and normal_strength > 0:
         normal = nodes.new('ShaderNodeTexImage')
         normal.image = load_image(MARBLE_NORMAL, 'Non-Color')
@@ -476,7 +481,7 @@ def build():
         combine.mode = 'HSV'
         sat = nodes.new('ShaderNodeMath')
         sat.operation = 'MULTIPLY'
-        sat.inputs[1].default_value = 0.55
+        sat.inputs[1].default_value = 0.28
         links.new(env.outputs['Color'], separate.inputs['Color'])
         links.new(separate.outputs['Red'], combine.inputs['Red'])
         links.new(separate.outputs['Green'], sat.inputs[0])
@@ -485,11 +490,11 @@ def build():
         links.new(combine.outputs['Color'], bg.inputs['Color'])
     else:
         bg.inputs['Color'].default_value = (0.75, 0.82, 0.9, 1)
-    bg.inputs['Strength'].default_value = float(os.environ.get('BLANC_SKY_STRENGTH', '0.9'))
+    bg.inputs['Strength'].default_value = float(os.environ.get('BLANC_SKY_STRENGTH', '1.45'))
 
     mats = {
         'marble': marble_material('marble', 0.34, 0.55, rough_scale=0.42),
-        'floor': marble_material('floor', 0.06, 0.2),
+        'floor': marble_material('floor', 0.04, 0.15),
         'gilt': new_material('gilt', tuple(srgb_to_linear(c) for c in (0.86, 0.68, 0.32)), 0.28, 1),
         'artwork': new_material('artwork', (0.4, 0.32, 0.24), 0.55),
         'iron': new_material('iron', (0.02, 0.02, 0.02), 0.35, 0.8),
@@ -642,7 +647,7 @@ def build():
         heroes.append(canvas)
         # Spot aimed at the marble around the frame.
         spot = bpy.data.lights.new(f"spot-{frame['id']}", 'SPOT')
-        spot.energy = 2400
+        spot.energy = 900
         spot.color = kelvin(3000)
         spot.spot_size = math.radians(52)
         spot.spot_blend = 0.85
@@ -667,6 +672,21 @@ def build():
         box(meshes['iron'], pack, hx - 0.045, hx + 0.045, frame['z'] - 0.04, frame['z'] + 0.04, height - 0.58, height - 0.36)
 
     place_rocks(mats['rock'])
+    # A real end wall, frosted so the sky behind it reads as a luminous dissolve.
+    # The door and the dog-leg are later; this sample only places the wall.
+    end_mat = bpy.data.materials.new('endwall')
+    end_mat.use_nodes = True
+    end_bsdf = end_mat.node_tree.nodes['Principled BSDF']
+    end_bsdf.inputs['Base Color'].default_value = (0.97, 0.975, 0.98, 1)
+    end_bsdf.inputs['Roughness'].default_value = 0.38
+    end_bsdf.inputs['Transmission Weight'].default_value = 0.86
+    end_bsdf.inputs['IOR'].default_value = 1.45
+    bpy.ops.mesh.primitive_plane_add(size=1, location=(0, end - 0.05, height * 0.5))
+    end_wall = bpy.context.active_object
+    end_wall.name = 'endwall'
+    end_wall.rotation_euler = (math.radians(90), 0, 0)
+    end_wall.scale = (ROOM['width'], height, 1)
+    end_wall.data.materials.append(end_mat)
 
     # Sky dome, emissive in the viewer, hidden from the bake.
     bpy.ops.mesh.primitive_uv_sphere_add(segments=48, ring_count=24, radius=40, location=(0, end * 0.5, 2))
@@ -682,9 +702,9 @@ def build():
     dome.hide_render = True
 
     sun = bpy.data.lights.new('sun', 'SUN')
-    sun.energy = 5.0
-    sun.color = kelvin(5600)
-    sun.angle = math.radians(0.8)
+    sun.energy = 2.2
+    sun.color = kelvin(5800)
+    sun.angle = math.radians(12)
     sun_obj = bpy.data.objects.new('sun', sun)
     sun_obj.rotation_euler = Vector((0.04, 0.7, -0.85)).to_track_quat('-Z', 'Y').to_euler()
     bpy.context.scene.collection.objects.link(sun_obj)
@@ -1163,7 +1183,7 @@ def add_haze():
 
 def render_photo(path, width, height, samples, denoise=True):
     scene = bpy.context.scene
-    apply_grade(float(os.environ.get('BLANC_EXPOSURE', '-0.15')))
+    apply_grade(float(os.environ.get('BLANC_EXPOSURE', '-0.65')))
     scene.cycles.samples = samples
     scene.cycles.use_adaptive_sampling = True
     scene.cycles.adaptive_threshold = float(os.environ.get('BLANC_THRESHOLD', '0.08'))
@@ -1464,6 +1484,16 @@ def composite_layered(folder, corners, cam, width, height):
         id_count = int(id_mask.sum())
         if quad_count * 0.4 < id_count < quad_count * 1.35:
             mask &= id_mask
+    albedo = load_layer('denoise-albedo')
+    normal = load_layer('denoise-normal')
+    if albedo is not None and normal is not None:
+        guide_a = albedo[::-1, :, :3]
+        guide_n = normal[::-1, :, :3]
+        light = denoise_array(light[::-1], guide_a, guide_n)[::-1]
+        gloss = denoise_array(gloss[::-1], guide_a, guide_n)[::-1]
+        beauty_rgb = denoise_array(beauty[:, :, :3][::-1], guide_a, guide_n)[::-1]
+        beauty = beauty.copy()
+        beauty[:, :, :3] = beauty_rgb
     def tame(pic):
         cap = float(np.percentile(pic, 99.5))
         return np.clip(pic, 0, max(cap, 1.0))
