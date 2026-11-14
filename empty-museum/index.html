@@ -245,11 +245,12 @@
 <script>
 (function(){
   var started=false;
-  function visitWanted(){
-    var params=new URLSearchParams(location.search);
-    if(params.get('visit')==='immersive') return true;
-    var hash=(location.hash||'').toLowerCase();
-    return hash==='#visite'||hash==='#visit'||hash==='#tour'||hash==='#walk'||hash==='#visite-3d';
+  var anchors={'#visite':1,'#visit':1,'#tour':1,'#walk':1,'#visite-3d':1};
+  function anchorWanted(){return anchors[(location.hash||'').toLowerCase()]===1;}
+  function rewriteVisitUrl(){
+    var url=new URL(location.href);
+    url.searchParams.set('visit','immersive');
+    history.replaceState(null,'',url.pathname+url.search+url.hash);
   }
   function startVisit(){
     if(started) return;
@@ -266,16 +267,23 @@
     script.src="engine-loader.js?v=20261111prix";
     document.body.appendChild(script);
   }
+  function openFromAnchor(){
+    if(!anchorWanted()) return;
+    rewriteVisitUrl();
+    startVisit();
+  }
   document.addEventListener('click',function(event){
     var link=event.target.closest&&event.target.closest('a[href*="visit=immersive"]');
     if(!link) return;
+    if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||event.button!==0) return;
     event.preventDefault();
     var url=new URL(link.getAttribute('href'),location.href);
     history.pushState(null,'',url.pathname+url.search+url.hash);
     startVisit();
   });
-  window.addEventListener('hashchange',function(){ if(visitWanted()) startVisit(); });
-  if(visitWanted()) startVisit();
+  window.addEventListener('hashchange',openFromAnchor);
+  if(anchorWanted()) openFromAnchor();
+  else if(new URLSearchParams(location.search).get('visit')==='immersive') startVisit();
 })();
 </script>
 </body></html>
