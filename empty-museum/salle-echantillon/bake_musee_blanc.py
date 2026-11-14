@@ -228,7 +228,39 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
         nmap.inputs['Strength'].default_value = normal_strength
         links.new(normal.outputs['Color'], nmap.inputs['Color'])
         links.new(nmap.outputs['Normal'], bsdf.inputs['Normal'])
-    if rough_scale and MARBLE_ROUGH.exists():
+    flat_floor = name == 'floor' and os.environ.get('BLANC_MIRROR') == '1' and os.environ.get('BLANC_FLOOR_FLAT') == '1'
+    if flat_floor:
+        # A small swing around 0.02–0.03. Multiplying the Carrara map (mean ~0.17)
+        # was either too smooth to read or, where the map peaks, milky.
+        base = float(os.environ.get('BLANC_FLOOR_ROUGH', '0.025'))
+        var = float(os.environ.get('BLANC_FLOOR_ROUGH_VAR', '0.008'))
+        if var > 0 and MARBLE_ROUGH.exists():
+            rough = nodes.new('ShaderNodeTexImage')
+            rough.image = load_image(MARBLE_ROUGH, 'Non-Color')
+            centered = nodes.new('ShaderNodeMath')
+            centered.operation = 'SUBTRACT'
+            centered.inputs[1].default_value = 0.17
+            swing = nodes.new('ShaderNodeMath')
+            swing.operation = 'MULTIPLY'
+            swing.inputs[1].default_value = var
+            shifted = nodes.new('ShaderNodeMath')
+            shifted.operation = 'ADD'
+            shifted.inputs[1].default_value = base
+            low = nodes.new('ShaderNodeMath')
+            low.operation = 'MAXIMUM'
+            low.inputs[1].default_value = 0.015
+            high = nodes.new('ShaderNodeMath')
+            high.operation = 'MINIMUM'
+            high.inputs[1].default_value = 0.035
+            links.new(rough.outputs['Color'], centered.inputs[0])
+            links.new(centered.outputs['Value'], swing.inputs[0])
+            links.new(swing.outputs['Value'], shifted.inputs[0])
+            links.new(shifted.outputs['Value'], low.inputs[0])
+            links.new(low.outputs['Value'], high.inputs[0])
+            links.new(high.outputs['Value'], bsdf.inputs['Roughness'])
+        else:
+            bsdf.inputs['Roughness'].default_value = base
+    elif rough_scale and MARBLE_ROUGH.exists():
         rough = nodes.new('ShaderNodeTexImage')
         rough.image = load_image(MARBLE_ROUGH, 'Non-Color')
         scale = nodes.new('ShaderNodeMath')
@@ -236,16 +268,93 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
         scale.inputs[1].default_value = rough_scale
         links.new(rough.outputs['Color'], scale.inputs[0])
         links.new(scale.outputs['Value'], bsdf.inputs['Roughness'])
+    if name == 'floor' and os.environ.get('BLANC_FLOOR_NORMAL'):
+        for node in nodes:
+            if node.type == 'NORMAL_MAP':
+                node.inputs['Strength'].default_value = float(os.environ['BLANC_FLOOR_NORMAL'])
     return material
+
+
+def apply_rock_shade(material):
+    """Darken the sky-filled side and the cavities. The linked sun still hits the lit face.
+
+    The world cannot be masked per receiver, so the shadow hemisphere of the rock
+    shader is attenuated here, and ambient occlusion digs the cavities.
+    """
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    bsdf = nodes['Principled BSDF']
+    color_in = bsdf.inputs['Base Color']
+    source = None
+    for link in list(links):
+        if link.to_socket == color_in:
+            source = link.from_socket
+            links.remove(link)
+            break
+    normal_path = CC0 / 'rocks' / 'textures' / 'boulder_01_nor_gl_1k.jpg'
+    normal_out = None
+    if normal_path.exists():
+        tex = nodes.new('ShaderNodeTexImage')
+        tex.image = load_image(normal_path, 'Non-Color')
+        nmap = nodes.new('ShaderNodeNormalMap')
+        nmap.inputs['Strength'].default_value = float(os.environ.get('BLANC_ROCK_NORMAL', '1.3'))
+        links.new(tex.outputs['Color'], nmap.inputs['Color'])
+        links.new(nmap.outputs['Normal'], bsdf.inputs['Normal'])
+        normal_out = nmap.outputs['Normal']
+    ao = nodes.new('ShaderNodeAmbientOcclusion')
+    ao.samples = 8
+    ao.inputs['Distance'].default_value = 0.4
+    if normal_out is not None:
+        links.new(normal_out, ao.inputs['Normal'])
+    cavity = nodes.new('ShaderNodeMapRange')
+    cavity.inputs['From Min'].default_value = 0.0
+    cavity.inputs['From Max'].default_value = 1.0
+    cavity.inputs['To Min'].default_value = float(os.environ.get('BLANC_ROCK_CAVITY', '0.45'))
+    cavity.inputs['To Max'].default_value = 1.0
+    cavity.clamp = True
+    links.new(ao.outputs['AO'], cavity.inputs['Value'])
+    # The detail normal must not drive this. It was washing the lit and shadow faces together.
+    shine = Vector((0.95, 0.2, -0.45))
+    shine.normalize()
+    to_sun = -shine
+    sun = nodes.new('ShaderNodeVectorMath')
+    sun.operation = 'DOT_PRODUCT'
+    geom = nodes.new('ShaderNodeNewGeometry')
+    links.new(geom.outputs['Normal'], sun.inputs[0])
+    sun.inputs[1].default_value = (to_sun.x, to_sun.y, to_sun.z)
+    facing = nodes.new('ShaderNodeMapRange')
+    facing.inputs['From Min'].default_value = -0.05
+    facing.inputs['From Max'].default_value = 0.55
+    facing.inputs['To Min'].default_value = float(os.environ.get('BLANC_ROCK_SHADE_MIN', '0.34'))
+    facing.inputs['To Max'].default_value = 1.0
+    facing.clamp = True
+    links.new(sun.outputs['Value'], facing.inputs['Value'])
+    shade = nodes.new('ShaderNodeMath')
+    shade.operation = 'MULTIPLY'
+    links.new(facing.outputs['Result'], shade.inputs[0])
+    links.new(cavity.outputs['Result'], shade.inputs[1])
+    tint = nodes.new('ShaderNodeMixRGB')
+    tint.blend_type = 'MULTIPLY'
+    tint.inputs['Fac'].default_value = 1.0
+    if source is not None:
+        links.new(source, tint.inputs['Color1'])
+    else:
+        tint.inputs['Color1'].default_value = (0.7, 0.7, 0.68, 1)
+    links.new(shade.outputs['Value'], tint.inputs['Color2'])
+    links.new(tint.outputs['Color'], color_in)
 
 
 def rock_material():
     """Pale stone. Boulder grey by default; marble blocks when BLANC_ROCK_MARBLE=1."""
     if os.environ.get('BLANC_ROCK_MARBLE', '1') == '1':
-        return marble_material(
-            'rock', 0.62, 0.9, contrast=10,
+        shaded = os.environ.get('BLANC_ROCK_SHADE') == '1'
+        material = marble_material(
+            'rock', 0.62, 0.0 if shaded else 0.9, contrast=10,
             bright=float(os.environ.get('BLANC_ROCK_BRIGHT', '-0.06')),
         )
+        if shaded:
+            apply_rock_shade(material)
+        return material
     material = bpy.data.materials.new('rock')
     material.use_nodes = True
     nodes = material.node_tree.nodes
@@ -1608,10 +1717,118 @@ def add_cloud_sheet(name, location, rotation, scale, strength, uv_offset, bend):
     return sheet
 
 
+def cloud_dome_material(strength):
+    """Cumulus band on a sphere. The camera sees it. Diffuse rays pass through, so the room stays put."""
+    material = bpy.data.materials.new('cumulus-dome')
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+    output = nodes.new('ShaderNodeOutputMaterial')
+    coord = nodes.new('ShaderNodeTexCoord')
+    separate = nodes.new('ShaderNodeSeparateXYZ')
+    links.new(coord.outputs['Object'], separate.inputs['Vector'])
+    length = nodes.new('ShaderNodeVectorMath')
+    length.operation = 'LENGTH'
+    links.new(coord.outputs['Object'], length.inputs[0])
+    sine = nodes.new('ShaderNodeMath')
+    sine.operation = 'DIVIDE'
+    links.new(separate.outputs['Z'], sine.inputs[0])
+    links.new(length.outputs['Value'], sine.inputs[1])
+    # Low elevation (the open end of the hall) gets the bright cloud bank.
+    # High elevation (the open roof) gets the scattered cumulus and their grey gaps.
+    vertical = nodes.new('ShaderNodeMapRange')
+    # Cover the whole upper hemisphere. A max of 0.72 clamped every steep
+    # view onto one texture row and turned it into spokes around the zenith.
+    vertical.inputs['From Min'].default_value = float(os.environ.get('BLANC_CLOUD_ELEV_MIN', '-0.08'))
+    vertical.inputs['From Max'].default_value = float(os.environ.get('BLANC_CLOUD_ELEV_MAX', '0.98'))
+    vertical.inputs['To Min'].default_value = 0.0
+    vertical.inputs['To Max'].default_value = 1.0
+    vertical.clamp = True
+    links.new(sine.outputs['Value'], vertical.inputs['Value'])
+    azimuth = nodes.new('ShaderNodeMath')
+    azimuth.operation = 'ARCTAN2'
+    links.new(separate.outputs['X'], azimuth.inputs[0])
+    links.new(separate.outputs['Y'], azimuth.inputs[1])
+    turns = nodes.new('ShaderNodeMath')
+    turns.operation = 'DIVIDE'
+    turns.inputs[1].default_value = math.tau
+    links.new(azimuth.outputs['Value'], turns.inputs[0])
+    wrapped = nodes.new('ShaderNodeMath')
+    wrapped.operation = 'ADD'
+    wrapped.inputs[1].default_value = 0.5
+    links.new(turns.outputs['Value'], wrapped.inputs[0])
+    combine = nodes.new('ShaderNodeCombineXYZ')
+    links.new(wrapped.outputs['Value'], combine.inputs['X'])
+    links.new(vertical.outputs['Result'], combine.inputs['Y'])
+    tex = nodes.new('ShaderNodeTexImage')
+    path = CC0 / 'cumulus-band.jpg'
+    if path.exists():
+        tex.image = load_image(path, 'sRGB')
+    tex.extension = 'EXTEND'
+    tex.interpolation = 'Smart'
+    links.new(combine.outputs['Vector'], tex.inputs['Vector'])
+    grade = nodes.new('ShaderNodeBrightContrast')
+    grade.inputs['Bright'].default_value = float(os.environ.get('BLANC_CLOUD_BRIGHT', '0'))
+    grade.inputs['Contrast'].default_value = float(os.environ.get('BLANC_CLOUD_CONTRAST', '0'))
+    links.new(tex.outputs['Color'], grade.inputs['Color'])
+    gamma = nodes.new('ShaderNodeGamma')
+    gamma.inputs['Gamma'].default_value = float(os.environ.get('BLANC_CLOUD_GAMMA', '1'))
+    links.new(grade.outputs['Color'], gamma.inputs['Color'])
+    # The exact zenith is one point of the photo. Fade it to a flat tone so no spoke remains.
+    cap = nodes.new('ShaderNodeMapRange')
+    cap.inputs['From Min'].default_value = 0.93
+    cap.inputs['From Max'].default_value = 1.0
+    cap.inputs['To Min'].default_value = 0.0
+    cap.inputs['To Max'].default_value = 1.0
+    cap.clamp = True
+    links.new(vertical.outputs['Result'], cap.inputs['Value'])
+    flat = nodes.new('ShaderNodeMixRGB')
+    flat.blend_type = 'MIX'
+    flat.inputs['Color2'].default_value = (0.78, 0.80, 0.82, 1)
+    links.new(cap.outputs['Result'], flat.inputs['Fac'])
+    links.new(gamma.outputs['Color'], flat.inputs['Color1'])
+    emit = nodes.new('ShaderNodeEmission')
+    emit.inputs['Strength'].default_value = strength
+    links.new(flat.outputs['Color'], emit.inputs['Color'])
+    transparent = nodes.new('ShaderNodeBsdfTransparent')
+    ray = nodes.new('ShaderNodeLightPath')
+    mix = nodes.new('ShaderNodeMixShader')
+    links.new(ray.outputs['Is Camera Ray'], mix.inputs['Fac'])
+    links.new(transparent.outputs['BSDF'], mix.inputs[1])
+    links.new(emit.outputs['Emission'], mix.inputs[2])
+    links.new(mix.outputs['Shader'], output.inputs['Surface'])
+    return material
+
+
+def add_cloud_dome(end_y):
+    """One large sphere. Every view through the open roof or the open end sees sky, and no sheet edge."""
+    strength = float(os.environ.get('BLANC_CLOUD', '0'))
+    radius = float(os.environ.get('BLANC_CLOUD_RADIUS', '120'))
+    bpy.ops.mesh.primitive_uv_sphere_add(
+        segments=48, ring_count=24, radius=radius,
+        location=(0.0, end_y * 0.45, -4.0),
+    )
+    dome = bpy.context.active_object
+    dome.name = 'cumulus-dome'
+    for polygon in dome.data.polygons:
+        polygon.flip()
+    dome.data.materials.append(cloud_dome_material(strength))
+    dome.visible_shadow = False
+    dome.visible_diffuse = False
+    dome.visible_glossy = False
+    dome.visible_transmission = False
+    print('cloud dome', radius, 'strength', strength)
+    return dome
+
+
 def add_cumulus_sheets(end_y):
     """Photo of the 0–25° cumulus band, hung where the camera looks, not at the HDRI zenith."""
     strength = float(os.environ.get('BLANC_CLOUD', '0'))
     if strength <= 0:
+        return
+    if os.environ.get('BLANC_CLOUD_DOME') == '1':
+        add_cloud_dome(end_y)
         return
     # Overhead, tilted so the opening is filled with clouds rather than the zenith.
     # Above the roofline, facing down into the opening. Not a banner across the hall.
@@ -1697,9 +1914,14 @@ def render_photo(path, width, height, samples, denoise=True):
         'spot', os.environ.get('BLANC_SPOT', '40'),
         'haze', 'shaft-only',
         'cloud', os.environ.get('BLANC_CLOUD', '0'),
+        'dome', os.environ.get('BLANC_CLOUD_DOME', '0'),
+        'cloud_contrast', os.environ.get('BLANC_CLOUD_CONTRAST', '0'),
         'end_glow', os.environ.get('BLANC_END_GLOW', '0'),
         'mirror', os.environ.get('BLANC_MIRROR', '0'),
+        'floor_rough', os.environ.get('BLANC_FLOOR_ROUGH', '0.05'),
+        'floor_flat', os.environ.get('BLANC_FLOOR_FLAT', '0'),
         'rock_sun', os.environ.get('BLANC_ROCK_SUN', '0'),
+        'rock_shade', os.environ.get('BLANC_ROCK_SHADE', '0'),
         'vein', os.environ.get('BLANC_VEIN_CONTRAST', '8'),
         'spot_tight', os.environ.get('BLANC_SPOT_TIGHT', '0'),
     )
