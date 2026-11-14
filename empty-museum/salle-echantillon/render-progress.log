@@ -59,3 +59,7 @@
 2026-11-14 22:26:19 UTC 4K processus terminé
 2026-11-14 22:34:40 UTC 4K, Sample 0/64, tuile interne 4/4, écoulé 1750s
 2026-11-14 22:35:06 UTC 4K terminée, 3840x2160, 64 échantillons, fichier landing-4k.jpg, durée environ 21 min
+2026-11-14 22:35:17 UTC démarrage tuiles=8 1536x192 échantillons=400 seuil=0.01
+2026-11-14 22:35:17 UTC toutes les tuiles présentes (8)
+2026-11-14 22:35:55 UTC démarrage tuiles=8 6144x3072 échantillons=512 seuil=0.01
+2026-11-14 22:38:24 UTC tuiles 1-4, 0/4 .ok, tuile Sample 368/512, écoulé 149s
