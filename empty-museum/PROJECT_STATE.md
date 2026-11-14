@@ -90,3 +90,12 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Plafond C01, C02 et C03 : emplacements conservés, sans prix. Le site en ligne affiche encore 9,95 €, 14,95 € et 20 €, absents du modèle ; cet écart n’est pas recopié ici.
 - La marque ™ est conservée. L’image d’accueil n’est pas modifiée ; le master HD attend le rendu réel du moteur 3D.
 - État : proposé dans la PR brouillon #52, **non fusionné**, non déployé.
+
+## Corrections d’accueil du 14 novembre 2026 (PR brouillon #52, non fusionnée)
+- Décision de Guillaume : « Oui, lance toutes les corrections sauf celles qui attendent la 4K ». Les points 3 et 15 (master 4K) et 14 (hors page marketing) ne sont pas appliqués.
+- Le moteur 3D, Three.js, le GLB d’entrée et les textures Polyhaven ne se chargent qu’au clic d’un lien `?visit=immersive`, à l’arrivée sur cette URL, ou sur une ancre de visite. `engine3d.js` et `engine-loader.js` ne sont pas modifiés.
+- Le hero (image, légende complète, deux boutons) tient au-dessus de la ligne de flottaison à 1280×800, 390×844 et 360×740. Le bouton « Entrer dans le musée » reste dans l’en-tête mobile. Les libellés de visite sont alignés, aucun bouton n’est retiré.
+- Les colonnes « Par module » et les quatre colonnes de l’allée restent lisibles sur mobile. La légende validée est entière. Le bandeau DÉMO est plus compact, texte inchangé. Les ancres ont un `scroll-margin-top` ; le mot-marque ramène en haut de page.
+- Les graisses 500/600 et l’italique sont dans `fonts-extended.css`, chargée après le premier rendu. La minification (point 16) n’est pas faite : GitHub Pages sert les fichiers tels quels, sans chaîne de build.
+- Inventaire des fonctions : `empty-museum/docs/landing-feature-inventory.md`.
+- État : proposé dans la PR brouillon #52, **non fusionné**, non déployé.
