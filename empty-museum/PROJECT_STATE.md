@@ -129,3 +129,5 @@ Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune
 - Vérifier le contrat des deux joysticks + zoom, la priorité des commandes manuelles et la présence des tests de sécurité dans les pipelines.
 - Exécuter des jeux de tests positifs **et négatifs** du garde-fou : un contrôle qui ne sait pas échouer lors d'une rupture simulée ne fournit aucune garantie.
 - Les tests statiques ne prouvent ni la qualité visuelle ni le succès de publication. Utiliser séparément Playwright et la vérification du déploiement GitHub Pages correspondant au SHA exact.
+
+- 2026-11-14 22:35:06 UTC. 4K livrée : empty-museum/salle-echantillon/assets/landing-4k.jpg, 3840×2160, 64 échantillons, environ 21 min.
