@@ -144,7 +144,7 @@ for ((k = TILE_FROM; k <= TILE_TO; k++)); do
   fi
   tile_log=$(printf '%s/tile-%03d.log' "$TILE_DIR" "$k")
   start_s=$(date +%s)
-  "$BLENDER" --background --python "$ROOT/render_pano_tiles.py" -- --tile "$k" > "$tile_log" 2>&1 &
+  "$BLENDER" --background --python-exit-code 1 --python "$ROOT/render_pano_tiles.py" -- --tile "$k" > "$tile_log" 2>&1 &
   pid=$!
   (
     while kill -0 "$pid" 2>/dev/null; do
@@ -163,7 +163,7 @@ for ((k = TILE_FROM; k <= TILE_TO; k++)); do
   wait "$pid" || status=$?
   kill "$beat" 2>/dev/null || true
   wait "$beat" 2>/dev/null || true
-  if [[ "${status:-0}" != "0" ]]; then
+  if [[ "${status:-0}" != "0" || ! -f "$exr" || ! -f "$stamp" ]]; then
     echo "tile $((k + 1)) failed, see $tile_log" >&2
     exit "${status:-1}"
   fi
