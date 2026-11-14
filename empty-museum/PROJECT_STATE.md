@@ -131,3 +131,5 @@ Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune
 - Les tests statiques ne prouvent ni la qualité visuelle ni le succès de publication. Utiliser séparément Playwright et la vérification du déploiement GitHub Pages correspondant au SHA exact.
 
 - 2026-11-14 22:35:06 UTC. 4K livrée : empty-museum/salle-echantillon/assets/landing-4k.jpg, 3840×2160, 64 échantillons, environ 21 min.
+
+- 2026-11-14 22:39:11 UTC. Tuile 1/8 terminée, durée 194s, SHA 3aaf9b6.
