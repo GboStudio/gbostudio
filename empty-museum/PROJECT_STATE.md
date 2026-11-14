@@ -100,6 +100,19 @@ Retour de Guillaume sur la 4K : « Je veux quelque chose de grandiose ». Branch
 - Sonde 360, sans bloom : pastille 384×384, soit 1/128 de 6144×3072, 16 échantillons en 12,8 s. Environ **102 s par échantillon** en 6144×3072. 512 échantillons : environ **14 h 30**. Huit tuiles : environ **1 h 50** chacune. La 4K 3840×2160 à 64 échantillons, au prix mesuré du 1280×720 (183 s pour 32 échantillons) : environ **55 min**. Ni la 4K ni le 360° lourd ne sont lancés.
 - **Pas déployé. Pas fusionné. Pas une PR.**
 
+## Salle blanche grandiose, deuxième passage — 14 novembre 2026
+
+Relecture de `compare-axis-grandiose` : la masse grise, le rectangle blanc du fond, les cadres clairsemés et les bandes entre pilastres ne suffisaient pas. Même branche `feat/musee-blanc-grandiose`, à partir de `490b3c1`. **Pas de pull request, pas de fusion.** La brume volumétrique et les masses émissives sont retirées.
+
+- Ciel : HDRI CC0 Poly Haven `sunflowers_puresky` en **8K**, posé sur un dôme UV vu par la caméra et le miroir seulement. L’ouverture montre des cumulus séparés avec du ciel entre eux. Les volumes et les boules émissives ne sont plus dans la scène.
+- Fond : baie de marbre. Derrière, la même photo de cumulus (carte caméra seulement), pas un aplat blanc. Le reflet de cette baie est dans le sol.
+- Cadres : un cadre large par travée de 3,2 m, huit par mur, jusqu’au fond. Héros 1,60 × 2,02 m. « Le Dernier Bal » reste à gauche. Manifeste : **16/16** avec quatre coins.
+- Pilastres ramenés à 8 cm de saillie, murs sans décrochement : les bandes lumineuses verticales ne sont plus là. Rochers : soleil lié plus fort, face d’ombre plus sombre.
+- Pas de rayon volumétrique. Un bloom léger seulement (fog glow, mix −0,82).
+- Aperçu 1280×720, 32 échantillons : `review/grandiose2-preview.jpg`. Luma 0,478 (−14 % sur 0,558, dans les ±15 %). Murs L* 75,5. Ciel L* 79,4, au-dessus des murs. Fond L* 83,3. Comparaison : `review/compare-axis-grandiose2.jpg`. Pano 1024×512 : `review/pano-test-grandiose2.jpg`, zénith en ciel, plus de calotte noire.
+- Sonde sans bloom : pastille 384×384 (1/128 de 6144×3072), 16 échantillons en 7,0 s. **56 s par échantillon** en 6144×3072. 256 échantillons ≈ **4 h**. 512 échantillons ≈ **7 h 55**. L’objectif de 40 s n’est pas atteint : le HDRI 8K et le sol miroir restent. C’est bien en dessous des 102 s du passage avec volume. Ni 4K ni 360° lourd.
+- **Pas déployé. Pas fusionné. Pas une PR.**
+
 ## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
 
 Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon d’origine (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. La branche grandiose allonge seulement l’échantillon (36 m, sans mur du fond) pour la photo ; elle ne construit pas la salle de 100 m et n’écrit pas ses cotes dans le contrat.

@@ -678,11 +678,39 @@ def build():
             except TypeError:
                 continue
         geo = nodes.new('ShaderNodeNewGeometry')
+        # Incoming points back at the camera, so the roof was sampling the ground half of the HDRI.
+        outward = nodes.new('ShaderNodeVectorMath')
+        outward.operation = 'SCALE'
+        outward.inputs['Scale'].default_value = -1.0
         mapping = nodes.new('ShaderNodeMapping')
         mapping.inputs['Rotation'].default_value[0] = math.radians(float(os.environ.get('BLANC_SKY_PITCH', '0')))
         mapping.inputs['Rotation'].default_value[2] = math.radians(float(os.environ.get('BLANC_SKY_ROT', '40')))
-        links.new(geo.outputs['Incoming'], mapping.inputs['Vector'])
-        links.new(mapping.outputs['Vector'], env.inputs['Vector'])
+        links.new(geo.outputs['Incoming'], outward.inputs['Vector'])
+        links.new(outward.outputs['Vector'], mapping.inputs['Vector'])
+        # Fold the ground half of a pure-sky HDRI back into the clouds.
+        # Otherwise a pitch that hides the trees also turns the zenith black.
+        separate_dir = nodes.new('ShaderNodeSeparateXYZ')
+        skyward = nodes.new('ShaderNodeMath')
+        sky_z = os.environ.get('BLANC_SKY_Z', 'abs')
+        if sky_z == 'flip':
+            skyward.operation = 'MULTIPLY'
+            skyward.inputs[1].default_value = -1.0
+        elif sky_z == 'none':
+            skyward.operation = 'ADD'
+            skyward.inputs[1].default_value = 0.0
+        else:
+            skyward.operation = 'ABSOLUTE'
+        combine_dir = nodes.new('ShaderNodeCombineXYZ')
+        normalise = nodes.new('ShaderNodeVectorMath')
+        normalise.operation = 'NORMALIZE'
+        links.new(mapping.outputs['Vector'], separate_dir.inputs['Vector'])
+        links.new(separate_dir.outputs['X'], combine_dir.inputs['X'])
+        links.new(separate_dir.outputs['Y'], combine_dir.inputs['Y'])
+        links.new(separate_dir.outputs['Z'], skyward.inputs[0])
+        links.new(skyward.outputs['Value'], combine_dir.inputs['Z'])
+        links.new(combine_dir.outputs['Vector'], normalise.inputs[0])
+        if os.environ.get('BLANC_SKY_VECTOR', 'custom') != 'default':
+            links.new(normalise.outputs['Vector'], env.inputs['Vector'])
         # Keep the white cumulus. The previous 0.28 saturation pulled them into a grey-blue plate.
         separate = nodes.new('ShaderNodeSeparateColor')
         combine = nodes.new('ShaderNodeCombineColor')
@@ -697,18 +725,25 @@ def build():
         links.new(sat.outputs['Value'], combine.inputs['Green'])
         links.new(separate.outputs['Blue'], combine.inputs['Blue'])
         sky_color = combine.outputs['Color']
+        photo_color = env.outputs['Color']
     else:
         bg.inputs['Color'].default_value = (0.92, 0.94, 0.96, 1)
         sky_color = None
+        photo_color = None
     # The photograph and the glass see a bright sky. The walls are lit by a dimmer copy,
     # so the opening can sit above the marble without burning the room again.
     view_bg = nodes.new('ShaderNodeBackground')
     if sky_color is not None:
         links.new(sky_color, bg.inputs['Color'])
-        # Lift the dark half of the puresky so the camera sees white cloud, not a blue band.
+        # The camera can see the real HDRI. The lighting copy stays desaturated so the marble does not go blue.
+        view_src = photo_color if os.environ.get('BLANC_SKY_FULL') == '1' and photo_color is not None else sky_color
+        view_grade = nodes.new('ShaderNodeBrightContrast')
+        view_grade.inputs['Bright'].default_value = float(os.environ.get('BLANC_SKY_VIEW_BRIGHT', '0'))
+        view_grade.inputs['Contrast'].default_value = float(os.environ.get('BLANC_SKY_VIEW_CONTRAST', '0'))
+        links.new(view_src, view_grade.inputs['Color'])
         lifted = nodes.new('ShaderNodeGamma')
         lifted.inputs['Gamma'].default_value = float(os.environ.get('BLANC_SKY_GAMMA', '1'))
-        links.new(sky_color, lifted.inputs['Color'])
+        links.new(view_grade.outputs['Color'], lifted.inputs['Color'])
         links.new(lifted.outputs['Color'], view_bg.inputs['Color'])
     light_strength = float(os.environ.get('BLANC_SKY_STRENGTH', '0.35'))
     view_strength = float(os.environ.get('BLANC_SKY_VIEW', '2.5'))
@@ -814,8 +849,9 @@ def build():
             slabs.append((y0, y1, mirror))
             mirror = not mirror
     recesses = [0.0, 0.08, 0.0, 0.12, 0.04, 0.0, 0.1]
+    flat_walls = os.environ.get('BLANC_FLAT_WALLS') == '1'
     for index, (y0, y1, mirrored) in enumerate(slabs):
-        recess = recesses[index % len(recesses)]
+        recess = 0.0 if flat_walls else recesses[index % len(recesses)]
         span = max(y1 - y0, 0.01)
         for sign, name in ((-1, 'left'), (1, 'right')):
             x = sign * (half + recess)
@@ -832,7 +868,7 @@ def build():
                 v = corner[2] / span
                 uvs.append((u, v))
             meshes['marble'].quad(coords, uvs, luvs, (-sign, 0, 0))
-        if index < len(slabs) - 1:
+        if index < len(slabs) - 1 and not flat_walls:
             y = y1
             for sign in (-1, 1):
                 x_face = sign * (half + recess - 0.012)
@@ -855,7 +891,8 @@ def build():
     # Pilasters: base, shaft, inner panel, capital. Wider than the bordeaux posts.
     for item in pilasters:
         width = max(item['width'], 0.72)
-        depth = 0.62
+        # A deep return facing the camera reads as a bright vertical band. Shallow posts do not.
+        depth = 0.08 if flat_walls else 0.62
         y0 = item['z'] - width / 2
         y1 = item['z'] + width / 2
         for sign in (-1, 1):
@@ -956,6 +993,8 @@ def build():
     place_rocks(mats['rock'])
     if os.environ.get('BLANC_ENTRY') == '1':
         add_entry(back, half, height, pack, meshes)
+    if os.environ.get('BLANC_END_BAY') == '1':
+        add_end_bay(end, half, height, pack, meshes)
     add_cumulus_sheets(end)
     if os.environ.get('BLANC_PUFFS') == '1':
         add_cumulus(end)
@@ -975,6 +1014,50 @@ def build():
     dome.data.uv_layers.new(name='Lightmap')
     # The photograph and the viewer show the dome. The bake uses the world, or the dome would seal the room.
     dome.hide_render = True
+    if os.environ.get('BLANC_SKY_SPHERE') == '1' and HDRI.exists():
+        # A closed shell. The world lookup was leaving a black cap at the zenith.
+        dome.hide_render = False
+        dome.visible_shadow = False
+        dome.visible_diffuse = False
+        shell = bpy.data.materials.new('sky-shell')
+        shell.use_nodes = True
+        sn = shell.node_tree.nodes
+        sl = shell.node_tree.links
+        sn.clear()
+        out = sn.new('ShaderNodeOutputMaterial')
+        emit = sn.new('ShaderNodeEmission')
+        emit.inputs['Strength'].default_value = float(os.environ.get('BLANC_SKY_VIEW', '1'))
+        tex = sn.new('ShaderNodeTexImage')
+        tex.image = bpy.data.images.load(str(HDRI))
+        tex.interpolation = 'Smart'
+        for space in ('Linear Rec.709', 'Linear', 'Non-Color'):
+            try:
+                tex.image.colorspace_settings.name = space
+                break
+            except TypeError:
+                continue
+        uv = sn.new('ShaderNodeTexCoord')
+        mapping = sn.new('ShaderNodeMapping')
+        mapping.inputs['Location'].default_value[0] = float(os.environ.get('BLANC_SKY_U', '0'))
+        mapping.inputs['Location'].default_value[1] = float(os.environ.get('BLANC_SKY_V', '0'))
+        mapping.inputs['Rotation'].default_value[2] = math.radians(float(os.environ.get('BLANC_SKY_ROT', '0')))
+        sl.new(uv.outputs['UV'], mapping.inputs['Vector'])
+        sl.new(mapping.outputs['Vector'], tex.inputs['Vector'])
+        sl.new(tex.outputs['Color'], emit.inputs['Color'])
+        hold = sn.new('ShaderNodeMixShader')
+        ray = sn.new('ShaderNodeLightPath')
+        seen = sn.new('ShaderNodeMath')
+        seen.operation = 'MAXIMUM'
+        trans = sn.new('ShaderNodeBsdfTransparent')
+        sl.new(ray.outputs['Is Camera Ray'], seen.inputs[0])
+        sl.new(ray.outputs['Is Glossy Ray'], seen.inputs[1])
+        sl.new(seen.outputs['Value'], hold.inputs['Fac'])
+        sl.new(trans.outputs['BSDF'], hold.inputs[1])
+        sl.new(emit.outputs['Emission'], hold.inputs[2])
+        sl.new(hold.outputs['Shader'], out.inputs['Surface'])
+        dome.data.materials.clear()
+        dome.data.materials.append(shell)
+        print('sky sphere on')
 
     sun = bpy.data.lights.new('sun', 'SUN')
     sun.energy = float(os.environ.get('BLANC_SUN', '2.0'))
@@ -1563,6 +1646,64 @@ def add_cumulus(end_y):
         blob.rotation_euler = (0.2 * index, 0.4 * index, 0.15 * index)
         blob.data.materials.append(material)
         blob.visible_shadow = False
+
+
+def add_end_bay(end, half, height, pack, meshes):
+    """A marble frame at the far end. The opening is the sky, not a white wall."""
+    y = end - 0.08
+    pier = float(os.environ.get('BLANC_BAY_PIER', '0.42'))
+    sill = float(os.environ.get('BLANC_BAY_SILL', '0.28'))
+    head = height - float(os.environ.get('BLANC_BAY_HEAD', '0.32'))
+
+    def face(x0, x1, z0, z1):
+        coords = [(x0, y, z0), (x1, y, z0), (x1, y, z1), (x0, y, z1)]
+        meshes['marble'].quad(coords, [(0, 0), (1, 0), (1, 1), (0, 1)], pack.for_quad(coords), (0, -1, 0))
+
+    face(-half - 0.02, -half + pier, 0, height)
+    face(half - pier, half + 0.02, 0, height)
+    face(-half + pier, half - pier, 0, sill)
+    face(-half + pier, half - pier, head, height)
+    add_end_plate(y + 0.35, (half - pier) * 2 - 0.08, head - sill, (sill + head) * 0.5)
+    print('end bay', round(y, 2), 'opening', round((half - pier) * 2, 2), 'x', round(head - sill, 2))
+
+
+def add_end_plate(y, width, height, z):
+    """The same cumulus photograph, on a distant card. Camera and mirror only."""
+    path = CC0 / 'cumulus-plate.jpg'
+    material = bpy.data.materials.new('end-plate')
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+    output = nodes.new('ShaderNodeOutputMaterial')
+    emit = nodes.new('ShaderNodeEmission')
+    emit.inputs['Strength'].default_value = float(os.environ.get('BLANC_PLATE', '3.2'))
+    if path.exists():
+        tex = nodes.new('ShaderNodeTexImage')
+        tex.image = load_image(path, 'sRGB')
+        tex.interpolation = 'Smart'
+        links.new(tex.outputs['Color'], emit.inputs['Color'])
+    else:
+        emit.inputs['Color'].default_value = (0.85, 0.9, 0.97, 1)
+    transparent = nodes.new('ShaderNodeBsdfTransparent')
+    ray = nodes.new('ShaderNodeLightPath')
+    seen = nodes.new('ShaderNodeMath')
+    seen.operation = 'MAXIMUM'
+    links.new(ray.outputs['Is Camera Ray'], seen.inputs[0])
+    links.new(ray.outputs['Is Glossy Ray'], seen.inputs[1])
+    mix = nodes.new('ShaderNodeMixShader')
+    links.new(seen.outputs['Value'], mix.inputs['Fac'])
+    links.new(transparent.outputs['BSDF'], mix.inputs[1])
+    links.new(emit.outputs['Emission'], mix.inputs[2])
+    links.new(mix.outputs['Shader'], output.inputs['Surface'])
+    bpy.ops.mesh.primitive_plane_add(size=1, location=(0, y, z))
+    card = bpy.context.active_object
+    card.name = 'end-plate'
+    card.rotation_euler = (math.radians(90), 0, 0)
+    card.scale = (width, height, 1)
+    card.data.materials.append(material)
+    card.visible_shadow = False
+    card.visible_diffuse = False
 
 
 def add_entry(back, half, height, pack, meshes):
@@ -2193,6 +2334,20 @@ def axis_test():
     scene.collection.objects.link(cam)
     aim(cam, (0, float(os.environ.get('BLANC_AIM_Y', '22')), float(os.environ.get('BLANC_AIM_Z', '3.0'))))
     scene.camera = cam
+    rots = [item for item in os.environ.get('BLANC_ROT_LIST', '').split(',') if item]
+    if rots:
+        mapping = next((node for node in scene.world.node_tree.nodes if node.type == 'MAPPING'), None)
+        width = int(os.environ.get('BLANC_AXIS_W', '400'))
+        height = int(os.environ.get('BLANC_AXIS_H', '225'))
+        samples = int(os.environ.get('BLANC_STILL_SAMPLES', '4'))
+        stem = os.environ.get('BLANC_AXIS_NAME', 'sky-rot.jpg')
+        for rot in rots:
+            if mapping:
+                mapping.inputs['Rotation'].default_value[2] = math.radians(float(rot))
+            label = rot.replace('-', 'm').replace('.', 'p')
+            out = folder / f'{Path(stem).stem}-{label}.jpg'
+            render_photo(out, width, height, samples)
+        return
     name = os.environ.get('BLANC_AXIS_NAME', 'pass6-try.jpg')
     exposures = [item for item in os.environ.get('BLANC_EXPOSURE_LIST', '').split(',') if item]
     if not exposures:
@@ -2583,7 +2738,7 @@ def still():
     aim(cam, (0, float(os.environ.get('BLANC_AIM_Y', '22')), float(os.environ.get('BLANC_AIM_Z', '3.0'))))
     scene.camera = cam
     sky = bpy.data.objects.get('sky')
-    if sky:
+    if sky and os.environ.get('BLANC_SKY_SPHERE') != '1':
         sky.hide_render = True
     render_photo(
         ASSETS / os.environ.get('BLANC_STILL_NAME', 'landing-4k.jpg'),
@@ -2608,7 +2763,7 @@ def pano():
     scene.camera = cam
     # The dome is for the walk viewer. The photograph sees the HDRI world.
     sky = bpy.data.objects.get('sky')
-    if sky:
+    if sky and os.environ.get('BLANC_SKY_SPHERE') != '1':
         sky.hide_render = True
     render_photo(
         ASSETS / os.environ.get('BLANC_PANO_NAME', 'pano-360.jpg'),
