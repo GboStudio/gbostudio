@@ -88,7 +88,7 @@ function prepareLightmap(texture) {
   texture.colorSpace = THREE.NoColorSpace;
   // glTF already flips V. A second flip maps the wall halos onto the ceiling.
   texture.flipY = params.get('flip') === '1';
-  downscaleLightmap(texture, 1024);
+  downscaleLightmap(texture, mobile ? 384 : 640);
   texture.needsUpdate = true;
   texture.generateMipmaps = false;
   texture.minFilter = THREE.LinearFilter;
@@ -188,6 +188,30 @@ async function paintingAtlas(frames) {
   return texture;
 }
 
+function shrinkImage(texture, maxEdge) {
+  const image = texture?.image;
+  if (!image?.width || Math.max(image.width, image.height) <= maxEdge) return texture;
+  if (image.data && !image.getContext && !image.tagName) return texture;
+  const scale = maxEdge / Math.max(image.width, image.height);
+  const plate = document.createElement('canvas');
+  plate.width = Math.max(1, Math.round(image.width * scale));
+  plate.height = Math.max(1, Math.round(image.height * scale));
+  plate.getContext('2d').drawImage(image, 0, 0, plate.width, plate.height);
+  texture.image = plate;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function loadPainting(url, maxEdge) {
+  return new Promise((resolve, reject) => {
+    new THREE.TextureLoader().load(url, texture => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      shrinkImage(texture, maxEdge);
+      resolve(texture);
+    }, undefined, reject);
+  });
+}
+
 function coverRepeat(imageAspect, frameAspect) {
   if (imageAspect > frameAspect) {
     const rx = frameAspect / imageAspect;
@@ -281,16 +305,15 @@ function applyLibrary(root, library, lightmap) {
   root.traverse(object => {
     if (!object.isMesh) return;
     if ((object.name || '') === 'endwall') {
-      object.material = new THREE.MeshPhysicalMaterial({
-        color: 0xf4f6f8,
-        roughness: 0.42,
-        metalness: 0,
-        transmission: 0.82,
-        thickness: 0.2,
+      // No transmission: that pass redrew the room and was most of the jump from 39 to 72 draws.
+      // A faint veil lets the sky dome show through the lower wall.
+      object.material = new THREE.MeshBasicMaterial({
+        color: 0xf7f8fa,
         transparent: true,
-        opacity: 1,
-        envMapIntensity: 1.1,
+        opacity: 0.07,
+        depthWrite: false,
         side: THREE.DoubleSide,
+        fog: false,
       });
       return;
     }
@@ -466,8 +489,8 @@ const report = {
 };
 window.__SALLE_ECHANTILLON__ = report;
 
-const marbleFile = mobile ? 'carrara-diff-mobile.jpg' : 'carrara-diff.jpg';
-const marbleRoughFile = mobile ? 'carrara-rough-mobile.jpg' : 'carrara-rough.jpg';
+const marbleFile = 'carrara-diff-mobile.jpg';
+const marbleRoughFile = 'carrara-rough-mobile.jpg';
 
 let panoMesh = null;
 let panoTexture = null;
@@ -569,24 +592,26 @@ try {
       resolve(texture);
     }, undefined, reject);
   });
-  const [marbleA, marbleR, marbleN, giltN, giltAo, sky, lightmap, gltf, atlas, heroes] = await Promise.all([
+  const [marbleA, marbleR, giltN, sky, lightmap, gltf] = await Promise.all([
     loadSurface(marbleFile, THREE.SRGBColorSpace),
     loadSurface(marbleRoughFile, THREE.NoColorSpace),
-    loadSurface('carrara-nor.jpg', THREE.NoColorSpace),
     loadPng('gilt-frame-nor.png', THREE.NoColorSpace).catch(() => loadSurface('gilt-nor.jpg', THREE.NoColorSpace)),
-    loadPng('gilt-frame-ao.png', THREE.NoColorSpace).catch(() => null),
     loadSurface('sky-dome.jpg', THREE.SRGBColorSpace),
     loadLightmap(),
     gltfLoader.loadAsync(ASSET + 'salle-echantillon.glb'),
-    paintingAtlas(layout.frames),
-    heroTextures(layout.frames),
   ]);
+  const marbleN = null;
+  const atlas = new THREE.DataTexture(new Uint8Array([90, 70, 54, 255]), 1, 1);
+  atlas.colorSpace = THREE.SRGBColorSpace;
+  atlas.needsUpdate = true;
+  const heroes = [];
   if ((giltN.image?.width || 0) > 256) {
     giltN.wrapS = giltN.wrapT = THREE.ClampToEdgeWrapping;
-    if (giltAo) giltAo.wrapS = giltAo.wrapT = THREE.ClampToEdgeWrapping;
+    shrinkImage(giltN, 512);
   } else {
     giltN.repeat.set(8, 2);
   }
+  shrinkImage(sky, mobile ? 512 : 1024);
   sky.wrapS = sky.wrapT = THREE.ClampToEdgeWrapping;
   const floorMap = marbleA.clone();
   const floorRough = marbleR.clone();
@@ -635,8 +660,8 @@ try {
       metalness: 1,
       normalMap: giltN,
       normalScale: new THREE.Vector2(0.65, 0.65),
-      aoMap: giltAo || null,
-      aoMapIntensity: giltAo ? 1.1 : 0,
+      aoMap: null,
+      aoMapIntensity: 0,
       envMapIntensity: mobile ? 0.8 : 1.3,
     }),
     artwork: new THREE.MeshStandardMaterial({
@@ -705,9 +730,8 @@ try {
   }
   if (canvases.length) {
     const frames = layout.frames.filter(frame => frame.wall === 'left' || frame.wall === 'right');
-    const textures = await Promise.all(frames.map(frame => new Promise((resolve, reject) => {
-      new THREE.TextureLoader().load(paintingUrl(frame.painting), resolve, undefined, reject);
-    })));
+    const paintEdge = mobile ? 480 : 768;
+    const textures = await Promise.all(frames.map(frame => loadPainting(paintingUrl(frame.painting), paintEdge)));
     const byId = new Map(frames.map((frame, index) => [frame.id, {frame, painting: textures[index]}]));
     canvases.forEach((object, index) => {
       const id = object.name.replace('framed-canvas-', '');
@@ -739,9 +763,11 @@ try {
   // and put the left wall on the right of the picture. Depth already points down -Z.
   scene.add(gltf.scene);
   const floorSpan = layout.room.length - layout.room.backZ;
+  // The mirror pass redraws the room. Phones keep the clearcoat reflection and skip that second draw.
+  if (!mobile) {
   const reflector = new Reflector(new THREE.PlaneGeometry(layout.room.width, floorSpan), {
-    textureWidth: mobile ? 256 : 768,
-    textureHeight: mobile ? 256 : 432,
+    textureWidth: 384,
+    textureHeight: 216,
     clipBias: 0.003,
     color: 0xf4f1ea,
   });
@@ -764,6 +790,7 @@ try {
   fitReflector();
   window.addEventListener('resize', fitReflector);
   scene.add(reflector);
+  }
   for (const frame of layout.frames) {
     const spot = new THREE.SpotLight(0xffc992, mobile ? 30 : 78, 6.4, 0.78, 0.88, 1.35);
     const side = frame.wall === 'left' ? 1 : -1;

@@ -24,7 +24,7 @@ CC0 = ASSETS / 'cc0'
 MARBLE_COLOR = ASSETS / 'pbr' / 'carrara-diff.jpg'
 MARBLE_NORMAL = ASSETS / 'pbr' / 'carrara-nor.jpg'
 MARBLE_ROUGH = ASSETS / 'pbr' / 'carrara-rough.jpg'
-HDRI = CC0 / 'kloppenheim_06_puresky_1k.hdr'
+HDRI = CC0 / 'kloofendal_48d_partly_cloudy_puresky_1k.hdr'
 PAINTINGS = ROOT.parent / 'salle-temoin' / 'assets' / 'paintings'
 ROCK_SOURCES = ['boulder_01', 'rock_07', 'rock_09', 'namaqualand_boulder_03']
 LAYOUT = json.loads((ROOT / 'layout.json').read_text())
@@ -184,7 +184,7 @@ def load_image(path, colorspace):
     return image
 
 
-def marble_material(name, roughness, normal_strength, rough_scale=None, metallic=0.0):
+def marble_material(name, roughness, normal_strength, rough_scale=None, metallic=0.0, contrast=None, bright=0.0):
     material = bpy.data.materials.new(name)
     material.use_nodes = True
     nodes = material.node_tree.nodes
@@ -197,9 +197,11 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
         color.extension = 'REPEAT'
         color.image = load_image(MARBLE_COLOR, 'sRGB')
         grade = nodes.new('ShaderNodeBrightContrast')
-        # Pull the grey veins out of the white stone so they read at the far end of the hall.
-        grade.inputs['Contrast'].default_value = 10 if name == 'floor' else 20
-        grade.inputs['Bright'].default_value = 0
+        # Grey veins have to survive at the far end. The floor stays a touch softer so the mirror reads.
+        if contrast is None:
+            contrast = 16 if name == 'floor' else 38
+        grade.inputs['Contrast'].default_value = contrast
+        grade.inputs['Bright'].default_value = bright
         links.new(color.outputs['Color'], grade.inputs['Color'])
         links.new(grade.outputs['Color'], bsdf.inputs['Base Color'])
     if MARBLE_NORMAL.exists() and normal_strength > 0:
@@ -474,32 +476,52 @@ def build():
         mapping.inputs['Rotation'].default_value[2] = math.radians(float(os.environ.get('BLANC_SKY_ROT', '210')))
         links.new(geo.outputs['Incoming'], mapping.inputs['Vector'])
         links.new(mapping.outputs['Vector'], env.inputs['Vector'])
-        # Slightly less blue than the raw puresky, without flattening the clouds to white.
+        # Keep the white cumulus. The previous 0.28 saturation pulled them into a grey-blue plate.
         separate = nodes.new('ShaderNodeSeparateColor')
         combine = nodes.new('ShaderNodeCombineColor')
         separate.mode = 'HSV'
         combine.mode = 'HSV'
         sat = nodes.new('ShaderNodeMath')
         sat.operation = 'MULTIPLY'
-        sat.inputs[1].default_value = 0.28
+        sat.inputs[1].default_value = 0.72
         links.new(env.outputs['Color'], separate.inputs['Color'])
         links.new(separate.outputs['Red'], combine.inputs['Red'])
         links.new(separate.outputs['Green'], sat.inputs[0])
         links.new(sat.outputs['Value'], combine.inputs['Green'])
         links.new(separate.outputs['Blue'], combine.inputs['Blue'])
-        links.new(combine.outputs['Color'], bg.inputs['Color'])
+        sky_color = combine.outputs['Color']
     else:
-        bg.inputs['Color'].default_value = (0.75, 0.82, 0.9, 1)
-    bg.inputs['Strength'].default_value = float(os.environ.get('BLANC_SKY_STRENGTH', '1.45'))
+        bg.inputs['Color'].default_value = (0.92, 0.94, 0.96, 1)
+        sky_color = None
+    # The photograph and the glass see a bright sky. The walls are lit by a dimmer copy,
+    # so the opening can sit above the marble without burning the room again.
+    view_bg = nodes.new('ShaderNodeBackground')
+    if sky_color is not None:
+        links.new(sky_color, bg.inputs['Color'])
+        links.new(sky_color, view_bg.inputs['Color'])
+    light_strength = float(os.environ.get('BLANC_SKY_STRENGTH', '1.05'))
+    view_strength = float(os.environ.get('BLANC_SKY_VIEW', '3.6'))
+    bg.inputs['Strength'].default_value = light_strength
+    view_bg.inputs['Strength'].default_value = view_strength
+    path = nodes.new('ShaderNodeLightPath')
+    viewed = nodes.new('ShaderNodeMath')
+    viewed.operation = 'MAXIMUM'
+    links.new(path.outputs['Is Camera Ray'], viewed.inputs[0])
+    links.new(path.outputs['Is Transmission Ray'], viewed.inputs[1])
+    mix = nodes.new('ShaderNodeMixShader')
+    links.new(viewed.outputs['Value'], mix.inputs['Fac'])
+    links.new(bg.outputs['Background'], mix.inputs[1])
+    links.new(view_bg.outputs['Background'], mix.inputs[2])
+    links.new(mix.outputs['Shader'], nodes['World Output'].inputs['Surface'])
 
     mats = {
-        'marble': marble_material('marble', 0.34, 0.55, rough_scale=0.42),
-        'floor': marble_material('floor', 0.04, 0.15),
-        'gilt': new_material('gilt', tuple(srgb_to_linear(c) for c in (0.86, 0.68, 0.32)), 0.28, 1),
+        'marble': marble_material('marble', 0.34, 0.55, rough_scale=0.42, bright=-0.04),
+        'floor': marble_material('floor', 0.035, 0.12),
+        'gilt': new_material('gilt', (0.68, 0.36, 0.06), 0.26, 1),
         'artwork': new_material('artwork', (0.4, 0.32, 0.24), 0.55),
         'iron': new_material('iron', (0.02, 0.02, 0.02), 0.35, 0.8),
         'bulb': new_material('bulb', kelvin(3000), 0.3),
-        'rock': marble_material('rock', 0.72, 0.15),
+        'rock': marble_material('rock', 0.9, 0.45, contrast=22, bright=-0.28),
         'sky': sky_material(ASSETS / 'pbr' / 'sky-dome.jpg'),
     }
     meshes = {name: Accum(name, material) for name, material in mats.items()}
@@ -647,7 +669,7 @@ def build():
         heroes.append(canvas)
         # Spot aimed at the marble around the frame.
         spot = bpy.data.lights.new(f"spot-{frame['id']}", 'SPOT')
-        spot.energy = 900
+        spot.energy = 420
         spot.color = kelvin(3000)
         spot.spot_size = math.radians(52)
         spot.spot_blend = 0.85
@@ -672,20 +694,22 @@ def build():
         box(meshes['iron'], pack, hx - 0.045, hx + 0.045, frame['z'] - 0.04, frame['z'] + 0.04, height - 0.58, height - 0.36)
 
     place_rocks(mats['rock'])
-    # A real end wall, frosted so the sky behind it reads as a luminous dissolve.
+    # Lower end wall only. The top stays open on the sky. The glass is almost clear,
+    # with a little roughness so the cumulus behind it dissolve instead of reading as a pane.
     # The door and the dog-leg are later; this sample only places the wall.
     end_mat = bpy.data.materials.new('endwall')
     end_mat.use_nodes = True
     end_bsdf = end_mat.node_tree.nodes['Principled BSDF']
-    end_bsdf.inputs['Base Color'].default_value = (0.97, 0.975, 0.98, 1)
-    end_bsdf.inputs['Roughness'].default_value = 0.38
-    end_bsdf.inputs['Transmission Weight'].default_value = 0.86
-    end_bsdf.inputs['IOR'].default_value = 1.45
-    bpy.ops.mesh.primitive_plane_add(size=1, location=(0, end - 0.05, height * 0.5))
+    end_bsdf.inputs['Base Color'].default_value = (1.0, 1.0, 1.0, 1)
+    end_bsdf.inputs['Roughness'].default_value = 0.1
+    end_bsdf.inputs['Transmission Weight'].default_value = 0.98
+    end_bsdf.inputs['IOR'].default_value = 1.08
+    wall_h = height * 0.62
+    bpy.ops.mesh.primitive_plane_add(size=1, location=(0, end - 0.05, wall_h * 0.5))
     end_wall = bpy.context.active_object
     end_wall.name = 'endwall'
     end_wall.rotation_euler = (math.radians(90), 0, 0)
-    end_wall.scale = (ROOM['width'], height, 1)
+    end_wall.scale = (ROOM['width'], wall_h, 1)
     end_wall.data.materials.append(end_mat)
 
     # Sky dome, emissive in the viewer, hidden from the bake.
@@ -702,23 +726,69 @@ def build():
     dome.hide_render = True
 
     sun = bpy.data.lights.new('sun', 'SUN')
-    sun.energy = 2.2
-    sun.color = kelvin(5800)
-    sun.angle = math.radians(12)
+    sun.energy = 1.7
+    sun.color = kelvin(5600)
+    # Wide enough that contact shadows stay soft grey, narrow enough that a rock has a dark side.
+    sun.angle = math.radians(16)
     sun_obj = bpy.data.objects.new('sun', sun)
-    sun_obj.rotation_euler = Vector((0.04, 0.7, -0.85)).to_track_quat('-Z', 'Y').to_euler()
+    sun_obj.rotation_euler = Vector((0.95, 0.25, -0.62)).to_track_quat('-Z', 'Y').to_euler()
     bpy.context.scene.collection.objects.link(sun_obj)
 
     for hero in heroes:
         hero.finish()
     for accum in meshes.values():
         accum.finish(smooth=False)
+    for obj in bpy.data.objects:
+        if obj.name.startswith('rock-') and obj.type == 'MESH':
+            for polygon in obj.data.polygons:
+                polygon.use_smooth = True
     place_fancy_frames()
+    add_cumulus(end)
     return scene
+
+
+def assign_gilt_maps(frame_obj, normal_path, ao_path):
+    """Gold stays in the base colour. The baked maps only bring the carving back."""
+    material = bpy.data.materials.new('gilt-baked')
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    bsdf = nodes['Principled BSDF']
+    gold = (0.68, 0.36, 0.06, 1)
+    bsdf.inputs['Base Color'].default_value = gold
+    bsdf.inputs['Metallic'].default_value = 1.0
+    bsdf.inputs['Roughness'].default_value = 0.26
+    if normal_path.exists():
+        normal_image = load_image(normal_path, 'Non-Color')
+        tex = nodes.new('ShaderNodeTexImage')
+        tex.image = normal_image
+        nmap = nodes.new('ShaderNodeNormalMap')
+        nmap.inputs['Strength'].default_value = 1.1
+        links.new(tex.outputs['Color'], nmap.inputs['Color'])
+        links.new(nmap.outputs['Normal'], bsdf.inputs['Normal'])
+    if ao_path.exists():
+        ao_image = load_image(ao_path, 'Non-Color')
+        tex = nodes.new('ShaderNodeTexImage')
+        tex.image = ao_image
+        mix = nodes.new('ShaderNodeMixRGB')
+        mix.blend_type = 'MULTIPLY'
+        mix.inputs['Fac'].default_value = 0.65
+        mix.inputs['Color1'].default_value = gold
+        links.new(tex.outputs['Color'], mix.inputs['Color2'])
+        links.new(mix.outputs['Color'], bsdf.inputs['Base Color'])
+    frame_obj.data.materials.clear()
+    frame_obj.data.materials.append(material)
 
 
 def bake_gilt_detail(frame_obj, target_faces):
     """Keep the carving of the 35k frame on the decimated mesh."""
+    normal_path = ASSETS / 'pbr' / 'gilt-frame-nor.png'
+    ao_path = ASSETS / 'pbr' / 'gilt-frame-ao.png'
+    if os.environ.get('BLANC_REBAKE_GILT') != '1' and normal_path.exists():
+        collapse_mesh(frame_obj, target_faces)
+        assign_gilt_maps(frame_obj, normal_path, ao_path)
+        print('gilt maps reused', len(frame_obj.data.polygons))
+        return
     high = frame_obj.copy()
     high.data = frame_obj.data.copy()
     high.name = 'gilt-high'
@@ -730,9 +800,9 @@ def bake_gilt_detail(frame_obj, target_faces):
     nodes = material.node_tree.nodes
     links = material.node_tree.links
     bsdf = nodes['Principled BSDF']
-    bsdf.inputs['Base Color'].default_value = (0.83, 0.62, 0.31, 1)
+    bsdf.inputs['Base Color'].default_value = (0.68, 0.36, 0.06, 1)
     bsdf.inputs['Metallic'].default_value = 1.0
-    bsdf.inputs['Roughness'].default_value = 0.34
+    bsdf.inputs['Roughness'].default_value = 0.26
     normal_image = bpy.data.images.new('gilt-frame-nor', 1024, 1024)
     normal_image.colorspace_settings.name = 'Non-Color'
     ao_image = bpy.data.images.new('gilt-frame-ao', 512, 512)
@@ -781,8 +851,8 @@ def bake_gilt_detail(frame_obj, target_faces):
         print('baked gilt ao')
         mix = nodes.new('ShaderNodeMixRGB')
         mix.blend_type = 'MULTIPLY'
-        mix.inputs['Fac'].default_value = 1.0
-        mix.inputs['Color1'].default_value = (0.83, 0.62, 0.31, 1)
+        mix.inputs['Fac'].default_value = 0.65
+        mix.inputs['Color1'].default_value = (0.68, 0.36, 0.06, 1)
         links.new(ao_node.outputs['Color'], mix.inputs['Color2'])
         links.new(mix.outputs['Color'], bsdf.inputs['Base Color'])
     except Exception as error:
@@ -925,10 +995,29 @@ def neutralize(image):
     print('lightmap luminance', float(luma.min()), float(np.median(luma[luma > 0.01])), float(luma.max()), 'scale', scale)
 
 
+def join_prefix(prefix):
+    """One draw call for every copy that shares a material."""
+    objs = [
+        obj for obj in bpy.context.scene.objects
+        if obj.type == 'MESH' and obj.name.startswith(prefix) and not obj.hide_render
+    ]
+    if len(objs) < 2:
+        return
+    bpy.ops.object.select_all(action='DESELECT')
+    for obj in objs:
+        obj.hide_set(False)
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = objs[0]
+    bpy.ops.object.join()
+    print('joined', prefix, len(objs), 'faces', len(objs[0].data.polygons))
+
+
 def export_glb():
     for obj in list(bpy.data.objects):
-        if obj.name.startswith('src-') or obj.name.startswith('fancy_picture_frame') or obj.name in ('haze', 'shaft'):
+        if obj.name.startswith('src-') or obj.name.startswith('fancy_picture_frame') or obj.name.startswith('cumulus') or obj.name in ('haze', 'shaft'):
             bpy.data.objects.remove(obj, do_unlink=True)
+    join_prefix('rock-')
+    join_prefix('giltframe-')
     for obj in bpy.context.scene.objects:
         if obj.type == 'MESH' and obj.data.uv_layers.get('UVMap'):
             obj.data.uv_layers['UVMap'].active = True
@@ -1135,6 +1224,88 @@ def dress_for_photo():
         background.inputs['Strength'].default_value = 1.15
 
 
+def cumulus_material():
+    """Bright cloud puffs for the camera only. They do not relight the marble."""
+    material = bpy.data.materials.new('cumulus')
+    material.use_nodes = True
+    material.blend_method = 'BLEND'
+    try:
+        material.shadow_method = 'NONE'
+    except Exception:
+        pass
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+    output = nodes.new('ShaderNodeOutputMaterial')
+    coord = nodes.new('ShaderNodeTexCoord')
+    noise = nodes.new('ShaderNodeTexNoise')
+    noise.inputs['Scale'].default_value = 1.2
+    noise.inputs['Detail'].default_value = 5.0
+    noise.inputs['Roughness'].default_value = 0.58
+    noise.inputs['Distortion'].default_value = 0.35
+    links.new(coord.outputs['Object'], noise.inputs['Vector'])
+    length = nodes.new('ShaderNodeVectorMath')
+    length.operation = 'LENGTH'
+    links.new(coord.outputs['Object'], length.inputs[0])
+    edge = nodes.new('ShaderNodeMapRange')
+    edge.inputs['From Min'].default_value = 0.2
+    edge.inputs['From Max'].default_value = 1.05
+    edge.inputs['To Min'].default_value = 1.0
+    edge.inputs['To Max'].default_value = 0.0
+    edge.clamp = True
+    links.new(length.outputs['Value'], edge.inputs['Value'])
+    puff = nodes.new('ShaderNodeMath')
+    puff.operation = 'MULTIPLY'
+    links.new(noise.outputs['Fac'], puff.inputs[0])
+    links.new(edge.outputs['Result'], puff.inputs[1])
+    emit = nodes.new('ShaderNodeEmission')
+    emit.inputs['Color'].default_value = (1.0, 0.99, 0.97, 1)
+    emit.inputs['Strength'].default_value = 3.2
+    transparent = nodes.new('ShaderNodeBsdfTransparent')
+    body = nodes.new('ShaderNodeMixShader')
+    links.new(puff.outputs['Value'], body.inputs['Fac'])
+    links.new(transparent.outputs['BSDF'], body.inputs[1])
+    links.new(emit.outputs['Emission'], body.inputs[2])
+    path = nodes.new('ShaderNodeLightPath')
+    lit = nodes.new('ShaderNodeMath')
+    lit.operation = 'MAXIMUM'
+    links.new(path.outputs['Is Diffuse Ray'], lit.inputs[0])
+    links.new(path.outputs['Is Glossy Ray'], lit.inputs[1])
+    hold = nodes.new('ShaderNodeMixShader')
+    links.new(lit.outputs['Value'], hold.inputs['Fac'])
+    links.new(body.outputs['Shader'], hold.inputs[1])
+    links.new(transparent.outputs['BSDF'], hold.inputs[2])
+    links.new(hold.outputs['Shader'], output.inputs['Surface'])
+    return material
+
+
+def add_cumulus(end_y):
+    """Large white masses in the open roof and behind the glass, so the end is not a flat plate."""
+    if bpy.data.objects.get('cumulus'):
+        return
+    material = cumulus_material()
+    blobs = [
+        (0.2, 7.5, 11.5, 6.2),
+        (-5.2, 10.5, 13.2, 7.4),
+        (5.6, 9.8, 10.4, 5.6),
+        (0.8, 14.0, 14.6, 8.2),
+        (-4.2, 16.5, 9.2, 6.4),
+        (4.8, 18.5, 12.8, 7.0),
+        (-1.0, end_y + 4.5, 5.2, 8.0),
+        (3.5, end_y + 6.0, 8.8, 6.6),
+        (-5.5, end_y + 3.0, 3.4, 5.8),
+        (1.5, end_y + 2.2, 11.0, 7.2),
+    ]
+    for index, (x, y, z, size) in enumerate(blobs):
+        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2, radius=1.0, location=(x, y, z))
+        blob = bpy.context.active_object
+        blob.name = 'cumulus' if index == 0 else f'cumulus-{index}'
+        blob.scale = (size * 1.25, size * 0.82, size * 0.7)
+        blob.rotation_euler = (0.2 * index, 0.4 * index, 0.15 * index)
+        blob.data.materials.append(material)
+        blob.visible_shadow = False
+
+
 def add_haze():
     bpy.ops.mesh.primitive_cube_add(size=1, location=(0, ROOM['length'] * 0.5, 4.2))
     cube = bpy.context.active_object
@@ -1170,7 +1341,7 @@ def add_haze():
     beam.use_nodes = True
     beam.node_tree.nodes.clear()
     scatter = beam.node_tree.nodes.new('ShaderNodeVolumeScatter')
-    scatter.inputs['Density'].default_value = 0.05
+    scatter.inputs['Density'].default_value = 0.08
     scatter.inputs['Anisotropy'].default_value = 0.9
     scatter.inputs['Color'].default_value = (1.0, 0.96, 0.88, 1)
     output = beam.node_tree.nodes.new('ShaderNodeOutputMaterial')
@@ -1183,7 +1354,7 @@ def add_haze():
 
 def render_photo(path, width, height, samples, denoise=True):
     scene = bpy.context.scene
-    apply_grade(float(os.environ.get('BLANC_EXPOSURE', '-0.65')))
+    apply_grade(float(os.environ.get('BLANC_EXPOSURE', '-1.25')))
     scene.cycles.samples = samples
     scene.cycles.use_adaptive_sampling = True
     scene.cycles.adaptive_threshold = float(os.environ.get('BLANC_THRESHOLD', '0.08'))
@@ -1541,20 +1712,24 @@ def composite_layered(folder, corners, cam, width, height):
 
 
 def still():
+    """Landing still. Same axis framing as the pass-5 review, at the delivery size."""
     scene = bpy.context.scene
     cam_data = bpy.data.cameras.new('Still')
     cam_data.sensor_fit = 'VERTICAL'
-    cam_data.angle = math.radians(ROOM.get('fov', 44))
+    cam_data.angle = math.radians(float(os.environ.get('BLANC_STILL_FOV', '44')))
     cam = bpy.data.objects.new('Still', cam_data)
-    cam.location = (0, ROOM.get('cameraZ', 1.9), ROOM.get('eye', 1.6))
-    cam.rotation_euler = (math.radians(96), 0, 0)
+    cam.location = (0, 1.9, 1.6)
     scene.collection.objects.link(cam)
+    aim(cam, (0, 12, 2.4))
     scene.camera = cam
+    sky = bpy.data.objects.get('sky')
+    if sky:
+        sky.hide_render = True
     render_photo(
-        ASSETS / os.environ.get('BLANC_STILL_NAME', 'still.jpg'),
-        int(os.environ.get('BLANC_STILL_W', '1280')),
-        int(os.environ.get('BLANC_STILL_H', '720')),
-        int(os.environ.get('BLANC_STILL_SAMPLES', '48')),
+        ASSETS / os.environ.get('BLANC_STILL_NAME', 'landing-4k.jpg'),
+        int(os.environ.get('BLANC_STILL_W', '3840')),
+        int(os.environ.get('BLANC_STILL_H', '2160')),
+        int(os.environ.get('BLANC_STILL_SAMPLES', '128')),
     )
 
 
@@ -1585,6 +1760,12 @@ def main():
     import sys
     args = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
     build()
+    if '--save-blend' in args:
+        path = ASSETS / 'musee-blanc-prepared.blend'
+        bpy.context.preferences.filepaths.use_relative_paths = True
+        bpy.ops.wm.save_as_mainfile(filepath=str(path))
+        print('saved blend', path, path.stat().st_size)
+        return
     if '--review' in args or '--proof' in args or '--mesh' in args:
         if '--review' in args:
             review()
