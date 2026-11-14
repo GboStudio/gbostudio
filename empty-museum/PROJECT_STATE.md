@@ -37,7 +37,7 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Les exemples sont fictifs ; les tarifs sont simulés ; absence de paiement, de publication publique et de contrôle serveur : ne jamais présenter ces fonctionnalités comme disponibles avant validation technique et juridique.
 
 ## Contradictions à résoudre (pas des fonctions terminées)
-1. L'interface classique `index.html` / `app.js` utilise encore certaines durées et certains prix historiques alors que le nouveau configurateur fonctionne en mensuel/annuel. **Unifier l'offre avant de lancer les ventes.**
+1. L'interface classique `index.html` / `app.js` utilise encore certaines durées et certains prix historiques alors que le nouveau configurateur fonctionne en mensuel/annuel. **Unifier l'offre avant de lancer les ventes.** (Corrigé dans la branche proposée `proposal/landing-blanche-nolimit`, non fusionnée : voir la section du 11 novembre.)
 2. Le double joystick de PR #34 a été fusionnée ; les contrôles navigateur CI ont été exercés, mais la validation sur iPhone réel et la correspondance du déploiement exact restent nécessaires.
 3. Le sol et l'accueil restent insatisfaisants visuellement malgré les tests logiciels ; validation visuelle nécessaire.
 4. PR #34 navigation et #37 accueil sont fusionnées ; PR #35 photoréalisme reste ouverte, synchronisée le 9 novembre avec la sécurité #38 sur `main` ; préserver ses six fichiers isolés et vérifier ses CI avant une éventuelle fusion. Le prototype n'est pas encore intégré à la galerie publique.
@@ -67,3 +67,36 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Vérifier le contrat des deux joysticks + zoom, la priorité des commandes manuelles et la présence des tests de sécurité dans les pipelines.
 - Exécuter des jeux de tests positifs **et négatifs** du garde-fou : un contrôle qui ne sait pas échouer lors d'une rupture simulée ne fournit aucune garantie.
 - Les tests statiques ne prouvent ni la qualité visuelle ni le succès de publication. Utiliser séparément Playwright et la vérification du déploiement GitHub Pages correspondant au SHA exact.
+
+## Proposition d’accueil « grand musée » — 10 novembre 2026 (proposée, non fusionnée)
+- Branche `proposal/landing-premium` : refonte de `empty-museum/index.html` (typographie Cormorant Garamond + Inter auto-hébergées, menu mobile accessible, emplacements visuels réservés « Visuel de la salle témoin à venir », offre créateurs, parcours en 4 étapes, mentions DÉMO conservées).
+- Aucun visuel inventé : seuls les rendus validés de la salle témoin rempliront les emplacements réservés. Le mur d’exemples fictifs de la démo est replié par défaut.
+- Corrections incluses : débordement horizontal mobile des tableaux de tarifs, balises og:/twitter:, canonical, favicon, entrée sitemap, nom « Empty Museum » visible retiré (carte d’accueil du studio, nom du fichier téléchargé), libellés anglais traduits, logo unifié, aria-label des tuiles.
+- Plafond : les prix 9,95 / 14,95 / 20 € (absents du modèle commercial) sont remplacés par « Tarif à définir » sur l’accueil ; `app.js` conserve ses prix historiques (contradiction n° 1 toujours ouverte). Supplanté le 11 novembre pour C01–C03 : plus aucune mention de tarif (voir la décision du jour sur la PR #52).
+- État : **proposé** — ni fusionné, ni déployé ; validation visuelle de Guillaume requise.
+
+## Direction artistique « blanche no limit » — 11 novembre 2026 (proposée, non fusionnée)
+- Décision de Guillaume relayée par le coordinateur : « Oui, la version blanche no limit remplace la salle classique pour tout le musée » ; « Oui go » pour aligner la page marketing. Image cible validée : galerie en marbre de Carrare blanc, plafond ouvert sur un ciel lumineux, blocs de marbre en apesanteur, sol miroir, cadres dorés sous spots chauds (grandiose, serein, rien de religieux).
+- Branche locale `proposal/landing-blanche-nolimit` (partant de `proposal/landing-premium`, PR brouillon #49) : accueil refondu en blanc / marbre / or. Hero = image cible recadrée (16:7 desktop, 1:1 mobile, WebP + JPEG en `srcset`, `assets/direction/`), signalée « Image de direction artistique · la visite 3D évolue vers cet univers ». Aucun autre visuel généré ; ambiances en CSS (dégradés ciel, veinage léger, filets or). Image de partage `assets/og/partage-salle-blanche.jpg` recadrée de la même image.
+- Accroches : « L’irréel a trouvé son musée. », « Ici, rien ne pèse… l’imaginaire n’a plus de limite. », « Ce qui n’existe nulle part a sa place ici. », « L’imaginaire sans limite, des places comptées. », « Entrez dans l’irréel. ».
+- Tarifs : grille de `commerce-model.mjs` conservée sans changement de montant (décision de Guillaume). Les prix historiques en dur de `app.js` (4,95 / 9,95 / 15 / 249,50 / 14,95 / 20 €) et de `walk.js` (499 €) sont supprimés : cadres muraux = miroir `gallery-mix.js` vérifié identique au modèle par test ; sol = `floor.js` via `aislePrice()` ; anciens formats = « Tarif à définir ». Le plafond et l’offre de mur entier sont précisés dans la décision suivante. Libellés 3D « € / 12 MOIS » erronés pour un tarif mensuel remplacés par « € / MOIS ». **Contradiction n° 1 résolue dans cette branche uniquement**, tant qu’elle n’est pas fusionnée.
+- Limites : l’image source fait 1280 × 720 ; les déclinaisons 2880 × 1260 et 1170 × 1170 sont agrandies (≈ × 2,25 et × 1,6). Un master haute définition de la salle cible est nécessaire avant publication. La visite 3D publique n’a pas encore ce rendu. L’image d’accueil n’est pas régénérée : le master HD attend le rendu réel du moteur 3D.
+- État : **proposé** dans la PR brouillon #52 — non fusionné, non déployé ; validation visuelle de Guillaume requise.
+
+## Décision du 11 novembre 2026 — cadres, allée 3D, plafond, pas de mur entier (PR brouillon #52, non fusionnée)
+- Décision de Guillaume : « Ils peuvent pas acheter le mur mais les différentes tailles de cadres » ; « Les œuvres 3D aussi à mettre dans l'allée » ; « On vend ça aussi » ; « On vend les œuvres 3 d aussi » ; « Les prix étaient sur la page qui présente les prix ».
+- On vend les cinq tailles de cadres et les quatre emplacements 3D S01–S04 dans l’allée. Les cadres gardent la grille du site en ligne. Les spots 3D passent à la grille à six portées validée par Guillaume (15, 25, 35, 45, 55 et 75 m), lue uniquement dans `commerce-model.mjs` et affichée dans `#pricing`. Les identifiants `near`, `gallery` et `landmark` restent ceux de 15, 35 et 75 m. Le site en ligne a encore l’ancienne grille à trois portées.
+- Il n’y a plus d’offre « Mur total » sur l’accueil, ni de fonction `wholeWallPrice`. Le site en ligne (`main`) affiche encore cette offre avec « prix sur proposition » ; elle est retirée seulement dans cette PR.
+- Plafond C01, C02 et C03 : emplacements conservés, sans prix. Le site en ligne affiche encore 9,95 €, 14,95 € et 20 €, absents du modèle ; cet écart n’est pas recopié ici.
+- La marque ™ est conservée. L’image d’accueil n’est pas modifiée ; le master HD attend le rendu réel du moteur 3D.
+- État : proposé dans la PR brouillon #52, **non fusionné**, non déployé.
+
+## Corrections d’accueil du 14 novembre 2026 (PR brouillon #52, non fusionnée)
+- Décision de Guillaume : « Oui, lance toutes les corrections sauf celles qui attendent la 4K ». Les points 3 et 15 (master 4K) et 14 (hors page marketing) ne sont pas appliqués.
+- Le moteur 3D, Three.js, le GLB d’entrée et les textures Polyhaven ne se chargent qu’au clic d’un lien `?visit=immersive`, à l’arrivée sur cette URL, ou sur une ancre de visite. `engine3d.js` et `engine-loader.js` ne sont pas modifiés.
+- Les ancres `#visite`, `#visit`, `#tour`, `#walk` et `#visite-3d` réécrivent d’abord l’adresse en `?visit=immersive` (l’ancre est conservée), puis chargent le moteur, pour que la visite s’ouvre. Un clic avec Ctrl, Cmd, Maj, Alt ou le bouton du milieu laisse le navigateur ouvrir un onglet sur `?visit=immersive`.
+- Le hero (image, légende complète, deux boutons) tient au-dessus de la ligne de flottaison à 1280×800, 390×844 et 360×740. Le bouton « Entrer dans le musée » reste dans l’en-tête mobile. Les libellés de visite sont alignés, aucun bouton n’est retiré.
+- Les colonnes « Par module » et les quatre colonnes de l’allée restent lisibles sur mobile. La légende validée est entière. Le bandeau DÉMO est plus compact, texte inchangé. Les ancres ont un `scroll-margin-top` ; le mot-marque ramène en haut de page.
+- Les graisses 500/600 et l’italique sont dans `fonts-extended.css`, chargée après le premier rendu. La minification (point 16) n’est pas faite : GitHub Pages sert les fichiers tels quels, sans chaîne de build.
+- Inventaire des fonctions : `empty-museum/docs/landing-feature-inventory.md`.
+- État : proposé dans la PR brouillon #52, **non fusionné**, non déployé.

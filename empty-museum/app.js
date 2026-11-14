@@ -18,7 +18,7 @@ const base=[
 {id:16,title:'Bench 01',author:'Kian',category:'build',tools:'ChatGPT + SketchUp',description:'Un banc produit après avoir demandé comment faire tenir trois personnes sans créer trois places séparées.',size:'large',image:'linear-gradient(150deg,#85796e,#d7cec2 50%,#3d3935)',date:'Oct. 2026'},
 {id:17,title:'Signal',author:'Eva',category:'design',tools:'ChatGPT + Figma',description:'Identité visuelle pour un projet qui n’existera probablement jamais.',size:'standard',image:'linear-gradient(135deg,#161616 0 45%,#d1ff39 45% 58%,#f0eee5 58%)',date:'Oct. 2026'},
 {id:18,title:'Tomorrow, Maybe',author:'Iris',category:'image',tools:'ChatGPT + image generation',description:'Une image produite à partir d’une phrase : demain, mais sans certitude.',size:'xl',image:'linear-gradient(165deg,#d9d6cf,#b7c6d3 45%,#f1c1a6 70%,#393f49)',date:'Oct. 2026'}];
-let pieces=base.slice(0,6), filter='all', plan={size:'standard',price:4.95}, upload='', selectedSlot=null;
+let pieces=base.slice(0,6), filter='all', plan={size:'standard',price:null}, upload='', selectedSlot=null;
 // Treat locally persisted exhibits as untrusted input (browser extensions and other code
 // running on the same origin can modify localStorage). Keep only known, bounded fields.
 function safeStoredPiece(item){
@@ -68,17 +68,23 @@ try{
   }
 }catch(e){}
 const grid=$('#grid'),viewport=$('#viewport');
+// Tarifs : une seule source de vérité, commerce-model.mjs.
+// - cadres muraux : miroir synchrone window.TUM_GALLERY_MIX.PRICES (gallery-mix.js), vérifié égal au modèle par test ;
+// - installations au sol : chiffrées par floor.js via aislePrice() du modèle ;
+// - plafond C01–C03 : aucun prix et aucune mention de tarif ;
+// - anciens formats (mini, portrait, paysage…) : aucun tarif arrêté, affichés « Tarif à définir ».
+// Aucun montant ne doit être écrit en dur ici.
 const FORMATS={
-  mini:{name:'Petit portrait',dimensions:'20 × 30 cm',ratio:2/3,price:4.95},
-  portrait:{name:'Portrait',dimensions:'40 × 60 cm',ratio:2/3,price:9.95},
-  landscape:{name:'Paysage',dimensions:'60 × 40 cm',ratio:3/2,price:9.95},
-  tall:{name:'Grand portrait',dimensions:'60 × 90 cm',ratio:2/3,price:15},
-  wide:{name:'Grand paysage',dimensions:'90 × 60 cm',ratio:3/2,price:15},
-  panorama:{name:'Panoramique',dimensions:'100 × 40 cm',ratio:5/2,price:15},
-  floor:{name:'Emplacement au sol',dimensions:'1,80 × 1,50 m',ratio:1.2,price:249.50},
-  'ceiling-mini':{name:'Cadre suspendu',dimensions:'20 × 30 cm',ratio:2/3,price:9.95},
-  'ceiling-medium':{name:'Caisson lumineux',dimensions:'60 × 40 cm',ratio:3/2,price:14.95},
-  'ceiling-large':{name:'Bannière aérienne',dimensions:'90 × 60 cm',ratio:3/2,price:20}
+  mini:{name:'Petit portrait',dimensions:'20 × 30 cm',ratio:2/3},
+  portrait:{name:'Portrait',dimensions:'40 × 60 cm',ratio:2/3},
+  landscape:{name:'Paysage',dimensions:'60 × 40 cm',ratio:3/2},
+  tall:{name:'Grand portrait',dimensions:'60 × 90 cm',ratio:2/3},
+  wide:{name:'Grand paysage',dimensions:'90 × 60 cm',ratio:3/2},
+  panorama:{name:'Panoramique',dimensions:'100 × 40 cm',ratio:5/2},
+  floor:{name:'Emplacement au sol',dimensions:'1,80 × 1,50 m',ratio:1.2},
+  'ceiling-mini':{name:'Cadre suspendu',dimensions:'20 × 30 cm',ratio:2/3},
+  'ceiling-medium':{name:'Caisson lumineux',dimensions:'60 × 40 cm',ratio:3/2},
+  'ceiling-large':{name:'Bannière aérienne',dimensions:'90 × 60 cm',ratio:3/2}
 };
 // Deux premiers cadres à gauche (0, 2) et à droite (1, 3) : espaces publicitaires hors vente.
 const AD_RESERVED_SLOTS=new Set([0,1,2,3]);
@@ -99,7 +105,10 @@ const CEILING_POSITIONS=[
  {id:'P05',z:109,size:'ceiling-medium',style:'lightbox'},
  {id:'P06',z:132,size:'ceiling-large',style:'banner'}
 ];
-const euros=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+const hasPrice=n=>n!==null&&n!==undefined&&n!==''&&Number.isFinite(Number(n));
+const euros=n=>hasPrice(n)?Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €':'Tarif à définir';
+// Libellé commun aux moteurs 3D (engine3d.js, walk.js) : tarif mensuel du modèle ou « tarif à définir ».
+const priceLabel=slot=>hasPrice(slot?.price)?Number(slot.price).toLocaleString('fr-FR',{maximumFractionDigits:2})+' € / MOIS':'TARIF À DÉFINIR';
 const normalizeSize=s=>({standard:'landscape',large:'wide',xl:'panorama'}[s]||s);
 function getSlots(){
   const placements=new Map();
@@ -112,7 +121,7 @@ function getSlots(){
   const highest=Math.max(17,...placements.keys()),total=Math.max(38,highest+5);
   return Array.from({length:total},(_,id)=>{
     const piece=placements.get(id)||null,size=piece&&piece.id>18?normalizeSize(piece.size):SLOT_SIZES[id%SLOT_SIZES.length];
-    return{id,size,price:FORMATS[size]?.price||9.95,format:FORMATS[size]||FORMATS.landscape,piece,reservedForAds:AD_RESERVED_SLOTS.has(id)};
+    return{id,size,price:null,format:FORMATS[size]||FORMATS.landscape,piece,reservedForAds:AD_RESERVED_SLOTS.has(id)};
   });
 }
 function getWallDisplaySlots(){
@@ -137,7 +146,7 @@ function getWallDisplaySlots(){
   });
 }
 function getFloorSlots(){
-  return FLOOR_POSITIONS.map(s=>({...s,size:'floor',price:249.5,format:FORMATS.floor,piece:[...pieces].reverse().find(p=>p.slot===s.id && (!p.expiresAt || Date.parse(p.expiresAt)>Date.now()))||null}));
+  return FLOOR_POSITIONS.map(s=>({...s,size:'floor',price:null,format:FORMATS.floor,piece:[...pieces].reverse().find(p=>p.slot===s.id && (!p.expiresAt || Date.parse(p.expiresAt)>Date.now()))||null}));
 }
 function getCeilingStatus(){
   const occupied=getWallDisplaySlots().filter(s=>!!s.piece).length;
@@ -145,7 +154,7 @@ function getCeilingStatus(){
 }
 function getCeilingSlots(){
   const {unlocked}=getCeilingStatus();
-  return CEILING_POSITIONS.map(s=>({...s,price:FORMATS[s.size].price,format:FORMATS[s.size],
+  return CEILING_POSITIONS.map(s=>({...s,format:FORMATS[s.size],
     piece:pieces.slice().reverse().find(p=>p.slot===s.id&&(!p.expiresAt||Date.parse(p.expiresAt)>Date.now()))||null,unlocked}));
 }
 function refreshCeilingOffers(){
@@ -162,7 +171,7 @@ function refreshCeilingOffers(){
 }
 const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 function bg(p){if(p.image?.startsWith('data:'))return `url("${p.image}")`;return p.image||'linear-gradient(145deg,#ddd8cd,#f8f6f0)'}
-function render(){grid.innerHTML='';const arr=filter==='all'?pieces:pieces.filter(p=>p.category===filter);arr.forEach(p=>{const el=document.createElement('article');el.className=`tile ${p.size.startsWith('ceiling-')?({'ceiling-mini':'mini','ceiling-medium':'landscape','ceiling-large':'wide'}[p.size]):p.size} ${p.size.startsWith('ceiling-')?'ceiling-tile':''} ${p.category==='words'?'words':''} ${p.category==='3d'?'threed':''}`;el.dataset.id=p.id;if(p.category==='words'){el.innerHTML=`<div class="wordsArt">${esc(p.words||p.title)}</div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}else if(p.category==='3d'){el.innerHTML=`<div class="img"></div><div class="shape"></div><div class="shade"></div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}else{el.innerHTML=`<div class="img"></div><div class="shade"></div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button></button>`}if(p.category!=='words'&&p.category!=='3d')el.querySelector('.img').style.backgroundImage=bg(p);el.querySelector('button').onclick=()=>openPiece(p);grid.appendChild(el)});stats()}
+function render(){grid.innerHTML='';const arr=filter==='all'?pieces:pieces.filter(p=>p.category===filter);arr.forEach(p=>{const el=document.createElement('article');el.className=`tile ${p.size.startsWith('ceiling-')?({'ceiling-mini':'mini','ceiling-medium':'landscape','ceiling-large':'wide'}[p.size]):p.size} ${p.size.startsWith('ceiling-')?'ceiling-tile':''} ${p.category==='words'?'words':''} ${p.category==='3d'?'threed':''}`;el.dataset.id=p.id;if(p.category==='words'){el.innerHTML=`<div class="wordsArt">${esc(p.words||p.title)}</div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button type="button" aria-label="Voir l’œuvre « ${esc(p.title)} » de ${esc(p.author)}"></button>`}else if(p.category==='3d'){el.innerHTML=`<div class="img"></div><div class="shape"></div><div class="shade"></div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button type="button" aria-label="Voir l’œuvre « ${esc(p.title)} » de ${esc(p.author)}"></button>`}else{el.innerHTML=`<div class="img"></div><div class="shade"></div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button type="button" aria-label="Voir l’œuvre « ${esc(p.title)} » de ${esc(p.author)}"></button>`}if(p.category!=='words'&&p.category!=='3d')el.querySelector('.img').style.backgroundImage=bg(p);el.querySelector('button').onclick=()=>openPiece(p);grid.appendChild(el)});stats()}
 function stats(){ refreshCeilingOffers(); $('#liveCount').textContent=pieces.length;$('#countHero').textContent=String(pieces.length).padStart(3,'0');const m=4.8+pieces.reduce((a,p)=>a+({mini:.22,standard:.42,large:.72,xl:1.12}[p.size]||.42),0);$('#metersHero').textContent=m.toFixed(1).replace('.',',')+' M'}
 $$('[data-filter]').forEach(b=>b.onclick=()=>{$$('[data-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;render();viewport.scrollTo({left:0,behavior:'smooth'})});
 $('#reset').onclick=()=>viewport.scrollTo({left:0,behavior:'smooth'});$('#random').onclick=()=>{const a=filter==='all'?pieces:pieces.filter(p=>p.category===filter);if(!a.length)return;const p=a[Math.floor(Math.random()*a.length)],el=grid.querySelector(`[data-id="${p.id}"]`);if(el){viewport.scrollTo({left:Math.max(0,el.offsetLeft-viewport.clientWidth/2),behavior:'smooth'});el.animate([{transform:'translateY(0)'},{transform:'translateY(-12px)'},{transform:'translateY(0)'}],{duration:700});setTimeout(()=>openPiece(p),600)}};
@@ -181,19 +190,19 @@ function openExhibit(size='landscape',price=null,slot=null){
   const commercial=typeof slot==='string'&&slot.startsWith('M')?getWallDisplaySlots().find(p=>p.id===slot&&!p.piece):null;
   if(typeof slot==='string'&&slot.startsWith('M')&&!commercial)return;
   const chosen=commercial?.format||FORMATS[size]||FORMATS.landscape;
-  plan={size,price:price===null?(commercial?.price??chosen.price):Number(price)};
+  plan={size,price:price==null?(commercial?.price??null):Number(price)};
   selectedSlot=slot;
   const isFloor=typeof slot==='string' && slot.startsWith('S');
   const isCeiling=typeof slot==='string' && slot.startsWith('P');
-  $('#durationLabel').textContent=commercial?'EXPOSITION · 1 MOIS':'EXPOSITION · 12 MOIS';
+  $('#durationLabel').textContent=isCeiling?'EMPLACEMENT PLAFOND':commercial?'EXPOSITION · 1 MOIS':'EXPOSITION · 12 MOIS';
   const reserveTerm=document.querySelector('.reserve-pay small');
-  if(reserveTerm)reserveTerm.textContent=commercial?'1 MOIS':'12 MOIS';
+  if(reserveTerm)reserveTerm.textContent=isCeiling?'':commercial?'1 MOIS':'12 MOIS';
   const name=commercial?'MODULE '+String(commercial.moduleNumber).padStart(3,'0')+' · '+commercial.format.name.toUpperCase()+' · CADRE '+commercial.ordinal:isCeiling?'PLAFOND · '+slot:isFloor?'ESPACE AU SOL N°'+slot.slice(1):(Number.isInteger(slot)?'MUR '+(slot%2?'DROIT':'GAUCHE')+' · CADRE N°'+String(slot+1).padStart(2,'0'):'EMPLACEMENT LIBRE');
   $('#slotName').textContent=name;
   $('#formatName').textContent=chosen.name;
   $('#dimensions').textContent=chosen.dimensions;
-  $('#reservePrice').textContent=euros(plan.price);
-  $('#price').textContent=euros(plan.price);
+  $('#reservePrice').textContent=isCeiling?'':euros(plan.price);
+  $('#price').textContent=isCeiling?'':euros(plan.price);
   $('#reservePreview').style.setProperty('--frame-ratio',String(chosen.ratio));
   $('#reservePreview').classList.toggle('is-floor',isFloor);
   $('#reservePreview').classList.toggle('is-ceiling',isCeiling);
@@ -211,7 +220,7 @@ function firstVacantCeiling(size=null){return getCeilingSlots().find(s=>s.unlock
 $$('[data-open]').forEach(b=>b.onclick=()=>{const s=firstVacantWall();if(s)openExhibit(s.size,s.price,s.id);});
 $$('[data-plan]').forEach(b=>b.onclick=()=>{
   const size=b.dataset.plan;
-  if(size==='floor'){const x=getFloorSlots().find(s=>!s.piece);if(x)openExhibit('floor',249.5,x.id);}
+  if(size==='floor'){const x=getFloorSlots().find(s=>!s.piece);if(x)openExhibit('floor',null,x.id);}
   else if(size.startsWith('ceiling-')){const x=firstVacantCeiling(size);if(x)openExhibit(x.size,x.price,x.id);}
   else{const x=firstVacantWall(size);if(x)openExhibit(x.size,x.price,x.id);}
 });
@@ -251,7 +260,7 @@ if(sketchCtx){
 $('#publish').onclick=()=>{const p={id:Math.max(18,...pieces.map(p=>Number(p.id)||18))+1,slot:selectedSlot,title:$('#title').value.trim()||'Untitled',author:$('#author').value.trim()||'Anonymous',category:$('#category').value,tools:$('#tools').value.trim()||'Création personnelle',description:$('#desc').value.trim()||'Une création exposée dans The Unreal Museum.',size:plan.size,date:new Date().toLocaleDateString('fr-FR',{month:'short',year:'numeric'}),image:upload||'linear-gradient(145deg,#c7d1d8,#eee5d8 60%,#6f7b83)',words:$('#category').value==='words'?($('#desc').value.trim()||'Untitled'):''};pieces.push(p);try{localStorage.setItem('tem-demo',JSON.stringify(pieces.filter(x=>x.id>18)))}catch(e){alert('La création est visible pendant cette visite, mais le stockage de votre appareil est saturé. Réduisez la taille du fichier pour la conserver.')}$('#exhibit').close();filter='all';$$('[data-filter]').forEach(x=>x.classList.toggle('active',x.dataset.filter==='all'));render();setTimeout(()=>viewport.scrollTo({left:grid.scrollWidth,behavior:'smooth'}),80);drawShare(p);$('#share').showModal();$('#form').reset();$('#prevTitle').textContent='VOTRE CRÉATION';$('#preview').style.backgroundImage='';upload='';selectedSlot=null;if(sketchCtx){sketchCtx.fillStyle='#faf8f3';sketchCtx.fillRect(0,0,sketch.width,sketch.height);sketchUsed=false;}window.dispatchEvent(new Event('tem:exhibited'))};
 function drawShare(p){const c=$('#canvas'),x=c.getContext('2d'),W=c.width,H=c.height;x.fillStyle='#efede5';x.fillRect(0,0,W,H);x.strokeStyle='#161613';x.lineWidth=3;x.strokeRect(75,75,W-150,H-150);x.fillStyle='#11110f';x.font='700 25px Arial';x.fillText('THE UNREAL MUSEUM',110,130);x.fillStyle='#77736b';x.font='700 20px Arial';x.fillText(`#${String(p.id).padStart(3,'0')} / APERÇU LOCAL`,110,185);x.fillStyle='#11110f';x.font='700 65px Arial';wrap(x,p.title.toUpperCase(),110,340,W-220,73,3);x.font='italic 46px Georgia';x.fillStyle='#4f4d48';wrap(x,`by ${p.author}`,110,575,W-220,55,2);x.font='500 24px Arial';x.fillStyle='#6c6963';wrap(x,p.description,110,735,W-220,35,5);x.fillStyle='#11110f';x.font='700 22px Arial';x.fillText(p.size==='floor'?'FLOOR INSTALLATION / 1 MONTH':typeof p.slot==='string'&&p.slot.startsWith('M')?p.size.toUpperCase()+' / MONTHLY DEMO':p.size.toUpperCase()+' / 12 MONTHS',110,H-170);x.fillStyle='#77736b';x.font='500 18px Arial';x.fillText('UN MUSÉE POUR TOUTES LES CRÉATIONS',110,H-125)}
 function wrap(ctx,t,x,y,w,lh,n){const words=String(t).split(/\s+/),lines=[];let line='';for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>w&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);lines.slice(0,n).forEach((l,i)=>ctx.fillText(l,x,y+i*lh))}
-$('#closeShare').onclick=()=>$('#share').close();$('#download').onclick=()=>{const a=document.createElement('a');a.download='the-empty-museum-exhibition.png';a.href=$('#canvas').toDataURL('image/png');a.click()};$('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(location.href.split('#')[0]);$('#copy').textContent='LIEN COPIÉ ✓';setTimeout(()=>$('#copy').textContent='COPIER LE LIEN',1400)}catch(e){}};$('#shareNative').onclick=async()=>{if(navigator.share)try{await navigator.share({title:'The Unreal Museum',text:'Ma création est exposée dans The Unreal Museum.',url:location.href})}catch(e){}};render();
+$('#closeShare').onclick=()=>$('#share').close();$('#download').onclick=()=>{const a=document.createElement('a');a.download='the-unreal-museum-exposition.png';a.href=$('#canvas').toDataURL('image/png');a.click()};$('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(location.href.split('#')[0]);$('#copy').textContent='LIEN COPIÉ ✓';setTimeout(()=>$('#copy').textContent='COPIER LE LIEN',1400)}catch(e){}};$('#shareNative').onclick=async()=>{if(navigator.share)try{await navigator.share({title:'The Unreal Museum',text:'Ma création est exposée dans The Unreal Museum.',url:location.href})}catch(e){}};render();
 
 // A direct link works for demo pieces and browser-local creations stored on this device.
 function openLinkedPiece(){const m=location.hash.match(/^#piece-(\d+)$/);if(!m)return;const p=pieces.find(piece=>piece.id===Number(m[1]));if(p)openPiece(p)}
@@ -270,4 +279,4 @@ function publishFloor(spec){
   return true;
 }
 // Browser-local demo bridge for the immersive gallery and floor studio.
-window.TEM = { getPieces: () => pieces, getSlots, getWallDisplaySlots, getFloorSlots, getCeilingSlots, getCeilingStatus, openPiece, openExhibit, publishFloor };
+window.TEM = { getPieces: () => pieces, priceLabel, getSlots, getWallDisplaySlots, getFloorSlots, getCeilingSlots, getCeilingStatus, openPiece, openExhibit, publishFloor };

@@ -5,7 +5,7 @@
  */
 import {
   DEFAULT_COMMERCE_CONFIG,normalizeCommerceConfig,
-  WALL_FORMATS,DISTANCE_LEVELS,euros
+  WALL_FORMATS,DISTANCE_LEVELS,AISLE_DURATIONS,euros
 } from './commerce-model.mjs';
 
 const config=normalizeCommerceConfig(DEFAULT_COMMERCE_CONFIG);
@@ -49,4 +49,28 @@ if(aisleRoot){
     cell(row,euros(prices['30']));
     aisleRoot.append(row);
   }
+}
+const tierSelect=document.getElementById('floorVisibilityTier');
+if(tierSelect){
+  const selected=tierSelect.value;
+  tierSelect.replaceChildren();
+  for(const tier of DISTANCE_LEVELS){
+    const option=document.createElement('option');
+    option.value=tier.id;
+    option.textContent=tier.label;
+    tierSelect.append(option);
+  }
+  if(DISTANCE_LEVELS.some(tier=>tier.id===selected))tierSelect.value=selected;
+}
+const durationSelect=document.getElementById('floorDurationDays');
+if(durationSelect){
+  const selected=durationSelect.value;
+  durationSelect.replaceChildren();
+  for(const duration of AISLE_DURATIONS){
+    const option=document.createElement('option');
+    option.value=String(duration.days);
+    option.textContent=duration.label;
+    durationSelect.append(option);
+  }
+  if(AISLE_DURATIONS.some(duration=>String(duration.days)===selected))durationSelect.value=selected;
 }
