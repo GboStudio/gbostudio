@@ -1,7 +1,7 @@
 #!/bin/bash
-# Final delivery renders for the white sample room.
-# The blend is already built. This does not rebuild the meshes.
-# Pass 5 did not clear the barrier. Run these only if that decision changes.
+# Final delivery renders. Rebuilds the pass-8 scene, then renders.
+# 4K: 3840×2160, 64 samples, threshold 0.02.
+# 360: tiled, 6144×3072, 512 samples, threshold 0.01, via render_pano_tiles.sh.
 #
 # Measured on this machine, Blender 4.2.11 Cycles CPU, 14 November 2026:
 #   800×450, 8 samples, OIDN, volumes on: 23.9 s (mean of four frames)
@@ -18,27 +18,33 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 BLENDER="${BLENDER:-/tmp/downloads/blender-4.2.11-linux-x64/blender}"
 BLEND="$ROOT/assets/musee-blanc-prepared.blend"
 MODE="${1:-still}"
-export BLANC_EXPOSURE="${BLANC_EXPOSURE:--1.25}"
+export BLANC_EXPOSURE="${BLANC_EXPOSURE:--1.6}"
+export BLANC_SUN="${BLANC_SUN:-2}"
+export BLANC_SKY_STRENGTH="${BLANC_SKY_STRENGTH:-0.35}"
+export BLANC_SKY_VIEW="${BLANC_SKY_VIEW:-2.5}"
+export BLANC_SKY_GAMMA="${BLANC_SKY_GAMMA:-1}"
+export BLANC_SPOT="${BLANC_SPOT:-40}"
+export BLANC_SKY_ROT="${BLANC_SKY_ROT:-40}"
+export BLANC_SKY_PITCH="${BLANC_SKY_PITCH:-0}"
+export BLANC_HORIZON="${BLANC_HORIZON:-0}"
+export BLANC_ROCK_MARBLE="${BLANC_ROCK_MARBLE:-1}"
+export BLANC_VEIN_CONTRAST="${BLANC_VEIN_CONTRAST:-8}"
+export BLANC_ENTRY="${BLANC_ENTRY:-1}"
 export BLANC_MIN_SAMPLES="${BLANC_MIN_SAMPLES:-12}"
-if [[ ! -f "$BLEND" ]]; then
-  echo "missing $BLEND — build it with: $BLENDER --background --python $ROOT/bake_musee_blanc.py -- --save-blend" >&2
-  exit 1
-fi
 if [[ "$MODE" == "still" ]]; then
-  export BLANC_THRESHOLD="${BLANC_THRESHOLD:-0.015}"
+  export BLANC_THRESHOLD="${BLANC_THRESHOLD:-0.02}"
   export BLANC_STILL_W="${BLANC_STILL_W:-3840}"
   export BLANC_STILL_H="${BLANC_STILL_H:-2160}"
-  export BLANC_STILL_SAMPLES="${BLANC_STILL_SAMPLES:-128}"
+  export BLANC_STILL_SAMPLES="${BLANC_STILL_SAMPLES:-64}"
   export BLANC_STILL_NAME="${BLANC_STILL_NAME:-landing-4k.jpg}"
-  exec "$BLENDER" --background "$BLEND" --python "$ROOT/render_prepared.py" -- --still
+  exec "$BLENDER" --background --python "$ROOT/bake_musee_blanc.py" -- --still
 fi
 if [[ "$MODE" == "pano" ]]; then
   export BLANC_THRESHOLD="${BLANC_THRESHOLD:-0.01}"
   export BLANC_PANO_W="${BLANC_PANO_W:-6144}"
   export BLANC_PANO_H="${BLANC_PANO_H:-3072}"
   export BLANC_PANO_SAMPLES="${BLANC_PANO_SAMPLES:-512}"
-  export BLANC_PANO_NAME="${BLANC_PANO_NAME:-pano-360.jpg}"
-  exec "$BLENDER" --background "$BLEND" --python "$ROOT/render_prepared.py" -- --pano
+  exec "$ROOT/render_pano_tiles.sh"
 fi
 echo "usage: $0 still|pano" >&2
 exit 1

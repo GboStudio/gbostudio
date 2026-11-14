@@ -24,7 +24,7 @@ CC0 = ASSETS / 'cc0'
 MARBLE_COLOR = ASSETS / 'pbr' / 'carrara-diff.jpg'
 MARBLE_NORMAL = ASSETS / 'pbr' / 'carrara-nor.jpg'
 MARBLE_ROUGH = ASSETS / 'pbr' / 'carrara-rough.jpg'
-HDRI = CC0 / 'kloofendal_48d_partly_cloudy_puresky_1k.hdr'
+HDRI = CC0 / os.environ.get('BLANC_HDRI', 'kloofendal_48d_partly_cloudy_puresky_1k.hdr')
 PAINTINGS = ROOT.parent / 'salle-temoin' / 'assets' / 'paintings'
 ROCK_SOURCES = ['boulder_01', 'rock_07', 'rock_09', 'namaqualand_boulder_03']
 LAYOUT = json.loads((ROOT / 'layout.json').read_text())
@@ -235,7 +235,9 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
 
 
 def rock_material():
-    """Real boulder grain. Box projection survives the voxel remesh, which drops UVs."""
+    """Pale stone. Boulder grey by default; marble blocks when BLANC_ROCK_MARBLE=1."""
+    if os.environ.get('BLANC_ROCK_MARBLE', '1') == '1':
+        return marble_material('rock', 0.62, 0.9, contrast=10, bright=-0.06)
     material = bpy.data.materials.new('rock')
     material.use_nodes = True
     nodes = material.node_tree.nodes
@@ -540,6 +542,7 @@ def build():
                 continue
         geo = nodes.new('ShaderNodeNewGeometry')
         mapping = nodes.new('ShaderNodeMapping')
+        mapping.inputs['Rotation'].default_value[0] = math.radians(float(os.environ.get('BLANC_SKY_PITCH', '0')))
         mapping.inputs['Rotation'].default_value[2] = math.radians(float(os.environ.get('BLANC_SKY_ROT', '40')))
         links.new(geo.outputs['Incoming'], mapping.inputs['Vector'])
         links.new(mapping.outputs['Vector'], env.inputs['Vector'])
@@ -567,11 +570,38 @@ def build():
         links.new(sky_color, bg.inputs['Color'])
         # Lift the dark half of the puresky so the camera sees white cloud, not a blue band.
         lifted = nodes.new('ShaderNodeGamma')
-        lifted.inputs['Gamma'].default_value = float(os.environ.get('BLANC_SKY_GAMMA', '0.42'))
+        lifted.inputs['Gamma'].default_value = float(os.environ.get('BLANC_SKY_GAMMA', '1'))
         links.new(sky_color, lifted.inputs['Color'])
         links.new(lifted.outputs['Color'], view_bg.inputs['Color'])
     light_strength = float(os.environ.get('BLANC_SKY_STRENGTH', '0.35'))
-    view_strength = float(os.environ.get('BLANC_SKY_VIEW', '6.0'))
+    view_strength = float(os.environ.get('BLANC_SKY_VIEW', '2.5'))
+    horizon_strength = float(os.environ.get('BLANC_HORIZON', '0'))
+    if horizon_strength > 0 and sky_color is not None:
+        # Camera-only band along the horizon, so the end of the hall can be
+        # brighter than the walls without turning the cumulus into a white sheet.
+        horizon_bg = nodes.new('ShaderNodeBackground')
+        horizon_bg.inputs['Color'].default_value = (1.0, 0.985, 0.96, 1)
+        horizon_bg.inputs['Strength'].default_value = horizon_strength
+        incoming = nodes.new('ShaderNodeNewGeometry')
+        incoming_z = nodes.new('ShaderNodeSeparateXYZ')
+        level = nodes.new('ShaderNodeMath')
+        level.operation = 'ABSOLUTE'
+        band = nodes.new('ShaderNodeMapRange')
+        band.inputs['From Min'].default_value = 0.02
+        band.inputs['From Max'].default_value = 0.45
+        band.inputs['To Min'].default_value = 1.0
+        band.inputs['To Max'].default_value = 0.0
+        band.clamp = True
+        links.new(incoming.outputs['Incoming'], incoming_z.inputs['Vector'])
+        links.new(incoming_z.outputs['Z'], level.inputs[0])
+        links.new(level.outputs['Value'], band.inputs['Value'])
+        horizon_mix = nodes.new('ShaderNodeMixShader')
+        links.new(band.outputs['Result'], horizon_mix.inputs['Fac'])
+        links.new(view_bg.outputs['Background'], horizon_mix.inputs[1])
+        links.new(horizon_bg.outputs['Background'], horizon_mix.inputs[2])
+        view_shader = horizon_mix.outputs['Shader']
+    else:
+        view_shader = view_bg.outputs['Background']
     bg.inputs['Strength'].default_value = light_strength
     view_bg.inputs['Strength'].default_value = view_strength
     path = nodes.new('ShaderNodeLightPath')
@@ -582,11 +612,14 @@ def build():
     mix = nodes.new('ShaderNodeMixShader')
     links.new(viewed.outputs['Value'], mix.inputs['Fac'])
     links.new(bg.outputs['Background'], mix.inputs[1])
-    links.new(view_bg.outputs['Background'], mix.inputs[2])
+    links.new(view_shader, mix.inputs[2])
     links.new(mix.outputs['Shader'], nodes['World Output'].inputs['Surface'])
 
     mats = {
-        'marble': marble_material('marble', 0.34, 0.55, rough_scale=0.42, bright=0.0),
+        'marble': marble_material(
+            'marble', 0.34, 0.55, rough_scale=0.42, bright=0.0,
+            contrast=float(os.environ.get('BLANC_VEIN_CONTRAST', '8')),
+        ),
         'floor': marble_material('floor', 0.035, 0.12),
         'gilt': new_material('gilt', (0.68, 0.36, 0.06), 0.26, 1),
         'artwork': new_material('artwork', (0.4, 0.32, 0.24), 0.55),
@@ -770,6 +803,8 @@ def build():
         box(meshes['iron'], pack, hx - 0.045, hx + 0.045, frame['z'] - 0.04, frame['z'] + 0.04, height - 0.58, height - 0.36)
 
     place_rocks(mats['rock'])
+    if os.environ.get('BLANC_ENTRY') == '1':
+        add_entry(back, half, height, pack, meshes)
     # No glass pane and no emissive rectangle. The camera sky is the world shader.
 
     # Sky dome, emissive in the viewer, hidden from the bake.
@@ -792,7 +827,12 @@ def build():
     sun.angle = math.radians(11)
     sun_obj = bpy.data.objects.new('sun', sun)
     # From behind the camera and to the left, so the near face of each rock is the lit face.
-    sun_obj.rotation_euler = Vector((0.65, 0.8, -0.5)).to_track_quat('-Z', 'Y').to_euler()
+    if os.environ.get('BLANC_SUN_HIGH') == '1':
+        # Raking light from above and slightly in front, so the visible face of a block is lit.
+        sun_vec = Vector((0.35, -0.25, -0.90))
+    else:
+        sun_vec = Vector((0.65, 0.8, -0.5))
+    sun_obj.rotation_euler = sun_vec.to_track_quat('-Z', 'Y').to_euler()
     bpy.context.scene.collection.objects.link(sun_obj)
 
     for hero in heroes:
@@ -1366,6 +1406,57 @@ def add_cumulus(end_y):
         blob.visible_shadow = False
 
 
+def add_entry(back, half, height, pack, meshes):
+    """Marble wall behind the visitor, with a door and two frames. Closes the void in the panorama."""
+    y = back + 0.04
+    door_half = 0.9
+    door_h = 3.35
+    def face(x0, x1, z0, z1):
+        coords = [(x0, y, z0), (x1, y, z0), (x1, y, z1), (x0, y, z1)]
+        uvs = [(0, 0), (1, 0), (1, 1), (0, 1)]
+        meshes['marble'].quad(coords, uvs, pack.for_quad(coords), (0, 1, 0))
+    face(-half, -door_half, 0, height)
+    face(door_half, half, 0, height)
+    face(-door_half, door_half, door_h, height)
+    # The door itself, set back a few centimetres, so the opening is not a hole into the void.
+    door = bpy.data.materials.new('door')
+    door.use_nodes = True
+    door_bsdf = door.node_tree.nodes['Principled BSDF']
+    door_bsdf.inputs['Base Color'].default_value = (0.16, 0.13, 0.10, 1)
+    door_bsdf.inputs['Roughness'].default_value = 0.45
+    panel = Accum('entry-door', door)
+    panel.quad(
+        [(-door_half + 0.06, y - 0.06, 0.02), (door_half - 0.06, y - 0.06, 0.02),
+         (door_half - 0.06, y - 0.06, door_h - 0.08), (-door_half + 0.06, y - 0.06, door_h - 0.08)],
+        [(0, 0), (1, 0), (1, 1), (0, 1)],
+        [(0, 0), (1, 0), (1, 1), (0, 1)],
+        (0, 1, 0),
+    )
+    panel.finish()
+    for side, painting, name in (
+        (-1, 'cc0/oeuvres/kintsugi.jpg', 'entry-left'),
+        (1, 'cc0/oeuvres/le-premier-spectateur.jpg', 'entry-right'),
+    ):
+        cx = side * 2.35
+        z0, z1 = 1.35, 2.85
+        x0, x1 = cx - 0.55, cx + 0.55
+        mould = 0.09
+        outer = [(x0, y + 0.03, z0), (x1, y + 0.03, z0), (x1, y + 0.03, z1), (x0, y + 0.03, z1)]
+        inner = [(x0 + mould, y + 0.07, z0 + mould), (x1 - mould, y + 0.07, z0 + mould),
+                 (x1 - mould, y + 0.07, z1 - mould), (x0 + mould, y + 0.07, z1 - mould)]
+        for i in range(4):
+            nxt = (i + 1) % 4
+            meshes['gilt'].quad(
+                [outer[i], outer[nxt], inner[nxt], inner[i]],
+                [(0, 0), (1, 0), (1, 1), (0, 1)],
+                pack.for_quad([outer[i], outer[nxt], inner[nxt], inner[i]]),
+                (0, 1, 0),
+            )
+        art = Accum(f'framed-canvas-{name}', painting_material(0, {'painting': painting}))
+        art.quad(inner, [(0, 0), (1, 0), (1, 1), (0, 1)], pack.for_quad(inner), (0, 1, 0))
+        art.finish()
+
+
 def add_cloud_backdrop(end_y):
     """Photoreal cumulus plate where the dark lower half of the puresky used to show."""
     path = CC0 / 'cumulus-backdrop.jpg'
@@ -1423,7 +1514,7 @@ def add_haze():
 
 def render_photo(path, width, height, samples, denoise=True):
     scene = bpy.context.scene
-    apply_grade(float(os.environ.get('BLANC_EXPOSURE', '0')))
+    apply_grade(float(os.environ.get('BLANC_EXPOSURE', '-1.6')))
     scene.cycles.samples = samples
     scene.cycles.use_adaptive_sampling = True
     scene.cycles.adaptive_threshold = float(os.environ.get('BLANC_THRESHOLD', '0.08'))
@@ -1567,7 +1658,14 @@ def write_slot_manifest(cam, corners_by_id):
             direction = delta.normalized()
             u = (math.atan2(direction.x, direction.y) - math.pi) / (-2 * math.pi)
             v = (math.acos(max(-1.0, min(1.0, direction.z))) - math.pi) / (-math.pi)
-            equirect.append([round(u % 1.0, 6), round(min(1.0, max(0.0, v)), 6)])
+            equirect.append([u % 1.0, min(1.0, max(0.0, v))])
+        inset = float(os.environ.get('BLANC_UV_INSET', '0.55'))
+        cu = sum(p[0] for p in equirect) / len(equirect)
+        cv = sum(p[1] for p in equirect) / len(equirect)
+        equirect = [
+            [round(cu + (u - cu) * (1 - inset), 6), round(cv + (v - cv) * (1 - inset), 6)]
+            for u, v in equirect
+        ]
         slots.append({
             'id': frame['id'],
             'slotId': frame['id'],
@@ -1829,7 +1927,7 @@ def still():
     cam = bpy.data.objects.new('Still', cam_data)
     cam.location = (0, 1.9, 1.6)
     scene.collection.objects.link(cam)
-    aim(cam, (0, 12, 2.4))
+    aim(cam, (0, 22, 3.0))
     scene.camera = cam
     sky = bpy.data.objects.get('sky')
     if sky:
@@ -1838,7 +1936,7 @@ def still():
         ASSETS / os.environ.get('BLANC_STILL_NAME', 'landing-4k.jpg'),
         int(os.environ.get('BLANC_STILL_W', '3840')),
         int(os.environ.get('BLANC_STILL_H', '2160')),
-        int(os.environ.get('BLANC_STILL_SAMPLES', '128')),
+        int(os.environ.get('BLANC_STILL_SAMPLES', '64')),
     )
 
 
