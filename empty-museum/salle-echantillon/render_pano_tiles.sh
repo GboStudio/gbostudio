@@ -16,7 +16,28 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$ROOT/../.." && pwd)"
 BLENDER="${BLENDER:-/tmp/downloads/blender-4.2.11-linux-x64/blender}"
-TILES="${BLANC_TILES:-8}"
+# BLANC_TILES is the count (default 8). A range such as 1-4 or 5-8 renders
+# only those 1-based tiles of an 8-tile frame, so two agents can split the 360.
+RAW_TILES="${BLANC_TILES:-8}"
+TILE_FROM=0
+if [[ "$RAW_TILES" =~ ^([0-9]+)-([0-9]+)$ ]]; then
+  RANGE_LO="${BASH_REMATCH[1]}"
+  RANGE_HI="${BASH_REMATCH[2]}"
+  if (( RANGE_LO < 1 || RANGE_HI < RANGE_LO )); then
+    echo "BLANC_TILES range must look like 1-4" >&2
+    exit 1
+  fi
+  TILE_FROM=$((RANGE_LO - 1))
+  TILE_TO=$((RANGE_HI - 1))
+  TILES="${BLANC_TILE_COUNT:-8}"
+  if (( TILE_TO + 1 > TILES )); then
+    TILES=$((TILE_TO + 1))
+  fi
+else
+  TILES="$RAW_TILES"
+  TILE_FROM=0
+  TILE_TO=$((TILES - 1))
+fi
 TILE_DIR="${BLANC_TILE_DIR:-$ROOT/assets/pano-tiles}"
 HEARTBEAT="${BLANC_HEARTBEAT_SEC:-600}"
 COMMIT="${BLANC_COMMIT:-1}"
@@ -64,7 +85,56 @@ export BLANC_ENTRY="${BLANC_ENTRY:-1}"
 
 echo "$(date -u +'%Y-%m-%d %H:%M:%S UTC') démarrage tuiles=$TILES ${BLANC_PANO_W}x${BLANC_PANO_H} échantillons=$BLANC_PANO_SAMPLES seuil=$BLANC_THRESHOLD" >> "$LOG"
 
-for ((k = 0; k < TILES; k++)); do
+sync_push() {
+  local message="$1"
+  shift
+  git -C "$REPO" add "$@"
+  git -C "$REPO" commit -m "$message" || return 0
+  local attempt
+  for attempt in 1 2 3 4 5 6; do
+    if git -C "$REPO" pull --rebase origin feat/musee-blanc-nolimit && git -C "$REPO" push origin HEAD; then
+      return 0
+    fi
+    local conflicted
+    conflicted=$(git -C "$REPO" diff --name-only --diff-filter=U || true)
+    if [[ -z "$conflicted" ]]; then
+      sleep $((attempt * 3))
+      continue
+    fi
+    local bad=0
+    local f
+    for f in $conflicted; do
+      case "$f" in
+        *render-progress.log|*PROJECT_STATE.md)
+          python3 - "$REPO/$f" << 'PY'
+import pathlib, sys
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(errors='replace')
+kept = []
+for line in text.splitlines(True):
+    if line.startswith('<<<<<<<') or line.startswith('=======') or line.startswith('>>>>>>>'):
+        continue
+    kept.append(line)
+path.write_text(''.join(kept))
+PY
+          git -C "$REPO" add "$f"
+          ;;
+        *)
+          bad=1
+          ;;
+      esac
+    done
+    if [[ "$bad" != "0" ]]; then
+      echo "rebase conflict outside the log: $conflicted" >&2
+      return 1
+    fi
+    GIT_EDITOR=true git -C "$REPO" rebase --continue || return 1
+  done
+  echo "push failed after retries" >&2
+  return 1
+}
+
+for ((k = TILE_FROM; k <= TILE_TO; k++)); do
   stamp=$(printf '%s/tile-%03d.ok' "$TILE_DIR" "$k")
   exr=$(printf '%s/tile-%03d.exr' "$TILE_DIR" "$k")
   if [[ -f "$stamp" && -f "$exr" ]]; then
@@ -84,9 +154,7 @@ for ((k = 0; k < TILES; k++)); do
       elapsed=$(( $(date +%s) - start_s ))
       echo "$now tuile $((k + 1))/$TILES, ${sample:-échantillon en cours}, écoulé ${elapsed}s" >> "$LOG"
       if [[ "$COMMIT" == "1" ]]; then
-        git -C "$REPO" add "$LOG" || true
-        git -C "$REPO" commit -m "pano heartbeat tile $((k + 1))/$TILES" || true
-        git -C "$REPO" push origin HEAD || true
+        sync_push "pano heartbeat tile $((k + 1))/$TILES" "$LOG" || true
       fi
     done
   ) &
@@ -102,9 +170,7 @@ for ((k = 0; k < TILES; k++)); do
   end_s=$(date +%s)
   dur=$((end_s - start_s))
   if [[ "$COMMIT" == "1" ]]; then
-    git -C "$REPO" add "$exr" "$stamp" "$LOG"
-    git -C "$REPO" commit -m "pano tile $((k + 1))/$TILES"
-    git -C "$REPO" push origin HEAD
+    sync_push "pano tile $((k + 1))/$TILES" "$exr" "$stamp" "$LOG"
     sha=$(git -C "$REPO" rev-parse --short HEAD)
   else
     sha="local"
@@ -113,11 +179,7 @@ for ((k = 0; k < TILES; k++)); do
   echo "$line" >> "$LOG"
   if [[ "$COMMIT" == "1" && -f "$STATE_FILE" ]]; then
     printf '\n- %s\n' "$line" >> "$STATE_FILE"
-    if [[ "$COMMIT" == "1" ]]; then
-      git -C "$REPO" add "$STATE_FILE" "$LOG"
-      git -C "$REPO" commit -m "Record pano tile $((k + 1))/$TILES" || true
-      git -C "$REPO" push origin HEAD || true
-    fi
+    sync_push "Record pano tile $((k + 1))/$TILES" "$STATE_FILE" "$LOG" || true
   fi
 done
 echo "$(date -u +'%Y-%m-%d %H:%M:%S UTC') toutes les tuiles présentes ($TILES)" >> "$LOG"

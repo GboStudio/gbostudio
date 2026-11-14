@@ -1775,19 +1775,38 @@ def cloud_dome_material(strength):
     gamma = nodes.new('ShaderNodeGamma')
     gamma.inputs['Gamma'].default_value = float(os.environ.get('BLANC_CLOUD_GAMMA', '1'))
     links.new(grade.outputs['Color'], gamma.inputs['Color'])
-    # The exact zenith is one point of the photo. Fade it to a flat tone so no spoke remains.
+    # Above about 70° the azimuth pinches one photo row into spokes.
+    # That cap uses the photo at a single azimuth, so it stays a smooth sky.
+    cap_start = math.sin(math.radians(float(os.environ.get('BLANC_CLOUD_CAP_START', '55'))))
+    cap_end = math.sin(math.radians(float(os.environ.get('BLANC_CLOUD_CAP', '70'))))
     cap = nodes.new('ShaderNodeMapRange')
-    cap.inputs['From Min'].default_value = 0.93
-    cap.inputs['From Max'].default_value = 1.0
+    cap.inputs['From Min'].default_value = cap_start
+    cap.inputs['From Max'].default_value = cap_end
     cap.inputs['To Min'].default_value = 0.0
     cap.inputs['To Max'].default_value = 1.0
     cap.clamp = True
-    links.new(vertical.outputs['Result'], cap.inputs['Value'])
+    links.new(sine.outputs['Value'], cap.inputs['Value'])
+    combine_cap = nodes.new('ShaderNodeCombineXYZ')
+    combine_cap.inputs['X'].default_value = 0.5
+    links.new(vertical.outputs['Result'], combine_cap.inputs['Y'])
+    tex_cap = nodes.new('ShaderNodeTexImage')
+    tex_cap.extension = 'EXTEND'
+    tex_cap.interpolation = 'Smart'
+    if tex.image:
+        tex_cap.image = tex.image
+    links.new(combine_cap.outputs['Vector'], tex_cap.inputs['Vector'])
+    grade_cap = nodes.new('ShaderNodeBrightContrast')
+    grade_cap.inputs['Bright'].default_value = grade.inputs['Bright'].default_value
+    grade_cap.inputs['Contrast'].default_value = grade.inputs['Contrast'].default_value
+    links.new(tex_cap.outputs['Color'], grade_cap.inputs['Color'])
+    gamma_cap = nodes.new('ShaderNodeGamma')
+    gamma_cap.inputs['Gamma'].default_value = gamma.inputs['Gamma'].default_value
+    links.new(grade_cap.outputs['Color'], gamma_cap.inputs['Color'])
     flat = nodes.new('ShaderNodeMixRGB')
     flat.blend_type = 'MIX'
-    flat.inputs['Color2'].default_value = (0.78, 0.80, 0.82, 1)
     links.new(cap.outputs['Result'], flat.inputs['Fac'])
     links.new(gamma.outputs['Color'], flat.inputs['Color1'])
+    links.new(gamma_cap.outputs['Color'], flat.inputs['Color2'])
     emit = nodes.new('ShaderNodeEmission')
     emit.inputs['Strength'].default_value = strength
     links.new(flat.outputs['Color'], emit.inputs['Color'])
