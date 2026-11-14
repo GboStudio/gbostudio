@@ -229,10 +229,60 @@ async function heroTextures(frames) {
 
 const LIGHT_GAIN = Number(params.get('gain')) || 1.08;
 
+function artworkCompositeMaterial(painting, lightmap) {
+  painting.colorSpace = THREE.NoColorSpace;
+  painting.updateMatrix();
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      map: {value: painting},
+      lightMap: {value: lightmap},
+      mapTransform: {value: painting.matrix},
+    },
+    toneMapped: true,
+    vertexShader: `
+      attribute vec2 uv2;
+      varying vec2 vUv;
+      varying vec2 vUv2;
+      varying vec3 vNormalW;
+      varying vec3 vView;
+      void main() {
+        vUv = uv;
+        vUv2 = uv2;
+        vec4 worldPos = modelMatrix * vec4(position, 1.0);
+        vNormalW = normalize(mat3(modelMatrix) * normal);
+        vView = cameraPosition - worldPos.xyz;
+        gl_Position = projectionMatrix * viewMatrix * worldPos;
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D map;
+      uniform sampler2D lightMap;
+      uniform mat3 mapTransform;
+      varying vec2 vUv;
+      varying vec2 vUv2;
+      varying vec3 vNormalW;
+      varying vec3 vView;
+      vec3 srgbToLinear(vec3 color) {
+        return mix(color / 12.92, pow((color + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), color));
+      }
+      void main() {
+        vec2 artUv = (mapTransform * vec3(vUv, 1.0)).xy;
+        vec3 art = srgbToLinear(texture2D(map, artUv).rgb);
+        vec3 light = max(texture2D(lightMap, vUv2).rgb * 3.14159 * 1.15, vec3(0.55));
+        float facing = clamp(dot(normalize(vNormalW), normalize(vView)), 0.0, 1.0);
+        vec3 gloss = vec3(0.04) * pow(1.0 - facing, 5.0);
+        gl_FragColor = vec4(art * light + gloss, 1.0);
+      }
+    `,
+  });
+}
+
 function applyLibrary(root, library, lightmap) {
   root.traverse(object => {
     if (!object.isMesh) return;
     if ((object.name || '').startsWith('giltframe')) {
+      const uv = object.geometry?.attributes?.uv;
+      if (uv && !object.geometry.attributes.uv2) object.geometry.setAttribute('uv2', uv);
       object.material = library.gilt.clone();
       object.castShadow = false;
       object.receiveShadow = false;
@@ -498,18 +548,31 @@ async function ensurePano() {
 }
 
 try {
-  const [marbleA, marbleR, marbleN, giltN, sky, lightmap, gltf, atlas, heroes] = await Promise.all([
+  const loadPng = (file, colorSpace) => new Promise((resolve, reject) => {
+    new THREE.TextureLoader().load(ASSET + 'pbr/' + file, texture => {
+      texture.colorSpace = colorSpace;
+      texture.needsUpdate = true;
+      resolve(texture);
+    }, undefined, reject);
+  });
+  const [marbleA, marbleR, marbleN, giltN, giltAo, sky, lightmap, gltf, atlas, heroes] = await Promise.all([
     loadSurface(marbleFile, THREE.SRGBColorSpace),
     loadSurface(marbleRoughFile, THREE.NoColorSpace),
     loadSurface('carrara-nor.jpg', THREE.NoColorSpace),
-    loadSurface('gilt-nor.jpg', THREE.NoColorSpace),
+    loadPng('gilt-frame-nor.png', THREE.NoColorSpace).catch(() => loadSurface('gilt-nor.jpg', THREE.NoColorSpace)),
+    loadPng('gilt-frame-ao.png', THREE.NoColorSpace).catch(() => null),
     loadSurface('sky-dome.jpg', THREE.SRGBColorSpace),
     loadLightmap(),
     gltfLoader.loadAsync(ASSET + 'salle-echantillon.glb'),
     paintingAtlas(layout.frames),
     heroTextures(layout.frames),
   ]);
-  giltN.repeat.set(8, 2);
+  if ((giltN.image?.width || 0) > 256) {
+    giltN.wrapS = giltN.wrapT = THREE.ClampToEdgeWrapping;
+    if (giltAo) giltAo.wrapS = giltAo.wrapT = THREE.ClampToEdgeWrapping;
+  } else {
+    giltN.repeat.set(8, 2);
+  }
   sky.wrapS = sky.wrapT = THREE.ClampToEdgeWrapping;
   const floorMap = marbleA.clone();
   const floorRough = marbleR.clone();
@@ -528,10 +591,10 @@ try {
       roughnessMap: floorRough,
       normalMap: mobile ? null : marbleN,
       normalScale: new THREE.Vector2(0.22, 0.22),
-      roughness: 0.24,
+      roughness: 0.1,
       metalness: 0.02,
-      clearcoat: mobile ? 0.2 : 0.42,
-      clearcoatRoughness: 0.18,
+      clearcoat: mobile ? 0.25 : 0.55,
+      clearcoatRoughness: 0.14,
       envMapIntensity: mobile ? 0.45 : 0.7,
     }),
     marble: new THREE.MeshPhysicalMaterial({
@@ -553,14 +616,14 @@ try {
       envMapIntensity: mobile ? 0.55 : 0.72,
     }),
     gilt: new THREE.MeshStandardMaterial({
-      color: 0xf0d48a,
-      emissive: 0xd4b36a,
-      emissiveIntensity: 0.16,
-      roughness: 0.3,
+      color: new THREE.Color().setRGB(0.83, 0.62, 0.31, THREE.LinearSRGBColorSpace),
+      roughness: 0.36,
       metalness: 1,
       normalMap: giltN,
-      normalScale: new THREE.Vector2(1.1, 1.1),
-      envMapIntensity: mobile ? 1.1 : 2.1,
+      normalScale: new THREE.Vector2(0.65, 0.65),
+      aoMap: giltAo || null,
+      aoMapIntensity: giltAo ? 1.1 : 0,
+      envMapIntensity: mobile ? 0.8 : 1.3,
     }),
     artwork: new THREE.MeshStandardMaterial({
       map: atlas,
@@ -586,7 +649,7 @@ try {
     }),
     sky: new THREE.MeshBasicMaterial({
       map: sky,
-      color: 0xfff1e4,
+      color: 0xffffff,
       side: THREE.DoubleSide,
       fog: false,
       toneMapped: false,
@@ -644,17 +707,10 @@ try {
       painting.wrapS = painting.wrapT = THREE.ClampToEdgeWrapping;
       painting.repeat.set(cover.rx, cover.ry);
       painting.offset.set(cover.ox, cover.oy);
-      object.material = object.material.clone();
-      object.material.map = painting;
-      object.material.color.set(0xffffff);
-      object.material.roughness = 0.62;
-      const uv = object.geometry.attributes.uv1 || object.geometry.attributes.uv2;
-      if (uv) {
-        object.geometry.setAttribute('uv2', uv);
-        object.material.lightMap = lightmap;
-        object.material.lightMap.channel = 2;
-        object.material.lightMapIntensity = Math.PI * LIGHT_GAIN * 1.1;
-      }
+      const lightUv = object.geometry.attributes.uv1 || object.geometry.attributes.uv2;
+      if (lightUv) object.geometry.setAttribute('uv2', lightUv);
+      else if (object.geometry.attributes.uv) object.geometry.setAttribute('uv2', object.geometry.attributes.uv);
+      object.material = artworkCompositeMaterial(painting, lightmap);
     });
   }
   // The mesh stays right-handed. A negative Z scale mirrored the paintings
@@ -693,7 +749,7 @@ try {
     spot.target.position.set(frame.x + side * 0.05, frame.y + frame.height * 0.15, -frame.z);
     scene.add(spot, spot.target);
   }
-  scene.fog = new THREE.Fog(0xf4efe6, 10, 19);
+  scene.fog = new THREE.Fog(0xf7f8fb, 16, 40);
   const shaftTex = shaftTexture();
   for (const [x, y, z, w, h, spin] of [[0.05, 6.4, 9.2, 1.8, 8.2, 0.08], [-0.45, 5.6, 12.2, 1.15, 6.4, -0.2], [0.5, 6.8, 14.6, 1.35, 7.2, 0.25]]) {
     const shaft = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({
@@ -709,18 +765,7 @@ try {
     shaft.rotation.y = spin;
     scene.add(shaft);
   }
-  for (const [z, opacity] of [[16.4, 0.1], [17.8, 0.22]]) {
-    const haze = new THREE.Mesh(new THREE.PlaneGeometry(12, 9), new THREE.MeshBasicMaterial({
-      color: 0xf7f8fa,
-      transparent: true,
-      opacity,
-      depthWrite: false,
-      fog: false,
-      side: THREE.DoubleSide,
-    }));
-    haze.position.set(0, 3.6, -z);
-    scene.add(haze);
-  }
+  // The far end is the sky dome, not a beige card.
   if (shot === 'pano' || params.get('view') === 'pano' || shot === 'switch') {
     await ensurePano();
   }
