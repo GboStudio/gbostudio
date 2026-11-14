@@ -13,3 +13,6 @@
 2026-11-14 20:37:44 UTC tuile 1/1, Sample 1/400, écoulé 8s
 2026-11-14 20:37:52 UTC tuile 1/1, Sample 48/400, écoulé 16s
 2026-11-14 20:38:00 UTC tuile 1/1, Sample 80/400, écoulé 24s
+2026-11-14 22:08:01 UTC démarrage tuiles=8 6144x3072 échantillons=512 seuil=0.01
+2026-11-14 22:09:53 UTC démarrage tuiles=8 6144x3072 échantillons=512 seuil=0.01
+2026-11-14 22:19:53 UTC tuile 5/8, Sample 92/512, écoulé 600s
