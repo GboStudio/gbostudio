@@ -2,6 +2,9 @@
  * White open-sky sample room. Dimensions are in the viewer's space:
  * X across the nave, Y up, Z down the axis toward the cloud haze.
  * There is no ceiling and no back wall. The public gallery does not import this module.
+ *
+ * This length is the sample only. The future 100 m gallery (end wall, door,
+ * dog-leg, repeated modules) is decided and not built. See PROJECT_STATE.md.
  */
 export const ROOM = {
   width: 7.2,

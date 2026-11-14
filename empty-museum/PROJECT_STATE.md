@@ -79,6 +79,16 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Écart qui reste, dit clairement : le ciel temps réel est un dôme peint, plus pâle que les nuages de la cible, et le rayon est une carte additive, pas un volume. Les blocs sont des cubes déplacés : ils se lisent comme des pierres à facettes, pas comme du marbre brut taillé. Le reflet du sol est planaire et basse définition ; le premier plan reste très clair. Les veines sont générées, larges et douces, pas une dalle bookmatch photographiée. Dans la photo 360, les deux grands cadres portent leur toile ; les petits cadres restent vides parce qu’ils partagent un atlas peint seulement par le viewer. Un marbre photographié, des rochers sculptés et un reflet flou haute définition rapprocheraient encore. Le temps réel actuel ne le fait pas tout seul.
 - **Pas déployé. Pas fusionné. Pas une PR.** La commercialisation reste en démonstration.
 
+## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
+
+Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon actuel (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. Il ne faut pas le rallonger ni le figer à sa place.
+
+- Une seule nef droite. Seule l’entrée a une forme différente.
+- La première salle est gelée à **100 m** : entrée à `z = 0`, mur du fond réel à `z = 100`, porte d’environ **2,1 × 3,4 m**. Un retour en baïonnette juste derrière la porte cache tout ce qui suit. Sur chacun des deux murs courts de part et d’autre de la porte, un cadre face au visiteur (2 cadres en tout), comme sur la cible.
+- Des salles modulaires identiques s’ajoutent après le retour, au fur et à mesure du remplissage. Le seuil d’occupation n’est pas choisi. Ajouter un module ne modifie ni les salles déjà construites ni leurs vues 360°.
+- Quand Guillaume aura validé l’échantillon, les cotes de cette salle de 100 m seront écrites dans `project-contract.json`, avec un test qui échoue si elles changent. Pas avant.
+- D’ici là, l’échantillon doit rester paramétrique (pas de baie, module de mur, dalles de marbre, ciel et lumière, kit cadre + spot) pour que la salle de 100 m et ses copies réutilisent les mêmes assets et le même éclairage. Le placage d’œuvre interchangeable reste par arrêt, afin que les 360° d’un module restent valables.
+
 ## Contradictions à résoudre (pas des fonctions terminées)
 1. L'interface classique `index.html` / `app.js` utilise encore certaines durées et certains prix historiques alors que le nouveau configurateur fonctionne en mensuel/annuel. **Unifier l'offre avant de lancer les ventes.**
 2. Le double joystick de PR #34 a été fusionnée ; les contrôles navigateur CI ont été exercés, mais la validation sur iPhone réel et la correspondance du déploiement exact restent nécessaires.
