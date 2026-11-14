@@ -16,3 +16,42 @@
 2026-11-14 22:08:01 UTC démarrage tuiles=8 6144x3072 échantillons=512 seuil=0.01
 2026-11-14 22:09:53 UTC démarrage tuiles=8 6144x3072 échantillons=512 seuil=0.01
 2026-11-14 22:19:53 UTC tuile 5/8, Sample 92/512, écoulé 600s
+2026-11-14 20:53:18 UTC démarrage tuiles=4 1536x768 échantillons=16 seuil=0.01
+2026-11-14 20:53:21 UTC. Tuile 1/4 terminée, durée 3s, SHA local.
+2026-11-14 20:53:28 UTC. Tuile 2/4 terminée, durée 7s, SHA local.
+2026-11-14 20:53:36 UTC. Tuile 3/4 terminée, durée 8s, SHA local.
+2026-11-14 20:53:44 UTC. Tuile 4/4 terminée, durée 8s, SHA local.
+2026-11-14 20:53:44 UTC toutes les tuiles présentes (4)
+2026-11-14 21:08:35 UTC démarrage tuiles=4 1536x768 échantillons=16 seuil=0.01
+2026-11-14 21:08:41 UTC. Tuile 1/4 terminée, durée 6s, SHA local.
+2026-11-14 21:08:52 UTC. Tuile 2/4 terminée, durée 11s, SHA local.
+2026-11-14 21:09:03 UTC. Tuile 3/4 terminée, durée 11s, SHA local.
+2026-11-14 21:09:14 UTC. Tuile 4/4 terminée, durée 11s, SHA local.
+2026-11-14 21:09:14 UTC toutes les tuiles présentes (4)
+2026-11-14 21:34:46 UTC démarrage tuiles=4 1536x768 échantillons=16 seuil=0.01
+2026-11-14 21:34:53 UTC. Tuile 1/4 terminée, durée 7s, SHA local.
+2026-11-14 21:35:07 UTC. Tuile 2/4 terminée, durée 14s, SHA local.
+2026-11-14 21:35:23 UTC. Tuile 3/4 terminée, durée 16s, SHA local.
+2026-11-14 21:35:36 UTC. Tuile 4/4 terminée, durée 13s, SHA local.
+2026-11-14 21:35:36 UTC toutes les tuiles présentes (4)
+2026-11-14 21:54:52 UTC démarrage tuiles=4 1536x768 échantillons=16 seuil=0.01
+2026-11-14 21:54:58 UTC. Tuile 1/4 terminée, durée 6s, SHA local.
+2026-11-14 21:55:13 UTC. Tuile 2/4 terminée, durée 15s, SHA local.
+2026-11-14 21:55:27 UTC. Tuile 3/4 terminée, durée 14s, SHA local.
+2026-11-14 21:55:41 UTC. Tuile 4/4 terminée, durée 14s, SHA local.
+2026-11-14 21:55:41 UTC toutes les tuiles présentes (4)
+2026-11-14 21:58:28 UTC démarrage tuiles=4 1536x768 échantillons=16 seuil=0.01
+2026-11-14 21:58:36 UTC. Tuile 1/4 terminée, durée 8s, SHA local.
+2026-11-14 21:58:50 UTC. Tuile 2/4 terminée, durée 14s, SHA local.
+2026-11-14 21:59:05 UTC. Tuile 3/4 terminée, durée 15s, SHA local.
+2026-11-14 21:59:19 UTC. Tuile 4/4 terminée, durée 14s, SHA local.
+2026-11-14 21:59:19 UTC toutes les tuiles présentes (4)
+2026-11-14 22:03:28 UTC démarrage tuiles=4 1536x768 échantillons=8 seuil=0.05
+2026-11-14 22:03:33 UTC. Tuile 1/4 terminée, durée 5s, SHA local.
+2026-11-14 22:03:41 UTC. Tuile 2/4 terminée, durée 8s, SHA local.
+2026-11-14 22:03:50 UTC. Tuile 3/4 terminée, durée 9s, SHA local.
+2026-11-14 22:03:58 UTC. Tuile 4/4 terminée, durée 8s, SHA local.
+2026-11-14 22:03:58 UTC toutes les tuiles présentes (4)
+2026-11-14 22:05:30 UTC démarrage 4K 3840x2160 64 échantillons
+2026-11-14 22:15:33 UTC 4K Sample 64/64
+2026-11-14 22:24:18 UTC 4K, Sample 60/64, tuile interne 2/4, écoulé 1128s
