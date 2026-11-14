@@ -18,7 +18,8 @@ REPO="$(cd "$ROOT/../.." && pwd)"
 BLENDER="${BLENDER:-/tmp/downloads/blender-4.2.11-linux-x64/blender}"
 # BLANC_TILES is the count (default 8). A range such as 1-4 or 5-8 renders
 # only those 1-based tiles of an 8-tile frame, so two agents can split the 360.
-RAW_TILES="${BLANC_TILES:-8}"
+# TILES is the same range when the other name is unset (TILES=5-8).
+RAW_TILES="${TILES:-${BLANC_TILES:-8}}"
 TILE_FROM=0
 if [[ "$RAW_TILES" =~ ^([0-9]+)-([0-9]+)$ ]]; then
   RANGE_LO="${BASH_REMATCH[1]}"
