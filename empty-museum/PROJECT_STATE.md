@@ -88,9 +88,21 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - 2026-11-14 22:06 UTC. Correction du zénith, un essai. Au-dessus de 70° d’élévation le dôme n’utilise plus l’azimut de la photo : la calotte est un ciel continu, fondu depuis 55°. Le pano de contrôle `review/pano-test-pass10b.jpg` (1536×768, 8 échantillons) n’a plus de rais au pôle. `BLANC_TILES=1-4` ou `5-8` ne rend que cette plage d’une sphère à 8 tuiles. Rien d’autre n’a bougé.
 - **Pas déployé. Pas fusionné. Pas une PR.** La commercialisation reste en démonstration.
 
+## Salle blanche grandiose — 14 novembre 2026
+
+Retour de Guillaume sur la 4K : « Je veux quelque chose de grandiose ». Branche `feat/musee-blanc-grandiose`, partie du commit `b7dcdba` (la 4K). **Pas de pull request, pas de fusion.** `feat/musee-blanc-nolimit` n’est pas touchée : les tuiles 360° y continuent. Largeur de nef laissée à **7,2 m** (murs à ±3,6 m, verrouillée par le test). Le « 9,2 m » du brief est la longueur de banquette de l’ancien layout (z 6,62–9,2), pas la largeur mur à mur.
+
+- Ciel : dôme photo CC0 (bande de cumulus déjà dans le dépôt, contraste 24, force 1,7) plus des masses émissives visibles seulement par la caméra et le miroir, dans l’ouverture et vers le fond. Un volume de brume étroit (densité 0,012, soleil lié qui n’éclaire pas le marbre) est là pour les rayons. Les volumes Principled ont été écartés : à densité utile ils noircissaient le fond ou, avec de l’émission, ils lavaient les murs.
+- Fond : pas de mur. L’axe s’ouvre sur la lueur et les masses. Ce n’est pas encore le ciel nuageux de la cible : le point de fuite reste une ouverture très claire.
+- Cadres : cadence variée sur les deux murs jusqu’au fond (14 à gauche, 13 à droite), plus de grappe de trois formats identiques. Héros inchangés, « Le Dernier Bal » à gauche. Manifeste d’arrêt : 27 cadres sur 27 ont quatre coins. Le mesh de marche (`salle-echantillon.glb`) n’a pas été rebake : la photo Cycles et le manifeste portent la nouvelle cadence, pas la visite temps réel.
+- Échelle : longueur de layout 36 m, nef rendue jusqu’à 34,5 m, hauteur 9,2 m (au lieu de 7,8). Huit rochers de plus dans la lumière. Sol miroir rugosité 0,012. Bloom léger (fog glow, mix −0,72).
+- Aperçu 1280×720, 32 échantillons, exposition −2,35, OIDN : `review/grandiose-preview.jpg`. Luma linéaire 0,629 (+13 % sur 0,558, dans les ±15 %). Murs L* 84,3 (dans 72–86). Ciel L* 84,3, pas clairement au-dessus des murs (cible : ciel 92, murs 77). Fond L* 91,5. Comparaison : `review/compare-axis-grandiose.jpg`. Pano test 1024×512, 8 échantillons : `review/pano-test-grandiose.jpg`.
+- Sonde 360, sans bloom : pastille 384×384, soit 1/128 de 6144×3072, 16 échantillons en 12,8 s. Environ **102 s par échantillon** en 6144×3072. 512 échantillons : environ **14 h 30**. Huit tuiles : environ **1 h 50** chacune. La 4K 3840×2160 à 64 échantillons, au prix mesuré du 1280×720 (183 s pour 32 échantillons) : environ **55 min**. Ni la 4K ni le 360° lourd ne sont lancés.
+- **Pas déployé. Pas fusionné. Pas une PR.**
+
 ## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
 
-Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon actuel (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. Il ne faut pas le rallonger ni le figer à sa place.
+Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon d’origine (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. La branche grandiose allonge seulement l’échantillon (36 m, sans mur du fond) pour la photo ; elle ne construit pas la salle de 100 m et n’écrit pas ses cotes dans le contrat.
 
 - Une seule nef droite. Seule l’entrée a une forme différente.
 - La première salle est gelée à **100 m** : entrée à `z = 0`, mur du fond réel à `z = 100`, porte d’environ **2,1 × 3,4 m**. Un retour en baïonnette juste derrière la porte cache tout ce qui suit. Sur chacun des deux murs courts de part et d’autre de la porte, un cadre face au visiteur (2 cadres en tout), comme sur la cible.
@@ -103,6 +115,7 @@ Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune
 2. Le double joystick de PR #34 a été fusionnée ; les contrôles navigateur CI ont été exercés, mais la validation sur iPhone réel et la correspondance du déploiement exact restent nécessaires.
 3. Le sol et l'accueil restent insatisfaisants visuellement malgré les tests logiciels ; validation visuelle nécessaire.
 4. PR #34 navigation et #37 accueil sont fusionnées ; PR #35 photoréalisme reste ouverte, synchronisée le 9 novembre avec la sécurité #38 sur `main` ; préserver ses six fichiers isolés et vérifier ses CI avant une éventuelle fusion. Le prototype n'est pas encore intégré à la galerie publique.
+5. La note du 14 novembre demande de ne pas rallonger l’échantillon vers la salle de 100 m. La branche `feat/musee-blanc-grandiose` porte l’échantillon à 36 m pour la photo demandée, sans mur du fond, sans salle de 100 m, et sans cotes dans `project-contract.json`.
 
 ## Politique de modifications et d'alertes
 - Réutiliser le registre avant toute modification ; compléter les décisions utiles après une discussion et lors de la livraison.

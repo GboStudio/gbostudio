@@ -505,6 +505,18 @@ def place_rocks(material):
         (1.55, 16.4, 4.4, 0.95),
         (-0.4, 11.6, 8.8, 1.25),
     ]
+    if os.environ.get('BLANC_MORE_ROCKS') == '1':
+        # More blocks in the light, further down the nave. Same CC0 meshes.
+        placements += [
+            (0.15, 18.2, 9.4, 1.45),
+            (-1.35, 20.4, 11.2, 1.15),
+            (1.45, 22.6, 8.2, 0.95),
+            (-0.35, 24.8, 12.4, 1.55),
+            (0.85, 27.2, 7.6, 0.72),
+            (-1.15, 29.5, 10.6, 1.05),
+            (0.25, 32.0, 9.0, 1.25),
+            (1.2, 19.0, 6.4, 0.58),
+        ]
     for index, (rx, ry, rz, radius) in enumerate(placements):
         src = sources[index % len(sources)]
         obj = src.copy()
@@ -637,7 +649,11 @@ def build():
     scene.cycles.max_bounces = 8
     scene.cycles.diffuse_bounces = 4
     scene.cycles.glossy_bounces = 6 if os.environ.get('BLANC_MIRROR') == '1' else 4
-    scene.cycles.volume_bounces = 1
+    scene.cycles.volume_bounces = int(os.environ.get('BLANC_VOL_BOUNCES', '1'))
+    if hasattr(scene.cycles, 'volume_step_rate'):
+        scene.cycles.volume_step_rate = float(os.environ.get('BLANC_VOL_STEP', '2'))
+    if hasattr(scene.cycles, 'volume_max_steps'):
+        scene.cycles.volume_max_steps = int(os.environ.get('BLANC_VOL_MAX_STEPS', '96'))
     scene.cycles.sample_clamp_indirect = float(os.environ.get('BLANC_CLAMP', '8'))
     if os.environ.get('BLANC_MIRROR') == '1':
         for attr in ('filter_glossy', 'blur_glossy'):
@@ -674,7 +690,7 @@ def build():
         combine.mode = 'HSV'
         sat = nodes.new('ShaderNodeMath')
         sat.operation = 'MULTIPLY'
-        sat.inputs[1].default_value = 0.06
+        sat.inputs[1].default_value = float(os.environ.get('BLANC_SKY_SAT', '0.06'))
         links.new(env.outputs['Color'], separate.inputs['Color'])
         links.new(separate.outputs['Red'], combine.inputs['Red'])
         links.new(separate.outputs['Green'], sat.inputs[0])
@@ -760,8 +776,12 @@ def build():
     half = ROOM['width'] / 2
     back = ROOM['backZ']
     # Longer nave than the 18 m sample, still not the 100 m gallery.
-    end = ROOM['length'] - 1.2 + float(os.environ.get('BLANC_EXTRA_LENGTH', '16'))
-    height = 7.8
+    # BLANC_HALL_END replaces the extra-length sum when the layout length already is the nave.
+    end = float(os.environ.get(
+        'BLANC_HALL_END',
+        ROOM['length'] - 1.2 + float(os.environ.get('BLANC_EXTRA_LENGTH', '16')),
+    ))
+    height = float(os.environ.get('BLANC_HEIGHT', '7.8'))
     floor_tile = 2.4
 
     # Floor, open at the far end. No back wall.
@@ -775,7 +795,7 @@ def build():
 
     # Slabs of about 2.4 m. Bookmatch flips on each pilaster so that seam is hidden.
     pilasters = list(LAYOUT['pilasters'])
-    extra_z = 17.55
+    extra_z = (pilasters[-1]['z'] + 5.85) if pilasters else 17.55
     while extra_z < end - 1.5:
         pilasters.append({'z': extra_z, 'width': 0.72, 'depth': 0.55})
         extra_z += 5.85
@@ -937,6 +957,10 @@ def build():
     if os.environ.get('BLANC_ENTRY') == '1':
         add_entry(back, half, height, pack, meshes)
     add_cumulus_sheets(end)
+    if os.environ.get('BLANC_PUFFS') == '1':
+        add_cumulus(end)
+    add_volume_clouds(end, height)
+    add_godrays(end, height)
     add_rock_sun()
 
     # Sky dome, emissive in the viewer, hidden from the bake.
@@ -1471,7 +1495,7 @@ def cumulus_material():
     output = nodes.new('ShaderNodeOutputMaterial')
     coord = nodes.new('ShaderNodeTexCoord')
     noise = nodes.new('ShaderNodeTexNoise')
-    noise.inputs['Scale'].default_value = 1.2
+    noise.inputs['Scale'].default_value = float(os.environ.get('BLANC_PUFF_SCALE', '1.2'))
     noise.inputs['Detail'].default_value = 5.0
     noise.inputs['Roughness'].default_value = 0.58
     noise.inputs['Distortion'].default_value = 0.35
@@ -1492,7 +1516,7 @@ def cumulus_material():
     links.new(edge.outputs['Result'], puff.inputs[1])
     emit = nodes.new('ShaderNodeEmission')
     emit.inputs['Color'].default_value = (1.0, 0.99, 0.97, 1)
-    emit.inputs['Strength'].default_value = 3.2
+    emit.inputs['Strength'].default_value = float(os.environ.get('BLANC_PUFF', '4.0'))
     transparent = nodes.new('ShaderNodeBsdfTransparent')
     body = nodes.new('ShaderNodeMixShader')
     links.new(puff.outputs['Value'], body.inputs['Fac'])
@@ -1502,7 +1526,9 @@ def cumulus_material():
     lit = nodes.new('ShaderNodeMath')
     lit.operation = 'MAXIMUM'
     links.new(path.outputs['Is Diffuse Ray'], lit.inputs[0])
-    links.new(path.outputs['Is Glossy Ray'], lit.inputs[1])
+    # Glossy stays on the cloud when the floor should mirror it. Otherwise the puff would light nothing and reflect nothing.
+    if os.environ.get('BLANC_PUFF_GLOSSY') != '1':
+        links.new(path.outputs['Is Glossy Ray'], lit.inputs[1])
     hold = nodes.new('ShaderNodeMixShader')
     links.new(lit.outputs['Value'], hold.inputs['Fac'])
     links.new(body.outputs['Shader'], hold.inputs[1])
@@ -1516,17 +1542,18 @@ def add_cumulus(end_y):
     if bpy.data.objects.get('cumulus'):
         return
     material = cumulus_material()
+    # Sizes are metres. Large enough to read as cumulus, small enough to leave sky between them.
     blobs = [
-        (0.2, 7.5, 11.5, 6.2),
-        (-5.2, 10.5, 13.2, 7.4),
-        (5.6, 9.8, 10.4, 5.6),
-        (0.8, 14.0, 14.6, 8.2),
-        (-4.2, 16.5, 9.2, 6.4),
-        (4.8, 18.5, 12.8, 7.0),
-        (-1.0, end_y + 4.5, 5.2, 8.0),
-        (3.5, end_y + 6.0, 8.8, 6.6),
-        (-5.5, end_y + 3.0, 3.4, 5.8),
-        (1.5, end_y + 2.2, 11.0, 7.2),
+        (0.2, 10.5, 7.0, 4.8),
+        (-2.8, 14.0, 8.6, 4.2),
+        (3.0, 16.5, 6.2, 4.4),
+        (-0.4, 19.0, 9.4, 5.2),
+        (1.6, 12.2, 5.4, 3.2),
+        (0.0, 22.0, 5.2, 5.6),
+        (-2.4, 26.0, 7.4, 5.0),
+        (2.6, 28.5, 4.8, 4.6),
+        (0.3, 31.0, 8.8, 5.8),
+        (-1.8, 24.0, 3.6, 3.8),
     ]
     for index, (x, y, z, size) in enumerate(blobs):
         bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2, radius=1.0, location=(x, y, z))
@@ -1623,7 +1650,168 @@ def add_cloud_backdrop(end_y):
     plane.visible_shadow = False
 
 
+def link_light(light_obj, receivers, label):
+    """Keep a sun off the marble. It only lights the volumes named here."""
+    if not receivers:
+        return
+    try:
+        group = bpy.data.collections.new(label)
+        bpy.context.scene.collection.children.link(group)
+        for item in receivers:
+            if item.name not in group.objects:
+                group.objects.link(item)
+        light_obj.light_linking.receiver_collection = group
+        print('light linked', label, len(receivers))
+    except Exception as error:
+        print('light linking failed', label, error)
+
+
+def volume_cloud_material(density, noise_scale, emit):
+    """White cumulus. Noise cuts holes so the sky stays visible between the masses."""
+    material = bpy.data.materials.new('vol-cumulus')
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+    output = nodes.new('ShaderNodeOutputMaterial')
+    coord = nodes.new('ShaderNodeTexCoord')
+    noise = nodes.new('ShaderNodeTexNoise')
+    noise.noise_dimensions = '4D'
+    noise.inputs['Scale'].default_value = noise_scale
+    noise.inputs['Detail'].default_value = 2.0
+    noise.inputs['Roughness'].default_value = 0.48
+    noise.inputs['Distortion'].default_value = 0.3
+    noise.inputs['W'].default_value = float(os.environ.get('BLANC_VOL_W', '0.15'))
+    links.new(coord.outputs['Generated'], noise.inputs['Vector'])
+    shaped = nodes.new('ShaderNodeMapRange')
+    shaped.inputs['From Min'].default_value = float(os.environ.get('BLANC_VOL_NOISE_MIN', '0.46'))
+    shaped.inputs['From Max'].default_value = float(os.environ.get('BLANC_VOL_NOISE_MAX', '0.70'))
+    shaped.inputs['To Min'].default_value = 0.0
+    shaped.inputs['To Max'].default_value = 1.0
+    shaped.clamp = True
+    links.new(noise.outputs['Fac'], shaped.inputs['Value'])
+    thick = nodes.new('ShaderNodeMath')
+    thick.operation = 'MULTIPLY'
+    thick.inputs[1].default_value = density
+    links.new(shaped.outputs['Result'], thick.inputs[0])
+    # Scatter only. Principled absorption turned the same density into a black ball.
+    volume = nodes.new('ShaderNodeVolumeScatter')
+    volume.inputs['Color'].default_value = (1.0, 0.995, 0.98, 1)
+    volume.inputs['Anisotropy'].default_value = float(os.environ.get('BLANC_VOL_ANISO', '0.45'))
+    links.new(thick.outputs['Value'], volume.inputs['Density'])
+    links.new(volume.outputs['Volume'], output.inputs['Volume'])
+    if emit > 0:
+        print('volume emit ignored; scatter only', emit)
+    return material
+
+
+def add_volume_domain(name, location, scale, material):
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=8, radius=1.0, location=location)
+    blob = bpy.context.active_object
+    blob.name = name
+    blob.scale = scale
+    blob.data.materials.append(material)
+    blob.visible_shadow = False
+    blob.display_type = 'WIRE'
+    return blob
+
+
+def add_volume_clouds(end_y, height):
+    """Cumulus volumes in the roof opening, and optionally a bank across the open end."""
+    roof = os.environ.get('BLANC_VOLCLOUDS') == '1'
+    far = os.environ.get('BLANC_END_CLOUDS') == '1'
+    if not roof and not far:
+        return []
+    density = float(os.environ.get('BLANC_VOL_DENSITY', '5'))
+    emit = float(os.environ.get('BLANC_VOL_EMIT', '0'))
+    material = volume_cloud_material(density, float(os.environ.get('BLANC_VOL_SCALE', '1.6')), emit)
+    made = []
+    if roof:
+        # In the opening the axis frame contains (a few metres above the eye line).
+        # A dome at height+1.4 sits above this camera and never enters the still.
+        for index, (x, y, z, sx, sy, sz) in enumerate((
+            (0.2, 10.0, 7.6, 3.2, 2.6, 2.2),
+            (-2.3, 13.6, 8.8, 2.8, 2.2, 1.9),
+            (2.5, 16.2, 7.0, 3.0, 2.4, 2.1),
+            (0.0, 19.4, 9.6, 3.6, 2.8, 2.3),
+            (-1.4, 12.0, 6.0, 2.2, 1.8, 1.6),
+            (1.6, 21.2, 10.6, 2.6, 2.0, 1.8),
+            (0.6, 15.0, 10.8, 2.4, 1.8, 1.6),
+        )):
+            made.append(add_volume_domain(
+                f'volcloud-{index}', (x, y, z), (sx, sy, sz), material,
+            ))
+    if far:
+        # The vanishing point looks into this bank, so the end is sky and cloud, not a white wall.
+        for index, (x, y, z, sx, sy, sz) in enumerate((
+            (0.0, end_y - 8.0, 4.4, 6.5, 4.5, 4.2),
+            (-2.8, end_y - 4.0, 7.2, 4.4, 3.2, 3.0),
+            (3.0, end_y - 5.0, 5.8, 4.2, 3.0, 2.8),
+            (0.4, end_y - 1.0, 9.2, 5.5, 3.6, 3.2),
+            (-1.2, end_y - 12.0, 3.4, 3.6, 2.8, 2.4),
+        )):
+            made.append(add_volume_domain(
+                f'volend-{index}', (x, y, z), (sx, sy, sz), material,
+            ))
+    sun_energy = float(os.environ.get('BLANC_VOL_SUN', '0'))
+    if sun_energy > 0 and made:
+        light = bpy.data.lights.new('cloud-sun', 'SUN')
+        light.energy = sun_energy
+        light.angle = math.radians(float(os.environ.get('BLANC_VOL_SUN_ANGLE', '6')))
+        light.color = kelvin(5800)
+        obj = bpy.data.objects.new('cloud-sun', light)
+        # From high and down the hall, back toward the visitor, so the masses have a bright face.
+        obj.rotation_euler = Vector((0.15, -0.55, -0.82)).to_track_quat('-Z', 'Y').to_euler()
+        bpy.context.scene.collection.objects.link(obj)
+        link_light(obj, made, 'cloud-sun-rx')
+    print('volume clouds', len(made), 'density', density, 'emit', emit)
+    return made
+
+
+def add_godrays(end_y, height):
+    """A narrow mist volume. The sun that lights it does not light the marble."""
+    if os.environ.get('BLANC_GODRAY') != '1':
+        return None
+    density = float(os.environ.get('BLANC_GODRAY_DENSITY', '0.012'))
+    material = bpy.data.materials.new('godray')
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+    output = nodes.new('ShaderNodeOutputMaterial')
+    scatter = nodes.new('ShaderNodeVolumeScatter')
+    scatter.inputs['Color'].default_value = (1.0, 0.97, 0.90, 1)
+    scatter.inputs['Density'].default_value = density
+    scatter.inputs['Anisotropy'].default_value = float(os.environ.get('BLANC_GODRAY_ANISO', '0.84'))
+    links.new(scatter.outputs['Volume'], output.inputs['Volume'])
+    length = max(8.0, end_y - 2.0)
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0.0, 2.0 + length * 0.5, height * 0.62))
+    shaft = bpy.context.active_object
+    shaft.name = 'godray'
+    # Narrow in X so the side walls are not veiled. Tall enough to cross the opening.
+    shaft.scale = (1.7, length, height * 0.72)
+    shaft.data.materials.append(material)
+    shaft.visible_shadow = False
+    energy = float(os.environ.get('BLANC_GODRAY_SUN', '40'))
+    light = bpy.data.lights.new('godray-sun', 'SUN')
+    light.energy = energy
+    light.angle = math.radians(float(os.environ.get('BLANC_GODRAY_ANGLE', '4')))
+    light.color = kelvin(5600)
+    sun = bpy.data.objects.new('godray-sun', light)
+    # Photons travel down and back toward the camera (+Y look, so the sun sits down the hall).
+    sun.rotation_euler = Vector((0.08, -0.42, -0.90)).to_track_quat('-Z', 'Y').to_euler()
+    bpy.context.scene.collection.objects.link(sun)
+    link_light(sun, [shaft], 'godray-sun-rx')
+    if hasattr(bpy.context.scene.cycles, 'volume_step_rate'):
+        bpy.context.scene.cycles.volume_step_rate = float(os.environ.get('BLANC_VOL_STEP', '2'))
+    print('godray density', density, 'sun', energy, 'length', round(length, 1))
+    return shaft
+
+
 def add_haze():
+    # A dedicated god-ray volume already fills the shaft. A second box only costs samples.
+    if bpy.data.objects.get('godray'):
+        return
     # No room-filling haze. That veil sat on top of AgX and kept the walls near L* 90.
     bpy.ops.mesh.primitive_cube_add(size=1, location=(0, ROOM['length'] * 0.55, 6.4))
     shaft = bpy.context.active_object
@@ -1835,7 +2023,8 @@ def add_cloud_dome(end_y):
     dome.data.materials.append(cloud_dome_material(strength))
     dome.visible_shadow = False
     dome.visible_diffuse = False
-    dome.visible_glossy = False
+    # Glossy on, the mirror floor can carry the clouds. Off, it only carries the dim world.
+    dome.visible_glossy = os.environ.get('BLANC_DOME_GLOSSY') == '1'
     dome.visible_transmission = False
     print('cloud dome', radius, 'strength', strength)
     return dome
@@ -1906,21 +2095,53 @@ def add_cumulus_sheets(end_y):
     pane.visible_shadow = False
 
 
+def apply_bloom():
+    """A light fog-glow on the highlights. Walls stay under the same exposure."""
+    scene = bpy.context.scene
+    if os.environ.get('BLANC_BLOOM') != '1':
+        scene.use_nodes = False
+        return
+    scene.use_nodes = True
+    scene.render.use_compositing = True
+    tree = scene.node_tree
+    tree.nodes.clear()
+    layers = tree.nodes.new('CompositorNodeRLayers')
+    glare = tree.nodes.new('CompositorNodeGlare')
+    glare.glare_type = 'FOG_GLOW'
+    glare.quality = 'MEDIUM'
+    glare.mix = float(os.environ.get('BLANC_BLOOM_MIX', '-0.72'))
+    glare.threshold = float(os.environ.get('BLANC_BLOOM_THRESHOLD', '0.8'))
+    glare.size = 6
+    composite = tree.nodes.new('CompositorNodeComposite')
+    tree.links.new(layers.outputs['Image'], glare.inputs['Image'])
+    tree.links.new(glare.outputs['Image'], composite.inputs['Image'])
+
+
 def render_photo(path, width, height, samples, denoise=True):
     scene = bpy.context.scene
     apply_grade(float(os.environ.get('BLANC_EXPOSURE', '-1.6')))
+    apply_bloom()
     scene.cycles.samples = samples
     scene.cycles.use_adaptive_sampling = True
     scene.cycles.adaptive_threshold = float(os.environ.get('BLANC_THRESHOLD', '0.08'))
     if hasattr(scene.cycles, 'adaptive_min_samples'):
         scene.cycles.adaptive_min_samples = int(os.environ.get('BLANC_MIN_SAMPLES', '6'))
-    scene.cycles.volume_bounces = 1
+    scene.cycles.volume_bounces = int(os.environ.get('BLANC_VOL_BOUNCES', '1'))
     scene.cycles.use_denoising = denoise
     scene.cycles.denoiser = 'OPENIMAGEDENOISE'
     if not bpy.data.objects.get('haze'):
         add_haze()
     scene.render.resolution_x = width
     scene.render.resolution_y = height
+    border = os.environ.get('BLANC_BORDER', '')
+    if border:
+        x0, y0, x1, y1 = (float(value) for value in border.split(','))
+        scene.render.use_border = True
+        scene.render.use_crop_to_border = True
+        scene.render.border_min_x = x0
+        scene.render.border_max_x = x1
+        scene.render.border_min_y = y0
+        scene.render.border_max_y = y1
     scene.render.image_settings.file_format = 'JPEG'
     scene.render.image_settings.quality = 92
     scene.render.filepath = str(path)
@@ -1934,6 +2155,11 @@ def render_photo(path, width, height, samples, denoise=True):
         'haze', 'shaft-only',
         'cloud', os.environ.get('BLANC_CLOUD', '0'),
         'dome', os.environ.get('BLANC_CLOUD_DOME', '0'),
+        'vol', os.environ.get('BLANC_VOLCLOUDS', '0'),
+        'end_clouds', os.environ.get('BLANC_END_CLOUDS', '0'),
+        'godray', os.environ.get('BLANC_GODRAY', '0'),
+        'height', os.environ.get('BLANC_HEIGHT', '7.8'),
+        'hall_end', os.environ.get('BLANC_HALL_END', ''),
         'cloud_contrast', os.environ.get('BLANC_CLOUD_CONTRAST', '0'),
         'end_glow', os.environ.get('BLANC_END_GLOW', '0'),
         'mirror', os.environ.get('BLANC_MIRROR', '0'),
@@ -1965,7 +2191,7 @@ def axis_test():
     cam = bpy.data.objects.new('axis', cam_data)
     cam.location = (0, 1.9, 1.6)
     scene.collection.objects.link(cam)
-    aim(cam, (0, 22, 3.0))
+    aim(cam, (0, float(os.environ.get('BLANC_AIM_Y', '22')), float(os.environ.get('BLANC_AIM_Z', '3.0'))))
     scene.camera = cam
     name = os.environ.get('BLANC_AXIS_NAME', 'pass6-try.jpg')
     exposures = [item for item in os.environ.get('BLANC_EXPOSURE_LIST', '').split(',') if item]
@@ -1981,6 +2207,8 @@ def axis_test():
         label = exposure.replace('-', 'm').replace('.', 'p')
         out = folder / (f'{stem}-{label}{suffix}' if len(exposures) > 1 else name)
         render_photo(out, width, height, samples)
+    if os.environ.get('BLANC_MANIFEST') == '1':
+        write_frame_manifest()
 
 
 def review():
@@ -2037,6 +2265,26 @@ def canvas_corners(obj):
         best = min(loops, key=lambda item: (item[0] - u) ** 2 + (item[1] - v) ** 2)
         ordered.append(best[2])
     return ordered
+
+
+def write_frame_manifest():
+    """Corners of every interchangeable canvas, from the same stop as the 360."""
+    corners = {}
+    for frame in LAYOUT['frames']:
+        if frame['wall'] not in ('left', 'right'):
+            continue
+        obj = bpy.data.objects.get(f"framed-canvas-{frame['id']}")
+        if obj is None:
+            print('manifest missing', frame['id'])
+            continue
+        found = canvas_corners(obj)
+        if len(found) < 4:
+            print('manifest short', frame['id'], len(found))
+            continue
+        corners[frame['id']] = found
+    cam = bpy.data.objects.get('axis') or bpy.context.scene.camera
+    write_slot_manifest(cam, corners)
+    print('manifest frames', len(corners), 'of', sum(1 for frame in LAYOUT['frames'] if frame['wall'] in ('left', 'right')))
 
 
 def write_slot_manifest(cam, corners_by_id):
@@ -2332,7 +2580,7 @@ def still():
     cam = bpy.data.objects.new('Still', cam_data)
     cam.location = (0, 1.9, 1.6)
     scene.collection.objects.link(cam)
-    aim(cam, (0, 22, 3.0))
+    aim(cam, (0, float(os.environ.get('BLANC_AIM_Y', '22')), float(os.environ.get('BLANC_AIM_Z', '3.0'))))
     scene.camera = cam
     sky = bpy.data.objects.get('sky')
     if sky:
@@ -2343,6 +2591,8 @@ def still():
         int(os.environ.get('BLANC_STILL_H', '2160')),
         int(os.environ.get('BLANC_STILL_SAMPLES', '64')),
     )
+    if os.environ.get('BLANC_MANIFEST') == '1':
+        write_frame_manifest()
 
 
 def pano():

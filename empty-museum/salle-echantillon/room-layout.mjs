@@ -9,9 +9,9 @@
 export const ROOM = {
   width: 7.2,
   backZ: -0.45,
-  hallLength: 13.4,
+  hallLength: 33.2,
   endDepth: 5.0,
-  length: 18.4,
+  length: 36.0,
   eye: 1.6,
   exposure: 1.2,
   openSky: true,
@@ -41,30 +41,44 @@ export const ROOM = {
 
 const PAINT = 'salle-temoin/assets/paintings/';
 
+// Four sizes, never three of the same in a row. The two walls start on different steps.
+const CADENCE = [
+  {artW: 0.64, artH: 0.86, mould: 0.09, hang: 1.82},
+  {artW: 0.42, artH: 0.56, mould: 0.055, hang: 1.64},
+  {artW: 0.82, artH: 0.6, mould: 0.08, hang: 1.74},
+  {artW: 0.7, artH: 0.98, mould: 0.1, hang: 1.92},
+];
+const PAINTINGS = {
+  left: [
+    'cc0/oeuvres/kintsugi.jpg',
+    'cc0/oeuvres/le-gamin-de-1987.jpg',
+    'pd/painting-5.webp',
+    'pd/painting-7.webp',
+    'pd/painting-2.webp',
+    'cc0/oeuvres/lundi-8h12.jpg',
+  ],
+  right: [
+    'cc0/oeuvres/lundi-8h12.jpg',
+    'pd/painting-2.webp',
+    'pd/painting-4.webp',
+    'pd/painting-6.webp',
+    'pd/painting-5.webp',
+    'cc0/oeuvres/kintsugi.jpg',
+  ],
+};
+
 function sideFrames(wall) {
   const sign = wall === 'left' ? -1 : 1;
   const x = sign * ROOM.width / 2;
   const normal = -sign;
-  const hang = 1.78;
   const large = wall === 'left'
-    ? {artW: 1.02, artH: 1.36, mould: 0.14, painting: 'cc0/oeuvres/le-dernier-bal.jpg', hero: true}
-    : {artW: 1.02, artH: 1.36, mould: 0.14, painting: 'cc0/oeuvres/le-premier-spectateur.jpg', hero: true};
-  const medium = wall === 'left'
-    ? [
-      ['cc0/oeuvres/kintsugi.jpg', 9.15],
-      ['cc0/oeuvres/le-gamin-de-1987.jpg', 10.05],
-      ['pd/painting-5.webp', 10.95],
-    ]
-    : [
-      ['cc0/oeuvres/lundi-8h12.jpg', 9.15],
-      ['pd/painting-2.webp', 10.05],
-      ['pd/painting-4.webp', 10.95],
-    ];
-  const frames = [{
+    ? {artW: 1.02, artH: 1.36, mould: 0.14, painting: 'cc0/oeuvres/le-dernier-bal.jpg'}
+    : {artW: 1.02, artH: 1.36, mould: 0.14, painting: 'cc0/oeuvres/le-premier-spectateur.jpg'};
+  const hero = {
     id: `${wall}-front`,
     wall,
     x,
-    y: hang,
+    y: 1.78,
     z: 7.55,
     artWidth: large.artW,
     artHeight: large.artH,
@@ -75,47 +89,45 @@ function sideFrames(wall) {
     painting: large.painting,
     hero: true,
     pictureLight: true,
-  }];
-  for (const [painting, z] of medium) {
-    const artW = 0.5;
-    const artH = 0.67;
-    const mould = 0.08;
+  };
+  const frames = [hero];
+  // Pilaster shafts are at least 0.72 m wide in the baker, plus a margin.
+  const posts = [5.85, 11.7, 17.55, 23.4, 29.25];
+  const blocked = (z, half) => posts.some(post => Math.abs(z - post) < half + 0.46);
+  let cursor = hero.z + hero.width / 2 + 0.62;
+  let step = wall === 'left' ? 0 : 2;
+  let paint = 0;
+  const stop = ROOM.hallLength - 0.7;
+  while (cursor < stop && frames.length < 14) {
+    const size = CADENCE[step % CADENCE.length];
+    const width = size.artW + size.mould * 2;
+    let z = cursor + width / 2;
+    if (blocked(z, width / 2)) {
+      const post = posts.find(item => Math.abs(z - item) < width / 2 + 0.46);
+      cursor = post + 0.46 + 0.08;
+      continue;
+    }
+    if (z + width / 2 > ROOM.hallLength - 0.2) break;
     frames.push({
-      id: `${wall}-${z}`,
+      id: `${wall}-${z.toFixed(2)}`,
       wall,
       x,
-      y: hang,
-      z,
-      artWidth: artW,
-      artHeight: artH,
-      moulding: mould,
-      width: artW + mould * 2,
-      height: artH + mould * 2,
+      y: size.hang,
+      z: Math.round(z * 100) / 100,
+      artWidth: size.artW,
+      artHeight: size.artH,
+      moulding: size.mould,
+      width,
+      height: size.artH + size.mould * 2,
       normal,
-      painting,
+      painting: PAINTINGS[wall][paint % PAINTINGS[wall].length],
       hero: false,
       pictureLight: true,
     });
+    cursor = z + width / 2 + 0.58;
+    step += 1;
+    paint += 1;
   }
-  const smallW = 0.42;
-  const smallH = 0.56;
-  const smallM = 0.055;
-  frames.push({
-    id: `${wall}-far`,
-    wall,
-    x,
-    y: hang,
-    z: 12.45,
-    artWidth: smallW,
-    artHeight: smallH,
-    moulding: smallM,
-    width: smallW + smallM * 2,
-    height: smallH + smallM * 2,
-    normal,
-    painting: wall === 'left' ? 'pd/painting-7.webp' : 'pd/painting-6.webp',
-    hero: false,
-    pictureLight: true,
-  });
   return frames;
 }
 
@@ -125,7 +137,7 @@ export function buildLayout() {
     {wall: 'left', x: -ROOM.width / 2 + 0.28, z0: 6.62, z1: 9.2, height: 0.46, depth: 0.44},
     {wall: 'right', x: ROOM.width / 2 - 0.28, z0: 6.62, z1: 9.2, height: 0.46, depth: 0.44},
   ];
-  const pilasters = [5.85, 11.7].map(z => ({z, width: 0.62, depth: 0.2}));
+  const pilasters = [5.85, 11.7, 17.55, 23.4, 29.25].map(z => ({z, width: 0.72, depth: 0.2}));
   const obstacles = benches.map(bench => ({
     minX: bench.x - bench.depth / 2,
     maxX: bench.x + bench.depth / 2,

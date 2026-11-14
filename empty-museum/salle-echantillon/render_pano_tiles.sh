@@ -54,13 +54,13 @@ export BLANC_PANO_SAMPLES="${BLANC_PANO_SAMPLES:-512}"
 export BLANC_THRESHOLD="${BLANC_THRESHOLD:-0.01}"
 export BLANC_TILES="$TILES"
 export BLANC_TILE_DIR="$TILE_DIR"
-# Pass 10 look: cloud dome, shaded rocks, mirror floor at roughness 0.025.
-export BLANC_EXPOSURE="${BLANC_EXPOSURE:--1.6}"
+# Grandiose look. Same knobs as render_final.sh. Does not start unless this script is run.
+export BLANC_EXPOSURE="${BLANC_EXPOSURE:--2.35}"
 export BLANC_SUN="${BLANC_SUN:-2}"
 export BLANC_SKY_STRENGTH="${BLANC_SKY_STRENGTH:-0.35}"
 export BLANC_SKY_VIEW="${BLANC_SKY_VIEW:-2.5}"
 export BLANC_SKY_GAMMA="${BLANC_SKY_GAMMA:-1}"
-export BLANC_SPOT="${BLANC_SPOT:-900}"
+export BLANC_SPOT="${BLANC_SPOT:-550}"
 export BLANC_SPOT_TIGHT="${BLANC_SPOT_TIGHT:-1}"
 export BLANC_SKY_ROT="${BLANC_SKY_ROT:-40}"
 export BLANC_SKY_PITCH="${BLANC_SKY_PITCH:-0}"
@@ -72,13 +72,25 @@ export BLANC_ROCK_SHADE="${BLANC_ROCK_SHADE:-1}"
 export BLANC_ROCK_SHADE_MIN="${BLANC_ROCK_SHADE_MIN:-0.20}"
 export BLANC_ROCK_CAVITY="${BLANC_ROCK_CAVITY:-0.40}"
 export BLANC_VEIN_CONTRAST="${BLANC_VEIN_CONTRAST:-14}"
-export BLANC_CLOUD="${BLANC_CLOUD:-3.4}"
+export BLANC_CLOUD="${BLANC_CLOUD:-1.7}"
 export BLANC_CLOUD_DOME="${BLANC_CLOUD_DOME:-1}"
-export BLANC_CLOUD_GAMMA="${BLANC_CLOUD_GAMMA:-1.6}"
+export BLANC_CLOUD_GAMMA="${BLANC_CLOUD_GAMMA:-1.0}"
+export BLANC_CLOUD_CONTRAST="${BLANC_CLOUD_CONTRAST:-24}"
+export BLANC_PUFFS="${BLANC_PUFFS:-1}"
+export BLANC_PUFF="${BLANC_PUFF:-22}"
+export BLANC_PUFF_SCALE="${BLANC_PUFF_SCALE:-2.2}"
+export BLANC_PUFF_GLOSSY="${BLANC_PUFF_GLOSSY:-1}"
+export BLANC_GODRAY="${BLANC_GODRAY:-1}"
+export BLANC_GODRAY_DENSITY="${BLANC_GODRAY_DENSITY:-0.012}"
+export BLANC_GODRAY_SUN="${BLANC_GODRAY_SUN:-140}"
+export BLANC_HEIGHT="${BLANC_HEIGHT:-9.2}"
+export BLANC_HALL_END="${BLANC_HALL_END:-34.5}"
+export BLANC_MORE_ROCKS="${BLANC_MORE_ROCKS:-1}"
+export BLANC_DOME_GLOSSY="${BLANC_DOME_GLOSSY:-1}"
 export BLANC_END_GLOW="${BLANC_END_GLOW:-0}"
 export BLANC_MIRROR="${BLANC_MIRROR:-1}"
 export BLANC_FLOOR_FLAT="${BLANC_FLOOR_FLAT:-1}"
-export BLANC_FLOOR_ROUGH="${BLANC_FLOOR_ROUGH:-0.025}"
+export BLANC_FLOOR_ROUGH="${BLANC_FLOOR_ROUGH:-0.012}"
 export BLANC_FLOOR_ROUGH_VAR="${BLANC_FLOOR_ROUGH_VAR:-0.008}"
 export BLANC_FLOOR_NORMAL="${BLANC_FLOOR_NORMAL:-0.02}"
 export BLANC_CLAMP="${BLANC_CLAMP:-8}"
@@ -93,7 +105,9 @@ sync_push() {
   git -C "$REPO" commit -m "$message" || return 0
   local attempt
   for attempt in 1 2 3 4 5 6; do
-    if git -C "$REPO" pull --rebase origin feat/musee-blanc-nolimit && git -C "$REPO" push origin HEAD; then
+    local branch
+    branch=$(git -C "$REPO" rev-parse --abbrev-ref HEAD)
+    if git -C "$REPO" pull --rebase "origin" "$branch" && git -C "$REPO" push origin HEAD; then
       return 0
     fi
     local conflicted
