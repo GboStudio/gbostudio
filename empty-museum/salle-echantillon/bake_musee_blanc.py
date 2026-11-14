@@ -192,6 +192,11 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
     bsdf = nodes['Principled BSDF']
     bsdf.inputs['Roughness'].default_value = roughness
     bsdf.inputs['Metallic'].default_value = metallic
+    if name == 'floor' and os.environ.get('BLANC_MIRROR') == '1':
+        if 'IOR' in bsdf.inputs:
+            bsdf.inputs['IOR'].default_value = 1.5
+        if 'Specular IOR Level' in bsdf.inputs:
+            bsdf.inputs['Specular IOR Level'].default_value = 1.0
     if MARBLE_COLOR.exists():
         color = nodes.new('ShaderNodeTexImage')
         color.extension = 'REPEAT'
@@ -237,7 +242,10 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
 def rock_material():
     """Pale stone. Boulder grey by default; marble blocks when BLANC_ROCK_MARBLE=1."""
     if os.environ.get('BLANC_ROCK_MARBLE', '1') == '1':
-        return marble_material('rock', 0.62, 0.9, contrast=10, bright=-0.06)
+        return marble_material(
+            'rock', 0.62, 0.9, contrast=10,
+            bright=float(os.environ.get('BLANC_ROCK_BRIGHT', '-0.06')),
+        )
     material = bpy.data.materials.new('rock')
     material.use_nodes = True
     nodes = material.node_tree.nodes
@@ -519,9 +527,13 @@ def build():
     scene.cycles.adaptive_threshold = 0.03
     scene.cycles.max_bounces = 8
     scene.cycles.diffuse_bounces = 4
-    scene.cycles.glossy_bounces = 4
+    scene.cycles.glossy_bounces = 6 if os.environ.get('BLANC_MIRROR') == '1' else 4
     scene.cycles.volume_bounces = 1
-    scene.cycles.sample_clamp_indirect = 8
+    scene.cycles.sample_clamp_indirect = float(os.environ.get('BLANC_CLAMP', '8'))
+    if os.environ.get('BLANC_MIRROR') == '1':
+        for attr in ('filter_glossy', 'blur_glossy'):
+            if hasattr(scene.cycles, attr):
+                setattr(scene.cycles, attr, 0.0)
     scene.cycles.caustics_reflective = False
     scene.cycles.caustics_refractive = False
     apply_grade(float(os.environ.get('BLANC_EXPOSURE', '0.15')))
@@ -620,7 +632,13 @@ def build():
             'marble', 0.34, 0.55, rough_scale=0.42, bright=0.0,
             contrast=float(os.environ.get('BLANC_VEIN_CONTRAST', '8')),
         ),
-        'floor': marble_material('floor', 0.035, 0.12),
+        'floor': marble_material(
+            'floor',
+            float(os.environ.get('BLANC_FLOOR_ROUGH', '0.05')) if os.environ.get('BLANC_MIRROR') == '1' else 0.035,
+            0.12,
+            rough_scale=float(os.environ.get('BLANC_FLOOR_ROUGH', '0.05')) if os.environ.get('BLANC_MIRROR') == '1' else None,
+            bright=float(os.environ.get('BLANC_FLOOR_BRIGHT', '0')) if os.environ.get('BLANC_MIRROR') == '1' else 0.0,
+        ),
         'gilt': new_material('gilt', (0.68, 0.36, 0.06), 0.26, 1),
         'artwork': new_material('artwork', (0.4, 0.32, 0.24), 0.55),
         'iron': new_material('iron', (0.02, 0.02, 0.02), 0.35, 0.8),
@@ -780,8 +798,12 @@ def build():
         spot = bpy.data.lights.new(f"spot-{frame['id']}", 'SPOT')
         spot.energy = float(os.environ.get('BLANC_SPOT', '40'))
         spot.color = kelvin(3000)
-        spot.spot_size = math.radians(52)
-        spot.spot_blend = 0.85
+        if os.environ.get('BLANC_SPOT_TIGHT') == '1':
+            spot.spot_size = math.radians(float(os.environ.get('BLANC_SPOT_DEG', '30')))
+            spot.spot_blend = 0.3
+        else:
+            spot.spot_size = math.radians(52)
+            spot.spot_blend = 0.85
         spot.shadow_soft_size = 0.25
         obj = bpy.data.objects.new(f"spot-{frame['id']}", spot)
         head = (x_wall + sign * 0.48, frame['z'], min(height - 0.35, frame['y'] + frame['height'] + 0.7))
@@ -805,7 +827,8 @@ def build():
     place_rocks(mats['rock'])
     if os.environ.get('BLANC_ENTRY') == '1':
         add_entry(back, half, height, pack, meshes)
-    # No glass pane and no emissive rectangle. The camera sky is the world shader.
+    add_cumulus_sheets(end)
+    add_rock_sun()
 
     # Sky dome, emissive in the viewer, hidden from the bake.
     bpy.ops.mesh.primitive_uv_sphere_add(segments=48, ring_count=24, radius=40, location=(0, end * 0.5, 2))
@@ -1114,7 +1137,7 @@ def join_prefix(prefix):
 
 def export_glb():
     for obj in list(bpy.data.objects):
-        if obj.name.startswith('src-') or obj.name.startswith('fancy_picture_frame') or obj.name.startswith('cumulus') or obj.name.startswith('skyback') or obj.name in ('haze', 'shaft'):
+        if obj.name.startswith('src-') or obj.name.startswith('fancy_picture_frame') or obj.name.startswith('cumulus') or obj.name.startswith('skyback') or obj.name in ('haze', 'shaft', 'end-glow'):
             bpy.data.objects.remove(obj, do_unlink=True)
     join_prefix('rock-')
     join_prefix('giltframe-')
@@ -1512,6 +1535,141 @@ def add_haze():
         bpy.context.scene.cycles.volume_step_rate = 2
 
 
+def cloud_sheet_material(strength, uv_offset):
+    """Cumulus photo. Camera and mirror only, so the sheets do not light the marble."""
+    material = bpy.data.materials.new('cumulus-sheet')
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+    output = nodes.new('ShaderNodeOutputMaterial')
+    tex = nodes.new('ShaderNodeTexImage')
+    path = CC0 / 'cumulus-band.jpg'
+    if path.exists():
+        tex.image = load_image(path, 'sRGB')
+    tex.extension = 'REPEAT'
+    mapping = nodes.new('ShaderNodeMapping')
+    mapping.inputs['Location'].default_value[0] = uv_offset
+    coord = nodes.new('ShaderNodeTexCoord')
+    links.new(coord.outputs['UV'], mapping.inputs['Vector'])
+    links.new(mapping.outputs['Vector'], tex.inputs['Vector'])
+    emit = nodes.new('ShaderNodeEmission')
+    emit.inputs['Strength'].default_value = strength
+    links.new(tex.outputs['Color'], emit.inputs['Color'])
+    transparent = nodes.new('ShaderNodeBsdfTransparent')
+    seen = nodes.new('ShaderNodeMath')
+    seen.operation = 'MAXIMUM'
+    ray = nodes.new('ShaderNodeLightPath')
+    links.new(ray.outputs['Is Camera Ray'], seen.inputs[0])
+    links.new(ray.outputs['Is Glossy Ray'], seen.inputs[1])
+    mix = nodes.new('ShaderNodeMixShader')
+    links.new(seen.outputs['Value'], mix.inputs['Fac'])
+    links.new(transparent.outputs['BSDF'], mix.inputs[1])
+    links.new(emit.outputs['Emission'], mix.inputs[2])
+    links.new(mix.outputs['Shader'], output.inputs['Surface'])
+    return material
+
+
+def add_rock_sun():
+    """A grazing sun that lights only the blocks, so one face stays bright and the other falls off."""
+    energy = float(os.environ.get('BLANC_ROCK_SUN', '0'))
+    if energy <= 0:
+        return
+    light = bpy.data.lights.new('rock-sun', 'SUN')
+    light.energy = energy
+    light.angle = math.radians(8)
+    light.color = kelvin(5600)
+    obj = bpy.data.objects.new('rock-sun', light)
+    obj.rotation_euler = Vector((0.95, 0.2, -0.45)).to_track_quat('-Z', 'Y').to_euler()
+    bpy.context.scene.collection.objects.link(obj)
+    rocks = [item for item in bpy.data.objects if item.type == 'MESH' and item.name.startswith('rock-')]
+    try:
+        receivers = bpy.data.collections.new('rock-receivers')
+        bpy.context.scene.collection.children.link(receivers)
+        for rock in rocks:
+            receivers.objects.link(rock)
+        obj.light_linking.receiver_collection = receivers
+        print('rock light linked', len(rocks))
+    except Exception as error:
+        print('light linking failed', error)
+
+
+def add_cloud_sheet(name, location, rotation, scale, strength, uv_offset, bend):
+    bpy.ops.mesh.primitive_grid_add(x_subdivisions=36, y_subdivisions=14, size=1, location=(0, 0, 0))
+    sheet = bpy.context.active_object
+    sheet.name = name
+    for vertex in sheet.data.vertices:
+        vertex.co.z += bend * (0.25 - vertex.co.y ** 2)
+    sheet.location = location
+    sheet.rotation_euler = rotation
+    sheet.scale = scale
+    sheet.data.materials.append(cloud_sheet_material(strength, uv_offset))
+    sheet.visible_shadow = False
+    return sheet
+
+
+def add_cumulus_sheets(end_y):
+    """Photo of the 0–25° cumulus band, hung where the camera looks, not at the HDRI zenith."""
+    strength = float(os.environ.get('BLANC_CLOUD', '0'))
+    if strength <= 0:
+        return
+    # Overhead, tilted so the opening is filled with clouds rather than the zenith.
+    # Above the roofline, facing down into the opening. Not a banner across the hall.
+    add_cloud_sheet(
+        'cumulus-roof',
+        (0, 14.0, 11.2),
+        (math.radians(168), 0, 0),
+        (24, 34, 1),
+        strength,
+        0.05,
+        0.2,
+    )
+    add_cloud_sheet(
+        'cumulus-mid',
+        (2.0, 22.0, 11.8),
+        (math.radians(158), 0, -0.05),
+        (16, 12, 1),
+        strength * 0.9,
+        0.4,
+        0.14,
+    )
+    add_cloud_sheet(
+        'cumulus-end',
+        (0, end_y - 6.0, 12.2),
+        (math.radians(155), 0, 0),
+        (22, 18, 1),
+        strength,
+        0.7,
+        0.16,
+    )
+    glow = float(os.environ.get('BLANC_END_GLOW', '0'))
+    if glow <= 0:
+        return
+    glow_mat = bpy.data.materials.new('end-glow')
+    glow_mat.use_nodes = True
+    nodes = glow_mat.node_tree.nodes
+    links = glow_mat.node_tree.links
+    nodes.clear()
+    output = nodes.new('ShaderNodeOutputMaterial')
+    emit = nodes.new('ShaderNodeEmission')
+    emit.inputs['Color'].default_value = (1.0, 0.97, 0.92, 1)
+    emit.inputs['Strength'].default_value = glow
+    transparent = nodes.new('ShaderNodeBsdfTransparent')
+    ray = nodes.new('ShaderNodeLightPath')
+    mix = nodes.new('ShaderNodeMixShader')
+    links.new(ray.outputs['Is Camera Ray'], mix.inputs['Fac'])
+    links.new(transparent.outputs['BSDF'], mix.inputs[1])
+    links.new(emit.outputs['Emission'], mix.inputs[2])
+    links.new(mix.outputs['Shader'], output.inputs['Surface'])
+    bpy.ops.mesh.primitive_plane_add(size=1, location=(0, end_y - 3.5, 5.2))
+    pane = bpy.context.active_object
+    pane.name = 'end-glow'
+    pane.rotation_euler = (math.radians(90), 0, 0)
+    pane.scale = (16, 10, 1)
+    pane.data.materials.append(glow_mat)
+    pane.visible_shadow = False
+
+
 def render_photo(path, width, height, samples, denoise=True):
     scene = bpy.context.scene
     apply_grade(float(os.environ.get('BLANC_EXPOSURE', '-1.6')))
@@ -1538,6 +1696,12 @@ def render_photo(path, width, height, samples, denoise=True):
         'sky_view', os.environ.get('BLANC_SKY_VIEW', '6.0'),
         'spot', os.environ.get('BLANC_SPOT', '40'),
         'haze', 'shaft-only',
+        'cloud', os.environ.get('BLANC_CLOUD', '0'),
+        'end_glow', os.environ.get('BLANC_END_GLOW', '0'),
+        'mirror', os.environ.get('BLANC_MIRROR', '0'),
+        'rock_sun', os.environ.get('BLANC_ROCK_SUN', '0'),
+        'vein', os.environ.get('BLANC_VEIN_CONTRAST', '8'),
+        'spot_tight', os.environ.get('BLANC_SPOT_TIGHT', '0'),
     )
     print('rendering', path.name, width, height, 'samples', samples)
     bpy.ops.render.render(write_still=True)
