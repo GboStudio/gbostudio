@@ -141,6 +141,19 @@ Le côte-à-côte 3 ne part pas chez Guillaume. Même branche, mêmes interdits.
 - Sonde 12 échantillons d’une pastille 1/128 en 5,5 s : **59 s par échantillon**. 256 échantillons ≈ **4 h 10**. 512 ≈ **8 h 25**. 4K 64 échantillons ≈ **19 min**. Rien de lourd n’est lancé.
 - **Pas déployé. Pas fusionné. Pas une PR.** Encore loin de la cible.
 
+## Salle blanche grandiose, cinquième passage — 15 novembre 2026
+
+Le côte-à-côte 4 ne part pas chez Guillaume. Même branche `feat/musee-blanc-grandiose`. **Pas de PR, pas de fusion, pas de 4K, pas de 360° lourd.** Huit essais 400×225. Le rythme des quatre travées, le fondu du fond et le plafond blanc du pano sont gardés.
+
+- Exposition −1,94, AgX contraste moyen-fort. Luma de l’aperçu **0,602** (+8 % sur 0,558, dans les ±15 %). Murs L* **83,0** (dans 72–86).
+- Ciel : photo CC0 de cumulus (`cumulus-band.jpg`, issue du HDRI Poly Haven), désaturée, contrastée, tirée vers le blanc, avec un cœur plus clair et un rayon en compositing. L* ciel officiel **89,2** (juste sous 90 : des rochers entrent dans la fenêtre de mesure). Le ciel dégagé au-dessus d’eux est vers L* **95**. Fond L* **92,0**.
+- Rochers : **40** scans CC0 (`boulder_01`, `rock_07`, `rock_09`, `namaqualand_boulder_03`), couronne éclairée, dessous plus gris, normale et rugosité branchées. Les plus gros font environ 1,5–2,2 m et flanquent l’axe.
+- Cadres centrés à **1,6 m**. Le plus proche fait 1,64 × 1,90 m (largeur affichée ~1,6 m). Spots chauds sur la toile. Or 0,52 / 0,37 / 0,16, rugosité 0,44.
+- Sol : marbre, rugosité **0,12**, deux bancs blancs dans la première travée. Œil **1,5 m**, champ horizontal **68°**.
+- Images : `review/grandiose5-preview.jpg` (1280×720, 32 échantillons, 52 s), `review/compare-axis-grandiose5.jpg`, `review/pano-test-grandiose5.jpg`. Le zénith du pano reste blanc, sans la moitié sol de l’HDRI. Des vagues douces restent près du zénith.
+- Sonde 360 : pastille 384×384, soit 1/128 de 6144×3072, 8 échantillons. Le temps entre l’échantillon 0 et l’échantillon 8 est 2,0 s, donc **32 s par échantillon**. 256 échantillons ≈ **2 h 15**. 512 ≈ **4 h 30**. Le pano 1024×512 (8,8 s, 8 échantillons) se projette vers **39 s** par échantillon : la fourchette mesurée est 32–39 s, sous les 60 s. 4K 3840×2160, 64 échantillons, au prix du 1280×720 (52 s pour 32) : environ **16 min**. Rien de lourd n’est lancé.
+- **Pas déployé. Pas fusionné. Pas une PR.** Plus proche que le passage 4, pas encore la cible.
+
 ## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
 
 Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon d’origine (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. La branche grandiose allonge seulement l’échantillon (36 m, sans mur du fond) pour la photo ; elle ne construit pas la salle de 100 m et n’écrit pas ses cotes dans le contrat.

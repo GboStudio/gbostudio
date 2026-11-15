@@ -567,19 +567,24 @@ def place_rocks(material):
         # Forty scanned boulders. Big ones in front, then a staggered file
         # from about 3 m above the floor up into the opening, down to the far end.
         placements = []
-        for i in range(40):
-            row = i // 2
+        # Large stones flank the shaft. The upper centre of the opening stays sky.
+        for x, along, z, radius in (
+            (-1.85, 8.2, 3.15, 1.4),
+            (1.95, 9.6, 3.35, 1.25),
+            (-2.1, 11.2, 3.2, 1.5),
+            (1.9, 12.8, 3.45, 1.2),
+            (-1.75, 14.4, 3.1, 1.15),
+            (2.1, 16.0, 3.4, 1.35),
+        ):
+            placements.append((x, along, z, radius))
+        for i in range(34):
             side = -1.0 if i % 2 == 0 else 1.0
-            along = 9.6 + row * 1.28
-            x = side * (0.7 + (row % 4) * 0.32)
-            band = (row + (0 if side < 0 else 2)) % 5
-            z = 3.05 + band * 0.68
-            radius = 0.58 + (row % 4) * 0.18
-            if i < 6:
-                z = 3.35 + (i % 3) * 1.05
-                radius = 1.55 + (i % 3) * 0.32
-                x = side * (0.85 + (i % 3) * 0.28)
-                along = 4.8 + i * 0.78
+            along = 12.2 + i * 0.6
+            x = side * (0.6 + (i % 5) * 0.34)
+            z = 3.05 + (i % 6) * 0.36
+            if along < 16.5 and z > 3.7:
+                x = side * max(abs(x), 1.55)
+            radius = 0.48 + (i % 4) * 0.16
             placements.append((round(x, 3), round(along, 3), round(z, 3), round(radius, 3)))
     elif os.environ.get('BLANC_MORE_ROCKS') == '1':
         # More blocks in the light, further down the nave. Same CC0 meshes.
@@ -1163,6 +1168,78 @@ def build():
         sl.new(clamped.outputs['Result'], uv_join.inputs['Y'])
         sl.new(uv_sep.outputs['Z'], uv_join.inputs['Z'])
         sl.new(uv_join.outputs['Vector'], tex.inputs['Vector'])
+        if os.environ.get('BLANC_SKY_ANGULAR') == '1':
+            for link in list(sl):
+                if link.to_socket == tex.inputs['Vector']:
+                    sl.remove(link)
+            direction = sn.new('ShaderNodeVectorMath')
+            direction.operation = 'NORMALIZE'
+            coord_ang = sn.new('ShaderNodeTexCoord')
+            sl.new(coord_ang.outputs['Object'], direction.inputs[0])
+            parts = sn.new('ShaderNodeSeparateXYZ')
+            sl.new(direction.outputs['Vector'], parts.inputs['Vector'])
+            azimuth = sn.new('ShaderNodeMath')
+            azimuth.operation = 'ARCTAN2'
+            sl.new(parts.outputs['X'], azimuth.inputs[0])
+            sl.new(parts.outputs['Y'], azimuth.inputs[1])
+            turns = sn.new('ShaderNodeMath')
+            turns.operation = 'DIVIDE'
+            turns.inputs[1].default_value = math.tau
+            sl.new(azimuth.outputs['Value'], turns.inputs[0])
+            u_shift = sn.new('ShaderNodeMath')
+            u_shift.operation = 'ADD'
+            u_shift.inputs[1].default_value = 0.5 + float(os.environ.get('BLANC_SKY_U', '0'))
+            sl.new(turns.outputs['Value'], u_shift.inputs[0])
+            # Above this, one azimuth, so the pano zenith does not turn into spokes.
+            cap = sn.new('ShaderNodeMapRange')
+            cap.inputs['From Min'].default_value = 0.62
+            cap.inputs['From Max'].default_value = 0.84
+            cap.inputs['To Min'].default_value = 0.0
+            cap.inputs['To Max'].default_value = 1.0
+            cap.clamp = True
+            sl.new(parts.outputs['Z'], cap.inputs['Value'])
+            u_held = sn.new('ShaderNodeMapRange')
+            u_held.clamp = True
+            u_held.inputs['From Min'].default_value = 0.0
+            u_held.inputs['From Max'].default_value = 1.0
+            u_held.inputs['To Min'].default_value = 0.5
+            u_held.inputs['To Max'].default_value = 0.5
+            # Mix the spinning azimuth back to one column near the zenith.
+            u_mix = sn.new('ShaderNodeMixRGB')
+            u_mix.blend_type = 'MIX'
+            sl.new(cap.outputs['Result'], u_mix.inputs['Fac'])
+            # MixRGB wants colors. Use a math mix via MapRange on the fac instead.
+            u_out = sn.new('ShaderNodeMath')
+            u_out.operation = 'MULTIPLY_ADD'
+            # u_out = u * (1 - cap) + 0.5 * cap
+            one_minus = sn.new('ShaderNodeMath')
+            one_minus.operation = 'SUBTRACT'
+            one_minus.inputs[0].default_value = 1.0
+            sl.new(cap.outputs['Result'], one_minus.inputs[1])
+            u_scaled = sn.new('ShaderNodeMath')
+            u_scaled.operation = 'MULTIPLY'
+            sl.new(u_shift.outputs['Value'], u_scaled.inputs[0])
+            sl.new(one_minus.outputs['Value'], u_scaled.inputs[1])
+            u_cap = sn.new('ShaderNodeMath')
+            u_cap.operation = 'MULTIPLY'
+            u_cap.inputs[0].default_value = 0.5
+            sl.new(cap.outputs['Result'], u_cap.inputs[1])
+            u_sum = sn.new('ShaderNodeMath')
+            u_sum.operation = 'ADD'
+            sl.new(u_scaled.outputs['Value'], u_sum.inputs[0])
+            sl.new(u_cap.outputs['Value'], u_sum.inputs[1])
+            elev = sn.new('ShaderNodeMapRange')
+            elev.inputs['From Min'].default_value = float(os.environ.get('BLANC_SKY_ANG_Z0', '-0.05'))
+            elev.inputs['From Max'].default_value = float(os.environ.get('BLANC_SKY_ANG_Z1', '0.9'))
+            elev.inputs['To Min'].default_value = float(os.environ.get('BLANC_SKY_ANG_V0', '0.12'))
+            elev.inputs['To Max'].default_value = float(os.environ.get('BLANC_SKY_ANG_V1', '0.88'))
+            elev.clamp = True
+            sl.new(parts.outputs['Z'], elev.inputs['Value'])
+            ang = sn.new('ShaderNodeCombineXYZ')
+            sl.new(u_sum.outputs['Value'], ang.inputs['X'])
+            sl.new(elev.outputs['Result'], ang.inputs['Y'])
+            sl.new(ang.outputs['Vector'], tex.inputs['Vector'])
+            print('sky angular')
         # Full desaturation, then the cloud shading is put back and lifted toward white.
         separate = sn.new('ShaderNodeSeparateColor')
         combine = sn.new('ShaderNodeCombineColor')
@@ -1225,10 +1302,28 @@ def build():
         core.inputs['Color2'].default_value = (1.0, 1.0, 1.0, 1)
         sl.new(core_amt.outputs['Value'], core.inputs['Fac'])
         sl.new(wash.outputs['Color'], core.inputs['Color1'])
+        # The far opening sits near the horizon of the shell. Push that band to white
+        # so the end of the nave melts into light while the ceiling keeps its clouds.
+        horizon = sn.new('ShaderNodeMapRange')
+        horizon.inputs['From Min'].default_value = float(os.environ.get('BLANC_SKY_END_Z0', '-0.02'))
+        horizon.inputs['From Max'].default_value = float(os.environ.get('BLANC_SKY_END_Z1', '0.42'))
+        horizon.inputs['To Min'].default_value = 1.0
+        horizon.inputs['To Max'].default_value = 0.0
+        horizon.clamp = True
+        sl.new(obj_sep.outputs['Z'], horizon.inputs['Value'])
+        end_amt = sn.new('ShaderNodeMath')
+        end_amt.operation = 'MULTIPLY'
+        end_amt.inputs[1].default_value = float(os.environ.get('BLANC_SKY_END', '0.0'))
+        sl.new(horizon.outputs['Result'], end_amt.inputs[0])
+        end_mix = sn.new('ShaderNodeMixRGB')
+        end_mix.blend_type = 'MIX'
+        end_mix.inputs['Color2'].default_value = (1.0, 1.0, 1.0, 1)
+        sl.new(end_amt.outputs['Value'], end_mix.inputs['Fac'])
+        sl.new(core.outputs['Color'], end_mix.inputs['Color1'])
         if os.environ.get('BLANC_SKY_RAW') == '1':
             sl.new(tex.outputs['Color'], emit.inputs['Color'])
         else:
-            sl.new(core.outputs['Color'], emit.inputs['Color'])
+            sl.new(end_mix.outputs['Color'], emit.inputs['Color'])
         hold = sn.new('ShaderNodeMixShader')
         ray = sn.new('ShaderNodeLightPath')
         seen = sn.new('ShaderNodeMath')
