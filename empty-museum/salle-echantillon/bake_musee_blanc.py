@@ -649,7 +649,7 @@ def repair_rock(obj, target_faces):
     bpy.ops.object.mode_set(mode='OBJECT')
     remesh = obj.modifiers.new('Remesh', 'REMESH')
     remesh.mode = 'VOXEL'
-    remesh.voxel_size = 0.018
+    remesh.voxel_size = float(os.environ.get('BLANC_ROCK_VOXEL', '0.012'))
     bpy.ops.object.modifier_apply(modifier=remesh.name)
     collapse_mesh(obj, target_faces)
     mesh = bmesh.new()
@@ -898,7 +898,7 @@ def build():
             bright=float(os.environ.get('BLANC_FLOOR_BRIGHT', '-0.04')) if os.environ.get('BLANC_MIRROR') == '1' else 0.0,
             contrast=float(os.environ.get('BLANC_FLOOR_VEIN', '42')),
         ),
-        'gilt': new_material('gilt', (0.68, 0.36, 0.06), 0.26, 1),
+        'gilt': new_material('gilt', (0.40, 0.28, 0.11), 0.5, 1),
         'artwork': new_material('artwork', (0.4, 0.32, 0.24), 0.55),
         'iron': new_material('iron', (0.02, 0.02, 0.02), 0.35, 0.8),
         'bulb': new_material('bulb', kelvin(3000), 0.3),
@@ -1028,13 +1028,15 @@ def build():
     for frame in LAYOUT['frames']:
         if frame['wall'] not in ('left', 'right'):
             continue
-        mould = frame['moulding']
+        mould = float(os.environ.get('BLANC_MOULD', '0.09'))
         sign = 1 if frame['x'] < 0 else -1
         x_wall = frame['x']
         y0 = frame['z'] - frame['width'] / 2
         y1 = frame['z'] + frame['width'] / 2
         z0 = frame['y'] - frame['height'] / 2
         z1 = frame['y'] + frame['height'] / 2
+        # A classic gilt profile, about 9 cm wide and a few centimetres proud.
+        profile = [0.0, 0.012, 0.028, 0.042]
         rings = []
         for step, depth_k in enumerate(profile):
             inset = mould * step / (len(profile) - 1)
@@ -1072,11 +1074,11 @@ def build():
             spot.spot_blend = 0.85
         spot.shadow_soft_size = float(os.environ.get('BLANC_SPOT_SOFT', '0.55'))
         obj = bpy.data.objects.new(f"spot-{frame['id']}", spot)
-        # The pool lands on the painting. The old aim sat above the canvas.
-        # The warm pool sits on the marble above the frame, not only on the canvas.
-        head = (x_wall + sign * 0.72, frame['z'], frame['y'] + frame['height'] * 0.85 + 0.55)
+        # The warm pool sits on the marble above the frame.
+        top = frame['y'] + frame['height'] * 0.5
+        head = (x_wall + sign * 0.58, frame['z'], min(height - 0.4, top + 1.15))
         obj.location = head
-        aim_at = Vector((x_wall + sign * 0.02, frame['z'], frame['y'] + frame['height'] * 0.62))
+        aim_at = Vector((x_wall + sign * 0.015, frame['z'], top + 0.32))
         direction = aim_at - Vector(head)
         obj.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
         bpy.context.scene.collection.objects.link(obj)
@@ -1416,8 +1418,9 @@ def build():
     for obj in bpy.data.objects:
         if obj.name.startswith('rock-') and obj.type == 'MESH':
             for polygon in obj.data.polygons:
-                polygon.use_smooth = True
-    place_fancy_frames()
+                polygon.use_smooth = False
+    if os.environ.get('BLANC_SIMPLE_FRAME', '1') != '1':
+        place_fancy_frames()
     return scene
 
 
@@ -2530,12 +2533,9 @@ def add_cloud_cards():
         return
     sources = [CC0 / 'cumulus-band.jpg', CC0 / 'cumulus-plate.jpg']
     strength = float(os.environ.get('BLANC_CARD', '2.4'))
-    # Tilt near 90° so the photo faces the visitor instead of lying on the ceiling.
+    # One cloud bank facing the camera at the far end. Tilted cards read as vertical streaks.
     cards = (
-        (0, (0.0, 6.5, 5.6), 86, (16.0, 7.0), 0.02),
-        (1, (-1.2, 10.5, 5.4), 82, (14.0, 6.2), 0.22),
-        (0, (1.0, 14.5, 5.2), 78, (15.0, 6.4), 0.48),
-        (1, (0.2, 18.2, 5.0), 74, (16.0, 6.6), 0.33),
+        (0, (0.0, 19.0, 4.4), 90, (16.0, 8.5), 0.08),
     )
     made = 0
     for index, (which, loc, tilt, scale, uoff) in enumerate(cards):
@@ -2648,6 +2648,7 @@ def add_cloud_cards():
         card.data.materials.append(material)
         card.visible_shadow = False
         card.visible_diffuse = False
+        card.visible_glossy = False
         made += 1
     print('cloud cards', made)
 
@@ -2834,6 +2835,24 @@ def apply_bloom():
         tree.links.new(current, added.inputs[1])
         tree.links.new(shaped.outputs[0], added.inputs[2])
         current = added.outputs[0]
+    if os.environ.get('BLANC_SHARPEN', '1') == '1':
+        # A light unsharp mask. It does not touch the sky glow, which is already applied.
+        soft_pic = tree.nodes.new('CompositorNodeBlur')
+        soft_pic.filter_type = 'GAUSS'
+        soft_pic.size_x = 2
+        soft_pic.size_y = 2
+        tree.links.new(current, soft_pic.inputs['Image'])
+        detail = tree.nodes.new('CompositorNodeMixRGB')
+        detail.blend_type = 'SUBTRACT'
+        detail.inputs['Fac'].default_value = 1.0
+        tree.links.new(current, detail.inputs[1])
+        tree.links.new(soft_pic.outputs['Image'], detail.inputs[2])
+        crisp = tree.nodes.new('CompositorNodeMixRGB')
+        crisp.blend_type = 'ADD'
+        crisp.inputs['Fac'].default_value = float(os.environ.get('BLANC_SHARPEN_AMT', '0.35'))
+        tree.links.new(current, crisp.inputs[1])
+        tree.links.new(detail.outputs[0], crisp.inputs[2])
+        current = crisp.outputs[0]
     composite = tree.nodes.new('CompositorNodeComposite')
     tree.links.new(current, composite.inputs['Image'])
 
@@ -2848,8 +2867,23 @@ def render_photo(path, width, height, samples, denoise=True):
     if hasattr(scene.cycles, 'adaptive_min_samples'):
         scene.cycles.adaptive_min_samples = int(os.environ.get('BLANC_MIN_SAMPLES', '6'))
     scene.cycles.volume_bounces = int(os.environ.get('BLANC_VOL_BOUNCES', '1'))
+    scene.render.use_motion_blur = False
+    scene.render.filter_size = float(os.environ.get('BLANC_FILTER', '1.0'))
     scene.cycles.use_denoising = denoise
     scene.cycles.denoiser = 'OPENIMAGEDENOISE'
+    if hasattr(scene.cycles, 'denoising_prefilter'):
+        scene.cycles.denoising_prefilter = 'ACCURATE'
+    if hasattr(scene.cycles, 'denoising_input_passes'):
+        try:
+            scene.cycles.denoising_input_passes = 'RGB_ALBEDO_NORMAL'
+        except TypeError:
+            pass
+    view_layer = scene.view_layers[0]
+    try:
+        view_layer.cycles.use_denoising = denoise
+        view_layer.cycles.denoising_store_passes = True
+    except Exception:
+        pass
     if os.environ.get('BLANC_HAZE') == '1' and not bpy.data.objects.get('shaft'):
         add_haze()
     scene.render.resolution_x = width
@@ -2903,24 +2937,25 @@ def aim(cam, target):
 
 def place_axis_camera(scene, name):
     """Eye at 1.5 m, horizontal field about 68°, vanishing point a little above the eye line."""
-    hfov = float(os.environ.get('BLANC_HFOV', '70'))
+    hfov = float(os.environ.get('BLANC_HFOV', '76'))
     aspect = float(os.environ.get('BLANC_ASPECT', str(16 / 9)))
     vfov = 2.0 * math.atan(math.tan(math.radians(hfov) * 0.5) / aspect)
     cam_data = bpy.data.cameras.new(name)
     cam_data.sensor_fit = 'VERTICAL'
     cam_data.angle = vfov
+    cam_data.dof.use_dof = False
     cam = bpy.data.objects.new(name, cam_data)
     eye = float(os.environ.get('BLANC_EYE', str(ROOM.get('eye', 1.5))))
     cam.location = (
         0.0,
-        float(os.environ.get('BLANC_CAM_Y', str(ROOM.get('cameraZ', 0.35)))),
+        float(os.environ.get('BLANC_CAM_Y', '-0.25')),
         eye,
     )
     scene.collection.objects.link(cam)
     aim(cam, (
         0.0,
         float(os.environ.get('BLANC_AIM_Y', '18')),
-        float(os.environ.get('BLANC_AIM_Z', '2.45')),
+        float(os.environ.get('BLANC_AIM_Z', '2.55')),
     ))
     scene.camera = cam
     print('camera', [round(v, 3) for v in cam.location], 'hfov', hfov, 'vfov', round(math.degrees(vfov), 2))

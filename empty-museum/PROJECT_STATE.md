@@ -202,6 +202,18 @@ Le cadrage du passage 8 est gardé. Le voile laiteux (bloom global, brume, rayon
 - Sonde 360 : 2,09 s entre l’échantillon 0 et le 8, donc **33 s par échantillon**. 256 ≈ **2 h 20**. 512 ≈ **4 h 45**. 4K 64 échantillons ≈ **17 min**. Rien de lourd n’est lancé.
 - **Pas déployé. Pas fusionné. Pas une PR.** Les murs, les toiles et les rochers sont plus nets. Les toiles ne sont pas encore les huiles très sombres de la cible, le cadre reste ouvragé, et le fond est encore un peu trop blanc.
 
+## Salle blanche grandiose, dixième passage — 15 novembre 2026
+
+Le cadrage, la nef courte, les travées et les spots restent. Les cartes de nuages inclinées, source des traînées, sont retirées. Quatre essais 400×225, puis un aperçu à 128 échantillons.
+
+- Caméra reculée à y = −0,25 m, champ **76°**, tangage d’environ **+3°**, horizon vers **57 %**. Les premiers cadres sont entiers, avec du mur autour.
+- Cadre doré procédural, profil d’environ **9 cm**, or vieilli (0,40 / 0,28 / 0,11). Plus le cadre sculpté.
+- Toiles du dépôt, gain **0,16**, sans émission. Veines de marbre reforcées (contraste 110, une texture sur 5,2 m). Rochers à faces plates, pas de flou de profondeur ni de mouvement. OIDN avec albedo et normales, préfiltre accurate. Masque de netteté léger.
+- Aperçu 1280×720, **128 échantillons**, 3 min 46. Luma **0,553** (−1 % sur 0,558). Murs L* **80,7**. Ciel officiel (fenêtre avec rochers) L* **74,7**, écart-type 22,6. Les 30 % les plus clairs de cette fenêtre : L* **97,9**. Fond L* **98,0** (au-dessus de 94–96, encore trop blanc, peu de cumulus modelés).
+- Images : `review/grandiose10-preview.jpg`, `review/compare-axis-grandiose10.jpg`, `review/pano-test-grandiose10.jpg`.
+- Sonde 360 : 2,46 s entre l’échantillon 0 et le 8, donc **39 s par échantillon**. 256 ≈ **2 h 50**. 512 ≈ **5 h 35**. 4K 64 échantillons ≈ **17 min**. Rien de lourd n’est lancé.
+- **Pas déployé. Pas fusionné. Pas une PR.** Les cadres, les toiles et les veines sont plus lisibles. Le fond n’est pas encore une banque de cumulus à L* 94–96, et les rochers restent un peu mous.
+
 ## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
 
 Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon d’origine (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. La branche grandiose allonge seulement l’échantillon (36 m, sans mur du fond) pour la photo ; elle ne construit pas la salle de 100 m et n’écrit pas ses cotes dans le contrat.

@@ -37,7 +37,7 @@ export const ROOM = {
   // 41.6° vertical is about 68° horizontal on a 16:9 frame.
   fov: 41.6,
   mobileFov: 58,
-  cameraZ: 0.35,
+  cameraZ: -0.25,
 };
 
 const PAINT = 'salle-temoin/assets/paintings/';
