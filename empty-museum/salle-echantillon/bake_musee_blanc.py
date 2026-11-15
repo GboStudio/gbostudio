@@ -192,11 +192,14 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
     bsdf = nodes['Principled BSDF']
     bsdf.inputs['Roughness'].default_value = roughness
     bsdf.inputs['Metallic'].default_value = metallic
+    soft_floor = name == 'floor' and os.environ.get('BLANC_FLOOR_SOFT') == '1'
     if name == 'floor' and os.environ.get('BLANC_MIRROR') == '1':
         if 'IOR' in bsdf.inputs:
             bsdf.inputs['IOR'].default_value = 1.5
         if 'Specular IOR Level' in bsdf.inputs:
-            bsdf.inputs['Specular IOR Level'].default_value = 1.0
+            # A soft floor keeps a duller highlight. 1.0 was a bright mirror.
+            spec = 0.48 if soft_floor else 1.0
+            bsdf.inputs['Specular IOR Level'].default_value = float(os.environ.get('BLANC_FLOOR_SPEC', str(spec)))
     if MARBLE_COLOR.exists():
         color = nodes.new('ShaderNodeTexImage')
         color.extension = 'REPEAT'
@@ -228,7 +231,12 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
         nmap.inputs['Strength'].default_value = normal_strength
         links.new(normal.outputs['Color'], nmap.inputs['Color'])
         links.new(nmap.outputs['Normal'], bsdf.inputs['Normal'])
-    flat_floor = name == 'floor' and os.environ.get('BLANC_MIRROR') == '1' and os.environ.get('BLANC_FLOOR_FLAT') == '1'
+    flat_floor = (
+        name == 'floor'
+        and os.environ.get('BLANC_MIRROR') == '1'
+        and os.environ.get('BLANC_FLOOR_FLAT') == '1'
+        and not soft_floor
+    )
     if flat_floor:
         # A small swing around 0.02–0.03. Multiplying the Carrara map (mean ~0.17)
         # was either too smooth to read or, where the map peaks, milky.
@@ -383,7 +391,7 @@ def rock_material():
         links.new(grey.outputs['Val'], shade.inputs['Color2'])
         pale = nodes.new('ShaderNodeMixRGB')
         pale.blend_type = 'MIX'
-        pale.inputs['Fac'].default_value = float(os.environ.get('BLANC_ROCK_PALE', '0.72'))
+        pale.inputs['Fac'].default_value = float(os.environ.get('BLANC_ROCK_PALE', '0.28'))
         pale.inputs['Color2'].default_value = (0.92, 0.90, 0.86, 1)
         links.new(shade.outputs['Color'], pale.inputs['Color1'])
         links.new(pale.outputs['Color'], bsdf.inputs['Base Color'])
@@ -399,13 +407,58 @@ def rock_material():
             nor.image = load_image(normal_path, 'Non-Color')
             links.new(mapping.outputs['Vector'], nor.inputs['Vector'])
             nmap = nodes.new('ShaderNodeNormalMap')
-            nmap.inputs['Strength'].default_value = 1.1
+            nmap.inputs['Strength'].default_value = float(os.environ.get('BLANC_ROCK_NORMAL', '1.8'))
             links.new(nor.outputs['Color'], nmap.inputs['Color'])
             links.new(nmap.outputs['Normal'], bump.inputs['Normal'])
         links.new(bump.outputs['Normal'], bsdf.inputs['Normal'])
+        arm_path = CC0 / 'rocks' / 'textures' / 'boulder_01_arm_1k.jpg'
+        if arm_path.exists():
+            arm = nodes.new('ShaderNodeTexImage')
+            arm.projection = 'BOX'
+            arm.projection_blend = 0.45
+            arm.image = load_image(arm_path, 'Non-Color')
+            links.new(mapping.outputs['Vector'], arm.inputs['Vector'])
+            split = nodes.new('ShaderNodeSeparateColor')
+            links.new(arm.outputs['Color'], split.inputs['Color'])
+            # glTF ARM: green is roughness. The scan reads as stone, not plastic.
+            links.new(split.outputs['Green'], bsdf.inputs['Roughness'])
     else:
         bsdf.inputs['Base Color'].default_value = (0.45, 0.44, 0.42, 1)
+    if os.environ.get('BLANC_ROCK_UP', '1') == '1':
+        shade_by_up(nodes, links, bsdf)
     return material
+
+
+def shade_by_up(nodes, links, bsdf):
+    """Crown in the light, underside a darker grey. The detail normal stays on the BSDF."""
+    color_in = bsdf.inputs['Base Color']
+    source = None
+    for link in list(links):
+        if link.to_socket == color_in:
+            source = link.from_socket
+            links.remove(link)
+            break
+    geom = nodes.new('ShaderNodeNewGeometry')
+    up = nodes.new('ShaderNodeVectorMath')
+    up.operation = 'DOT_PRODUCT'
+    links.new(geom.outputs['Normal'], up.inputs[0])
+    up.inputs[1].default_value = (0.0, 0.0, 1.0)
+    facing = nodes.new('ShaderNodeMapRange')
+    facing.inputs['From Min'].default_value = float(os.environ.get('BLANC_ROCK_UP_FROM', '-0.25'))
+    facing.inputs['From Max'].default_value = float(os.environ.get('BLANC_ROCK_UP_TO', '0.65'))
+    facing.inputs['To Min'].default_value = float(os.environ.get('BLANC_ROCK_SHADE_MIN', '0.32'))
+    facing.inputs['To Max'].default_value = 1.0
+    facing.clamp = True
+    links.new(up.outputs['Value'], facing.inputs['Value'])
+    tint = nodes.new('ShaderNodeMixRGB')
+    tint.blend_type = 'MULTIPLY'
+    tint.inputs['Fac'].default_value = 1.0
+    if source is not None:
+        links.new(source, tint.inputs['Color1'])
+    else:
+        tint.inputs['Color1'].default_value = (0.72, 0.70, 0.66, 1)
+    links.new(facing.outputs['Result'], tint.inputs['Color2'])
+    links.new(tint.outputs['Color'], color_in)
 
 
 def painting_material(index, frame):
@@ -511,19 +564,23 @@ def place_rocks(material):
         (-0.4, 11.6, 8.8, 1.25),
     ]
     if os.environ.get('BLANC_ROCK_FIELD') == '1':
-        # A procession of large scanned boulders down the axis, in the light.
+        # Forty scanned boulders. Big ones in front, then a staggered file
+        # from about 3 m above the floor up into the opening, down to the far end.
         placements = []
-        # Three heights, spaced down the nave: low, mid, and just under the opening.
-        lanes = ((-1.7, 3.1), (0.05, 4.6), (1.65, 6.0))
-        for row in range(12):
-            along = 6.4 + row * 2.15
-            for lane, (xsign, zbase) in enumerate(lanes):
-                placements.append((
-                    xsign * (0.65 + (row % 2) * 0.4),
-                    along + lane * 0.4,
-                    zbase + (row % 3) * 0.28,
-                    0.7 + ((row + lane) % 4) * 0.18,
-                ))
+        for i in range(40):
+            row = i // 2
+            side = -1.0 if i % 2 == 0 else 1.0
+            along = 9.6 + row * 1.28
+            x = side * (0.7 + (row % 4) * 0.32)
+            band = (row + (0 if side < 0 else 2)) % 5
+            z = 3.05 + band * 0.68
+            radius = 0.58 + (row % 4) * 0.18
+            if i < 6:
+                z = 3.35 + (i % 3) * 1.05
+                radius = 1.55 + (i % 3) * 0.32
+                x = side * (0.85 + (i % 3) * 0.28)
+                along = 4.8 + i * 0.78
+            placements.append((round(x, 3), round(along, 3), round(z, 3), round(radius, 3)))
     elif os.environ.get('BLANC_MORE_ROCKS') == '1':
         # More blocks in the light, further down the nave. Same CC0 meshes.
         placements += [
@@ -543,7 +600,10 @@ def place_rocks(material):
         obj.name = f'rock-{index:02d}'
         obj.location = (rx, ry, rz)
         obj.rotation_euler = (index * 0.9, index * 1.3, index * 0.45)
-        stretch = 1.25 if os.environ.get('BLANC_ROCK_FIELD') == '1' else 1.5
+        stretch = float(os.environ.get(
+            'BLANC_ROCK_STRETCH',
+            '1.05' if os.environ.get('BLANC_ROCK_FIELD') == '1' else '1.5',
+        ))
         obj.scale = (
             radius * (stretch + 0.45 * abs(math.sin(index * 1.7))),
             radius * (stretch * 0.85 + 0.4 * abs(math.cos(index * 0.8))),
@@ -556,8 +616,8 @@ def place_rocks(material):
 
 def apply_grade(exposure):
     view = bpy.context.scene.view_settings
-    view.view_transform = 'AgX'
-    view.look = 'AgX - Medium High Contrast'
+    view.view_transform = os.environ.get('BLANC_VIEW', 'AgX')
+    view.look = os.environ.get('BLANC_LOOK', 'AgX - Medium High Contrast')
     view.exposure = exposure
 
 
@@ -676,9 +736,10 @@ def build():
         scene.cycles.volume_max_steps = int(os.environ.get('BLANC_VOL_MAX_STEPS', '96'))
     scene.cycles.sample_clamp_indirect = float(os.environ.get('BLANC_CLAMP', '8'))
     if os.environ.get('BLANC_MIRROR') == '1':
+        glossy_blur = 1.0 if os.environ.get('BLANC_FLOOR_SOFT') == '1' else 0.0
         for attr in ('filter_glossy', 'blur_glossy'):
             if hasattr(scene.cycles, attr):
-                setattr(scene.cycles, attr, 0.0)
+                setattr(scene.cycles, attr, glossy_blur)
     scene.cycles.caustics_reflective = False
     scene.cycles.caustics_refractive = False
     apply_grade(float(os.environ.get('BLANC_EXPOSURE', '0.15')))
@@ -809,7 +870,8 @@ def build():
 
     mats = {
         'marble': marble_material(
-            'marble', 0.34, 0.55, rough_scale=0.42, bright=0.0,
+            'marble', 0.34, 0.55, rough_scale=0.42,
+            bright=float(os.environ.get('BLANC_WALL_BRIGHT', '-0.02')),
             contrast=float(os.environ.get('BLANC_VEIN_CONTRAST', '8')),
         ),
         'floor': marble_material(
@@ -985,16 +1047,17 @@ def build():
         spot.energy = float(os.environ.get('BLANC_SPOT', '40'))
         spot.color = kelvin(3000)
         if os.environ.get('BLANC_SPOT_TIGHT') == '1':
-            spot.spot_size = math.radians(float(os.environ.get('BLANC_SPOT_DEG', '30')))
-            spot.spot_blend = 0.3
+            spot.spot_size = math.radians(float(os.environ.get('BLANC_SPOT_DEG', '38')))
+            spot.spot_blend = float(os.environ.get('BLANC_SPOT_BLEND', '0.55'))
         else:
             spot.spot_size = math.radians(52)
             spot.spot_blend = 0.85
         spot.shadow_soft_size = float(os.environ.get('BLANC_SPOT_SOFT', '0.55'))
         obj = bpy.data.objects.new(f"spot-{frame['id']}", spot)
-        head = (x_wall + sign * 0.48, frame['z'], min(height - 0.35, frame['y'] + frame['height'] + 0.7))
+        # The pool lands on the painting. The old aim sat above the canvas.
+        head = (x_wall + sign * 0.95, frame['z'], frame['y'] + frame['height'] * 0.42)
         obj.location = head
-        aim_at = Vector((x_wall + sign * 0.02, frame['z'], frame['y'] + frame['height'] * 0.55))
+        aim_at = Vector((x_wall + sign * 0.02, frame['z'], frame['y']))
         direction = aim_at - Vector(head)
         obj.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
         bpy.context.scene.collection.objects.link(obj)
@@ -1048,14 +1111,21 @@ def build():
         emit = sn.new('ShaderNodeEmission')
         emit.inputs['Strength'].default_value = float(os.environ.get('BLANC_SKY_VIEW', '1'))
         tex = sn.new('ShaderNodeTexImage')
-        tex.image = bpy.data.images.load(str(HDRI))
+        shell_path = HDRI
+        if os.environ.get('BLANC_SKY_BAND') == '1':
+            shell_path = CC0 / os.environ.get('BLANC_SKY_BAND_FILE', 'cumulus-band.jpg')
+        tex.image = bpy.data.images.load(str(shell_path))
         tex.interpolation = 'Smart'
-        for space in ('Linear Rec.709', 'Linear', 'Non-Color'):
-            try:
-                tex.image.colorspace_settings.name = space
-                break
-            except TypeError:
-                continue
+        if shell_path.suffix.lower() in {'.jpg', '.jpeg', '.png'}:
+            tex.image.colorspace_settings.name = 'sRGB'
+        else:
+            for space in ('Linear Rec.709', 'Linear', 'Non-Color'):
+                try:
+                    tex.image.colorspace_settings.name = space
+                    break
+                except TypeError:
+                    continue
+        print('sky shell', shell_path.name)
         uv = sn.new('ShaderNodeTexCoord')
         mapping = sn.new('ShaderNodeMapping')
         mapping.inputs['Location'].default_value[0] = float(os.environ.get('BLANC_SKY_U', '0'))
@@ -1069,10 +1139,10 @@ def build():
         uv_abs.operation = 'ABSOLUTE'
         uv_sky = sn.new('ShaderNodeMath')
         uv_sky.operation = 'ADD'
-        uv_sky.inputs[1].default_value = 0.52
+        uv_sky.inputs[1].default_value = float(os.environ.get('BLANC_SKY_FOLD_ADD', '0.52'))
         uv_scale = sn.new('ShaderNodeMath')
         uv_scale.operation = 'MULTIPLY'
-        uv_scale.inputs[1].default_value = 0.42
+        uv_scale.inputs[1].default_value = float(os.environ.get('BLANC_SKY_FOLD_MUL', '0.42'))
         uv_join = sn.new('ShaderNodeCombineXYZ')
         sl.new(mapping.outputs['Vector'], uv_sep.inputs['Vector'])
         uv_mid = sn.new('ShaderNodeMath')
@@ -1082,11 +1152,18 @@ def build():
         sl.new(uv_mid.outputs['Value'], uv_abs.inputs[0])
         sl.new(uv_abs.outputs['Value'], uv_scale.inputs[0])
         sl.new(uv_scale.outputs['Value'], uv_sky.inputs[0])
+        clamped = sn.new('ShaderNodeMapRange')
+        clamped.inputs['From Min'].default_value = 0.0
+        clamped.inputs['From Max'].default_value = 1.0
+        clamped.inputs['To Min'].default_value = 0.02
+        clamped.inputs['To Max'].default_value = 0.98
+        clamped.clamp = True
+        sl.new(uv_sky.outputs['Value'], clamped.inputs['Value'])
         sl.new(uv_sep.outputs['X'], uv_join.inputs['X'])
-        sl.new(uv_sky.outputs['Value'], uv_join.inputs['Y'])
+        sl.new(clamped.outputs['Result'], uv_join.inputs['Y'])
         sl.new(uv_sep.outputs['Z'], uv_join.inputs['Z'])
         sl.new(uv_join.outputs['Vector'], tex.inputs['Vector'])
-        # Pull the blue down but keep the cumulus brighter than the gaps.
+        # Full desaturation, then the cloud shading is put back and lifted toward white.
         separate = sn.new('ShaderNodeSeparateColor')
         combine = sn.new('ShaderNodeCombineColor')
         separate.mode = 'HSV'
@@ -1099,13 +1176,59 @@ def build():
         sl.new(separate.outputs['Green'], sat.inputs[0])
         sl.new(sat.outputs['Value'], combine.inputs['Green'])
         sl.new(separate.outputs['Blue'], combine.inputs['Blue'])
+        contrast = sn.new('ShaderNodeBrightContrast')
+        contrast.inputs['Contrast'].default_value = float(os.environ.get('BLANC_SKY_CONTRAST', '0'))
+        contrast.inputs['Bright'].default_value = float(os.environ.get('BLANC_SKY_BRIGHT', '0'))
+        sl.new(combine.outputs['Color'], contrast.inputs['Color'])
         lifted = sn.new('ShaderNodeGamma')
         lifted.inputs['Gamma'].default_value = float(os.environ.get('BLANC_SKY_LIFT', '0.72'))
-        sl.new(combine.outputs['Color'], lifted.inputs['Color'])
+        sl.new(contrast.outputs['Color'], lifted.inputs['Color'])
+        wash = sn.new('ShaderNodeMixRGB')
+        wash.blend_type = 'MIX'
+        wash.inputs['Fac'].default_value = float(os.environ.get('BLANC_SKY_WASH', '0'))
+        wash.inputs['Color2'].default_value = (1.0, 1.0, 1.0, 1)
+        sl.new(lifted.outputs['Color'], wash.inputs['Color1'])
+        # A brighter core overhead, on axis. Object coords are metres on the 40 m shell.
+        coord = sn.new('ShaderNodeTexCoord')
+        direction = sn.new('ShaderNodeVectorMath')
+        direction.operation = 'NORMALIZE'
+        sl.new(coord.outputs['Object'], direction.inputs[0])
+        obj_sep = sn.new('ShaderNodeSeparateXYZ')
+        sl.new(direction.outputs['Vector'], obj_sep.inputs['Vector'])
+        absx = sn.new('ShaderNodeMath')
+        absx.operation = 'ABSOLUTE'
+        sl.new(obj_sep.outputs['X'], absx.inputs[0])
+        axial = sn.new('ShaderNodeMapRange')
+        axial.inputs['From Min'].default_value = 0.0
+        axial.inputs['From Max'].default_value = float(os.environ.get('BLANC_SKY_CORE_X', '0.42'))
+        axial.inputs['To Min'].default_value = 1.0
+        axial.inputs['To Max'].default_value = 0.0
+        axial.clamp = True
+        sl.new(absx.outputs['Value'], axial.inputs['Value'])
+        overhead = sn.new('ShaderNodeMapRange')
+        overhead.inputs['From Min'].default_value = float(os.environ.get('BLANC_SKY_CORE_Z0', '0.05'))
+        overhead.inputs['From Max'].default_value = float(os.environ.get('BLANC_SKY_CORE_Z1', '0.72'))
+        overhead.inputs['To Min'].default_value = 0.0
+        overhead.inputs['To Max'].default_value = 1.0
+        overhead.clamp = True
+        sl.new(obj_sep.outputs['Z'], overhead.inputs['Value'])
+        core_fac = sn.new('ShaderNodeMath')
+        core_fac.operation = 'MULTIPLY'
+        sl.new(axial.outputs['Result'], core_fac.inputs[0])
+        sl.new(overhead.outputs['Result'], core_fac.inputs[1])
+        core_amt = sn.new('ShaderNodeMath')
+        core_amt.operation = 'MULTIPLY'
+        core_amt.inputs[1].default_value = float(os.environ.get('BLANC_SKY_CORE', '0.45'))
+        sl.new(core_fac.outputs['Value'], core_amt.inputs[0])
+        core = sn.new('ShaderNodeMixRGB')
+        core.blend_type = 'MIX'
+        core.inputs['Color2'].default_value = (1.0, 1.0, 1.0, 1)
+        sl.new(core_amt.outputs['Value'], core.inputs['Fac'])
+        sl.new(wash.outputs['Color'], core.inputs['Color1'])
         if os.environ.get('BLANC_SKY_RAW') == '1':
             sl.new(tex.outputs['Color'], emit.inputs['Color'])
         else:
-            sl.new(lifted.outputs['Color'], emit.inputs['Color'])
+            sl.new(core.outputs['Color'], emit.inputs['Color'])
         hold = sn.new('ShaderNodeMixShader')
         ray = sn.new('ShaderNodeLightPath')
         seen = sn.new('ShaderNodeMath')
@@ -1156,10 +1279,12 @@ def assign_gilt_maps(frame_obj, normal_path, ao_path):
     links = material.node_tree.links
     bsdf = nodes['Principled BSDF']
     # Aged gold: less yellow, darker in the carving, roughness that breaks the plastic shine.
-    gold = (0.34, 0.24, 0.10, 1)
+    gold_raw = os.environ.get('BLANC_GOLD', '0.58,0.40,0.16')
+    gold_rgb = tuple(float(channel) for channel in gold_raw.split(','))
+    gold = (*gold_rgb, 1)
     bsdf.inputs['Base Color'].default_value = gold
     bsdf.inputs['Metallic'].default_value = 1.0
-    bsdf.inputs['Roughness'].default_value = 0.58
+    bsdf.inputs['Roughness'].default_value = float(os.environ.get('BLANC_GOLD_ROUGH', '0.40'))
     if normal_path.exists():
         normal_image = load_image(normal_path, 'Non-Color')
         tex = nodes.new('ShaderNodeTexImage')
@@ -1174,7 +1299,7 @@ def assign_gilt_maps(frame_obj, normal_path, ao_path):
         tex.image = ao_image
         mix = nodes.new('ShaderNodeMixRGB')
         mix.blend_type = 'MULTIPLY'
-        mix.inputs['Fac'].default_value = 0.88
+        mix.inputs['Fac'].default_value = float(os.environ.get('BLANC_GOLD_AO', '0.42'))
         mix.inputs['Color1'].default_value = gold
         links.new(tex.outputs['Color'], mix.inputs['Color2'])
         links.new(mix.outputs['Color'], bsdf.inputs['Base Color'])
@@ -2083,7 +2208,8 @@ def add_rock_sun():
     light.angle = math.radians(8)
     light.color = kelvin(5600)
     obj = bpy.data.objects.new('rock-sun', light)
-    obj.rotation_euler = Vector((0.95, 0.2, -0.45)).to_track_quat('-Z', 'Y').to_euler()
+    # Straight down, a little toward the visitor, so the crown is lit and the belly falls off.
+    obj.rotation_euler = Vector((0.15, -0.05, -1.0)).to_track_quat('-Z', 'Y').to_euler()
     bpy.context.scene.collection.objects.link(obj)
     rocks = [item for item in bpy.data.objects if item.type == 'MESH' and item.name.startswith('rock-')]
     try:
@@ -2358,6 +2484,31 @@ def apply_bloom():
         glare.size = 6
         tree.links.new(current, glare.inputs['Image'])
         current = glare.outputs['Image']
+    if os.environ.get('BLANC_SHAFT') == '1':
+        # A 2D shaft. No volume, so the 360 stays on the same sample cost.
+        mask = tree.nodes.new('CompositorNodeEllipseMask')
+        mask.width = float(os.environ.get('BLANC_SHAFT_W', '0.18'))
+        mask.height = float(os.environ.get('BLANC_SHAFT_H', '0.92'))
+        mask.x = 0.5
+        mask.y = float(os.environ.get('BLANC_SHAFT_Y', '0.58'))
+        blur = tree.nodes.new('CompositorNodeBlur')
+        blur.filter_type = 'GAUSS'
+        blur.size_x = int(os.environ.get('BLANC_SHAFT_BLUR', '90'))
+        blur.size_y = int(os.environ.get('BLANC_SHAFT_BLUR_Y', '48'))
+        tree.links.new(mask.outputs['Mask'], blur.inputs['Image'])
+        white = tree.nodes.new('CompositorNodeRGB')
+        white.outputs[0].default_value = (1.0, 0.98, 0.93, 1)
+        shaped = tree.nodes.new('CompositorNodeMixRGB')
+        shaped.blend_type = 'MULTIPLY'
+        shaped.inputs['Fac'].default_value = 1.0
+        tree.links.new(blur.outputs['Image'], shaped.inputs[1])
+        tree.links.new(white.outputs[0], shaped.inputs[2])
+        added = tree.nodes.new('CompositorNodeMixRGB')
+        added.blend_type = 'ADD'
+        added.inputs['Fac'].default_value = float(os.environ.get('BLANC_SHAFT_AMT', '0.55'))
+        tree.links.new(current, added.inputs[1])
+        tree.links.new(shaped.outputs[0], added.inputs[2])
+        current = added.outputs[0]
     composite = tree.nodes.new('CompositorNodeComposite')
     tree.links.new(current, composite.inputs['Image'])
 
@@ -2374,7 +2525,7 @@ def render_photo(path, width, height, samples, denoise=True):
     scene.cycles.volume_bounces = int(os.environ.get('BLANC_VOL_BOUNCES', '1'))
     scene.cycles.use_denoising = denoise
     scene.cycles.denoiser = 'OPENIMAGEDENOISE'
-    if not bpy.data.objects.get('haze'):
+    if os.environ.get('BLANC_HAZE') == '1' and not bpy.data.objects.get('shaft'):
         add_haze()
     scene.render.resolution_x = width
     scene.render.resolution_y = height
@@ -2425,19 +2576,38 @@ def aim(cam, target):
     cam.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
 
 
+def place_axis_camera(scene, name):
+    """Eye at 1.5 m, horizontal field about 68°, vanishing point a little above the eye line."""
+    hfov = float(os.environ.get('BLANC_HFOV', '68'))
+    aspect = float(os.environ.get('BLANC_ASPECT', str(16 / 9)))
+    vfov = 2.0 * math.atan(math.tan(math.radians(hfov) * 0.5) / aspect)
+    cam_data = bpy.data.cameras.new(name)
+    cam_data.sensor_fit = 'VERTICAL'
+    cam_data.angle = vfov
+    cam = bpy.data.objects.new(name, cam_data)
+    eye = float(os.environ.get('BLANC_EYE', str(ROOM.get('eye', 1.5))))
+    cam.location = (
+        0.0,
+        float(os.environ.get('BLANC_CAM_Y', str(ROOM.get('cameraZ', 1.15)))),
+        eye,
+    )
+    scene.collection.objects.link(cam)
+    aim(cam, (
+        0.0,
+        float(os.environ.get('BLANC_AIM_Y', '28')),
+        float(os.environ.get('BLANC_AIM_Z', '2.05')),
+    ))
+    scene.camera = cam
+    print('camera', [round(v, 3) for v in cam.location], 'hfov', hfov, 'vfov', round(math.degrees(vfov), 2))
+    return cam
+
+
 def axis_test():
     """One cheap axis frame for the pass-6 barrier loop."""
     scene = bpy.context.scene
     folder = ASSETS / 'review-renders'
     folder.mkdir(exist_ok=True)
-    cam_data = bpy.data.cameras.new('axis')
-    cam_data.sensor_fit = 'VERTICAL'
-    cam_data.angle = math.radians(44)
-    cam = bpy.data.objects.new('axis', cam_data)
-    cam.location = (0, 1.9, 1.6)
-    scene.collection.objects.link(cam)
-    aim(cam, (0, float(os.environ.get('BLANC_AIM_Y', '22')), float(os.environ.get('BLANC_AIM_Z', '3.0'))))
-    scene.camera = cam
+    place_axis_camera(scene, 'axis')
     rots = [item for item in os.environ.get('BLANC_ROT_LIST', '').split(',') if item]
     if rots:
         mapping = next((node for node in scene.world.node_tree.nodes if node.type == 'MAPPING'), None)
@@ -2831,16 +3001,9 @@ def composite_layered(folder, corners, cam, width, height):
 
 
 def still():
-    """Landing still. Same axis framing as the pass-5 review, at the delivery size."""
+    """Landing still. Same axis framing as the review, at the delivery size."""
     scene = bpy.context.scene
-    cam_data = bpy.data.cameras.new('Still')
-    cam_data.sensor_fit = 'VERTICAL'
-    cam_data.angle = math.radians(float(os.environ.get('BLANC_STILL_FOV', '44')))
-    cam = bpy.data.objects.new('Still', cam_data)
-    cam.location = (0, 1.9, 1.6)
-    scene.collection.objects.link(cam)
-    aim(cam, (0, float(os.environ.get('BLANC_AIM_Y', '22')), float(os.environ.get('BLANC_AIM_Z', '3.0'))))
-    scene.camera = cam
+    place_axis_camera(scene, 'Still')
     sky = bpy.data.objects.get('sky')
     if sky and os.environ.get('BLANC_SKY_SPHERE') != '1':
         sky.hide_render = True

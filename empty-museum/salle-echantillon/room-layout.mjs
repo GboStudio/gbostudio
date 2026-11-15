@@ -12,7 +12,7 @@ export const ROOM = {
   hallLength: 33.2,
   endDepth: 5.0,
   length: 36.0,
-  eye: 1.6,
+  eye: 1.5,
   exposure: 1.2,
   openSky: true,
   wallColor: '#E4E0DA',
@@ -34,9 +34,10 @@ export const ROOM = {
   endPower: 2200,
   lightmapSize: 2048,
   floorTileM: 5.4,
-  fov: 44,
+  // 41.6° vertical is about 68° horizontal on a 16:9 frame.
+  fov: 41.6,
   mobileFov: 58,
-  cameraZ: 1.9,
+  cameraZ: 1.15,
 };
 
 const PAINT = 'salle-temoin/assets/paintings/';
@@ -74,10 +75,12 @@ function sideFrames(wall) {
   const paintings = PAINTINGS[wall];
   // Four long bays. Three large frames in each, facing the visitor at an angle.
   const posts = [4.6, 11.8, 19.0, 26.2, 33.0];
+  // Centres sit on a 1.6 m line. The scan is portrait, so the hung width
+  // is about 0.86 × the height. The nearest frame is the wide one.
   const trio = [
-    {artW: 1.02, artH: 1.36, mould: 0.12, hang: 1.72},
-    {artW: 0.78, artH: 1.02, mould: 0.09, hang: 1.88},
-    {artW: 0.92, artH: 0.72, mould: 0.08, hang: 1.52},
+    {artW: 1.22, artH: 1.52, mould: 0.15, hang: 1.6},
+    {artW: 0.98, artH: 1.22, mould: 0.13, hang: 1.6},
+    {artW: 0.88, artH: 1.06, mould: 0.13, hang: 1.6},
   ];
   const frames = [];
   let paint = 0;
@@ -89,14 +92,14 @@ function sideFrames(wall) {
       const size = trio[(slot + (wall === 'right' ? 1 : 0)) % 3];
       const z = Math.round((z0 + step * (slot + 0.5)) * 100) / 100;
       const hero = frames.length === 0;
-      const artW = hero ? 1.22 : size.artW;
-      const artH = hero ? 1.58 : size.artH;
+      const artW = hero ? 1.34 : size.artW;
+      const artH = hero ? 1.60 : size.artH;
       const mould = hero ? 0.15 : size.mould;
       frames.push({
         id: hero ? `${wall}-front` : `${wall}-${z.toFixed(2)}`,
         wall,
         x,
-        y: hero ? 1.7 : size.hang,
+        y: 1.6,
         z,
         artWidth: Math.round(artW * 1000) / 1000,
         artHeight: Math.round(artH * 1000) / 1000,
@@ -118,8 +121,8 @@ function sideFrames(wall) {
 export function buildLayout() {
   const frames = [...sideFrames('left'), ...sideFrames('right')];
   const benches = [
-    {wall: 'left', x: -ROOM.width / 2 + 0.28, z0: 6.62, z1: 9.2, height: 0.46, depth: 0.44},
-    {wall: 'right', x: ROOM.width / 2 - 0.28, z0: 6.62, z1: 9.2, height: 0.46, depth: 0.44},
+    {wall: 'left', x: -ROOM.width / 2 + 0.32, z0: 5.4, z1: 10.9, height: 0.48, depth: 0.42},
+    {wall: 'right', x: ROOM.width / 2 - 0.32, z0: 5.4, z1: 10.9, height: 0.48, depth: 0.42},
   ];
   const pilasters = [];
   for (const z of [4.6, 11.8, 19.0, 26.2, 33.0]) {
