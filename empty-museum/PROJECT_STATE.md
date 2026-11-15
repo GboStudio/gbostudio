@@ -113,6 +113,20 @@ Relecture de `compare-axis-grandiose` : la masse grise, le rectangle blanc du fo
 - Sonde sans bloom : pastille 384×384 (1/128 de 6144×3072), 16 échantillons en 7,0 s. **56 s par échantillon** en 6144×3072. 256 échantillons ≈ **4 h**. 512 échantillons ≈ **7 h 55**. L’objectif de 40 s n’est pas atteint : le HDRI 8K et le sol miroir restent. C’est bien en dessous des 102 s du passage avec volume. Ni 4K ni 360° lourd.
 - **Pas déployé. Pas fusionné. Pas une PR.**
 
+## Salle blanche grandiose, troisième passage — 15 novembre 2026
+
+Verdict de Guillaume sur l’aperçu 2 : « On est loin de la cible ». Même branche, **pas de PR, pas de fusion, pas de 4K, pas de 360° lourd**.
+
+- Largeur de nef **9,6 m**, hauteur des murs **6,8 m**, rapport **1,41**. L’ancien couloir était 7,2 / 7,6 = 0,95. Le test exige maintenant `ROOM.width === 9.6`, égalité stricte. Sur la cible, l’ouverture entre les premiers pilastres, rapportée à leur hauteur au même plan, se lit autour de **1,4**.
+- Ciel : le même HDRI `sunflowers_puresky` 8K sur le dôme, sans volume. Il reste bleu-blanc. L* du ciel de l’aperçu **79,5**, murs **78,0**. Le ciel est au-dessus des murs, pas aux 92 de la cible.
+- Rochers : 18 copies des scans CC0 Poly Haven `boulder_01`, `rock_07`, `rock_09`, `namaqualand_boulder_03`, avec leur diffuse éclairci et leur normale. Ils restent trop peu nombreux, trop sombres, trop groupés.
+- Fond ouvert, brume de compositing vers le blanc (pas une photo dans un rectangle). L* du fond **89,5**.
+- Or moins jaune (0,40 / 0,29 / 0,13, rugosité 0,46, AO 0,88). Soleil à 42° pour adoucir l’ombre de contact. Bloom léger, pas de volume.
+- Le pano basse définition montre encore une moitié de plafond grise : la moitié sol de l’HDRI. Ce n’est pas corrigé.
+- Aperçu : `review/grandiose3-preview.jpg`. Comparaison : `review/compare-axis-grandiose3.jpg`. Pano : `review/pano-test-grandiose3.jpg`.
+- Sonde 384×384, 12 échantillons en 4,9 s : **52 s par échantillon** en 6144×3072 (sous les 60 s demandés). 256 échantillons ≈ **3 h 40**. 512 ≈ **7 h 20**. 4K 64 échantillons ≈ **17 min**, déduit du 1280×720 (57 s pour 32 échantillons). Rien de tout cela n’est lancé.
+- **Pas déployé. Pas fusionné. Pas une PR.** On est encore loin de la cible.
+
 ## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
 
 Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon d’origine (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. La branche grandiose allonge seulement l’échantillon (36 m, sans mur du fond) pour la photo ; elle ne construit pas la salle de 100 m et n’écrit pas ses cotes dans le contrat.

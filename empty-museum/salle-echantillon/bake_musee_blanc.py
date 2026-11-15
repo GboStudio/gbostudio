@@ -508,18 +508,18 @@ def place_rocks(material):
     if os.environ.get('BLANC_ROCK_FIELD') == '1':
         # A procession of large scanned boulders down the axis, in the light.
         placements = []
-        for index, along in enumerate((7.4, 9.2, 11.0, 12.8, 14.8, 16.8, 19.0, 21.4, 24.0, 26.8, 29.6)):
+        for index, along in enumerate((8.0, 10.4, 12.8, 15.2, 17.8, 20.4, 23.2, 26.2, 29.2)):
             placements.append((
-                0.35 * math.sin(index * 1.4),
+                0.25 * math.sin(index * 1.3),
                 along,
-                5.4 + (index % 3) * 1.35,
-                1.85 + (index % 4) * 0.28,
+                5.6 + (index % 3) * 1.15,
+                0.72 + (index % 3) * 0.16,
             ))
             placements.append((
-                1.15 * math.cos(index * 0.9),
-                along + 0.7,
-                7.2 + (index % 2) * 1.5,
-                1.05 + (index % 3) * 0.2,
+                0.85 * math.cos(index * 0.8),
+                along + 1.05,
+                7.4 + (index % 2) * 1.2,
+                0.42 + (index % 2) * 0.1,
             ))
     elif os.environ.get('BLANC_MORE_ROCKS') == '1':
         # More blocks in the light, further down the nave. Same CC0 meshes.
@@ -1056,43 +1056,30 @@ def build():
         mapping = sn.new('ShaderNodeMapping')
         mapping.inputs['Location'].default_value[0] = float(os.environ.get('BLANC_SKY_U', '0'))
         mapping.inputs['Location'].default_value[1] = float(os.environ.get('BLANC_SKY_V', '0'))
+        mapping.inputs['Scale'].default_value[1] = float(os.environ.get('BLANC_SKY_VSCALE', '1'))
         mapping.inputs['Rotation'].default_value[2] = math.radians(float(os.environ.get('BLANC_SKY_ROT', '0')))
         sl.new(uv.outputs['UV'], mapping.inputs['Vector'])
         sl.new(mapping.outputs['Vector'], tex.inputs['Vector'])
-        # White glowing cumulus. The raw HDRI is blue; the camera sees a pale, luminous sky.
+        # Pull the blue down but keep the cumulus brighter than the gaps.
         separate = sn.new('ShaderNodeSeparateColor')
         combine = sn.new('ShaderNodeCombineColor')
         separate.mode = 'HSV'
         combine.mode = 'HSV'
         sat = sn.new('ShaderNodeMath')
         sat.operation = 'MULTIPLY'
-        sat.inputs[1].default_value = float(os.environ.get('BLANC_SKY_WHITE', '0.08'))
+        sat.inputs[1].default_value = float(os.environ.get('BLANC_SKY_WHITE', '0.2'))
         sl.new(tex.outputs['Color'], separate.inputs['Color'])
         sl.new(separate.outputs['Red'], combine.inputs['Red'])
         sl.new(separate.outputs['Green'], sat.inputs[0])
         sl.new(sat.outputs['Value'], combine.inputs['Green'])
         sl.new(separate.outputs['Blue'], combine.inputs['Blue'])
-        pale = sn.new('ShaderNodeMixRGB')
-        pale.blend_type = 'MIX'
-        pale.inputs['Fac'].default_value = float(os.environ.get('BLANC_SKY_PALE', '0.55'))
-        pale.inputs['Color2'].default_value = (1.0, 0.99, 0.96, 1)
-        sl.new(combine.outputs['Color'], pale.inputs['Color1'])
-        # Halo: the bright sun core goes whiter still.
-        luma = sn.new('ShaderNodeRGBToBW')
-        sl.new(tex.outputs['Color'], luma.inputs['Color'])
-        halo = sn.new('ShaderNodeMapRange')
-        halo.inputs['From Min'].default_value = 0.35
-        halo.inputs['From Max'].default_value = 1.4
-        halo.inputs['To Min'].default_value = 0.0
-        halo.inputs['To Max'].default_value = float(os.environ.get('BLANC_SKY_HALO', '0.45'))
-        halo.clamp = True
-        sl.new(luma.outputs['Val'], halo.inputs['Value'])
-        glow = sn.new('ShaderNodeMixRGB')
-        glow.blend_type = 'MIX'
-        glow.inputs['Color2'].default_value = (1.0, 1.0, 0.98, 1)
-        sl.new(halo.outputs['Result'], glow.inputs['Fac'])
-        sl.new(pale.outputs['Color'], glow.inputs['Color1'])
-        sl.new(glow.outputs['Color'], emit.inputs['Color'])
+        lifted = sn.new('ShaderNodeGamma')
+        lifted.inputs['Gamma'].default_value = float(os.environ.get('BLANC_SKY_LIFT', '0.72'))
+        sl.new(combine.outputs['Color'], lifted.inputs['Color'])
+        if os.environ.get('BLANC_SKY_RAW') == '1':
+            sl.new(tex.outputs['Color'], emit.inputs['Color'])
+        else:
+            sl.new(lifted.outputs['Color'], emit.inputs['Color'])
         hold = sn.new('ShaderNodeMixShader')
         ray = sn.new('ShaderNodeLightPath')
         seen = sn.new('ShaderNodeMath')
@@ -2309,12 +2296,33 @@ def apply_bloom():
     layers = tree.nodes.new('CompositorNodeRLayers')
     current = layers.outputs['Image']
     if mist and 'Mist' in layers.outputs:
-        wash = tree.nodes.new('ShaderNodeMixRGB') if False else tree.nodes.new('CompositorNodeMixRGB')
+        # Haze the far nave, not the sky shell. Mist is 1 on the background.
+        span = tree.nodes.new('CompositorNodeMapRange')
+        span.inputs['From Min'].default_value = 0.12
+        span.inputs['From Max'].default_value = 0.62
+        span.inputs['To Min'].default_value = 0.0
+        span.inputs['To Max'].default_value = float(os.environ.get('BLANC_MIST_AMOUNT', '0.55'))
+        span.use_clamp = True
+        gate = tree.nodes.new('CompositorNodeMapRange')
+        gate.inputs['From Min'].default_value = 0.78
+        gate.inputs['From Max'].default_value = 0.94
+        gate.inputs['To Min'].default_value = 1.0
+        gate.inputs['To Max'].default_value = 0.0
+        gate.use_clamp = True
+        tree.links.new(layers.outputs['Mist'], span.inputs['Value'])
+        tree.links.new(layers.outputs['Mist'], gate.inputs['Value'])
+        fac = tree.nodes.new('CompositorNodeMath')
+        fac.operation = 'MULTIPLY'
+        tree.links.new(span.outputs['Value'], fac.inputs[0])
+        tree.links.new(gate.outputs['Value'], fac.inputs[1])
+        wash = tree.nodes.new('CompositorNodeMixRGB')
         wash.blend_type = 'MIX'
-        wash.inputs['Color2'].default_value = (1.0, 0.99, 0.97, 1)
-        tree.links.new(layers.outputs['Mist'], wash.inputs['Fac'])
-        tree.links.new(current, wash.inputs['Color1'])
-        current = wash.outputs['Image']
+        white = tree.nodes.new('CompositorNodeRGB')
+        white.outputs[0].default_value = (1.0, 0.99, 0.97, 1)
+        tree.links.new(fac.outputs['Value'], wash.inputs[0])
+        tree.links.new(current, wash.inputs[1])
+        tree.links.new(white.outputs[0], wash.inputs[2])
+        current = wash.outputs[0]
     if bloom:
         glare = tree.nodes.new('CompositorNodeGlare')
         glare.glare_type = 'FOG_GLOW'
