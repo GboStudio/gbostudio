@@ -9,7 +9,7 @@
 export const ROOM = {
   width: 9.6,
   backZ: -0.45,
-  hallLength: 33.2,
+  hallLength: 21.2,
   endDepth: 5.0,
   length: 36.0,
   eye: 1.5,
@@ -37,7 +37,7 @@ export const ROOM = {
   // 41.6° vertical is about 68° horizontal on a 16:9 frame.
   fov: 41.6,
   mobileFov: 58,
-  cameraZ: 1.15,
+  cameraZ: 0.45,
 };
 
 const PAINT = 'salle-temoin/assets/paintings/';
@@ -73,23 +73,19 @@ function sideFrames(wall) {
   const x = sign * ROOM.width / 2;
   const normal = -sign;
   const paintings = PAINTINGS[wall];
-  // Four bays. Two large frames in the first, then two or three smaller
-  // ones, with space around them. The scan is portrait, so the hung width
-  // is about 0.86 × the height.
-  const posts = [4.6, 11.8, 19.0, 26.2, 33.0];
+  // Three bays, ending in the cloud opening near 20 m. Two large frames
+  // in the first, three in the second, two smaller in the third.
+  // The scan is portrait, so the hung width is about 0.86 × the height.
+  const posts = [2.6, 8.4, 14.6, 20.2];
   const bays = [
     [
-      {artW: 1.05, artH: 1.28, mould: 0.11},
-      {artW: 0.76, artH: 0.9, mould: 0.09},
+      {artW: 1.22, artH: 1.48, mould: 0.14},
+      {artW: 1.02, artH: 1.24, mould: 0.12},
     ],
     [
+      {artW: 0.86, artH: 1.02, mould: 0.1},
       {artW: 0.7, artH: 0.84, mould: 0.08},
-      {artW: 0.58, artH: 0.7, mould: 0.07},
-    ],
-    [
-      {artW: 0.74, artH: 0.88, mould: 0.08},
-      {artW: 0.56, artH: 0.68, mould: 0.07},
-      {artW: 0.64, artH: 0.76, mould: 0.07},
+      {artW: 0.76, artH: 0.9, mould: 0.09},
     ],
     [
       {artW: 0.68, artH: 0.8, mould: 0.08},
@@ -108,9 +104,9 @@ function sideFrames(wall) {
       const size = sizes[(slot + shift) % sizes.length];
       const z = Math.round((z0 + step * (slot + 0.5)) * 100) / 100;
       const hero = frames.length === 0;
-      const artW = hero ? 1.08 : size.artW;
-      const artH = hero ? 1.28 : size.artH;
-      const mould = hero ? 0.12 : size.mould;
+      const artW = hero ? 1.28 : size.artW;
+      const artH = hero ? 1.52 : size.artH;
+      const mould = hero ? 0.15 : size.mould;
       frames.push({
         id: hero ? `${wall}-front` : `${wall}-${z.toFixed(2)}`,
         wall,
@@ -137,11 +133,11 @@ function sideFrames(wall) {
 export function buildLayout() {
   const frames = [...sideFrames('left'), ...sideFrames('right')];
   const benches = [
-    {wall: 'left', x: -ROOM.width / 2 + 0.32, z0: 5.4, z1: 10.9, height: 0.48, depth: 0.42},
-    {wall: 'right', x: ROOM.width / 2 - 0.32, z0: 5.4, z1: 10.9, height: 0.48, depth: 0.42},
+    {wall: 'left', x: -ROOM.width / 2 + 0.32, z0: 3.4, z1: 7.6, height: 0.48, depth: 0.42},
+    {wall: 'right', x: ROOM.width / 2 - 0.32, z0: 3.4, z1: 7.6, height: 0.48, depth: 0.42},
   ];
   const pilasters = [];
-  for (const z of [4.6, 11.8, 19.0, 26.2, 33.0]) {
+  for (const z of [2.6, 8.4, 14.6, 20.2]) {
     pilasters.push({z, width: 0.55, depth: 0.5});
   }
   const obstacles = benches.map(bench => ({

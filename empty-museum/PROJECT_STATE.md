@@ -167,6 +167,19 @@ Dernier passage avant le rapport à Guillaume. Même branche, mêmes interdits. 
 - Sonde 360 : pastille 384×384, 8 échantillons, 2,2 s entre l’échantillon 0 et le 8, donc **36 s par échantillon**. 256 échantillons ≈ **2 h 30**. 512 ≈ **5 h**. 4K 64 échantillons ≈ **16 min**. Rien de lourd n’est lancé.
 - **Pas déployé. Pas fusionné. Pas une PR.** Plus lisible que le passage 5. Ce n’est pas encore la cible : les cumulus restent plus gris et plus plats que la masse blanche de la référence, le L* du ciel officiel n’atteint pas 92, et le sol reflète encore plus net que les traînées floues de la cible.
 
+## Salle blanche grandiose, septième passage — 15 novembre 2026
+
+Le passage 6 était encore un long couloir. Même branche, mêmes interdits. Trois essais 400×225, puis l’aperçu.
+
+- Longueur visible ramenée à **20,5 m**, trois travées (pilastres à 2,6 / 8,4 / 14,6 / 20,2 m). `ROOM.hallLength` passe de 33,2 à **21,2**. La largeur reste **9,6 m**, l’assertion stricte du test n’a pas changé. Hauteur des murs **8,4 m**. Œil 1,5 m, champ horizontal **56°**, caméra à 0,45 m, visée relevée vers l’ouverture.
+- Cadres : **14** (7 par mur). Deux grands dans la première travée (1,58 × 1,82 m), trois dans la deuxième, deux plus petits dans la troisième. Centres à 1,6 m. Spots chauds sur le marbre au-dessus de chaque cadre.
+- Rochers : **25**. Huit gros (environ 1,5–3 m) dans l’ouverture, près de la caméra, puis dix-sept plus petits qui s’éloignent. Le modelé est gardé.
+- Ciel : les cartes de cumulus remplissent l’ouverture. Le zénith du pano reste blanc. L* ciel officiel **79,5** (les gros rochers occupent la fenêtre ; écart-type 13,8). Fond L* **81,3**. Murs L* **79,6**. Luma **0,608** (+9 % sur 0,558, dans les ±15 %).
+- Sol : rugosité **0,25**.
+- Images : `review/grandiose7-preview.jpg` (1280×720, 32 échantillons, 43 s), `review/compare-axis-grandiose7.jpg`, `review/pano-test-grandiose7.jpg`.
+- Sonde 360 : 2,05 s entre l’échantillon 0 et le 8 sur une pastille 1/128, donc **33 s par échantillon**. 256 échantillons ≈ **2 h 20**. 512 ≈ **4 h 40**. 4K 64 échantillons ≈ **13 min**. Rien de lourd n’est lancé.
+- **Pas déployé. Pas fusionné. Pas une PR.** L’échelle est celle d’une salle, plus d’un couloir. Ce n’est pas la cible : le ciel mesuré n’atteint pas L* 92, le fond n’est pas le vide blanc de la référence, et les cadres restent bas dans l’image.
+
 ## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
 
 Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon d’origine (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. La branche grandiose allonge seulement l’échantillon (36 m, sans mur du fond) pour la photo ; elle ne construit pas la salle de 100 m et n’écrit pas ses cotes dans le contrat.

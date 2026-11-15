@@ -574,27 +574,24 @@ def place_rocks(material):
         (-0.4, 11.6, 8.8, 1.25),
     ]
     if os.environ.get('BLANC_ROCK_FIELD') == '1':
-        # About thirty stones in the upper opening, rising into the clouds,
-        # with a few lower ones only near the far end. Not a mid-height knot.
-        placements = []
-        for i in range(26):
+        # Twenty-five stones. The big ones are close, in the opening above the camera.
+        placements = [
+            (0.1, 3.2, 4.4, 2.3),
+            (-1.05, 4.4, 5.2, 1.9),
+            (1.15, 4.9, 4.2, 1.7),
+            (0.25, 6.0, 5.8, 2.05),
+            (-1.35, 6.8, 4.8, 1.55),
+            (1.25, 7.6, 5.6, 1.75),
+            (-0.2, 8.6, 4.5, 1.4),
+            (0.85, 9.6, 5.4, 1.35),
+        ]
+        for i in range(17):
             side = -1.0 if i % 2 == 0 else 1.0
-            along = 6.8 + i * 0.95
-            x = side * (0.55 + (i % 4) * 0.5)
-            z = 4.4 + ((i * 3) % 7) * 0.28
-            radius = 0.5 + (i % 5) * 0.14
-            if i < 5:
-                radius = 1.05 + (i % 3) * 0.18
-                z = 4.8 + (i % 3) * 0.55
-                x = side * (1.15 + (i % 3) * 0.25)
+            along = 11.2 + i * 0.5
+            x = side * (0.35 + (i % 4) * 0.4)
+            z = 4.6 + (i % 5) * 0.45
+            radius = 0.42 + (i % 4) * 0.12
             placements.append((round(x, 3), round(along, 3), round(z, 3), round(radius, 3)))
-        for x, along, z, radius in (
-            (-0.9, 26.5, 3.15, 0.72),
-            (1.2, 29.2, 2.95, 0.55),
-            (-0.3, 31.8, 3.35, 0.8),
-            (1.5, 24.0, 3.4, 0.48),
-        ):
-            placements.append((x, along, z, radius))
     elif os.environ.get('BLANC_MORE_ROCKS') == '1':
         # More blocks in the light, further down the nave. Same CC0 meshes.
         placements += [
@@ -1071,9 +1068,10 @@ def build():
         spot.shadow_soft_size = float(os.environ.get('BLANC_SPOT_SOFT', '0.55'))
         obj = bpy.data.objects.new(f"spot-{frame['id']}", spot)
         # The pool lands on the painting. The old aim sat above the canvas.
-        head = (x_wall + sign * 0.95, frame['z'], frame['y'] + frame['height'] * 0.42)
+        # The warm pool sits on the marble above the frame, not only on the canvas.
+        head = (x_wall + sign * 0.72, frame['z'], frame['y'] + frame['height'] * 0.85 + 0.55)
         obj.location = head
-        aim_at = Vector((x_wall + sign * 0.02, frame['z'], frame['y']))
+        aim_at = Vector((x_wall + sign * 0.02, frame['z'], frame['y'] + frame['height'] * 0.62))
         direction = aim_at - Vector(head)
         obj.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
         bpy.context.scene.collection.objects.link(obj)
@@ -2517,10 +2515,10 @@ def add_cloud_cards():
     strength = float(os.environ.get('BLANC_CARD', '2.4'))
     # Tilt near 90° so the photo faces the visitor instead of lying on the ceiling.
     cards = (
-        (0, (-2.2, 8.4, 6.4), 86, (10.0, 5.2), 0.04),
-        (1, (2.4, 12.5, 6.8), 84, (9.0, 4.8), 0.22),
-        (0, (-0.6, 18.0, 6.5), 83, (11.0, 5.4), 0.55),
-        (1, (1.8, 24.0, 6.2), 82, (10.0, 5.0), 0.4),
+        (0, (0.0, 3.2, 7.4), 88, (18.0, 8.0), 0.02),
+        (1, (-1.4, 8.5, 7.1), 84, (15.0, 7.0), 0.22),
+        (0, (1.2, 13.5, 6.7), 80, (16.0, 7.2), 0.48),
+        (1, (0.2, 18.5, 6.4), 76, (16.0, 7.4), 0.33),
     )
     made = 0
     for index, (which, loc, tilt, scale, uoff) in enumerate(cards):
@@ -2853,7 +2851,7 @@ def aim(cam, target):
 
 def place_axis_camera(scene, name):
     """Eye at 1.5 m, horizontal field about 68°, vanishing point a little above the eye line."""
-    hfov = float(os.environ.get('BLANC_HFOV', '68'))
+    hfov = float(os.environ.get('BLANC_HFOV', '56'))
     aspect = float(os.environ.get('BLANC_ASPECT', str(16 / 9)))
     vfov = 2.0 * math.atan(math.tan(math.radians(hfov) * 0.5) / aspect)
     cam_data = bpy.data.cameras.new(name)
@@ -2863,14 +2861,14 @@ def place_axis_camera(scene, name):
     eye = float(os.environ.get('BLANC_EYE', str(ROOM.get('eye', 1.5))))
     cam.location = (
         0.0,
-        float(os.environ.get('BLANC_CAM_Y', str(ROOM.get('cameraZ', 1.15)))),
+        float(os.environ.get('BLANC_CAM_Y', str(ROOM.get('cameraZ', 0.45)))),
         eye,
     )
     scene.collection.objects.link(cam)
     aim(cam, (
         0.0,
-        float(os.environ.get('BLANC_AIM_Y', '28')),
-        float(os.environ.get('BLANC_AIM_Z', '2.05')),
+        float(os.environ.get('BLANC_AIM_Y', '11')),
+        float(os.environ.get('BLANC_AIM_Z', '4.6')),
     ))
     scene.camera = cam
     print('camera', [round(v, 3) for v in cam.location], 'hfov', hfov, 'vfov', round(math.degrees(vfov), 2))
