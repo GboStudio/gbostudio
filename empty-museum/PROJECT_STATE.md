@@ -180,6 +180,17 @@ Le passage 6 était encore un long couloir. Même branche, mêmes interdits. Tro
 - Sonde 360 : 2,05 s entre l’échantillon 0 et le 8 sur une pastille 1/128, donc **33 s par échantillon**. 256 échantillons ≈ **2 h 20**. 512 ≈ **4 h 40**. 4K 64 échantillons ≈ **13 min**. Rien de lourd n’est lancé.
 - **Pas déployé. Pas fusionné. Pas une PR.** L’échelle est celle d’une salle, plus d’un couloir. Ce n’est pas la cible : le ciel mesuré n’atteint pas L* 92, le fond n’est pas le vide blanc de la référence, et les cadres restent bas dans l’image.
 
+## Salle blanche grandiose, huitième passage — 15 novembre 2026
+
+Correctif de caméra. La salle courte, les gros rochers et les spots chauds restent. Quatre essais 400×225.
+
+- Caméra de niveau : œil **1,5 m**, champ horizontal **70°**, tangage **+3,1°**. L’horizon tombe à environ **57 %** de la hauteur depuis le haut. Le sol occupe le bas, les cadres la bande du milieu, l’ouverture le haut. La première travée est au bord du cadre.
+- Rochers : **25**, les gros dans le tiers supérieur d’une vue de niveau, une file vers le fond. Cadres : **14** (2, puis 3, puis 2). Sol : rugosité **0,25**.
+- Aperçu 1280×720, 32 échantillons, 53 s. Luma **0,638** (+14 % , dans les ±15 %). Murs L* **84,1**. Ciel officiel (fenêtre du script, qui prend des rochers) L* **91,3**, écart-type 5,5. Ciel ouvert, hors rochers : gauche **92,1**, droite **91,2**. Fond L* **98,9** (blanc brûlé, au-dessus des 95).
+- Images : `review/grandiose8-preview.jpg`, `review/compare-axis-grandiose8.jpg`, `review/pano-test-grandiose8.jpg`. Zénith du pano blanc.
+- Sonde 360 : 2,06 s entre l’échantillon 0 et le 8, donc **33 s par échantillon**. 256 ≈ **2 h 20**. 512 ≈ **4 h 40**. 4K 64 échantillons ≈ **16 min**. Rien de lourd n’est lancé.
+- **Pas déployé. Pas fusionné. Pas une PR.** La caméra est celle qui était demandée. Le ciel ouvert est au seuil de 92, le fond est plus blanc que 95, et les nuages ont peu de modelé.
+
 ## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
 
 Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon d’origine (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. La branche grandiose allonge seulement l’échantillon (36 m, sans mur du fond) pour la photo ; elle ne construit pas la salle de 100 m et n’écrit pas ses cotes dans le contrat.

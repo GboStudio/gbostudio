@@ -37,7 +37,7 @@ export const ROOM = {
   // 41.6° vertical is about 68° horizontal on a 16:9 frame.
   fov: 41.6,
   mobileFov: 58,
-  cameraZ: 0.45,
+  cameraZ: 0.35,
 };
 
 const PAINT = 'salle-temoin/assets/paintings/';
@@ -76,7 +76,7 @@ function sideFrames(wall) {
   // Three bays, ending in the cloud opening near 20 m. Two large frames
   // in the first, three in the second, two smaller in the third.
   // The scan is portrait, so the hung width is about 0.86 × the height.
-  const posts = [2.6, 8.4, 14.6, 20.2];
+  const posts = [5.2, 11.0, 16.2, 20.4];
   const bays = [
     [
       {artW: 1.22, artH: 1.48, mould: 0.14},
@@ -133,11 +133,11 @@ function sideFrames(wall) {
 export function buildLayout() {
   const frames = [...sideFrames('left'), ...sideFrames('right')];
   const benches = [
-    {wall: 'left', x: -ROOM.width / 2 + 0.32, z0: 3.4, z1: 7.6, height: 0.48, depth: 0.42},
-    {wall: 'right', x: ROOM.width / 2 - 0.32, z0: 3.4, z1: 7.6, height: 0.48, depth: 0.42},
+    {wall: 'left', x: -ROOM.width / 2 + 0.32, z0: 6.6, z1: 10.2, height: 0.48, depth: 0.42},
+    {wall: 'right', x: ROOM.width / 2 - 0.32, z0: 6.6, z1: 10.2, height: 0.48, depth: 0.42},
   ];
   const pilasters = [];
-  for (const z of [2.6, 8.4, 14.6, 20.2]) {
+  for (const z of [5.2, 11.0, 16.2, 20.4]) {
     pilasters.push({z, width: 0.55, depth: 0.5});
   }
   const obstacles = benches.map(bench => ({

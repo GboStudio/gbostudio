@@ -575,22 +575,23 @@ def place_rocks(material):
     ]
     if os.environ.get('BLANC_ROCK_FIELD') == '1':
         # Twenty-five stones. The big ones are close, in the opening above the camera.
+        # Big stones in the upper third of a level view, then a trail into the end.
         placements = [
-            (0.1, 3.2, 4.4, 2.3),
-            (-1.05, 4.4, 5.2, 1.9),
-            (1.15, 4.9, 4.2, 1.7),
-            (0.25, 6.0, 5.8, 2.05),
-            (-1.35, 6.8, 4.8, 1.55),
-            (1.25, 7.6, 5.6, 1.75),
-            (-0.2, 8.6, 4.5, 1.4),
-            (0.85, 9.6, 5.4, 1.35),
+            (0.2, 6.4, 3.8, 2.05),
+            (-0.95, 7.6, 4.3, 1.65),
+            (1.05, 8.4, 3.6, 1.5),
+            (0.15, 9.6, 4.7, 1.8),
+            (-1.05, 10.8, 3.9, 1.3),
+            (0.85, 12.0, 4.5, 1.45),
+            (-0.25, 13.4, 5.0, 1.1),
+            (0.55, 14.8, 5.4, 0.95),
         ]
         for i in range(17):
             side = -1.0 if i % 2 == 0 else 1.0
-            along = 11.2 + i * 0.5
-            x = side * (0.35 + (i % 4) * 0.4)
-            z = 4.6 + (i % 5) * 0.45
-            radius = 0.42 + (i % 4) * 0.12
+            along = 15.4 + i * 0.26
+            x = side * (0.3 + (i % 4) * 0.35)
+            z = 4.6 + (i % 4) * 0.4
+            radius = 0.38 + (i % 4) * 0.1
             placements.append((round(x, 3), round(along, 3), round(z, 3), round(radius, 3)))
     elif os.environ.get('BLANC_MORE_ROCKS') == '1':
         # More blocks in the light, further down the nave. Same CC0 meshes.
@@ -2515,10 +2516,10 @@ def add_cloud_cards():
     strength = float(os.environ.get('BLANC_CARD', '2.4'))
     # Tilt near 90° so the photo faces the visitor instead of lying on the ceiling.
     cards = (
-        (0, (0.0, 3.2, 7.4), 88, (18.0, 8.0), 0.02),
-        (1, (-1.4, 8.5, 7.1), 84, (15.0, 7.0), 0.22),
-        (0, (1.2, 13.5, 6.7), 80, (16.0, 7.2), 0.48),
-        (1, (0.2, 18.5, 6.4), 76, (16.0, 7.4), 0.33),
+        (0, (0.0, 6.5, 5.6), 86, (16.0, 7.0), 0.02),
+        (1, (-1.2, 10.5, 5.4), 82, (14.0, 6.2), 0.22),
+        (0, (1.0, 14.5, 5.2), 78, (15.0, 6.4), 0.48),
+        (1, (0.2, 18.2, 5.0), 74, (16.0, 6.6), 0.33),
     )
     made = 0
     for index, (which, loc, tilt, scale, uoff) in enumerate(cards):
@@ -2851,7 +2852,7 @@ def aim(cam, target):
 
 def place_axis_camera(scene, name):
     """Eye at 1.5 m, horizontal field about 68°, vanishing point a little above the eye line."""
-    hfov = float(os.environ.get('BLANC_HFOV', '56'))
+    hfov = float(os.environ.get('BLANC_HFOV', '70'))
     aspect = float(os.environ.get('BLANC_ASPECT', str(16 / 9)))
     vfov = 2.0 * math.atan(math.tan(math.radians(hfov) * 0.5) / aspect)
     cam_data = bpy.data.cameras.new(name)
@@ -2861,14 +2862,14 @@ def place_axis_camera(scene, name):
     eye = float(os.environ.get('BLANC_EYE', str(ROOM.get('eye', 1.5))))
     cam.location = (
         0.0,
-        float(os.environ.get('BLANC_CAM_Y', str(ROOM.get('cameraZ', 0.45)))),
+        float(os.environ.get('BLANC_CAM_Y', str(ROOM.get('cameraZ', 0.35)))),
         eye,
     )
     scene.collection.objects.link(cam)
     aim(cam, (
         0.0,
-        float(os.environ.get('BLANC_AIM_Y', '11')),
-        float(os.environ.get('BLANC_AIM_Z', '4.6')),
+        float(os.environ.get('BLANC_AIM_Y', '18')),
+        float(os.environ.get('BLANC_AIM_Z', '2.45')),
     ))
     scene.camera = cam
     print('camera', [round(v, 3) for v in cam.location], 'hfov', hfov, 'vfov', round(math.degrees(vfov), 2))
