@@ -187,11 +187,15 @@ def load_image(path, colorspace):
 def marble_material(name, roughness, normal_strength, rough_scale=None, metallic=0.0, contrast=None, bright=0.0):
     material = bpy.data.materials.new(name)
     material.use_nodes = True
+    material.blend_method = 'OPAQUE'
     nodes = material.node_tree.nodes
     links = material.node_tree.links
     bsdf = nodes['Principled BSDF']
     bsdf.inputs['Roughness'].default_value = roughness
     bsdf.inputs['Metallic'].default_value = metallic
+    for socket_name, value in (('Transmission Weight', 0.0), ('Alpha', 1.0)):
+        if socket_name in bsdf.inputs:
+            bsdf.inputs[socket_name].default_value = value
     soft_floor = name == 'floor' and os.environ.get('BLANC_FLOOR_SOFT') == '1'
     if name == 'floor' and os.environ.get('BLANC_MIRROR') == '1':
         if 'IOR' in bsdf.inputs:
@@ -1436,7 +1440,7 @@ def assign_gilt_maps(frame_obj, normal_path, ao_path):
         tex = nodes.new('ShaderNodeTexImage')
         tex.image = normal_image
         nmap = nodes.new('ShaderNodeNormalMap')
-        nmap.inputs['Strength'].default_value = 1.1
+        nmap.inputs['Strength'].default_value = float(os.environ.get('BLANC_GOLD_NORMAL', '0.22'))
         links.new(tex.outputs['Color'], nmap.inputs['Color'])
         links.new(nmap.outputs['Normal'], bsdf.inputs['Normal'])
     if ao_path.exists():
@@ -1644,14 +1648,26 @@ def place_fancy_frames():
         image_path = (ASSETS / rel) if str(rel).startswith('cc0/') else (PAINTINGS / rel)
         if not image_path.exists() or not painted.data.materials:
             continue
-        material = painted.data.materials[0].copy()
-        painted.data.materials[0] = material
-        bsdf = material.node_tree.nodes.get('Principled BSDF')
+        material = bpy.data.materials.new(f"paint-{frame['id']}")
+        material.use_nodes = True
+        material.blend_method = 'OPAQUE'
+        bsdf = material.node_tree.nodes['Principled BSDF']
+        bsdf.inputs['Roughness'].default_value = 0.62
+        if 'Transmission Weight' in bsdf.inputs:
+            bsdf.inputs['Transmission Weight'].default_value = 0.0
+        if 'Emission Strength' in bsdf.inputs:
+            bsdf.inputs['Emission Strength'].default_value = 0.0
         tex = material.node_tree.nodes.new('ShaderNodeTexImage')
         tex.image = load_image(image_path, 'sRGB')
-        if bsdf:
-            material.node_tree.links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])
-            bsdf.inputs['Roughness'].default_value = 0.55
+        # Held down so the oil stays darker than the marble.
+        gain = float(os.environ.get('BLANC_PAINT_GAIN', '0.32'))
+        dark = material.node_tree.nodes.new('ShaderNodeMixRGB')
+        dark.blend_type = 'MULTIPLY'
+        dark.inputs['Fac'].default_value = 1.0
+        dark.inputs['Color2'].default_value = (gain, gain * 0.92, gain * 0.82, 1)
+        material.node_tree.links.new(tex.outputs['Color'], dark.inputs['Color1'])
+        material.node_tree.links.new(dark.outputs['Color'], bsdf.inputs['Base Color'])
+        painted.data.materials[0] = material
 
 
 def neutralize(image):
@@ -2702,11 +2718,13 @@ def add_cumulus_sheets(end_y):
 
 
 def apply_bloom():
-    """Bloom and a white distance haze. Both are compositing, not a volume."""
+    """Glow only on the already-bright sky. Walls, paintings and rocks stay sharp."""
     scene = bpy.context.scene
     bloom = os.environ.get('BLANC_BLOOM') == '1'
     mist = os.environ.get('BLANC_MIST') == '1'
-    if not bloom and not mist:
+    shaft = os.environ.get('BLANC_SHAFT') == '1'
+    glow = os.environ.get('BLANC_SKY_GLOW', '1') == '1'
+    if not bloom and not mist and not shaft and not glow:
         scene.use_nodes = False
         return
     if mist:
@@ -2722,7 +2740,6 @@ def apply_bloom():
     layers = tree.nodes.new('CompositorNodeRLayers')
     current = layers.outputs['Image']
     if mist and 'Mist' in layers.outputs:
-        # Haze the far nave, not the sky shell. Mist is 1 on the background.
         span = tree.nodes.new('CompositorNodeMapRange')
         span.inputs['From Min'].default_value = 0.12
         span.inputs['From Max'].default_value = 0.62
@@ -2750,6 +2767,7 @@ def apply_bloom():
         tree.links.new(white.outputs[0], wash.inputs[2])
         current = wash.outputs[0]
     if bloom:
+        # Old whole-image fog glow. Off unless explicitly asked for.
         glare = tree.nodes.new('CompositorNodeGlare')
         glare.glare_type = 'FOG_GLOW'
         glare.quality = 'MEDIUM'
@@ -2758,28 +2776,61 @@ def apply_bloom():
         glare.size = 6
         tree.links.new(current, glare.inputs['Image'])
         current = glare.outputs['Image']
-    if os.environ.get('BLANC_SHAFT') == '1':
-        # A 2D shaft. No volume, so the 360 stays on the same sample cost.
+    if glow or shaft:
+        # Only pixels that are already near white (the sky) may glow.
+        luma = tree.nodes.new('CompositorNodeRGBToBW')
+        tree.links.new(current, luma.inputs['Image'])
+        sky_mask = tree.nodes.new('CompositorNodeMapRange')
+        sky_mask.inputs['From Min'].default_value = float(os.environ.get('BLANC_GLOW_LO', '0.72'))
+        sky_mask.inputs['From Max'].default_value = float(os.environ.get('BLANC_GLOW_HI', '0.94'))
+        sky_mask.inputs['To Min'].default_value = 0.0
+        sky_mask.inputs['To Max'].default_value = 1.0
+        sky_mask.use_clamp = True
+        tree.links.new(luma.outputs['Val'], sky_mask.inputs['Value'])
+        soft = tree.nodes.new('CompositorNodeBlur')
+        soft.filter_type = 'GAUSS'
+        soft.size_x = int(os.environ.get('BLANC_GLOW_BLUR', '24'))
+        soft.size_y = int(os.environ.get('BLANC_GLOW_BLUR', '24'))
+        tree.links.new(sky_mask.outputs['Value'], soft.inputs['Image'])
+    if glow:
+        white = tree.nodes.new('CompositorNodeRGB')
+        white.outputs[0].default_value = (1.0, 0.99, 0.96, 1)
+        veil = tree.nodes.new('CompositorNodeMixRGB')
+        veil.blend_type = 'MULTIPLY'
+        veil.inputs['Fac'].default_value = 1.0
+        tree.links.new(soft.outputs['Image'], veil.inputs[1])
+        tree.links.new(white.outputs[0], veil.inputs[2])
+        added = tree.nodes.new('CompositorNodeMixRGB')
+        added.blend_type = 'ADD'
+        added.inputs['Fac'].default_value = float(os.environ.get('BLANC_SKY_GLOW_AMT', '0.18'))
+        tree.links.new(current, added.inputs[1])
+        tree.links.new(veil.outputs[0], added.inputs[2])
+        current = added.outputs[0]
+    if shaft:
         mask = tree.nodes.new('CompositorNodeEllipseMask')
-        mask.width = float(os.environ.get('BLANC_SHAFT_W', '0.18'))
-        mask.height = float(os.environ.get('BLANC_SHAFT_H', '0.92'))
+        mask.width = float(os.environ.get('BLANC_SHAFT_W', '0.10'))
+        mask.height = float(os.environ.get('BLANC_SHAFT_H', '0.55'))
         mask.x = 0.5
-        mask.y = float(os.environ.get('BLANC_SHAFT_Y', '0.58'))
+        mask.y = float(os.environ.get('BLANC_SHAFT_Y', '0.72'))
         blur = tree.nodes.new('CompositorNodeBlur')
         blur.filter_type = 'GAUSS'
-        blur.size_x = int(os.environ.get('BLANC_SHAFT_BLUR', '90'))
-        blur.size_y = int(os.environ.get('BLANC_SHAFT_BLUR_Y', '48'))
+        blur.size_x = int(os.environ.get('BLANC_SHAFT_BLUR', '40'))
+        blur.size_y = int(os.environ.get('BLANC_SHAFT_BLUR_Y', '28'))
         tree.links.new(mask.outputs['Mask'], blur.inputs['Image'])
+        held = tree.nodes.new('CompositorNodeMath')
+        held.operation = 'MULTIPLY'
+        tree.links.new(blur.outputs['Image'], held.inputs[0])
+        tree.links.new(soft.outputs['Image'], held.inputs[1])
         white = tree.nodes.new('CompositorNodeRGB')
-        white.outputs[0].default_value = (1.0, 0.98, 0.93, 1)
+        white.outputs[0].default_value = (1.0, 0.98, 0.94, 1)
         shaped = tree.nodes.new('CompositorNodeMixRGB')
         shaped.blend_type = 'MULTIPLY'
         shaped.inputs['Fac'].default_value = 1.0
-        tree.links.new(blur.outputs['Image'], shaped.inputs[1])
+        tree.links.new(held.outputs['Value'], shaped.inputs[1])
         tree.links.new(white.outputs[0], shaped.inputs[2])
         added = tree.nodes.new('CompositorNodeMixRGB')
         added.blend_type = 'ADD'
-        added.inputs['Fac'].default_value = float(os.environ.get('BLANC_SHAFT_AMT', '0.55'))
+        added.inputs['Fac'].default_value = float(os.environ.get('BLANC_SHAFT_AMT', '0.28'))
         tree.links.new(current, added.inputs[1])
         tree.links.new(shaped.outputs[0], added.inputs[2])
         current = added.outputs[0]
