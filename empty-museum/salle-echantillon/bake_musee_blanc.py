@@ -508,18 +508,14 @@ def place_rocks(material):
     if os.environ.get('BLANC_ROCK_FIELD') == '1':
         # A procession of large scanned boulders down the axis, in the light.
         placements = []
-        for index, along in enumerate((8.0, 10.4, 12.8, 15.2, 17.8, 20.4, 23.2, 26.2, 29.2)):
+        # Thirty-six stones. Big ones near the opening, smaller ones receding, all pale.
+        for index in range(36):
+            along = 6.5 + index * 0.72
             placements.append((
-                0.25 * math.sin(index * 1.3),
+                0.55 * math.sin(index * 0.85),
                 along,
-                5.6 + (index % 3) * 1.15,
-                0.72 + (index % 3) * 0.16,
-            ))
-            placements.append((
-                0.85 * math.cos(index * 0.8),
-                along + 1.05,
-                7.4 + (index % 2) * 1.2,
-                0.42 + (index % 2) * 0.1,
+                3.4 + (index % 5) * 0.72,
+                0.55 + (index % 4) * 0.22,
             ))
     elif os.environ.get('BLANC_MORE_ROCKS') == '1':
         # More blocks in the light, further down the nave. Same CC0 meshes.
@@ -906,9 +902,9 @@ def build():
 
     # Pilasters: base, shaft, inner panel, capital. Wider than the bordeaux posts.
     for item in pilasters:
-        width = max(item['width'], 0.72)
-        # A deep return facing the camera reads as a bright vertical band. Shallow posts do not.
-        depth = 0.08 if flat_walls else 0.62
+        width = item['width']
+        # A few shallow partitions, about half a metre into the nave. Not a corridor of fins.
+        depth = float(os.environ.get('BLANC_PIER', '0.5'))
         y0 = item['z'] - width / 2
         y1 = item['z'] + width / 2
         for sign in (-1, 1):
@@ -1059,7 +1055,29 @@ def build():
         mapping.inputs['Scale'].default_value[1] = float(os.environ.get('BLANC_SKY_VSCALE', '1'))
         mapping.inputs['Rotation'].default_value[2] = math.radians(float(os.environ.get('BLANC_SKY_ROT', '0')))
         sl.new(uv.outputs['UV'], mapping.inputs['Vector'])
-        sl.new(mapping.outputs['Vector'], tex.inputs['Vector'])
+        # The ground half of the HDRI was painting a grey ceiling. Stay in the sky half.
+        uv_sep = sn.new('ShaderNodeSeparateXYZ')
+        uv_abs = sn.new('ShaderNodeMath')
+        uv_abs.operation = 'ABSOLUTE'
+        uv_sky = sn.new('ShaderNodeMath')
+        uv_sky.operation = 'ADD'
+        uv_sky.inputs[1].default_value = 0.52
+        uv_scale = sn.new('ShaderNodeMath')
+        uv_scale.operation = 'MULTIPLY'
+        uv_scale.inputs[1].default_value = 0.42
+        uv_join = sn.new('ShaderNodeCombineXYZ')
+        sl.new(mapping.outputs['Vector'], uv_sep.inputs['Vector'])
+        uv_mid = sn.new('ShaderNodeMath')
+        uv_mid.operation = 'SUBTRACT'
+        uv_mid.inputs[1].default_value = 0.5
+        sl.new(uv_sep.outputs['Y'], uv_mid.inputs[0])
+        sl.new(uv_mid.outputs['Value'], uv_abs.inputs[0])
+        sl.new(uv_abs.outputs['Value'], uv_scale.inputs[0])
+        sl.new(uv_scale.outputs['Value'], uv_sky.inputs[0])
+        sl.new(uv_sep.outputs['X'], uv_join.inputs['X'])
+        sl.new(uv_sky.outputs['Value'], uv_join.inputs['Y'])
+        sl.new(uv_sep.outputs['Z'], uv_join.inputs['Z'])
+        sl.new(uv_join.outputs['Vector'], tex.inputs['Vector'])
         # Pull the blue down but keep the cumulus brighter than the gaps.
         separate = sn.new('ShaderNodeSeparateColor')
         combine = sn.new('ShaderNodeCombineColor')
@@ -1130,10 +1148,10 @@ def assign_gilt_maps(frame_obj, normal_path, ao_path):
     links = material.node_tree.links
     bsdf = nodes['Principled BSDF']
     # Aged gold: less yellow, darker in the carving, roughness that breaks the plastic shine.
-    gold = (0.40, 0.29, 0.13, 1)
+    gold = (0.28, 0.19, 0.08, 1)
     bsdf.inputs['Base Color'].default_value = gold
     bsdf.inputs['Metallic'].default_value = 1.0
-    bsdf.inputs['Roughness'].default_value = 0.46
+    bsdf.inputs['Roughness'].default_value = 0.58
     if normal_path.exists():
         normal_image = load_image(normal_path, 'Non-Color')
         tex = nodes.new('ShaderNodeTexImage')

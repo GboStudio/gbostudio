@@ -72,44 +72,45 @@ function sideFrames(wall) {
   const x = sign * ROOM.width / 2;
   const normal = -sign;
   const paintings = PAINTINGS[wall];
-  // One frame in each bay. The hero is the nearest, and the widest.
-  const posts = [];
-  for (let z = 6.6; z <= 32.2; z += 3.35) posts.push(Math.round(z * 100) / 100);
-  // Two large sizes only. A 0.5 m frame disappears down a 30 m nave.
-  const kinds = wall === 'left'
-    ? [{artW: 1.15, artH: 1.52, mould: 0.13, hang: 1.78}, {artW: 1.35, artH: 1.05, mould: 0.11, hang: 1.62}]
-    : [{artW: 1.35, artH: 1.05, mould: 0.11, hang: 1.62}, {artW: 1.15, artH: 1.52, mould: 0.13, hang: 1.78}];
+  // Four long bays. Three large frames in each, facing the visitor at an angle.
+  const posts = [4.6, 11.8, 19.0, 26.2, 33.0];
+  const trio = [
+    {artW: 1.02, artH: 1.36, mould: 0.12, hang: 1.72},
+    {artW: 0.78, artH: 1.02, mould: 0.09, hang: 1.88},
+    {artW: 0.92, artH: 0.72, mould: 0.08, hang: 1.52},
+  ];
   const frames = [];
   let paint = 0;
-  for (let i = 0; i < posts.length - 1; i += 1) {
-    const z0 = posts[i] + 0.4;
-    const z1 = posts[i + 1] - 0.4;
-    const room = z1 - z0;
-    if (room < 1.2) continue;
-    const size = kinds[i % kinds.length];
-    const z = Math.round(((z0 + z1) / 2) * 100) / 100;
-    const hero = frames.length === 0;
-    const artW = hero ? 1.28 : Math.min(size.artW, room - 0.28);
-    const artH = hero ? 1.7 : size.artH;
-    const mould = hero ? 0.16 : size.mould;
-    frames.push({
-      id: hero ? `${wall}-front` : `${wall}-${z.toFixed(2)}`,
-      wall,
-      x,
-      y: hero ? 1.72 : size.hang,
-      z,
-      artWidth: Math.round(artW * 1000) / 1000,
-      artHeight: Math.round(artH * 1000) / 1000,
-      moulding: Math.round(mould * 1000) / 1000,
-      width: Math.round((artW + mould * 2) * 1000) / 1000,
-      height: Math.round((artH + mould * 2) * 1000) / 1000,
-      normal,
-      painting: hero
-        ? (wall === 'left' ? 'cc0/oeuvres/le-dernier-bal.jpg' : 'cc0/oeuvres/le-premier-spectateur.jpg')
-        : paintings[paint++ % paintings.length],
-      hero,
-      pictureLight: true,
-    });
+  for (let bay = 0; bay < posts.length - 1; bay += 1) {
+    const z0 = posts[bay] + 0.55;
+    const z1 = posts[bay + 1] - 0.55;
+    const step = (z1 - z0) / 3;
+    for (let slot = 0; slot < 3; slot += 1) {
+      const size = trio[(slot + (wall === 'right' ? 1 : 0)) % 3];
+      const z = Math.round((z0 + step * (slot + 0.5)) * 100) / 100;
+      const hero = frames.length === 0;
+      const artW = hero ? 1.22 : size.artW;
+      const artH = hero ? 1.58 : size.artH;
+      const mould = hero ? 0.15 : size.mould;
+      frames.push({
+        id: hero ? `${wall}-front` : `${wall}-${z.toFixed(2)}`,
+        wall,
+        x,
+        y: hero ? 1.7 : size.hang,
+        z,
+        artWidth: Math.round(artW * 1000) / 1000,
+        artHeight: Math.round(artH * 1000) / 1000,
+        moulding: Math.round(mould * 1000) / 1000,
+        width: Math.round((artW + mould * 2) * 1000) / 1000,
+        height: Math.round((artH + mould * 2) * 1000) / 1000,
+        normal,
+        painting: hero
+          ? (wall === 'left' ? 'cc0/oeuvres/le-dernier-bal.jpg' : 'cc0/oeuvres/le-premier-spectateur.jpg')
+          : paintings[paint++ % paintings.length],
+        hero,
+        pictureLight: true,
+      });
+    }
   }
   return frames;
 }
@@ -121,7 +122,9 @@ export function buildLayout() {
     {wall: 'right', x: ROOM.width / 2 - 0.28, z0: 6.62, z1: 9.2, height: 0.46, depth: 0.44},
   ];
   const pilasters = [];
-  for (let z = 6.6; z <= 32.2; z += 3.35) pilasters.push({z: Math.round(z * 100) / 100, width: 0.72, depth: 0.48});
+  for (const z of [4.6, 11.8, 19.0, 26.2, 33.0]) {
+    pilasters.push({z, width: 0.55, depth: 0.5});
+  }
   const obstacles = benches.map(bench => ({
     minX: bench.x - bench.depth / 2,
     maxX: bench.x + bench.depth / 2,
