@@ -223,7 +223,17 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
         links.new(separate.outputs['Green'], grey.inputs[0])
         links.new(grey.outputs['Value'], combine.inputs['Green'])
         links.new(separate.outputs['Blue'], combine.inputs['Blue'])
-        links.new(combine.outputs['Color'], bsdf.inputs['Base Color'])
+        gain_name = 'BLANC_FLOOR_GAIN' if name == 'floor' else 'BLANC_WALL_GAIN'
+        gain = float(os.environ.get(gain_name, '1'))
+        color_out = combine.outputs['Color']
+        if abs(gain - 1.0) > 0.001:
+            mul = nodes.new('ShaderNodeMixRGB')
+            mul.blend_type = 'MULTIPLY'
+            mul.inputs['Fac'].default_value = 1.0
+            mul.inputs['Color2'].default_value = (gain, gain, gain, 1)
+            links.new(color_out, mul.inputs['Color1'])
+            color_out = mul.outputs['Color']
+        links.new(color_out, bsdf.inputs['Base Color'])
     if MARBLE_NORMAL.exists() and normal_strength > 0:
         normal = nodes.new('ShaderNodeTexImage')
         normal.image = load_image(MARBLE_NORMAL, 'Non-Color')
@@ -564,28 +574,27 @@ def place_rocks(material):
         (-0.4, 11.6, 8.8, 1.25),
     ]
     if os.environ.get('BLANC_ROCK_FIELD') == '1':
-        # Forty scanned boulders. Big ones in front, then a staggered file
-        # from about 3 m above the floor up into the opening, down to the far end.
+        # About thirty stones in the upper opening, rising into the clouds,
+        # with a few lower ones only near the far end. Not a mid-height knot.
         placements = []
-        # Large stones flank the shaft. The upper centre of the opening stays sky.
+        for i in range(26):
+            side = -1.0 if i % 2 == 0 else 1.0
+            along = 6.8 + i * 0.95
+            x = side * (0.55 + (i % 4) * 0.5)
+            z = 4.4 + ((i * 3) % 7) * 0.28
+            radius = 0.5 + (i % 5) * 0.14
+            if i < 5:
+                radius = 1.05 + (i % 3) * 0.18
+                z = 4.8 + (i % 3) * 0.55
+                x = side * (1.15 + (i % 3) * 0.25)
+            placements.append((round(x, 3), round(along, 3), round(z, 3), round(radius, 3)))
         for x, along, z, radius in (
-            (-1.85, 8.2, 3.15, 1.4),
-            (1.95, 9.6, 3.35, 1.25),
-            (-2.1, 11.2, 3.2, 1.5),
-            (1.9, 12.8, 3.45, 1.2),
-            (-1.75, 14.4, 3.1, 1.15),
-            (2.1, 16.0, 3.4, 1.35),
+            (-0.9, 26.5, 3.15, 0.72),
+            (1.2, 29.2, 2.95, 0.55),
+            (-0.3, 31.8, 3.35, 0.8),
+            (1.5, 24.0, 3.4, 0.48),
         ):
             placements.append((x, along, z, radius))
-        for i in range(34):
-            side = -1.0 if i % 2 == 0 else 1.0
-            along = 12.2 + i * 0.6
-            x = side * (0.6 + (i % 5) * 0.34)
-            z = 3.05 + (i % 6) * 0.36
-            if along < 16.5 and z > 3.7:
-                x = side * max(abs(x), 1.55)
-            radius = 0.48 + (i % 4) * 0.16
-            placements.append((round(x, 3), round(along, 3), round(z, 3), round(radius, 3)))
     elif os.environ.get('BLANC_MORE_ROCKS') == '1':
         # More blocks in the light, further down the nave. Same CC0 meshes.
         placements += [
@@ -884,7 +893,8 @@ def build():
             float(os.environ.get('BLANC_FLOOR_ROUGH', '0.05')) if os.environ.get('BLANC_MIRROR') == '1' else 0.035,
             0.12,
             rough_scale=float(os.environ.get('BLANC_FLOOR_ROUGH', '0.05')) if os.environ.get('BLANC_MIRROR') == '1' else None,
-            bright=float(os.environ.get('BLANC_FLOOR_BRIGHT', '0')) if os.environ.get('BLANC_MIRROR') == '1' else 0.0,
+            bright=float(os.environ.get('BLANC_FLOOR_BRIGHT', '-0.04')) if os.environ.get('BLANC_MIRROR') == '1' else 0.0,
+            contrast=float(os.environ.get('BLANC_FLOOR_VEIN', '42')),
         ),
         'gilt': new_material('gilt', (0.68, 0.36, 0.06), 0.26, 1),
         'artwork': new_material('artwork', (0.4, 0.32, 0.24), 0.55),
@@ -904,7 +914,7 @@ def build():
         ROOM['length'] - 1.2 + float(os.environ.get('BLANC_EXTRA_LENGTH', '16')),
     ))
     height = float(os.environ.get('BLANC_HEIGHT', '7.8'))
-    floor_tile = 2.4
+    floor_tile = float(os.environ.get('BLANC_FLOOR_TILE', '7.2'))
 
     # Floor, open at the far end. No back wall.
     floor = [(-half, back, 0), (half, back, 0), (half, end + 4, 0), (-half, end + 4, 0)]
@@ -947,12 +957,13 @@ def build():
                 coords = [coords[0], coords[3], coords[2], coords[1]]
             luvs = [rect_uv(name, (c[1] - back) / (end - back), c[2] / height) for c in coords]
             uvs = []
+            vein_m = float(os.environ.get('BLANC_VEIN_METRES', '8.0'))
             for corner in coords:
-                # One scan across the slab. V uses the same metre, so veins stay square.
-                u = (corner[1] - y0) / span
+                # Large veins, one scan across several metres, not a repeat per slab.
+                u = (corner[1] - back) / vein_m
                 if mirrored:
-                    u = 1.0 - u
-                v = corner[2] / span
+                    u = -u
+                v = corner[2] / vein_m
                 uvs.append((u, v))
             meshes['marble'].quad(coords, uvs, luvs, (-sign, 0, 0))
         if index < len(slabs) - 1 and not flat_walls:
@@ -1088,6 +1099,7 @@ def build():
         add_cumulus(end)
     add_volume_clouds(end, height)
     add_godrays(end, height)
+    add_cloud_cards()
     add_rock_sun()
 
     # Sky dome, emissive in the viewer, hidden from the bake.
@@ -1240,6 +1252,33 @@ def build():
             sl.new(elev.outputs['Result'], ang.inputs['Y'])
             sl.new(ang.outputs['Vector'], tex.inputs['Vector'])
             print('sky angular')
+            if os.environ.get('BLANC_SKY_LAYERS', '1') != '0':
+                tex_b = sn.new('ShaderNodeTexImage')
+                tex_b.image = tex.image
+                tex_b.interpolation = 'Smart'
+                u_b = sn.new('ShaderNodeMath')
+                u_b.operation = 'ADD'
+                u_b.inputs[1].default_value = float(os.environ.get('BLANC_SKY_U2', '0.37'))
+                sl.new(u_sum.outputs['Value'], u_b.inputs[0])
+                v_b = sn.new('ShaderNodeMath')
+                v_b.operation = 'MULTIPLY_ADD'
+                v_b.inputs[1].default_value = 0.82
+                v_b.inputs[2].default_value = float(os.environ.get('BLANC_SKY_V2', '0.12'))
+                sl.new(elev.outputs['Result'], v_b.inputs[0])
+                ang_b = sn.new('ShaderNodeCombineXYZ')
+                sl.new(u_b.outputs['Value'], ang_b.inputs['X'])
+                sl.new(v_b.outputs['Value'], ang_b.inputs['Y'])
+                sl.new(ang_b.outputs['Vector'], tex_b.inputs['Vector'])
+                piled = sn.new('ShaderNodeMixRGB')
+                piled.blend_type = 'DARKEN'
+                piled.inputs['Fac'].default_value = float(os.environ.get('BLANC_SKY_LAYER_MIX', '0.8'))
+                sl.new(tex.outputs['Color'], piled.inputs['Color1'])
+                sl.new(tex_b.outputs['Color'], piled.inputs['Color2'])
+                tex_color = piled.outputs['Color']
+            else:
+                tex_color = tex.outputs['Color']
+        else:
+            tex_color = tex.outputs['Color']
         # Full desaturation, then the cloud shading is put back and lifted toward white.
         separate = sn.new('ShaderNodeSeparateColor')
         combine = sn.new('ShaderNodeCombineColor')
@@ -1248,7 +1287,7 @@ def build():
         sat = sn.new('ShaderNodeMath')
         sat.operation = 'MULTIPLY'
         sat.inputs[1].default_value = float(os.environ.get('BLANC_SKY_WHITE', '0.2'))
-        sl.new(tex.outputs['Color'], separate.inputs['Color'])
+        sl.new(tex_color, separate.inputs['Color'])
         sl.new(separate.outputs['Red'], combine.inputs['Red'])
         sl.new(separate.outputs['Green'], sat.inputs[0])
         sl.new(sat.outputs['Value'], combine.inputs['Green'])
@@ -1320,10 +1359,23 @@ def build():
         end_mix.inputs['Color2'].default_value = (1.0, 1.0, 1.0, 1)
         sl.new(end_amt.outputs['Value'], end_mix.inputs['Fac'])
         sl.new(core.outputs['Color'], end_mix.inputs['Color1'])
+        # The pano zenith is a flat white cap. A photo row there turned into waves.
+        zenith = sn.new('ShaderNodeMapRange')
+        zenith.inputs['From Min'].default_value = float(os.environ.get('BLANC_SKY_ZENITH_Z0', '0.74'))
+        zenith.inputs['From Max'].default_value = float(os.environ.get('BLANC_SKY_ZENITH_Z1', '0.9'))
+        zenith.inputs['To Min'].default_value = 0.0
+        zenith.inputs['To Max'].default_value = 1.0
+        zenith.clamp = True
+        sl.new(obj_sep.outputs['Z'], zenith.inputs['Value'])
+        cap_mix = sn.new('ShaderNodeMixRGB')
+        cap_mix.blend_type = 'MIX'
+        cap_mix.inputs['Color2'].default_value = (0.98, 0.985, 0.99, 1)
+        sl.new(zenith.outputs['Result'], cap_mix.inputs['Fac'])
+        sl.new(end_mix.outputs['Color'], cap_mix.inputs['Color1'])
         if os.environ.get('BLANC_SKY_RAW') == '1':
             sl.new(tex.outputs['Color'], emit.inputs['Color'])
         else:
-            sl.new(end_mix.outputs['Color'], emit.inputs['Color'])
+            sl.new(cap_mix.outputs['Color'], emit.inputs['Color'])
         hold = sn.new('ShaderNodeMixShader')
         ray = sn.new('ShaderNodeLightPath')
         seen = sn.new('ShaderNodeMath')
@@ -2455,6 +2507,134 @@ def add_cloud_dome(end_y):
     dome.visible_transmission = False
     print('cloud dome', radius, 'strength', strength)
     return dome
+
+
+def add_cloud_cards():
+    """Alpha-masked cloud photos at several depths. Camera and mirror only."""
+    if os.environ.get('BLANC_SKY_CARDS') != '1':
+        return
+    sources = [CC0 / 'cumulus-band.jpg', CC0 / 'cumulus-plate.jpg']
+    strength = float(os.environ.get('BLANC_CARD', '2.4'))
+    # Tilt near 90° so the photo faces the visitor instead of lying on the ceiling.
+    cards = (
+        (0, (-2.2, 8.4, 6.4), 86, (10.0, 5.2), 0.04),
+        (1, (2.4, 12.5, 6.8), 84, (9.0, 4.8), 0.22),
+        (0, (-0.6, 18.0, 6.5), 83, (11.0, 5.4), 0.55),
+        (1, (1.8, 24.0, 6.2), 82, (10.0, 5.0), 0.4),
+    )
+    made = 0
+    for index, (which, loc, tilt, scale, uoff) in enumerate(cards):
+        path = sources[which]
+        if not path.exists():
+            continue
+        material = bpy.data.materials.new(f'cloud-card-{index}')
+        material.use_nodes = True
+        material.blend_method = 'BLEND'
+        try:
+            material.shadow_method = 'NONE'
+        except Exception:
+            pass
+        nodes = material.node_tree.nodes
+        links = material.node_tree.links
+        nodes.clear()
+        output = nodes.new('ShaderNodeOutputMaterial')
+        tex = nodes.new('ShaderNodeTexImage')
+        tex.image = load_image(path, 'sRGB')
+        tex.extension = 'REPEAT'
+        mapping = nodes.new('ShaderNodeMapping')
+        mapping.inputs['Location'].default_value[0] = uoff
+        mapping.inputs['Scale'].default_value = (0.85, 0.85, 1)
+        coord = nodes.new('ShaderNodeTexCoord')
+        links.new(coord.outputs['UV'], mapping.inputs['Vector'])
+        links.new(mapping.outputs['Vector'], tex.inputs['Vector'])
+        grey = nodes.new('ShaderNodeRGBToBW')
+        links.new(tex.outputs['Color'], grey.inputs['Val'] if 'Val' in [s.name for s in grey.inputs] else grey.inputs[0])
+        alpha = nodes.new('ShaderNodeMapRange')
+        alpha.inputs['From Min'].default_value = float(os.environ.get('BLANC_CARD_LO', '0.62'))
+        alpha.inputs['From Max'].default_value = float(os.environ.get('BLANC_CARD_HI', '0.9'))
+        alpha.inputs['To Min'].default_value = 0.0
+        alpha.inputs['To Max'].default_value = 1.0
+        alpha.clamp = True
+        links.new(grey.outputs['Val'], alpha.inputs['Value'])
+        # Soft oval, so the card does not read as a rectangle.
+        uv_sep = nodes.new('ShaderNodeSeparateXYZ')
+        links.new(mapping.outputs['Vector'], uv_sep.inputs['Vector'])
+        cu = nodes.new('ShaderNodeMath')
+        cu.operation = 'SUBTRACT'
+        cu.inputs[1].default_value = 0.5
+        cv = nodes.new('ShaderNodeMath')
+        cv.operation = 'SUBTRACT'
+        cv.inputs[1].default_value = 0.5
+        links.new(uv_sep.outputs['X'], cu.inputs[0])
+        links.new(uv_sep.outputs['Y'], cv.inputs[0])
+        u2 = nodes.new('ShaderNodeMath')
+        u2.operation = 'MULTIPLY'
+        links.new(cu.outputs['Value'], u2.inputs[0])
+        links.new(cu.outputs['Value'], u2.inputs[1])
+        v2 = nodes.new('ShaderNodeMath')
+        v2.operation = 'MULTIPLY'
+        links.new(cv.outputs['Value'], v2.inputs[0])
+        links.new(cv.outputs['Value'], v2.inputs[1])
+        rad = nodes.new('ShaderNodeMath')
+        rad.operation = 'ADD'
+        links.new(u2.outputs['Value'], rad.inputs[0])
+        links.new(v2.outputs['Value'], rad.inputs[1])
+        edge = nodes.new('ShaderNodeMapRange')
+        edge.inputs['From Min'].default_value = 0.02
+        edge.inputs['From Max'].default_value = 0.22
+        edge.inputs['To Min'].default_value = 1.0
+        edge.inputs['To Max'].default_value = 0.0
+        edge.clamp = True
+        links.new(rad.outputs['Value'], edge.inputs['Value'])
+        alpha_soft = nodes.new('ShaderNodeMath')
+        alpha_soft.operation = 'MULTIPLY'
+        links.new(alpha.outputs['Result'], alpha_soft.inputs[0])
+        links.new(edge.outputs['Result'], alpha_soft.inputs[1])
+        separate = nodes.new('ShaderNodeSeparateColor')
+        combine = nodes.new('ShaderNodeCombineColor')
+        separate.mode = 'HSV'
+        combine.mode = 'HSV'
+        sat = nodes.new('ShaderNodeMath')
+        sat.operation = 'MULTIPLY'
+        sat.inputs[1].default_value = 0.0
+        links.new(tex.outputs['Color'], separate.inputs['Color'])
+        links.new(separate.outputs['Red'], combine.inputs['Red'])
+        links.new(separate.outputs['Green'], sat.inputs[0])
+        links.new(sat.outputs['Value'], combine.inputs['Green'])
+        links.new(separate.outputs['Blue'], combine.inputs['Blue'])
+        lift = nodes.new('ShaderNodeMixRGB')
+        lift.blend_type = 'MIX'
+        lift.inputs['Fac'].default_value = float(os.environ.get('BLANC_CARD_LIFT', '0.2'))
+        lift.inputs['Color2'].default_value = (1.0, 1.0, 1.0, 1)
+        links.new(combine.outputs['Color'], lift.inputs['Color1'])
+        emit = nodes.new('ShaderNodeEmission')
+        emit.inputs['Strength'].default_value = strength
+        links.new(lift.outputs['Color'], emit.inputs['Color'])
+        transparent = nodes.new('ShaderNodeBsdfTransparent')
+        body = nodes.new('ShaderNodeMixShader')
+        links.new(alpha_soft.outputs['Value'], body.inputs['Fac'])
+        links.new(transparent.outputs['BSDF'], body.inputs[1])
+        links.new(emit.outputs['Emission'], body.inputs[2])
+        ray = nodes.new('ShaderNodeLightPath')
+        seen = nodes.new('ShaderNodeMath')
+        seen.operation = 'MAXIMUM'
+        links.new(ray.outputs['Is Camera Ray'], seen.inputs[0])
+        links.new(ray.outputs['Is Glossy Ray'], seen.inputs[1])
+        hold = nodes.new('ShaderNodeMixShader')
+        links.new(seen.outputs['Value'], hold.inputs['Fac'])
+        links.new(transparent.outputs['BSDF'], hold.inputs[1])
+        links.new(body.outputs['Shader'], hold.inputs[2])
+        links.new(hold.outputs['Shader'], output.inputs['Surface'])
+        bpy.ops.mesh.primitive_plane_add(size=1, location=loc)
+        card = bpy.context.active_object
+        card.name = f'cloud-card-{index}'
+        card.rotation_euler = (math.radians(tilt), 0.0, math.radians((index - 1.5) * 7))
+        card.scale = (scale[0], scale[1], 1)
+        card.data.materials.append(material)
+        card.visible_shadow = False
+        card.visible_diffuse = False
+        made += 1
+    print('cloud cards', made)
 
 
 def add_cumulus_sheets(end_y):

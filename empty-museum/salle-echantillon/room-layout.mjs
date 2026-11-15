@@ -73,28 +73,44 @@ function sideFrames(wall) {
   const x = sign * ROOM.width / 2;
   const normal = -sign;
   const paintings = PAINTINGS[wall];
-  // Four long bays. Three large frames in each, facing the visitor at an angle.
+  // Four bays. Two large frames in the first, then two or three smaller
+  // ones, with space around them. The scan is portrait, so the hung width
+  // is about 0.86 × the height.
   const posts = [4.6, 11.8, 19.0, 26.2, 33.0];
-  // Centres sit on a 1.6 m line. The scan is portrait, so the hung width
-  // is about 0.86 × the height. The nearest frame is the wide one.
-  const trio = [
-    {artW: 1.22, artH: 1.52, mould: 0.15, hang: 1.6},
-    {artW: 0.98, artH: 1.22, mould: 0.13, hang: 1.6},
-    {artW: 0.88, artH: 1.06, mould: 0.13, hang: 1.6},
+  const bays = [
+    [
+      {artW: 1.05, artH: 1.28, mould: 0.11},
+      {artW: 0.76, artH: 0.9, mould: 0.09},
+    ],
+    [
+      {artW: 0.7, artH: 0.84, mould: 0.08},
+      {artW: 0.58, artH: 0.7, mould: 0.07},
+    ],
+    [
+      {artW: 0.74, artH: 0.88, mould: 0.08},
+      {artW: 0.56, artH: 0.68, mould: 0.07},
+      {artW: 0.64, artH: 0.76, mould: 0.07},
+    ],
+    [
+      {artW: 0.68, artH: 0.8, mould: 0.08},
+      {artW: 0.58, artH: 0.7, mould: 0.07},
+    ],
   ];
   const frames = [];
   let paint = 0;
   for (let bay = 0; bay < posts.length - 1; bay += 1) {
-    const z0 = posts[bay] + 0.55;
-    const z1 = posts[bay + 1] - 0.55;
-    const step = (z1 - z0) / 3;
-    for (let slot = 0; slot < 3; slot += 1) {
-      const size = trio[(slot + (wall === 'right' ? 1 : 0)) % 3];
+    const sizes = bays[bay];
+    const z0 = posts[bay] + 0.7;
+    const z1 = posts[bay + 1] - 0.7;
+    const step = (z1 - z0) / sizes.length;
+    for (let slot = 0; slot < sizes.length; slot += 1) {
+      const shift = wall === 'right' && bay > 0 ? 1 : 0;
+      const size = sizes[(slot + shift) % sizes.length];
       const z = Math.round((z0 + step * (slot + 0.5)) * 100) / 100;
       const hero = frames.length === 0;
-      const artW = hero ? 1.34 : size.artW;
-      const artH = hero ? 1.60 : size.artH;
-      const mould = hero ? 0.15 : size.mould;
+      const artW = hero ? 1.08 : size.artW;
+      const artH = hero ? 1.28 : size.artH;
+      const mould = hero ? 0.12 : size.mould;
       frames.push({
         id: hero ? `${wall}-front` : `${wall}-${z.toFixed(2)}`,
         wall,
