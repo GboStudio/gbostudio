@@ -127,6 +127,20 @@ Verdict de Guillaume sur l’aperçu 2 : « On est loin de la cible ». Même br
 - Sonde 384×384, 12 échantillons en 4,9 s : **52 s par échantillon** en 6144×3072 (sous les 60 s demandés). 256 échantillons ≈ **3 h 40**. 512 ≈ **7 h 20**. 4K 64 échantillons ≈ **17 min**, déduit du 1280×720 (57 s pour 32 échantillons). Rien de tout cela n’est lancé.
 - **Pas déployé. Pas fusionné. Pas une PR.** On est encore loin de la cible.
 
+## Salle blanche grandiose, quatrième passage — 15 novembre 2026
+
+Le côte-à-côte 3 ne part pas chez Guillaume. Même branche, mêmes interdits.
+
+- Quatre travées par mur, trois grands cadres dans chacune, cloisons en saillie de **0,5 m** (plus le couloir d’ailettes). Spots chauds, flaques visibles.
+- Ciel : moitié nuageuse de `sunflowers_puresky` 8K, désaturée et éclaircie, bloom. L* ciel **87,4** (murs **82,4**). Pas encore 90, et les cumulus restent mous. Le pano n’a plus de demi-plafond gris : le sol de l’HDRI n’est plus affiché.
+- Rochers : **36** scans Poly Haven (`boulder_01`, `rock_07`, `rock_09`, `namaqualand_boulder_03`), albedo éclairci. Ils forment un groupe au centre, pas encore la procession claire de la cible.
+- Fond : brume de compositing vers le blanc, L* **95,7**, sans carte photo rectangulaire.
+- Sol : marbre, rugosité 0,09. Or assombri (0,34 / 0,24 / 0,10, rugosité 0,58).
+- Nef **9,6 × 6,8 m**, rapport **1,41**. Œil à 1,6 m, point de fuite un peu bas.
+- Images : `review/grandiose4-preview.jpg`, `review/compare-axis-grandiose4.jpg`, `review/pano-test-grandiose4.jpg`.
+- Sonde 12 échantillons d’une pastille 1/128 en 5,5 s : **59 s par échantillon**. 256 échantillons ≈ **4 h 10**. 512 ≈ **8 h 25**. 4K 64 échantillons ≈ **19 min**. Rien de lourd n’est lancé.
+- **Pas déployé. Pas fusionné. Pas une PR.** Encore loin de la cible.
+
 ## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
 
 Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon d’origine (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. La branche grandiose allonge seulement l’échantillon (36 m, sans mur du fond) pour la photo ; elle ne construit pas la salle de 100 m et n’écrit pas ses cotes dans le contrat.

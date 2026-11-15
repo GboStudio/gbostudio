@@ -381,7 +381,12 @@ def rock_material():
         rock_grey = float(os.environ.get('BLANC_ROCK_GREY', '0.72'))
         shade.inputs['Color1'].default_value = (rock_grey, rock_grey, rock_grey, 1)
         links.new(grey.outputs['Val'], shade.inputs['Color2'])
-        links.new(shade.outputs['Color'], bsdf.inputs['Base Color'])
+        pale = nodes.new('ShaderNodeMixRGB')
+        pale.blend_type = 'MIX'
+        pale.inputs['Fac'].default_value = float(os.environ.get('BLANC_ROCK_PALE', '0.72'))
+        pale.inputs['Color2'].default_value = (0.92, 0.90, 0.86, 1)
+        links.new(shade.outputs['Color'], pale.inputs['Color1'])
+        links.new(pale.outputs['Color'], bsdf.inputs['Base Color'])
         bump = nodes.new('ShaderNodeBump')
         bump.inputs['Strength'].default_value = 0.45
         bump.inputs['Distance'].default_value = 0.15
@@ -508,15 +513,17 @@ def place_rocks(material):
     if os.environ.get('BLANC_ROCK_FIELD') == '1':
         # A procession of large scanned boulders down the axis, in the light.
         placements = []
-        # Thirty-six stones. Big ones near the opening, smaller ones receding, all pale.
-        for index in range(36):
-            along = 6.5 + index * 0.72
-            placements.append((
-                0.55 * math.sin(index * 0.85),
-                along,
-                3.4 + (index % 5) * 0.72,
-                0.55 + (index % 4) * 0.22,
-            ))
+        # Three heights, spaced down the nave: low, mid, and just under the opening.
+        lanes = ((-1.7, 3.1), (0.05, 4.6), (1.65, 6.0))
+        for row in range(12):
+            along = 6.4 + row * 2.15
+            for lane, (xsign, zbase) in enumerate(lanes):
+                placements.append((
+                    xsign * (0.65 + (row % 2) * 0.4),
+                    along + lane * 0.4,
+                    zbase + (row % 3) * 0.28,
+                    0.7 + ((row + lane) % 4) * 0.18,
+                ))
     elif os.environ.get('BLANC_MORE_ROCKS') == '1':
         # More blocks in the light, further down the nave. Same CC0 meshes.
         placements += [
@@ -536,10 +543,11 @@ def place_rocks(material):
         obj.name = f'rock-{index:02d}'
         obj.location = (rx, ry, rz)
         obj.rotation_euler = (index * 0.9, index * 1.3, index * 0.45)
+        stretch = 1.25 if os.environ.get('BLANC_ROCK_FIELD') == '1' else 1.5
         obj.scale = (
-            radius * (1.5 + 0.9 * abs(math.sin(index * 1.7))),
-            radius * (1.2 + 1.0 * abs(math.cos(index * 0.8))),
-            radius * (1.4 + 0.8 * abs(math.sin(index * 2.2))),
+            radius * (stretch + 0.45 * abs(math.sin(index * 1.7))),
+            radius * (stretch * 0.85 + 0.4 * abs(math.cos(index * 0.8))),
+            radius * (stretch + 0.35 * abs(math.sin(index * 2.2))),
         )
         obj.hide_render = False
         obj.hide_set(False)
@@ -1148,7 +1156,7 @@ def assign_gilt_maps(frame_obj, normal_path, ao_path):
     links = material.node_tree.links
     bsdf = nodes['Principled BSDF']
     # Aged gold: less yellow, darker in the carving, roughness that breaks the plastic shine.
-    gold = (0.28, 0.19, 0.08, 1)
+    gold = (0.34, 0.24, 0.10, 1)
     bsdf.inputs['Base Color'].default_value = gold
     bsdf.inputs['Metallic'].default_value = 1.0
     bsdf.inputs['Roughness'].default_value = 0.58
