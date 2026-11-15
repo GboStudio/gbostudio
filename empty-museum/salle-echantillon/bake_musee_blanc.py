@@ -505,7 +505,23 @@ def place_rocks(material):
         (1.55, 16.4, 4.4, 0.95),
         (-0.4, 11.6, 8.8, 1.25),
     ]
-    if os.environ.get('BLANC_MORE_ROCKS') == '1':
+    if os.environ.get('BLANC_ROCK_FIELD') == '1':
+        # A procession of large scanned boulders down the axis, in the light.
+        placements = []
+        for index, along in enumerate((7.4, 9.2, 11.0, 12.8, 14.8, 16.8, 19.0, 21.4, 24.0, 26.8, 29.6)):
+            placements.append((
+                0.35 * math.sin(index * 1.4),
+                along,
+                5.4 + (index % 3) * 1.35,
+                1.85 + (index % 4) * 0.28,
+            ))
+            placements.append((
+                1.15 * math.cos(index * 0.9),
+                along + 0.7,
+                7.2 + (index % 2) * 1.5,
+                1.05 + (index % 3) * 0.2,
+            ))
+    elif os.environ.get('BLANC_MORE_ROCKS') == '1':
         # More blocks in the light, further down the nave. Same CC0 meshes.
         placements += [
             (0.15, 18.2, 9.4, 1.45),
@@ -970,7 +986,7 @@ def build():
         else:
             spot.spot_size = math.radians(52)
             spot.spot_blend = 0.85
-        spot.shadow_soft_size = 0.25
+        spot.shadow_soft_size = float(os.environ.get('BLANC_SPOT_SOFT', '0.55'))
         obj = bpy.data.objects.new(f"spot-{frame['id']}", spot)
         head = (x_wall + sign * 0.48, frame['z'], min(height - 0.35, frame['y'] + frame['height'] + 0.7))
         obj.location = head
@@ -1043,7 +1059,40 @@ def build():
         mapping.inputs['Rotation'].default_value[2] = math.radians(float(os.environ.get('BLANC_SKY_ROT', '0')))
         sl.new(uv.outputs['UV'], mapping.inputs['Vector'])
         sl.new(mapping.outputs['Vector'], tex.inputs['Vector'])
-        sl.new(tex.outputs['Color'], emit.inputs['Color'])
+        # White glowing cumulus. The raw HDRI is blue; the camera sees a pale, luminous sky.
+        separate = sn.new('ShaderNodeSeparateColor')
+        combine = sn.new('ShaderNodeCombineColor')
+        separate.mode = 'HSV'
+        combine.mode = 'HSV'
+        sat = sn.new('ShaderNodeMath')
+        sat.operation = 'MULTIPLY'
+        sat.inputs[1].default_value = float(os.environ.get('BLANC_SKY_WHITE', '0.08'))
+        sl.new(tex.outputs['Color'], separate.inputs['Color'])
+        sl.new(separate.outputs['Red'], combine.inputs['Red'])
+        sl.new(separate.outputs['Green'], sat.inputs[0])
+        sl.new(sat.outputs['Value'], combine.inputs['Green'])
+        sl.new(separate.outputs['Blue'], combine.inputs['Blue'])
+        pale = sn.new('ShaderNodeMixRGB')
+        pale.blend_type = 'MIX'
+        pale.inputs['Fac'].default_value = float(os.environ.get('BLANC_SKY_PALE', '0.55'))
+        pale.inputs['Color2'].default_value = (1.0, 0.99, 0.96, 1)
+        sl.new(combine.outputs['Color'], pale.inputs['Color1'])
+        # Halo: the bright sun core goes whiter still.
+        luma = sn.new('ShaderNodeRGBToBW')
+        sl.new(tex.outputs['Color'], luma.inputs['Color'])
+        halo = sn.new('ShaderNodeMapRange')
+        halo.inputs['From Min'].default_value = 0.35
+        halo.inputs['From Max'].default_value = 1.4
+        halo.inputs['To Min'].default_value = 0.0
+        halo.inputs['To Max'].default_value = float(os.environ.get('BLANC_SKY_HALO', '0.45'))
+        halo.clamp = True
+        sl.new(luma.outputs['Val'], halo.inputs['Value'])
+        glow = sn.new('ShaderNodeMixRGB')
+        glow.blend_type = 'MIX'
+        glow.inputs['Color2'].default_value = (1.0, 1.0, 0.98, 1)
+        sl.new(halo.outputs['Result'], glow.inputs['Fac'])
+        sl.new(pale.outputs['Color'], glow.inputs['Color1'])
+        sl.new(glow.outputs['Color'], emit.inputs['Color'])
         hold = sn.new('ShaderNodeMixShader')
         ray = sn.new('ShaderNodeLightPath')
         seen = sn.new('ShaderNodeMath')
@@ -1063,7 +1112,7 @@ def build():
     sun.energy = float(os.environ.get('BLANC_SUN', '2.0'))
     sun.color = kelvin(5600)
     # Soft enough to avoid black floor stains, side-on so a rock has a lit face and a shadow face.
-    sun.angle = math.radians(11)
+    sun.angle = math.radians(float(os.environ.get('BLANC_SUN_ANGLE', '28')))
     sun_obj = bpy.data.objects.new('sun', sun)
     # From behind the camera and to the left, so the near face of each rock is the lit face.
     if os.environ.get('BLANC_SUN_HIGH') == '1':
@@ -1093,10 +1142,11 @@ def assign_gilt_maps(frame_obj, normal_path, ao_path):
     nodes = material.node_tree.nodes
     links = material.node_tree.links
     bsdf = nodes['Principled BSDF']
-    gold = (0.68, 0.36, 0.06, 1)
+    # Aged gold: less yellow, darker in the carving, roughness that breaks the plastic shine.
+    gold = (0.40, 0.29, 0.13, 1)
     bsdf.inputs['Base Color'].default_value = gold
     bsdf.inputs['Metallic'].default_value = 1.0
-    bsdf.inputs['Roughness'].default_value = 0.26
+    bsdf.inputs['Roughness'].default_value = 0.46
     if normal_path.exists():
         normal_image = load_image(normal_path, 'Non-Color')
         tex = nodes.new('ShaderNodeTexImage')
@@ -1111,7 +1161,7 @@ def assign_gilt_maps(frame_obj, normal_path, ao_path):
         tex.image = ao_image
         mix = nodes.new('ShaderNodeMixRGB')
         mix.blend_type = 'MULTIPLY'
-        mix.inputs['Fac'].default_value = 0.65
+        mix.inputs['Fac'].default_value = 0.88
         mix.inputs['Color1'].default_value = gold
         links.new(tex.outputs['Color'], mix.inputs['Color2'])
         links.new(mix.outputs['Color'], bsdf.inputs['Base Color'])
@@ -1292,7 +1342,9 @@ def place_fancy_frames():
         scale = frame['height'] / tall if tall else 1
         obj.scale = (scale, scale, scale)
         depth = min(src.dimensions) * scale
-        obj.location = (frame['x'] + sign * (depth * 0.5 + 0.02), frame['z'], frame['y'])
+        # Close to the marble. A deep offset was painting a black bar behind the gilt.
+        gap = float(os.environ.get('BLANC_FRAME_GAP', '0.012'))
+        obj.location = (frame['x'] + sign * gap, frame['z'], frame['y'])
         obj.name = f"giltframe-{frame['id']}"
         if src_canvas is None:
             continue
@@ -2237,25 +2289,43 @@ def add_cumulus_sheets(end_y):
 
 
 def apply_bloom():
-    """A light fog-glow on the highlights. Walls stay under the same exposure."""
+    """Bloom and a white distance haze. Both are compositing, not a volume."""
     scene = bpy.context.scene
-    if os.environ.get('BLANC_BLOOM') != '1':
+    bloom = os.environ.get('BLANC_BLOOM') == '1'
+    mist = os.environ.get('BLANC_MIST') == '1'
+    if not bloom and not mist:
         scene.use_nodes = False
         return
+    if mist:
+        scene.view_layers[0].use_pass_mist = True
+        scene.world.mist_settings.use_mist = True
+        scene.world.mist_settings.falloff = 'QUADRATIC'
+        scene.world.mist_settings.start = float(os.environ.get('BLANC_MIST_START', '8'))
+        scene.world.mist_settings.depth = float(os.environ.get('BLANC_MIST_DEPTH', '22'))
     scene.use_nodes = True
     scene.render.use_compositing = True
     tree = scene.node_tree
     tree.nodes.clear()
     layers = tree.nodes.new('CompositorNodeRLayers')
-    glare = tree.nodes.new('CompositorNodeGlare')
-    glare.glare_type = 'FOG_GLOW'
-    glare.quality = 'MEDIUM'
-    glare.mix = float(os.environ.get('BLANC_BLOOM_MIX', '-0.72'))
-    glare.threshold = float(os.environ.get('BLANC_BLOOM_THRESHOLD', '0.8'))
-    glare.size = 6
+    current = layers.outputs['Image']
+    if mist and 'Mist' in layers.outputs:
+        wash = tree.nodes.new('ShaderNodeMixRGB') if False else tree.nodes.new('CompositorNodeMixRGB')
+        wash.blend_type = 'MIX'
+        wash.inputs['Color2'].default_value = (1.0, 0.99, 0.97, 1)
+        tree.links.new(layers.outputs['Mist'], wash.inputs['Fac'])
+        tree.links.new(current, wash.inputs['Color1'])
+        current = wash.outputs['Image']
+    if bloom:
+        glare = tree.nodes.new('CompositorNodeGlare')
+        glare.glare_type = 'FOG_GLOW'
+        glare.quality = 'MEDIUM'
+        glare.mix = float(os.environ.get('BLANC_BLOOM_MIX', '-0.72'))
+        glare.threshold = float(os.environ.get('BLANC_BLOOM_THRESHOLD', '0.8'))
+        glare.size = 6
+        tree.links.new(current, glare.inputs['Image'])
+        current = glare.outputs['Image']
     composite = tree.nodes.new('CompositorNodeComposite')
-    tree.links.new(layers.outputs['Image'], glare.inputs['Image'])
-    tree.links.new(glare.outputs['Image'], composite.inputs['Image'])
+    tree.links.new(current, composite.inputs['Image'])
 
 
 def render_photo(path, width, height, samples, denoise=True):

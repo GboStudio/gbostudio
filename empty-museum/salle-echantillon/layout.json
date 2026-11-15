@@ -1,6 +1,6 @@
 {
   "room": {
-    "width": 7.2,
+    "width": 9.6,
     "backZ": -0.45,
     "hallLength": 33.2,
     "endDepth": 5,
@@ -35,9 +35,9 @@
     {
       "id": "left-front",
       "wall": "left",
-      "x": -3.6,
+      "x": -4.8,
       "y": 1.72,
-      "z": 5.5,
+      "z": 8.27,
       "artWidth": 1.28,
       "artHeight": 1.7,
       "moulding": 0.16,
@@ -49,11 +49,11 @@
       "pictureLight": true
     },
     {
-      "id": "left-8.70",
+      "id": "left-11.63",
       "wall": "left",
-      "x": -3.6,
+      "x": -4.8,
       "y": 1.62,
-      "z": 8.7,
+      "z": 11.63,
       "artWidth": 1.35,
       "artHeight": 1.05,
       "moulding": 0.11,
@@ -65,11 +65,11 @@
       "pictureLight": true
     },
     {
-      "id": "left-11.90",
+      "id": "left-14.98",
       "wall": "left",
-      "x": -3.6,
+      "x": -4.8,
       "y": 1.78,
-      "z": 11.9,
+      "z": 14.98,
       "artWidth": 1.15,
       "artHeight": 1.52,
       "moulding": 0.13,
@@ -81,11 +81,11 @@
       "pictureLight": true
     },
     {
-      "id": "left-15.10",
+      "id": "left-18.33",
       "wall": "left",
-      "x": -3.6,
+      "x": -4.8,
       "y": 1.62,
-      "z": 15.1,
+      "z": 18.33,
       "artWidth": 1.35,
       "artHeight": 1.05,
       "moulding": 0.11,
@@ -97,11 +97,11 @@
       "pictureLight": true
     },
     {
-      "id": "left-18.30",
+      "id": "left-21.68",
       "wall": "left",
-      "x": -3.6,
+      "x": -4.8,
       "y": 1.78,
-      "z": 18.3,
+      "z": 21.68,
       "artWidth": 1.15,
       "artHeight": 1.52,
       "moulding": 0.13,
@@ -113,11 +113,11 @@
       "pictureLight": true
     },
     {
-      "id": "left-21.50",
+      "id": "left-25.03",
       "wall": "left",
-      "x": -3.6,
+      "x": -4.8,
       "y": 1.62,
-      "z": 21.5,
+      "z": 25.03,
       "artWidth": 1.35,
       "artHeight": 1.05,
       "moulding": 0.11,
@@ -129,11 +129,11 @@
       "pictureLight": true
     },
     {
-      "id": "left-24.70",
+      "id": "left-28.38",
       "wall": "left",
-      "x": -3.6,
+      "x": -4.8,
       "y": 1.78,
-      "z": 24.7,
+      "z": 28.38,
       "artWidth": 1.15,
       "artHeight": 1.52,
       "moulding": 0.13,
@@ -145,27 +145,11 @@
       "pictureLight": true
     },
     {
-      "id": "left-27.90",
-      "wall": "left",
-      "x": -3.6,
-      "y": 1.62,
-      "z": 27.9,
-      "artWidth": 1.35,
-      "artHeight": 1.05,
-      "moulding": 0.11,
-      "width": 1.57,
-      "height": 1.27,
-      "normal": 1,
-      "painting": "cc0/oeuvres/kintsugi.jpg",
-      "hero": false,
-      "pictureLight": true
-    },
-    {
       "id": "right-front",
       "wall": "right",
-      "x": 3.6,
+      "x": 4.8,
       "y": 1.72,
-      "z": 5.5,
+      "z": 8.27,
       "artWidth": 1.28,
       "artHeight": 1.7,
       "moulding": 0.16,
@@ -177,11 +161,11 @@
       "pictureLight": true
     },
     {
-      "id": "right-8.70",
+      "id": "right-11.63",
       "wall": "right",
-      "x": 3.6,
+      "x": 4.8,
       "y": 1.78,
-      "z": 8.7,
+      "z": 11.63,
       "artWidth": 1.15,
       "artHeight": 1.52,
       "moulding": 0.13,
@@ -193,11 +177,11 @@
       "pictureLight": true
     },
     {
-      "id": "right-11.90",
+      "id": "right-14.98",
       "wall": "right",
-      "x": 3.6,
+      "x": 4.8,
       "y": 1.62,
-      "z": 11.9,
+      "z": 14.98,
       "artWidth": 1.35,
       "artHeight": 1.05,
       "moulding": 0.11,
@@ -209,11 +193,11 @@
       "pictureLight": true
     },
     {
-      "id": "right-15.10",
+      "id": "right-18.33",
       "wall": "right",
-      "x": 3.6,
+      "x": 4.8,
       "y": 1.78,
-      "z": 15.1,
+      "z": 18.33,
       "artWidth": 1.15,
       "artHeight": 1.52,
       "moulding": 0.13,
@@ -225,11 +209,11 @@
       "pictureLight": true
     },
     {
-      "id": "right-18.30",
+      "id": "right-21.68",
       "wall": "right",
-      "x": 3.6,
+      "x": 4.8,
       "y": 1.62,
-      "z": 18.3,
+      "z": 21.68,
       "artWidth": 1.35,
       "artHeight": 1.05,
       "moulding": 0.11,
@@ -241,11 +225,11 @@
       "pictureLight": true
     },
     {
-      "id": "right-21.50",
+      "id": "right-25.03",
       "wall": "right",
-      "x": 3.6,
+      "x": 4.8,
       "y": 1.78,
-      "z": 21.5,
+      "z": 25.03,
       "artWidth": 1.15,
       "artHeight": 1.52,
       "moulding": 0.13,
@@ -257,11 +241,11 @@
       "pictureLight": true
     },
     {
-      "id": "right-24.70",
+      "id": "right-28.38",
       "wall": "right",
-      "x": 3.6,
+      "x": 4.8,
       "y": 1.62,
-      "z": 24.7,
+      "z": 28.38,
       "artWidth": 1.35,
       "artHeight": 1.05,
       "moulding": 0.11,
@@ -271,28 +255,12 @@
       "painting": "cc0/oeuvres/kintsugi.jpg",
       "hero": false,
       "pictureLight": true
-    },
-    {
-      "id": "right-27.90",
-      "wall": "right",
-      "x": 3.6,
-      "y": 1.78,
-      "z": 27.9,
-      "artWidth": 1.15,
-      "artHeight": 1.52,
-      "moulding": 0.13,
-      "width": 1.41,
-      "height": 1.78,
-      "normal": -1,
-      "painting": "cc0/oeuvres/lundi-8h12.jpg",
-      "hero": false,
-      "pictureLight": true
     }
   ],
   "benches": [
     {
       "wall": "left",
-      "x": -3.3200000000000003,
+      "x": -4.52,
       "z0": 6.62,
       "z1": 9.2,
       "height": 0.46,
@@ -300,7 +268,7 @@
     },
     {
       "wall": "right",
-      "x": 3.3200000000000003,
+      "x": 4.52,
       "z0": 6.62,
       "z1": 9.2,
       "height": 0.46,
@@ -309,61 +277,56 @@
   ],
   "pilasters": [
     {
-      "z": 3.9,
+      "z": 6.6,
       "width": 0.72,
-      "depth": 0.08
+      "depth": 0.48
     },
     {
-      "z": 7.1,
+      "z": 9.95,
       "width": 0.72,
-      "depth": 0.08
+      "depth": 0.48
     },
     {
-      "z": 10.3,
+      "z": 13.3,
       "width": 0.72,
-      "depth": 0.08
+      "depth": 0.48
     },
     {
-      "z": 13.5,
+      "z": 16.65,
       "width": 0.72,
-      "depth": 0.08
+      "depth": 0.48
     },
     {
-      "z": 16.7,
+      "z": 20,
       "width": 0.72,
-      "depth": 0.08
+      "depth": 0.48
     },
     {
-      "z": 19.9,
+      "z": 23.35,
       "width": 0.72,
-      "depth": 0.08
+      "depth": 0.48
     },
     {
-      "z": 23.1,
+      "z": 26.7,
       "width": 0.72,
-      "depth": 0.08
+      "depth": 0.48
     },
     {
-      "z": 26.3,
+      "z": 30.05,
       "width": 0.72,
-      "depth": 0.08
-    },
-    {
-      "z": 29.5,
-      "width": 0.72,
-      "depth": 0.08
+      "depth": 0.48
     }
   ],
   "obstacles": [
     {
-      "minX": -3.5400000000000005,
-      "maxX": -3.1,
+      "minX": -4.739999999999999,
+      "maxX": -4.3,
       "minZ": 6.62,
       "maxZ": 9.2
     },
     {
-      "minX": 3.1,
-      "maxX": 3.5400000000000005,
+      "minX": 4.3,
+      "maxX": 4.739999999999999,
       "minZ": 6.62,
       "maxZ": 9.2
     }

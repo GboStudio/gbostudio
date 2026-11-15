@@ -7,7 +7,7 @@
  * dog-leg, repeated modules) is decided and not built. See PROJECT_STATE.md.
  */
 export const ROOM = {
-  width: 7.2,
+  width: 9.6,
   backZ: -0.45,
   hallLength: 33.2,
   endDepth: 5.0,
@@ -74,7 +74,7 @@ function sideFrames(wall) {
   const paintings = PAINTINGS[wall];
   // One frame in each bay. The hero is the nearest, and the widest.
   const posts = [];
-  for (let z = 3.9; z <= 31.4; z += 3.2) posts.push(Math.round(z * 100) / 100);
+  for (let z = 6.6; z <= 32.2; z += 3.35) posts.push(Math.round(z * 100) / 100);
   // Two large sizes only. A 0.5 m frame disappears down a 30 m nave.
   const kinds = wall === 'left'
     ? [{artW: 1.15, artH: 1.52, mould: 0.13, hang: 1.78}, {artW: 1.35, artH: 1.05, mould: 0.11, hang: 1.62}]
@@ -121,7 +121,7 @@ export function buildLayout() {
     {wall: 'right', x: ROOM.width / 2 - 0.28, z0: 6.62, z1: 9.2, height: 0.46, depth: 0.44},
   ];
   const pilasters = [];
-  for (let z = 3.9; z <= 31.4; z += 3.2) pilasters.push({z: Math.round(z * 100) / 100, width: 0.72, depth: 0.08});
+  for (let z = 6.6; z <= 32.2; z += 3.35) pilasters.push({z: Math.round(z * 100) / 100, width: 0.72, depth: 0.48});
   const obstacles = benches.map(bench => ({
     minX: bench.x - bench.depth / 2,
     maxX: bench.x + bench.depth / 2,
