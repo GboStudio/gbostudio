@@ -5,7 +5,7 @@ Mesuré sur la branche `proposal/landing-blanche-nolimit` avant et après les po
 | Fonction | Avant | Après |
 | --- | --- | --- |
 | Titre « The Unreal Museum — l’irréel a trouvé son musée » | présent | présent |
-| Image héro `salle-blanche-hero-1920x840.jpg` | présente | présente, non régénérée |
+| Image héro | ancienne cible recadrée | master 4K validé, dérivés AVIF/WebP/JPEG |
 | Légende « Image de direction artistique · la visite 3D évolue vers cet univers » | le complément était masqué sur mobile | entière, y compris sur mobile |
 | Marque ™ dans la visite (`THE UNREAL MUSEUM` + TM) | présente | présente |
 | Bandeau « VERSION DÉMONSTRATION · Œuvres d’exemple fictives · Ajouts visibles uniquement sur votre appareil · Aucun paiement » | présent | présent, plus compact |

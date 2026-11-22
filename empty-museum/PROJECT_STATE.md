@@ -100,3 +100,8 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Les graisses 500/600 et l’italique sont dans `fonts-extended.css`, chargée après le premier rendu. La minification (point 16) n’est pas faite : GitHub Pages sert les fichiers tels quels, sans chaîne de build.
 - Inventaire des fonctions : `empty-museum/docs/landing-feature-inventory.md`.
 - État : proposé dans la PR brouillon #52, **non fusionné**, non déployé.
+
+## Master 4K de l’accueil — 22 novembre 2026 (PR brouillon #52, non déployé)
+- Guillaume : « La 4K me va : fais-la intégrer sur la page d'accueil (sans mise en ligne) ». Les points 3 et 15 de l’audit sont donc faits ici ; le point 14 (textes du moteur) reste hors de cette PR.
+- Le hero lit le master validé 3840×2160, servi en AVIF, WebP et JPEG de repli (640 à 1920). Le JPEG 4K brut n’est pas une ressource de la page. Favicon 16 et 32, apple-touch 180 et image de partage 1200×630 en sont dérivés. `commerce-model.mjs` et les fichiers du moteur 3D ne changent pas.
+- Rien n’est publié : la PR reste un brouillon.
