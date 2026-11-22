@@ -225,6 +225,17 @@ Reprise depuis `31963f1`. La caméra, les cadres, les bancs, les veines et les s
 - Sonde 360 : 9,02 s entre l’échantillon 0 et le 8 en 1024×512, donc **1,13 s par échantillon** à cette taille, environ **41 s par échantillon** en 6144×3072. 256 ≈ **2 h 55**. 512 ≈ **5 h 45**. 4K 64 échantillons ≈ **15 min**, déduit des 1,59 s/échantillon mesurés en 1280×720. Rien de lourd n’est lancé.
 - **Pas déployé. Pas fusionné. Pas une PR.** L’ouverture montre la photo de cumulus. Le fond est dans la fourchette, mais le modelé y reste faible : à L* 94 la photo est écrasée par le rendu et se lit encore comme un rectangle clair. Les petits rochers du fond restent proches de l’axe.
 
+## Salle blanche grandiose, douzième passage — 22 novembre 2026
+
+Le cadrage, les rochers et les nuages du onzième passage sont gardés. La feuille verticale qui coupait le sol est retirée. Cinq essais 400×225, puis l’aperçu.
+
+- Le sol et les murs continuent (nef à 28 m, deux travées de cadres en plus). Une brume de profondeur, seulement au fond, mélange le sol, les cloisons et le ciel dans un blanc lumineux. Plus de liseré noir.
+- Le reflet du sol ne voit plus la photo bleue : les rayons glossy lisent un blanc chaud, et le marbre est à rugosité 0,28. Veines de mur continues, contraste 155, pas de bookmatch. Toiles désaturées (0,18) et réchauffées ; le grand cadre de gauche prend `painting-5.webp` à la place du bal rouge.
+- Aperçu 1280×720, **128 échantillons**, OIDN albedo + normales, 3 min 46. Luma **0,529** (−5 % sur 0,558, dans les ±15 %). Murs L* **83,3**. Ciel de la fenêtre officielle L* **86,8** (écart-type 13,2). Les pointes de l’ouverture sont vers L* **97**. Fond L* **89,9** (écart-type 2,3) : plus de coupure, mais le fond reste un champ clair plutôt qu’une banque de cumulus modelée.
+- Images : `review/grandiose12-preview.jpg`, `review/compare-axis-grandiose12.jpg`, `review/pano-test-grandiose12.jpg` (1024×512, 8 échantillons).
+- Sonde 360 : 9,34 s entre l’échantillon 0 et le 8 en 1024×512, donc **1,17 s par échantillon** à cette taille, environ **42 s par échantillon** en 6144×3072. 256 ≈ **3 h**. 512 ≈ **6 h**. 4K 64 échantillons ≈ **17 min**, déduit des 1,76 s/échantillon mesurés en 1280×720. Rien de lourd n’est lancé.
+- **Pas déployé. Pas fusionné. Pas une PR.** Le liseré noir et le reflet bleu ont disparu. Le fond se dissout, mais la brume aplatit les nuages là-bas.
+
 ## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
 
 Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon d’origine (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. La branche grandiose allonge seulement l’échantillon (36 m, sans mur du fond) pour la photo ; elle ne construit pas la salle de 100 m et n’écrit pas ses cotes dans le contrat.
