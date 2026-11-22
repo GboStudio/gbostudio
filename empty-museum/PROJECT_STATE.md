@@ -282,6 +282,17 @@ Le sol du quinzième est inchangé (rugosité 0,06, speculaire 0,68, vernis 0,45
 - Sonde 360 : 4,75 s entre l’échantillon 0 et le 8 en 1024×512, donc **0,59 s par échantillon**, environ **21 s par échantillon** en 6144×3072. 256 ≈ **1 h 30**. 512 ≈ **3 h**. 4K 64 échantillons ≈ **13 min**, déduit des 1,31 s/échantillon en 1280×720. Rien de lourd n’est lancé.
 - **Pas déployé. Pas fusionné. Pas une PR.** La nef a des piliers et des retraits, les nuages sont revenus au plafond, le sol miroir est gardé. Le fond est encore un champ clair : les feuilles y sont douces, pas un volume de cumulus, et les toiles sont trop petites et trop sombres pour se lire comme les huiles de la cible.
 
+## Salle blanche grandiose, dix-septième passage — 22 novembre 2026
+
+La géométrie du seizième est gardée : nef 12,8 m, pilastres de 1,6 m, seize rochers, cumulus au-dessus, sol du quinzième (rugosité 0,06, speculaire 0,68, vernis). La caméra est avancée à y = 1,2 m, champ 78°, pour montrer les cadres.
+
+- Chaque baie a 2 ou 3 cadres dorés, les deux murs, centre à 1,6 m. Les toiles sont les images réelles (UV image, sRGB), gain 0,78, saturation 0,72, teinte chaude. Un spot 3000 K éclaire la toile et le mur au-dessus.
+- Les murs sont lavés vers le blanc (gain 0,95, voile 0,84, contraste de veine 18, maille 20 m) pour sortir du réseau craquelé. Des aires chaudes éclairent les faces des pilastres et le sol, plus fort vers le fond. Le marbre lointain émet un peu, pour fondre l’horizon.
+- Aperçu 1280×720, **128 échantillons**, 4 min 11. Luma **0,645** (juste au-dessus de 0,60). Murs L* **81,0**. Ciel L* **94,0**. Fond L* **93,7** (écart-type 5,6). Le saut d’horizon au centre est passé d’environ 50 niveaux de gris à **14**.
+- Images : `review/grandiose17-preview.jpg`, `review/compare-axis-grandiose17.jpg`, `review/pano-test-grandiose17.jpg`, `review/paintings-crop17.jpg`.
+- Sonde 360 : 5,31 s entre l’échantillon 0 et le 8 en 1024×512, donc **0,66 s par échantillon**, environ **24 s par échantillon** en 6144×3072. 256 ≈ **1 h 40**. 512 ≈ **3 h 25**. 4K 64 échantillons ≈ **18 min**. Rien de lourd n’est lancé.
+- **Pas déployé. Pas fusionné. Pas une PR.** Les cadres du premier plan montrent des scènes lisibles, sombres et chaudes, et les murs ne sont plus un gris craquelé. Une ligne claire reste où le sol rencontre l’ouverture, et le fond n’a pas encore le volume de cumulus de la cible.
+
 ## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
 
 Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon d’origine (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. La branche grandiose allonge seulement l’échantillon (36 m, sans mur du fond) pour la photo ; elle ne construit pas la salle de 100 m et n’écrit pas ses cotes dans le contrat.

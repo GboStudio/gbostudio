@@ -252,6 +252,14 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
             lift.inputs['Color2'].default_value = (0.9, 0.89, 0.87, 1)
             links.new(color_out, lift.inputs['Color1'])
             color_out = lift.outputs['Color']
+        else:
+            # Wash the Carrara network down to a few soft veins.
+            lift = nodes.new('ShaderNodeMixRGB')
+            lift.blend_type = 'MIX'
+            lift.inputs['Fac'].default_value = float(os.environ.get('BLANC_WALL_WHITE', '0.84'))
+            lift.inputs['Color2'].default_value = (0.94, 0.93, 0.91, 1)
+            links.new(color_out, lift.inputs['Color1'])
+            color_out = lift.outputs['Color']
         links.new(color_out, bsdf.inputs['Base Color'])
     if MARBLE_NORMAL.exists() and normal_strength > 0:
         normal = nodes.new('ShaderNodeTexImage')
@@ -311,6 +319,20 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
         for node in nodes:
             if node.type == 'NORMAL_MAP':
                 node.inputs['Strength'].default_value = float(os.environ['BLANC_FLOOR_NORMAL'])
+    if name == 'floor' and 'Emission Strength' in bsdf.inputs:
+        # The far marble brightens into the opening. Same coat and roughness.
+        geo = nodes.new('ShaderNodeNewGeometry')
+        sep = nodes.new('ShaderNodeSeparateXYZ')
+        links.new(geo.outputs['Position'], sep.inputs['Vector'])
+        glow = nodes.new('ShaderNodeMapRange')
+        glow.inputs['From Min'].default_value = 14.0
+        glow.inputs['From Max'].default_value = 36.0
+        glow.inputs['To Min'].default_value = 0.0
+        glow.inputs['To Max'].default_value = float(os.environ.get('BLANC_FLOOR_GLOW', '14'))
+        glow.clamp = True
+        links.new(sep.outputs['Y'], glow.inputs['Value'])
+        links.new(glow.outputs['Result'], bsdf.inputs['Emission Strength'])
+        bsdf.inputs['Emission Color'].default_value = (1.0, 0.98, 0.94, 1)
     return material
 
 
@@ -520,11 +542,11 @@ def painting_material(index, frame):
     links.new(separate.outputs['Green'], sat.inputs[0])
     links.new(sat.outputs['Value'], combine.inputs['Green'])
     links.new(separate.outputs['Blue'], combine.inputs['Blue'])
-    gain = float(os.environ.get('BLANC_PAINT_GAIN', '0.42'))
+    gain = float(os.environ.get('BLANC_PAINT_GAIN', '0.78'))
     dark = nodes.new('ShaderNodeMixRGB')
     dark.blend_type = 'MULTIPLY'
     dark.inputs['Fac'].default_value = 1.0
-    dark.inputs['Color2'].default_value = (gain * 1.15, gain, gain * 0.72, 1)
+    dark.inputs['Color2'].default_value = (gain * 1.08, gain * 0.96, gain * 0.78, 1)
     links.new(combine.outputs['Color'], dark.inputs['Color1'])
     links.new(dark.outputs['Color'], nodes['Principled BSDF'].inputs['Base Color'])
     return material
@@ -1142,11 +1164,11 @@ def build():
             spot.spot_blend = 0.85
         spot.shadow_soft_size = float(os.environ.get('BLANC_SPOT_SOFT', '0.55'))
         obj = bpy.data.objects.new(f"spot-{frame['id']}", spot)
-        # The warm pool sits on the marble above the frame.
+        # Warm pool on the marble above the frame, wide enough to light the painting.
         top = frame['y'] + frame['height'] * 0.5
-        head = (x_wall + sign * 0.58, frame['z'], min(height - 0.4, top + 1.15))
+        head = (x_wall + sign * 0.72, frame['z'], min(height - 0.35, top + 0.85))
         obj.location = head
-        aim_at = Vector((x_wall + sign * 0.015, frame['z'], top + 0.32))
+        aim_at = Vector((x_wall + sign * 0.02, frame['z'], frame['y'] + frame['height'] * 0.12))
         direction = aim_at - Vector(head)
         obj.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
         bpy.context.scene.collection.objects.link(obj)
@@ -1173,7 +1195,7 @@ def build():
     add_volume_clouds(end, height)
     add_godrays(end, height)
     add_cloud_cards()
-    add_opening_glow(end)
+    add_nave_fill(end, height)
     add_rock_sun()
 
     # Sky dome, emissive in the viewer, hidden from the bake.
@@ -2665,20 +2687,73 @@ def add_floor_haze(end, half):
     print('floor haze', round(y0, 2), round(y1, 2))
 
 
-def add_opening_glow(end):
-    """A wide warm area light in the last opening, so the far floor glows."""
+def add_nave_fill(end, height):
+    """Warm diffuse fill so the pier faces read white, not grey."""
+    energy = float(os.environ.get('BLANC_FILL', '70'))
+    if energy <= 0:
+        return
+    for index, y in enumerate((6.5, 14.0)):
+        light = bpy.data.lights.new(f'nave-fill-{index}', 'AREA')
+        light.energy = energy
+        light.size = 8.0
+        light.color = (1.0, 0.97, 0.90)
+        obj = bpy.data.objects.new(light.name, light)
+        obj.location = (0.0, y, height - 0.6)
+        obj.rotation_euler = (0.0, 0.0, 0.0)
+        bpy.context.scene.collection.objects.link(obj)
+    print('nave fill', energy)
+    # Down-lights, stronger toward the opening, so the floor brightens with no hard edge.
+    for index, (y, power) in enumerate(((12.0, 40.0), (17.5, 180.0), (21.5, 420.0))):
+        light = bpy.data.lights.new(f'floor-wash-{index}', 'AREA')
+        light.energy = power * float(os.environ.get('BLANC_WASH_SCALE', '1'))
+        light.size = 16.0
+        light.color = (1.0, 0.97, 0.90)
+        obj = bpy.data.objects.new(light.name, light)
+        obj.location = (0.0, y, 6.5)
+        obj.rotation_euler = (0.0, 0.0, 0.0)
+        bpy.context.scene.collection.objects.link(obj)
+    # Near the camera, so the foreground marble is not left in shadow.
+    near = bpy.data.lights.new('floor-wash-near', 'AREA')
+    near.energy = 90.0 * float(os.environ.get('BLANC_WASH_SCALE', '1'))
+    near.size = 10.0
+    near.color = (1.0, 0.97, 0.90)
+    near_obj = bpy.data.objects.new(near.name, near)
+    near_obj.location = (0.0, 3.2, 5.5)
+    near_obj.rotation_euler = (0.0, 0.0, 0.0)
+    bpy.context.scene.collection.objects.link(near_obj)
+    # Side light so the faces turned toward the nave are white.
+    for index, (y, sign) in enumerate(((3.2, -1.0), (3.2, 1.0), (8.5, -1.0), (8.5, 1.0), (15.0, -1.0), (15.0, 1.0))):
+        side = bpy.data.lights.new(f'wall-wash-{index}', 'AREA')
+        side.energy = 220.0
+        side.size = 5.0
+        side.color = (1.0, 0.96, 0.88)
+        sobj = bpy.data.objects.new(side.name, side)
+        sobj.location = (sign * 2.4, y, 2.6)
+        aim = Vector((sign * 6.4, y, 1.8))
+        sobj.rotation_euler = (aim - Vector(sobj.location)).to_track_quat('-Z', 'Y').to_euler()
+        bpy.context.scene.collection.objects.link(sobj)
+    front = bpy.data.lights.new('camera-fill', 'AREA')
+    front.energy = 160.0
+    front.size = 12.0
+    front.color = (1.0, 0.96, 0.90)
+    fobj = bpy.data.objects.new(front.name, front)
+    fobj.location = (0.0, 0.4, 3.4)
+    faim = Vector((0.0, 14.0, 1.2))
+    fobj.rotation_euler = (faim - Vector(fobj.location)).to_track_quat('-Z', 'Y').to_euler()
+    bpy.context.scene.collection.objects.link(fobj)
     energy = float(os.environ.get('BLANC_OPENING_LIGHT', '180'))
     if energy <= 0:
         return
     light = bpy.data.lights.new('opening-glow', 'AREA')
     light.energy = energy
     light.shape = 'RECTANGLE'
-    light.size = 8.0
-    light.size_y = 3.2
+    light.size = 14.0
+    light.size_y = 6.0
     light.color = (1.0, 0.96, 0.88)
     obj = bpy.data.objects.new('opening-glow', light)
-    obj.location = (0.0, end - 0.6, 4.2)
-    aim_at = Vector((0.0, end - 10.0, 0.3))
+    # In the opening, shining back down the floor, so the marble brightens toward the end.
+    obj.location = (0.0, end + 1.2, 3.2)
+    aim_at = Vector((0.0, end - 12.0, 0.15))
     direction = aim_at - Vector(obj.location)
     obj.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
     bpy.context.scene.collection.objects.link(obj)

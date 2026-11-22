@@ -96,7 +96,7 @@ function sideFrames(wall) {
   let paint = 0;
   for (let bay = 0; bay < posts.length - 1; bay += 1) {
     const sizes = bays[bay];
-    const z0 = posts[bay] + 0.7;
+    const z0 = posts[bay] + 1.15;
     const z1 = posts[bay + 1] - 0.7;
     const step = (z1 - z0) / sizes.length;
     for (let slot = 0; slot < sizes.length; slot += 1) {
