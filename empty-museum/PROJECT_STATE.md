@@ -236,6 +236,17 @@ Le cadrage, les rochers et les nuages du onzième passage sont gardés. La feuil
 - Sonde 360 : 9,34 s entre l’échantillon 0 et le 8 en 1024×512, donc **1,17 s par échantillon** à cette taille, environ **42 s par échantillon** en 6144×3072. 256 ≈ **3 h**. 512 ≈ **6 h**. 4K 64 échantillons ≈ **17 min**, déduit des 1,76 s/échantillon mesurés en 1280×720. Rien de lourd n’est lancé.
 - **Pas déployé. Pas fusionné. Pas une PR.** Le liseré noir et le reflet bleu ont disparu. Le fond se dissout, mais la brume aplatit les nuages là-bas.
 
+## Salle blanche grandiose, treizième passage — 22 novembre 2026
+
+La brume pleine image du douzième passage est retirée : elle avait effacé les cumulus. Deux essais 400×225, puis l’aperçu.
+
+- La feuille du onzième passage est revenue au-dessus de l’ouverture (photo `cumulus-plate.jpg`, ombres grises, pointes vers L* 97). La brume ne couvre plus le ciel : un dégradé blanc, caméra seulement, sur les 8 derniers mètres du sol. Au-dessus, une banque de la même photo, neutre, centrée à 6,3 m de haut.
+- Sol : rugosité **0,14**, speculaire 0,42, gain 0,78, pour un marbre blanc qui reflète cadres et spots. Toiles : saturation 0,82, gain 0,62, sans le voile brun. Le grand cadre de gauche reprend *Le dernier bal*.
+- Aperçu 1280×720, **128 échantillons**, OIDN albedo + normales, 3 min 49. Luma **0,551** (−1 % sur 0,558). Murs L* **83,8**. Ciel de la fenêtre officielle L* **89,6** (écart-type 13,6). Fond L* **92,6** (écart-type 4,4), dans 90–95.
+- Images : `review/grandiose13-preview.jpg`, `review/compare-axis-grandiose13.jpg`, `review/pano-test-grandiose13.jpg` (1024×512, 8 échantillons).
+- Sonde 360 : 9,56 s entre l’échantillon 0 et le 8 en 1024×512, donc **1,20 s par échantillon** à cette taille, environ **43 s par échantillon** en 6144×3072. 256 ≈ **3 h 05**. 512 ≈ **6 h 05**. 4K 64 échantillons ≈ **17 min**, déduit des 1,78 s/échantillon mesurés en 1280×720. Rien de lourd n’est lancé.
+- **Pas déployé. Pas fusionné. Pas une PR.** Les cumulus du plafond, la couleur des toiles et le reflet du sol sont revenus. Le bas du fond reste un champ clair : la banque de nuages y est lisible surtout en écart-type, pas comme un cumulus franc.
+
 ## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
 
 Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon d’origine (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. La branche grandiose allonge seulement l’échantillon (36 m, sans mur du fond) pour la photo ; elle ne construit pas la salle de 100 m et n’écrit pas ses cotes dans le contrat.
