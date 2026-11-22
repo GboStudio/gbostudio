@@ -214,6 +214,17 @@ Le cadrage, la nef courte, les travées et les spots restent. Les cartes de nuag
 - Sonde 360 : 2,46 s entre l’échantillon 0 et le 8, donc **39 s par échantillon**. 256 ≈ **2 h 50**. 512 ≈ **5 h 35**. 4K 64 échantillons ≈ **17 min**. Rien de lourd n’est lancé.
 - **Pas déployé. Pas fusionné. Pas une PR.** Les cadres, les toiles et les veines sont plus lisibles. Le fond n’est pas encore une banque de cumulus à L* 94–96, et les rochers restent un peu mous.
 
+## Salle blanche grandiose, onzième passage — 22 novembre 2026
+
+Reprise depuis `31963f1`. La caméra, les cadres, les bancs, les veines et les spots chauds du dixième passage sont gardés. Sept essais 400×225, puis l’aperçu. Le onzième essai qui assombrissait le fond (L* 88) a été rejeté.
+
+- Le dôme reste un blanc neutre, sans la bande photo qui faisait des traînées. Deux feuilles face à la caméra portent `cumulus-plate.jpg` (CC0, Poly Haven / kloofendal) : une au-dessus de l’ouverture, une banque au fond. Pas de carte de chant. Un rayon de post-production reste masqué sur le ciel.
+- Huit gros rochers anguleux, à gauche et à droite de l’axe, à des profondeurs différentes, plus cinq plus petits vers le fond. Ils ne se touchent pas et ne sont pas coupés par le cadre. Toiles : gain 0,20, saturation 0,38, teinte chaude.
+- Aperçu 1280×720, **128 échantillons**, OIDN albedo + normales, 3 min 25. Luma **0,492** (−12 % sur 0,558, dans les ±15 %). Murs L* **77,6**. Ciel de la fenêtre officielle L* **87,8** (écart-type 17,1, les rochers sont dans la fenêtre). Les pointes de l’ouverture sont vers L* **96–97**, les ombres de nuage au centre vers **84–86**. Fond L* **94,1** (écart-type 4,6), dans 92–96.
+- Images : `review/grandiose11-preview.jpg`, `review/compare-axis-grandiose11.jpg`, `review/pano-test-grandiose11.jpg` (1024×512, 8 échantillons).
+- Sonde 360 : 9,02 s entre l’échantillon 0 et le 8 en 1024×512, donc **1,13 s par échantillon** à cette taille, environ **41 s par échantillon** en 6144×3072. 256 ≈ **2 h 55**. 512 ≈ **5 h 45**. 4K 64 échantillons ≈ **15 min**, déduit des 1,59 s/échantillon mesurés en 1280×720. Rien de lourd n’est lancé.
+- **Pas déployé. Pas fusionné. Pas une PR.** L’ouverture montre la photo de cumulus. Le fond est dans la fourchette, mais le modelé y reste faible : à L* 94 la photo est écrasée par le rendu et se lit encore comme un rectangle clair. Les petits rochers du fond restent proches de l’axe.
+
 ## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
 
 Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon d’origine (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. La branche grandiose allonge seulement l’échantillon (36 m, sans mur du fond) pour la photo ; elle ne construit pas la salle de 100 m et n’écrit pas ses cotes dans le contrat.
