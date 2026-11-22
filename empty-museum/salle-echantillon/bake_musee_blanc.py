@@ -494,21 +494,21 @@ def painting_material(index, frame):
     combine.mode = 'HSV'
     sat = nodes.new('ShaderNodeMath')
     sat.operation = 'MULTIPLY'
-    sat.inputs[1].default_value = float(os.environ.get('BLANC_PAINT_SAT', '0.22'))
+    sat.inputs[1].default_value = float(os.environ.get('BLANC_PAINT_SAT', '0.82'))
     links.new(tex.outputs['Color'], separate.inputs['Color'])
     links.new(separate.outputs['Red'], combine.inputs['Red'])
     links.new(separate.outputs['Green'], sat.inputs[0])
     links.new(sat.outputs['Value'], combine.inputs['Green'])
     links.new(separate.outputs['Blue'], combine.inputs['Blue'])
     grade = nodes.new('ShaderNodeBrightContrast')
-    grade.inputs['Contrast'].default_value = 16.0
-    grade.inputs['Bright'].default_value = -0.1
+    grade.inputs['Contrast'].default_value = 8.0
+    grade.inputs['Bright'].default_value = -0.02
     links.new(combine.outputs['Color'], grade.inputs['Color'])
-    gain = float(os.environ.get('BLANC_PAINT_GAIN', '0.22'))
+    gain = float(os.environ.get('BLANC_PAINT_GAIN', '0.62'))
     dark = nodes.new('ShaderNodeMixRGB')
     dark.blend_type = 'MULTIPLY'
     dark.inputs['Fac'].default_value = 1.0
-    dark.inputs['Color2'].default_value = (gain, gain * 0.68, gain * 0.38, 1)
+    dark.inputs['Color2'].default_value = (gain, gain * 0.9, gain * 0.72, 1)
     links.new(grade.outputs['Color'], dark.inputs['Color1'])
     links.new(dark.outputs['Color'], nodes['Principled BSDF'].inputs['Base Color'])
     return material
@@ -1071,8 +1071,9 @@ def build():
                     'painting': 'pd/painting-5.webp',
                 })
     for frame in frames:
-        if frame.get('id') == 'left-front':
-            frame['painting'] = os.environ.get('BLANC_FRONT_PAINT', 'pd/painting-5.webp')
+        front = os.environ.get('BLANC_FRONT_PAINT', '')
+        if frame.get('id') == 'left-front' and front:
+            frame['painting'] = front
         if frame['wall'] not in ('left', 'right'):
             continue
         mould = float(os.environ.get('BLANC_MOULD', '0.09'))
@@ -1152,6 +1153,7 @@ def build():
     add_volume_clouds(end, height)
     add_godrays(end, height)
     add_cloud_cards()
+    add_floor_haze(end, half)
     add_rock_sun()
 
     # Sky dome, emissive in the viewer, hidden from the bake.
@@ -2590,17 +2592,69 @@ def add_cloud_dome(end_y):
     return dome
 
 
+def add_floor_haze(end, half):
+    """A soft white gradient on the last metres of floor. It does not cover the opening."""
+    if os.environ.get('BLANC_FLOOR_HAZE', '1') != '1':
+        return
+    length = float(os.environ.get('BLANC_FLOOR_HAZE_LEN', '8'))
+    y0 = end - length
+    y1 = end + 6.0
+    material = bpy.data.materials.new('floor-haze')
+    material.use_nodes = True
+    material.blend_method = 'BLEND'
+    try:
+        material.shadow_method = 'NONE'
+    except Exception:
+        pass
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+    output = nodes.new('ShaderNodeOutputMaterial')
+    coord = nodes.new('ShaderNodeTexCoord')
+    sep = nodes.new('ShaderNodeSeparateXYZ')
+    links.new(coord.outputs['Generated'], sep.inputs['Vector'])
+    along = nodes.new('ShaderNodeMapRange')
+    along.inputs['From Min'].default_value = 0.02
+    along.inputs['From Max'].default_value = 0.72
+    along.inputs['To Min'].default_value = 0.0
+    along.inputs['To Max'].default_value = 1.0
+    along.clamp = True
+    links.new(sep.outputs['Y'], along.inputs['Value'])
+    emit = nodes.new('ShaderNodeEmission')
+    emit.inputs['Color'].default_value = (1.0, 0.99, 0.97, 1)
+    emit.inputs['Strength'].default_value = float(os.environ.get('BLANC_FLOOR_HAZE_PWR', '8'))
+    transparent = nodes.new('ShaderNodeBsdfTransparent')
+    body = nodes.new('ShaderNodeMixShader')
+    links.new(along.outputs['Result'], body.inputs['Fac'])
+    links.new(transparent.outputs['BSDF'], body.inputs[1])
+    links.new(emit.outputs['Emission'], body.inputs[2])
+    ray = nodes.new('ShaderNodeLightPath')
+    hold = nodes.new('ShaderNodeMixShader')
+    links.new(ray.outputs['Is Camera Ray'], hold.inputs['Fac'])
+    links.new(transparent.outputs['BSDF'], hold.inputs[1])
+    links.new(body.outputs['Shader'], hold.inputs[2])
+    links.new(hold.outputs['Shader'], output.inputs['Surface'])
+    bpy.ops.mesh.primitive_plane_add(size=1, location=(0.0, (y0 + y1) * 0.5, 0.05))
+    fog = bpy.context.active_object
+    fog.name = 'floor-haze'
+    fog.scale = (half * 2 + 1.2, y1 - y0, 1)
+    fog.data.materials.append(material)
+    fog.visible_shadow = False
+    fog.visible_diffuse = False
+    fog.visible_glossy = False
+    print('floor haze', round(y0, 2), round(y1, 2))
+
+
 def add_cloud_cards():
     """Alpha-masked cloud photos at several depths. Camera and mirror only."""
     if os.environ.get('BLANC_SKY_CARDS') != '1':
         return
     sources = [CC0 / 'cumulus-plate.jpg', CC0 / 'cumulus-band.jpg']
-    # Horizontal sheets only, wider than the opening, so no vertical backdrop
-    # and no card edge in the picture. Tuple: photo, location, tilt, scale,
-    # u offset, emission, shadow out, highlight out.
+    # Overhead sheet is the round-11 cumulus. The second sheet is a bank
+    # across the far opening, held above the floor so it cannot cut the marble.
     cards = (
-        (0, (0.0, 9.0, 8.8), 180, (32.0, 22.0), 0.0, 42.0, 0.84, 1.0),
-        (0, (0.0, 20.0, 9.6), 180, (28.0, 20.0), 0.42, 44.0, 0.88, 1.0),
+        (0, (0.0, 10.5, 8.0), 180, (22.0, 16.0), 0.0, 50.0, 0.62, 1.0),
+        (0, (0.0, 24.5, 6.3), 90, (13.0, 5.2), 0.0, 30.0, 0.4, 0.88),
     )
     made = 0
     for index, (which, loc, tilt, scale, uoff, strength, out_lo, out_hi) in enumerate(cards):
@@ -2623,8 +2677,8 @@ def add_cloud_cards():
         tex.extension = 'REPEAT'
         mapping = nodes.new('ShaderNodeMapping')
         mapping.inputs['Location'].default_value[0] = uoff
-        mapping.inputs['Location'].default_value[1] = 0.22 if index == 1 else 0.0
-        mapping.inputs['Scale'].default_value = (0.7, 0.7, 1) if index == 1 else (0.55, 0.55, 1)
+        mapping.inputs['Location'].default_value[1] = 0.4 if index == 1 else 0.0
+        mapping.inputs['Scale'].default_value = (0.5, 0.55, 1) if index == 1 else (0.55, 0.55, 1)
         coord = nodes.new('ShaderNodeTexCoord')
         links.new(coord.outputs['UV'], mapping.inputs['Vector'])
         links.new(mapping.outputs['Vector'], tex.inputs['Vector'])
@@ -2661,8 +2715,8 @@ def add_cloud_cards():
         links.new(u2.outputs['Value'], rad.inputs[0])
         links.new(v2.outputs['Value'], rad.inputs[1])
         edge = nodes.new('ShaderNodeMapRange')
-        edge.inputs['From Min'].default_value = 0.28
-        edge.inputs['From Max'].default_value = 0.46
+        edge.inputs['From Min'].default_value = 0.16
+        edge.inputs['From Max'].default_value = 0.32
         edge.inputs['To Min'].default_value = 1.0
         edge.inputs['To Max'].default_value = 0.0
         edge.clamp = True
