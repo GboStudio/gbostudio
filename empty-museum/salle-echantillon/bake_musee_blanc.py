@@ -581,19 +581,19 @@ def place_rocks(material):
         # Twenty-five stones. The big ones are close, in the opening above the camera.
         # Big stones in the upper third of a level view, then a trail into the end.
         placements = [
-            (-2.3, 6.6, 4.0, 1.55),
-            (2.2, 8.4, 4.6, 1.4),
-            (-0.5, 10.4, 5.2, 1.65),
+            (-2.3, 6.6, 3.55, 1.55),
+            (2.2, 8.4, 4.15, 1.4),
+            (-0.5, 10.4, 4.55, 1.65),
             (2.5, 12.2, 3.9, 1.25),
             (-2.4, 13.8, 4.8, 1.35),
             (1.0, 15.6, 5.5, 1.1),
             (-1.7, 17.2, 4.2, 1.0),
             (2.1, 18.6, 5.0, 0.9),
-            (-2.5, 16.4, 4.5, 0.5),
-            (2.6, 17.6, 5.1, 0.45),
-            (0.3, 18.9, 4.4, 0.4),
-            (-1.5, 19.5, 5.3, 0.38),
-            (1.5, 19.7, 4.0, 0.36),
+            (-2.2, 16.0, 4.6, 0.48),
+            (2.4, 17.0, 5.0, 0.42),
+            (-1.3, 18.2, 4.3, 0.36),
+            (1.7, 18.8, 5.2, 0.34),
+            (0.15, 19.6, 4.7, 0.28),
         ]
     elif os.environ.get('BLANC_MORE_ROCKS') == '1':
         # More blocks in the light, further down the nave. Same CC0 meshes.
@@ -2546,14 +2546,15 @@ def add_cloud_cards():
     if os.environ.get('BLANC_SKY_CARDS') != '1':
         return
     sources = [CC0 / 'cumulus-plate.jpg', CC0 / 'cumulus-band.jpg']
-    strength = float(os.environ.get('BLANC_CARD', '3.2'))
-    # Face-on only: a sheet we look up at, and one bank across the far end.
+    # Face-on only. The first sheet is the opening we look up into.
+    # The second is the cloud bank across the far end, graded brighter.
+    # Tuple: photo, location, tilt, scale, u offset, emission, shadow out, highlight out.
     cards = (
-        (0, (0.0, 11.5, 7.4), 180, (20.0, 14.0), 0.0),
-        (0, (0.0, 18.7, 4.6), 90, (14.0, 7.5), 0.2),
+        (0, (0.0, 10.5, 8.0), 180, (22.0, 16.0), 0.0, 50.0, 0.62, 1.0),
+        (0, (0.0, 18.6, 3.7), 90, (14.0, 6.4), 0.05, 40.0, 0.5, 1.0),
     )
     made = 0
-    for index, (which, loc, tilt, scale, uoff) in enumerate(cards):
+    for index, (which, loc, tilt, scale, uoff, strength, out_lo, out_hi) in enumerate(cards):
         path = sources[which]
         if not path.exists():
             continue
@@ -2573,19 +2574,20 @@ def add_cloud_cards():
         tex.extension = 'REPEAT'
         mapping = nodes.new('ShaderNodeMapping')
         mapping.inputs['Location'].default_value[0] = uoff
-        mapping.inputs['Scale'].default_value = (0.85, 0.85, 1)
+        mapping.inputs['Location'].default_value[1] = 0.22 if index == 1 else 0.0
+        mapping.inputs['Scale'].default_value = (0.7, 0.7, 1) if index == 1 else (0.55, 0.55, 1)
         coord = nodes.new('ShaderNodeTexCoord')
         links.new(coord.outputs['UV'], mapping.inputs['Vector'])
         links.new(mapping.outputs['Vector'], tex.inputs['Vector'])
         grey = nodes.new('ShaderNodeRGBToBW')
         links.new(tex.outputs['Color'], grey.inputs['Val'] if 'Val' in [s.name for s in grey.inputs] else grey.inputs[0])
-        alpha = nodes.new('ShaderNodeMapRange')
-        alpha.inputs['From Min'].default_value = float(os.environ.get('BLANC_CARD_LO', '0.62'))
-        alpha.inputs['From Max'].default_value = float(os.environ.get('BLANC_CARD_HI', '0.9'))
-        alpha.inputs['To Min'].default_value = 0.0
-        alpha.inputs['To Max'].default_value = 1.0
-        alpha.clamp = True
-        links.new(grey.outputs['Val'], alpha.inputs['Value'])
+        graded = nodes.new('ShaderNodeMapRange')
+        graded.inputs['From Min'].default_value = float(os.environ.get('BLANC_CARD_LO', '0.32'))
+        graded.inputs['From Max'].default_value = float(os.environ.get('BLANC_CARD_HI', '0.88'))
+        graded.inputs['To Min'].default_value = out_lo
+        graded.inputs['To Max'].default_value = out_hi
+        graded.clamp = True
+        links.new(grey.outputs['Val'], graded.inputs['Value'])
         # Soft oval, so the card does not read as a rectangle.
         uv_sep = nodes.new('ShaderNodeSeparateXYZ')
         links.new(mapping.outputs['Vector'], uv_sep.inputs['Vector'])
@@ -2610,39 +2612,26 @@ def add_cloud_cards():
         links.new(u2.outputs['Value'], rad.inputs[0])
         links.new(v2.outputs['Value'], rad.inputs[1])
         edge = nodes.new('ShaderNodeMapRange')
-        edge.inputs['From Min'].default_value = 0.02
-        edge.inputs['From Max'].default_value = 0.48
+        edge.inputs['From Min'].default_value = 0.16
+        edge.inputs['From Max'].default_value = 0.32
         edge.inputs['To Min'].default_value = 1.0
         edge.inputs['To Max'].default_value = 0.0
         edge.clamp = True
         links.new(rad.outputs['Value'], edge.inputs['Value'])
-        alpha_soft = nodes.new('ShaderNodeMath')
-        alpha_soft.operation = 'MULTIPLY'
-        links.new(alpha.outputs['Result'], alpha_soft.inputs[0])
-        links.new(edge.outputs['Result'], alpha_soft.inputs[1])
-        separate = nodes.new('ShaderNodeSeparateColor')
-        combine = nodes.new('ShaderNodeCombineColor')
-        separate.mode = 'HSV'
-        combine.mode = 'HSV'
-        sat = nodes.new('ShaderNodeMath')
-        sat.operation = 'MULTIPLY'
-        sat.inputs[1].default_value = float(os.environ.get('BLANC_CARD_SAT', '0.18'))
-        links.new(tex.outputs['Color'], separate.inputs['Color'])
-        links.new(separate.outputs['Red'], combine.inputs['Red'])
-        links.new(separate.outputs['Green'], sat.inputs[0])
-        links.new(sat.outputs['Value'], combine.inputs['Green'])
-        links.new(separate.outputs['Blue'], combine.inputs['Blue'])
-        lift = nodes.new('ShaderNodeMixRGB')
-        lift.blend_type = 'MIX'
-        lift.inputs['Fac'].default_value = float(os.environ.get('BLANC_CARD_LIFT', '0.2'))
-        lift.inputs['Color2'].default_value = (1.0, 1.0, 1.0, 1)
-        links.new(combine.outputs['Color'], lift.inputs['Color1'])
+        tint = nodes.new('ShaderNodeCombineColor')
+        links.new(graded.outputs['Result'], tint.inputs['Red'])
+        warm = nodes.new('ShaderNodeMath')
+        warm.operation = 'MULTIPLY'
+        warm.inputs[1].default_value = 0.985
+        links.new(graded.outputs['Result'], warm.inputs[0])
+        links.new(graded.outputs['Result'], tint.inputs['Green'])
+        links.new(warm.outputs['Value'], tint.inputs['Blue'])
         emit = nodes.new('ShaderNodeEmission')
         emit.inputs['Strength'].default_value = strength
-        links.new(lift.outputs['Color'], emit.inputs['Color'])
+        links.new(tint.outputs['Color'], emit.inputs['Color'])
         transparent = nodes.new('ShaderNodeBsdfTransparent')
         body = nodes.new('ShaderNodeMixShader')
-        links.new(alpha_soft.outputs['Value'], body.inputs['Fac'])
+        links.new(edge.outputs['Result'], body.inputs['Fac'])
         links.new(transparent.outputs['BSDF'], body.inputs[1])
         links.new(emit.outputs['Emission'], body.inputs[2])
         ray = nodes.new('ShaderNodeLightPath')
