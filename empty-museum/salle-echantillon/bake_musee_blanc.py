@@ -155,6 +155,9 @@ class Accum:
         mesh.materials.append(self.material)
         for polygon in mesh.polygons:
             polygon.use_smooth = smooth
+        if self.name.startswith('Canvas') and mesh.uv_layers.get('UVMap'):
+            mesh.uv_layers['UVMap'].active = True
+            mesh.uv_layers['UVMap'].active_render = True
         obj = bpy.data.objects.new(self.name, mesh)
         bpy.context.scene.collection.objects.link(obj)
         return obj
@@ -488,29 +491,11 @@ def painting_material(index, frame):
     links = material.node_tree.links
     tex = nodes.new('ShaderNodeTexImage')
     tex.image = load_image(path, 'sRGB')
-    separate = nodes.new('ShaderNodeSeparateColor')
-    combine = nodes.new('ShaderNodeCombineColor')
-    separate.mode = 'HSV'
-    combine.mode = 'HSV'
-    sat = nodes.new('ShaderNodeMath')
-    sat.operation = 'MULTIPLY'
-    sat.inputs[1].default_value = float(os.environ.get('BLANC_PAINT_SAT', '0.82'))
-    links.new(tex.outputs['Color'], separate.inputs['Color'])
-    links.new(separate.outputs['Red'], combine.inputs['Red'])
-    links.new(separate.outputs['Green'], sat.inputs[0])
-    links.new(sat.outputs['Value'], combine.inputs['Green'])
-    links.new(separate.outputs['Blue'], combine.inputs['Blue'])
-    grade = nodes.new('ShaderNodeBrightContrast')
-    grade.inputs['Contrast'].default_value = 8.0
-    grade.inputs['Bright'].default_value = -0.02
-    links.new(combine.outputs['Color'], grade.inputs['Color'])
-    gain = float(os.environ.get('BLANC_PAINT_GAIN', '0.62'))
-    dark = nodes.new('ShaderNodeMixRGB')
-    dark.blend_type = 'MULTIPLY'
-    dark.inputs['Fac'].default_value = 1.0
-    dark.inputs['Color2'].default_value = (gain, gain * 0.9, gain * 0.72, 1)
-    links.new(grade.outputs['Color'], dark.inputs['Color1'])
-    links.new(dark.outputs['Color'], nodes['Principled BSDF'].inputs['Base Color'])
+    tex.interpolation = 'Smart'
+    uv = nodes.new('ShaderNodeUVMap')
+    uv.uv_map = 'UVMap'
+    links.new(uv.outputs['UV'], tex.inputs['Vector'])
+    links.new(tex.outputs['Color'], nodes['Principled BSDF'].inputs['Base Color'])
     return material
 
 
@@ -1153,7 +1138,6 @@ def build():
     add_volume_clouds(end, height)
     add_godrays(end, height)
     add_cloud_cards()
-    add_floor_haze(end, half)
     add_rock_sun()
 
     # Sky dome, emissive in the viewer, hidden from the bake.
@@ -2654,7 +2638,7 @@ def add_cloud_cards():
     # across the far opening, held above the floor so it cannot cut the marble.
     cards = (
         (0, (0.0, 10.5, 8.0), 180, (22.0, 16.0), 0.0, 50.0, 0.62, 1.0),
-        (0, (0.0, 24.5, 6.3), 90, (13.0, 5.2), 0.0, 30.0, 0.4, 0.88),
+        (0, (0.0, 21.0, 4.4), 90, (15.0, 8.0), 0.0, 22.0, 0.42, 1.0),
     )
     made = 0
     for index, (which, loc, tilt, scale, uoff, strength, out_lo, out_hi) in enumerate(cards):
@@ -2677,8 +2661,8 @@ def add_cloud_cards():
         tex.extension = 'REPEAT'
         mapping = nodes.new('ShaderNodeMapping')
         mapping.inputs['Location'].default_value[0] = uoff
-        mapping.inputs['Location'].default_value[1] = 0.4 if index == 1 else 0.0
-        mapping.inputs['Scale'].default_value = (0.5, 0.55, 1) if index == 1 else (0.55, 0.55, 1)
+        mapping.inputs['Location'].default_value[1] = 0.28 if index == 1 else 0.0
+        mapping.inputs['Scale'].default_value = (0.62, 0.62, 1) if index == 1 else (0.55, 0.55, 1)
         coord = nodes.new('ShaderNodeTexCoord')
         links.new(coord.outputs['UV'], mapping.inputs['Vector'])
         links.new(mapping.outputs['Vector'], tex.inputs['Vector'])
@@ -2721,6 +2705,24 @@ def add_cloud_cards():
         edge.inputs['To Max'].default_value = 0.0
         edge.clamp = True
         links.new(rad.outputs['Value'], edge.inputs['Value'])
+        cover = edge.outputs['Result']
+        if index == 1:
+            # World height, not UV: the sheet fades out before it can meet the floor.
+            geo = nodes.new('ShaderNodeNewGeometry')
+            sepz = nodes.new('ShaderNodeSeparateXYZ')
+            links.new(geo.outputs['Position'], sepz.inputs['Vector'])
+            bottom = nodes.new('ShaderNodeMapRange')
+            bottom.inputs['From Min'].default_value = 1.15
+            bottom.inputs['From Max'].default_value = 3.1
+            bottom.inputs['To Min'].default_value = 0.0
+            bottom.inputs['To Max'].default_value = 1.0
+            bottom.clamp = True
+            links.new(sepz.outputs['Z'], bottom.inputs['Value'])
+            faded = nodes.new('ShaderNodeMath')
+            faded.operation = 'MULTIPLY'
+            links.new(edge.outputs['Result'], faded.inputs[0])
+            links.new(bottom.outputs['Result'], faded.inputs[1])
+            cover = faded.outputs['Value']
         tint = nodes.new('ShaderNodeCombineColor')
         links.new(graded.outputs['Result'], tint.inputs['Red'])
         warm = nodes.new('ShaderNodeMath')
@@ -2734,7 +2736,7 @@ def add_cloud_cards():
         links.new(tint.outputs['Color'], emit.inputs['Color'])
         transparent = nodes.new('ShaderNodeBsdfTransparent')
         body = nodes.new('ShaderNodeMixShader')
-        links.new(edge.outputs['Result'], body.inputs['Fac'])
+        links.new(cover, body.inputs['Fac'])
         links.new(transparent.outputs['BSDF'], body.inputs[1])
         links.new(emit.outputs['Emission'], body.inputs[2])
         ray = nodes.new('ShaderNodeLightPath')
