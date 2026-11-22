@@ -105,3 +105,7 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Guillaume : « La 4K me va : fais-la intégrer sur la page d'accueil (sans mise en ligne) ». Les points 3 et 15 de l’audit sont donc faits ici ; le point 14 (textes du moteur) reste hors de cette PR.
 - Le hero lit le master validé 3840×2160, servi en AVIF, WebP et JPEG de repli (640 à 1920). Le JPEG 4K brut n’est pas une ressource de la page. Favicon 16 et 32, apple-touch 180 et image de partage 1200×630 en sont dérivés. `commerce-model.mjs` et les fichiers du moteur 3D ne changent pas.
 - Rien n’est publié : la PR reste un brouillon.
+
+## On ne parle pas de taille — 22 novembre 2026 (PR brouillon #52)
+- Guillaume : « On ne parle pas de taille ». La statistique « 7,5 M / Longueur simulée de la galerie » devient « 2 / Visites, libre et guidée ». La visite guidée et le mode libre sont bien les deux modes du dock (`museum-v5.js`, non modifié).
+- Les distances 15 à 75 m de la grille 3D et les cinq formats de cadres restent. Les mentions de longueur du lieu ont été retirées des textes d’accueil.

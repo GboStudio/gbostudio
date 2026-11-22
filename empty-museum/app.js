@@ -172,7 +172,7 @@ function refreshCeilingOffers(){
 const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 function bg(p){if(p.image?.startsWith('data:'))return `url("${p.image}")`;return p.image||'linear-gradient(145deg,#ddd8cd,#f8f6f0)'}
 function render(){grid.innerHTML='';const arr=filter==='all'?pieces:pieces.filter(p=>p.category===filter);arr.forEach(p=>{const el=document.createElement('article');el.className=`tile ${p.size.startsWith('ceiling-')?({'ceiling-mini':'mini','ceiling-medium':'landscape','ceiling-large':'wide'}[p.size]):p.size} ${p.size.startsWith('ceiling-')?'ceiling-tile':''} ${p.category==='words'?'words':''} ${p.category==='3d'?'threed':''}`;el.dataset.id=p.id;if(p.category==='words'){el.innerHTML=`<div class="wordsArt">${esc(p.words||p.title)}</div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button type="button" aria-label="Voir l’œuvre « ${esc(p.title)} » de ${esc(p.author)}"></button>`}else if(p.category==='3d'){el.innerHTML=`<div class="img"></div><div class="shape"></div><div class="shade"></div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button type="button" aria-label="Voir l’œuvre « ${esc(p.title)} » de ${esc(p.author)}"></button>`}else{el.innerHTML=`<div class="img"></div><div class="shade"></div><div class="lab"><div><b>${esc(p.title)}</b><span>${esc(p.author)}</span></div><span>#${String(p.id).padStart(3,'0')}</span></div><button type="button" aria-label="Voir l’œuvre « ${esc(p.title)} » de ${esc(p.author)}"></button>`}if(p.category!=='words'&&p.category!=='3d')el.querySelector('.img').style.backgroundImage=bg(p);el.querySelector('button').onclick=()=>openPiece(p);grid.appendChild(el)});stats()}
-function stats(){ refreshCeilingOffers(); $('#liveCount').textContent=pieces.length;$('#countHero').textContent=String(pieces.length).padStart(3,'0');const m=4.8+pieces.reduce((a,p)=>a+({mini:.22,standard:.42,large:.72,xl:1.12}[p.size]||.42),0);$('#metersHero').textContent=m.toFixed(1).replace('.',',')+' M'}
+function stats(){ refreshCeilingOffers(); $('#liveCount').textContent=pieces.length;$('#countHero').textContent=String(pieces.length).padStart(3,'0')}
 $$('[data-filter]').forEach(b=>b.onclick=()=>{$$('[data-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;render();viewport.scrollTo({left:0,behavior:'smooth'})});
 $('#reset').onclick=()=>viewport.scrollTo({left:0,behavior:'smooth'});$('#random').onclick=()=>{const a=filter==='all'?pieces:pieces.filter(p=>p.category===filter);if(!a.length)return;const p=a[Math.floor(Math.random()*a.length)],el=grid.querySelector(`[data-id="${p.id}"]`);if(el){viewport.scrollTo({left:Math.max(0,el.offsetLeft-viewport.clientWidth/2),behavior:'smooth'});el.animate([{transform:'translateY(0)'},{transform:'translateY(-12px)'},{transform:'translateY(0)'}],{duration:700});setTimeout(()=>openPiece(p),600)}};
 let down=false,sx=0,sl=0;viewport.onmousedown=e=>{down=true;sx=e.pageX-viewport.offsetLeft;sl=viewport.scrollLeft};window.onmouseup=()=>down=false;viewport.onmouseleave=()=>down=false;viewport.onmousemove=e=>{if(!down)return;e.preventDefault();viewport.scrollLeft=sl-(e.pageX-viewport.offsetLeft-sx)*1.35};
@@ -200,7 +200,7 @@ function openExhibit(size='landscape',price=null,slot=null){
   const name=commercial?'MODULE '+String(commercial.moduleNumber).padStart(3,'0')+' · '+commercial.format.name.toUpperCase()+' · CADRE '+commercial.ordinal:isCeiling?'PLAFOND · '+slot:isFloor?'ESPACE AU SOL N°'+slot.slice(1):(Number.isInteger(slot)?'MUR '+(slot%2?'DROIT':'GAUCHE')+' · CADRE N°'+String(slot+1).padStart(2,'0'):'EMPLACEMENT LIBRE');
   $('#slotName').textContent=name;
   $('#formatName').textContent=chosen.name;
-  $('#dimensions').textContent=chosen.dimensions;
+  $('#dimensions').textContent=isFloor?'':chosen.dimensions;
   $('#reservePrice').textContent=isCeiling?'':euros(plan.price);
   $('#price').textContent=isCeiling?'':euros(plan.price);
   $('#reservePreview').style.setProperty('--frame-ratio',String(chosen.ratio));
@@ -210,7 +210,7 @@ function openExhibit(size='landscape',price=null,slot=null){
     ?'Cet espace au sol est réservé à une sculpture, un objet ou une installation. Dans cette démo, vous pouvez présenter votre projet avec une photo et un texte.'
     :isCeiling
     ?'Cet emplacement premium est suspendu au plafond. Il reste exposé pendant 12 mois. Tournez la caméra vers le haut pour le retrouver.'
-    :commercial?'Ce cadre occupe une vraie subdivision du module mural de 3 mètres. Tarif mensuel indicatif : cette démo ne réalise aucun paiement.'
+    :commercial?'Ce cadre occupe une place du module mural. Tarif mensuel indicatif : cette démo ne réalise aucun paiement.'
     :'Ce cadre précis vous est réservé pendant 12 mois. Votre image conserve ses proportions : elle ne sera ni étirée ni déformée.';
   setReserveStage(1);
   $('#exhibit').showModal();

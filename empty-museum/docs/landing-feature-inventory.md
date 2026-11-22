@@ -23,3 +23,15 @@ Mesuré sur la branche `proposal/landing-blanche-nolimit` avant et après les po
 | Mot-marque vers le haut de page | `#top` (sous l’en-tête) | `#page-top`, défilement à 0 |
 | Moteur 3D au premier affichage | chargé tout de suite | seulement au clic ou à l’URL `?visit=immersive` (et ancres de visite) ; la visite s’ouvre comme avant |
 | CSS de visite `walk.css` | dans le premier rendu | chargée avec le moteur |
+
+## Inventaire AUDIT.md — avant `7c84105` / après « on ne parle pas de taille »
+
+Contrôle des entrées de la section « Inventaire des fonctionnalités actuelles » de `AUDIT.md` (sélecteurs, boutons, tableaux, dialogues, visite). Le chiffre du hero qui parlait de longueur reste un chiffre : « 2 / Visites, libre et guidée ». Aucune entrée de l’inventaire n’a été retirée.
+
+| Contrôle | Avant `7c84105` | Après |
+| --- | --- | --- |
+| Sections, ancres, navigation, menus, tableaux, formulaires, modales, filtres, mentions DÉMO, visite | présentes | présentes |
+| Chiffre « 7,5 M / Longueur simulée » | présent | remplacé par « 2 / Visites, libre et guidée » (`#metersHero` conservé) |
+| Grille 15–75 m et cinq formats de cadres | présents | présents, prix inchangés |
+| Manquants | 0 | 0 |
+| Cassés | 0 | 0 |

@@ -102,10 +102,10 @@ body.um .um-hero-visual{position:relative;margin:0;padding:0}
 body.um .um-hero-media.editorial-art-canvas{position:relative;display:block;width:100%;height:min(42svh,360px);aspect-ratio:16/7;max-height:min(42svh,360px);min-height:0;overflow:hidden;background:linear-gradient(180deg,#f1f3f3 0%,#e9e8e4 100%);border:0}
 body.um .um-hero-media.editorial-art-canvas::before{content:none;display:none}
 body.um .um-hero-media picture,body.um .um-hero-media img{display:block;width:100%;height:100%}
-body.um .um-hero-media img{object-fit:cover;object-position:50% 38%}
-/* fondu vers le blanc, comme le sol miroir qui rejoint la page */
+body.um .um-hero-media img{object-fit:cover;object-position:50% 72%}
+/* fondu vers le blanc, plus bas, pour laisser voir la pièce et le sol miroir */
 body.um .um-hero-media::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(251,250,247,0) 48%,rgba(251,250,247,.62) 70%,rgba(251,250,247,.95) 88%,var(--paper) 100%)}
+  background:linear-gradient(180deg,rgba(251,250,247,0) 72%,rgba(251,250,247,.28) 86%,rgba(251,250,247,.82) 96%,var(--paper) 100%)}
 body.um .um-hero-caption{position:absolute;top:20px;right:var(--gutter);z-index:2;margin:0;padding:7px 12px;background:rgba(251,250,247,.93);border:1px solid rgba(184,148,90,.38);
   font:500 12px/1.3 var(--sans);letter-spacing:.06em;color:var(--ink-2);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 body.um .um-hero-main{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;margin-top:clamp(-120px,-8vw,-48px);padding-top:0;padding-bottom:28px}

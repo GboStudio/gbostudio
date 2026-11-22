@@ -27,7 +27,7 @@ if(wallRoot){
     const row=document.createElement('tr');
     const title=cell(row,format.label);
     const description=document.createElement('small');
-    description.textContent=format.count+' cadre'+(format.count>1?'s':'')+' sur 3 m de mur';
+    description.textContent=format.count+' cadre'+(format.count>1?'s':'')+' par module';
     title.append(description);
     cell(row,String(format.count));
     cell(row,euros(prices.monthly));
