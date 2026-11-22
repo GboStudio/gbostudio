@@ -207,6 +207,10 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
             # A soft floor keeps a duller highlight. 1.0 was a bright mirror.
             spec = 0.48 if soft_floor else 1.0
             bsdf.inputs['Specular IOR Level'].default_value = float(os.environ.get('BLANC_FLOOR_SPEC', str(spec)))
+        if 'Coat Weight' in bsdf.inputs:
+            bsdf.inputs['Coat Weight'].default_value = float(os.environ.get('BLANC_FLOOR_COAT', '0.4'))
+        if 'Coat Roughness' in bsdf.inputs:
+            bsdf.inputs['Coat Roughness'].default_value = float(os.environ.get('BLANC_FLOOR_COAT_ROUGH', '0.06'))
     if MARBLE_COLOR.exists():
         color = nodes.new('ShaderNodeTexImage')
         color.extension = 'REPEAT'
@@ -240,6 +244,14 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
             mul.inputs['Color2'].default_value = (gain, gain, gain, 1)
             links.new(color_out, mul.inputs['Color1'])
             color_out = mul.outputs['Color']
+        if name == 'floor':
+            # Lift the scan toward white so the floor is the brightest surface after the sky.
+            lift = nodes.new('ShaderNodeMixRGB')
+            lift.blend_type = 'MIX'
+            lift.inputs['Fac'].default_value = float(os.environ.get('BLANC_FLOOR_WHITE', '0.42'))
+            lift.inputs['Color2'].default_value = (0.9, 0.89, 0.87, 1)
+            links.new(color_out, lift.inputs['Color1'])
+            color_out = lift.outputs['Color']
         links.new(color_out, bsdf.inputs['Base Color'])
     if MARBLE_NORMAL.exists() and normal_strength > 0:
         normal = nodes.new('ShaderNodeTexImage')
@@ -495,7 +507,18 @@ def painting_material(index, frame):
     uv = nodes.new('ShaderNodeUVMap')
     uv.uv_map = 'UVMap'
     links.new(uv.outputs['UV'], tex.inputs['Vector'])
-    links.new(tex.outputs['Color'], nodes['Principled BSDF'].inputs['Base Color'])
+    warm = nodes.new('ShaderNodeMixRGB')
+    warm.blend_type = 'MIX'
+    warm.inputs['Fac'].default_value = 0.35
+    warm.inputs['Color2'].default_value = (1.0, 0.82, 0.62, 1)
+    tinted = nodes.new('ShaderNodeMixRGB')
+    tinted.blend_type = 'MULTIPLY'
+    tinted.inputs['Fac'].default_value = 1.0
+    tinted.inputs['Color2'].default_value = (1.0, 0.9, 0.75, 1)
+    links.new(tex.outputs['Color'], tinted.inputs['Color1'])
+    links.new(tex.outputs['Color'], warm.inputs['Color1'])
+    links.new(tinted.outputs['Color'], warm.inputs['Color2'])
+    links.new(warm.outputs['Color'], nodes['Principled BSDF'].inputs['Base Color'])
     return material
 
 
@@ -1043,7 +1066,7 @@ def build():
     frames = [dict(item) for item in LAYOUT['frames']]
     if os.environ.get('BLANC_FAR_BAY', '1') == '1':
         # Two smaller bays past the layout, so the hall keeps going into the light.
-        for z, width, height_f in ((23.0, 0.96, 1.12), (26.2, 0.72, 0.86)):
+        for z, width, height_f in ((22.2, 0.9, 1.05),):
             for wall, x in (('left', -4.8), ('right', 4.8)):
                 frames.append({
                     'id': f'{wall}-far-{z:.0f}',
@@ -1138,6 +1161,7 @@ def build():
     add_volume_clouds(end, height)
     add_godrays(end, height)
     add_cloud_cards()
+    add_opening_glow(end)
     add_rock_sun()
 
     # Sky dome, emissive in the viewer, hidden from the bake.
@@ -2629,6 +2653,26 @@ def add_floor_haze(end, half):
     print('floor haze', round(y0, 2), round(y1, 2))
 
 
+def add_opening_glow(end):
+    """A wide warm area light in the last opening, so the far floor glows."""
+    energy = float(os.environ.get('BLANC_OPENING_LIGHT', '180'))
+    if energy <= 0:
+        return
+    light = bpy.data.lights.new('opening-glow', 'AREA')
+    light.energy = energy
+    light.shape = 'RECTANGLE'
+    light.size = 8.0
+    light.size_y = 3.2
+    light.color = (1.0, 0.96, 0.88)
+    obj = bpy.data.objects.new('opening-glow', light)
+    obj.location = (0.0, end - 0.6, 4.2)
+    aim_at = Vector((0.0, end - 10.0, 0.3))
+    direction = aim_at - Vector(obj.location)
+    obj.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
+    bpy.context.scene.collection.objects.link(obj)
+    print('opening glow', round(end, 2), energy)
+
+
 def add_cloud_cards():
     """Alpha-masked cloud photos at several depths. Camera and mirror only."""
     if os.environ.get('BLANC_SKY_CARDS') != '1':
@@ -2638,7 +2682,7 @@ def add_cloud_cards():
     # across the far opening, held above the floor so it cannot cut the marble.
     cards = (
         (0, (0.0, 10.5, 8.0), 180, (22.0, 16.0), 0.0, 50.0, 0.62, 1.0),
-        (0, (0.0, 21.0, 4.4), 90, (15.0, 8.0), 0.0, 22.0, 0.42, 1.0),
+        (0, (0.0, 23.6, 4.3), 90, (18.0, 8.2), 0.0, 40.0, 0.45, 1.0),
     )
     made = 0
     for index, (which, loc, tilt, scale, uoff, strength, out_lo, out_hi) in enumerate(cards):
@@ -2705,6 +2749,9 @@ def add_cloud_cards():
         edge.inputs['To Max'].default_value = 0.0
         edge.clamp = True
         links.new(rad.outputs['Value'], edge.inputs['Value'])
+        if index == 1:
+            edge.inputs['From Min'].default_value = 0.24
+            edge.inputs['From Max'].default_value = 0.46
         cover = edge.outputs['Result']
         if index == 1:
             # World height, not UV: the sheet fades out before it can meet the floor.
@@ -2712,8 +2759,8 @@ def add_cloud_cards():
             sepz = nodes.new('ShaderNodeSeparateXYZ')
             links.new(geo.outputs['Position'], sepz.inputs['Vector'])
             bottom = nodes.new('ShaderNodeMapRange')
-            bottom.inputs['From Min'].default_value = 1.15
-            bottom.inputs['From Max'].default_value = 3.1
+            bottom.inputs['From Min'].default_value = 0.35
+            bottom.inputs['From Max'].default_value = 1.35
             bottom.inputs['To Min'].default_value = 0.0
             bottom.inputs['To Max'].default_value = 1.0
             bottom.clamp = True
@@ -2926,7 +2973,7 @@ def apply_bloom():
         tree.links.new(sky_mask.outputs['Value'], soft.inputs['Image'])
     if glow:
         white = tree.nodes.new('CompositorNodeRGB')
-        white.outputs[0].default_value = (1.0, 0.99, 0.96, 1)
+        white.outputs[0].default_value = (1.0, 0.95, 0.86, 1)
         veil = tree.nodes.new('CompositorNodeMixRGB')
         veil.blend_type = 'MULTIPLY'
         veil.inputs['Fac'].default_value = 1.0
