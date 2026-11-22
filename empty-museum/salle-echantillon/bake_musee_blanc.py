@@ -507,18 +507,26 @@ def painting_material(index, frame):
     uv = nodes.new('ShaderNodeUVMap')
     uv.uv_map = 'UVMap'
     links.new(uv.outputs['UV'], tex.inputs['Vector'])
-    warm = nodes.new('ShaderNodeMixRGB')
-    warm.blend_type = 'MIX'
-    warm.inputs['Fac'].default_value = 0.35
-    warm.inputs['Color2'].default_value = (1.0, 0.82, 0.62, 1)
-    tinted = nodes.new('ShaderNodeMixRGB')
-    tinted.blend_type = 'MULTIPLY'
-    tinted.inputs['Fac'].default_value = 1.0
-    tinted.inputs['Color2'].default_value = (1.0, 0.9, 0.75, 1)
-    links.new(tex.outputs['Color'], tinted.inputs['Color1'])
-    links.new(tex.outputs['Color'], warm.inputs['Color1'])
-    links.new(tinted.outputs['Color'], warm.inputs['Color2'])
-    links.new(warm.outputs['Color'], nodes['Principled BSDF'].inputs['Base Color'])
+    # Darker, less pastel, still the picture itself.
+    separate = nodes.new('ShaderNodeSeparateColor')
+    combine = nodes.new('ShaderNodeCombineColor')
+    separate.mode = 'HSV'
+    combine.mode = 'HSV'
+    sat = nodes.new('ShaderNodeMath')
+    sat.operation = 'MULTIPLY'
+    sat.inputs[1].default_value = float(os.environ.get('BLANC_PAINT_SAT', '0.55'))
+    links.new(tex.outputs['Color'], separate.inputs['Color'])
+    links.new(separate.outputs['Red'], combine.inputs['Red'])
+    links.new(separate.outputs['Green'], sat.inputs[0])
+    links.new(sat.outputs['Value'], combine.inputs['Green'])
+    links.new(separate.outputs['Blue'], combine.inputs['Blue'])
+    gain = float(os.environ.get('BLANC_PAINT_GAIN', '0.42'))
+    dark = nodes.new('ShaderNodeMixRGB')
+    dark.blend_type = 'MULTIPLY'
+    dark.inputs['Fac'].default_value = 1.0
+    dark.inputs['Color2'].default_value = (gain * 1.15, gain, gain * 0.72, 1)
+    links.new(combine.outputs['Color'], dark.inputs['Color1'])
+    links.new(dark.outputs['Color'], nodes['Principled BSDF'].inputs['Base Color'])
     return material
 
 
@@ -615,19 +623,22 @@ def place_rocks(material):
         # Twenty-five stones. The big ones are close, in the opening above the camera.
         # Big stones in the upper third of a level view, then a trail into the end.
         placements = [
-            (-2.3, 6.6, 3.55, 1.55),
-            (2.2, 8.4, 4.15, 1.4),
-            (-0.5, 10.4, 4.55, 1.65),
-            (2.5, 12.2, 3.9, 1.25),
-            (-2.4, 13.8, 4.8, 1.35),
-            (1.0, 15.6, 5.5, 1.1),
-            (-1.7, 17.2, 4.2, 1.0),
-            (2.1, 18.6, 5.0, 0.9),
-            (-2.2, 16.0, 4.6, 0.48),
-            (2.4, 17.0, 5.0, 0.42),
-            (-1.3, 18.2, 4.3, 0.36),
-            (1.7, 18.8, 5.2, 0.34),
-            (0.15, 19.6, 4.7, 0.28),
+            (-3.4, 6.2, 5.4, 1.7),
+            (3.2, 7.4, 4.2, 1.45),
+            (-1.2, 8.6, 6.6, 1.35),
+            (2.6, 9.8, 3.4, 1.15),
+            (-3.6, 11.2, 4.8, 1.25),
+            (0.6, 12.0, 7.2, 1.5),
+            (3.4, 13.4, 5.6, 1.2),
+            (-2.2, 14.2, 3.1, 1.05),
+            (1.4, 15.6, 6.2, 1.3),
+            (-3.8, 16.4, 2.6, 0.85),
+            (2.8, 17.2, 2.4, 0.75),
+            (-0.8, 18.0, 4.4, 0.95),
+            (3.6, 18.8, 3.2, 0.7),
+            (-2.6, 19.4, 2.3, 0.62),
+            (0.4, 20.2, 5.0, 0.8),
+            (1.8, 21.0, 2.5, 0.55),
         ]
     elif os.environ.get('BLANC_MORE_ROCKS') == '1':
         # More blocks in the light, further down the nave. Same CC0 meshes.
@@ -935,7 +946,7 @@ def build():
             bright=float(os.environ.get('BLANC_FLOOR_BRIGHT', '-0.04')) if os.environ.get('BLANC_MIRROR') == '1' else 0.0,
             contrast=float(os.environ.get('BLANC_FLOOR_VEIN', '42')),
         ),
-        'gilt': new_material('gilt', (0.40, 0.28, 0.11), 0.5, 1),
+        'gilt': new_material('gilt', (0.46, 0.32, 0.13), 0.58, 1),
         'artwork': new_material('artwork', (0.4, 0.32, 0.24), 0.55),
         'iron': new_material('iron', (0.02, 0.02, 0.02), 0.35, 0.8),
         'bulb': new_material('bulb', kelvin(3000), 0.3),
@@ -956,8 +967,9 @@ def build():
     floor_tile = float(os.environ.get('BLANC_FLOOR_TILE', '7.2'))
 
     # Floor, open at the far end. No back wall.
+    floor_back = min(back, float(os.environ.get('BLANC_CAM_Y', '-0.25')) - 2.0)
     floor_far = end + float(os.environ.get('BLANC_FLOOR_EXTRA', '18'))
-    floor = [(-half, back, 0), (half, back, 0), (half, floor_far, 0), (-half, floor_far, 0)]
+    floor = [(-half, floor_back, 0), (half, floor_back, 0), (half, floor_far, 0), (-half, floor_far, 0)]
     meshes['floor'].quad(
         floor,
         [(c[0] / floor_tile, c[1] / floor_tile) for c in floor],
@@ -1030,7 +1042,7 @@ def build():
     for item in pilasters:
         width = item['width']
         # A few shallow partitions, about half a metre into the nave. Not a corridor of fins.
-        depth = float(os.environ.get('BLANC_PIER', '0.5'))
+        depth = float(os.environ.get('BLANC_PIER', '1.6'))
         y0 = item['z'] - width / 2
         y1 = item['z'] + width / 2
         for sign in (-1, 1):
@@ -2678,11 +2690,15 @@ def add_cloud_cards():
     if os.environ.get('BLANC_SKY_CARDS') != '1':
         return
     sources = [CC0 / 'cumulus-plate.jpg', CC0 / 'cumulus-band.jpg']
-    # Overhead sheet is the round-11 cumulus. The second sheet is a bank
-    # across the far opening, held above the floor so it cannot cut the marble.
+    # Overhead sheets in the opening we actually see, plus a bank of
+    # several face-on layers in the far opening. Not one wall.
     cards = (
-        (0, (0.0, 10.5, 8.0), 180, (22.0, 16.0), 0.0, 50.0, 0.62, 1.0),
-        (0, (0.0, 23.6, 4.3), 90, (18.0, 8.2), 0.0, 40.0, 0.45, 1.0),
+        (0, (0.0, 8.5, 6.4), 180, (28.0, 18.0), 0.05, 26.0, 0.5, 1.0),
+        (0, (1.5, 13.5, 7.6), 180, (22.0, 14.0), 0.45, 24.0, 0.52, 0.98),
+        (0, (-1.6, 18.2, 5.4), 90, (12.0, 5.6), 0.08, 32.0, 0.48, 0.96),
+        (0, (2.0, 20.4, 4.2), 90, (11.0, 5.0), 0.45, 30.0, 0.5, 0.94),
+        (0, (0.2, 23.0, 5.8), 90, (14.0, 6.2), 0.22, 28.0, 0.46, 0.92),
+        (0, (-2.2, 25.5, 3.4), 90, (13.0, 4.4), 0.6, 26.0, 0.52, 0.9),
     )
     made = 0
     for index, (which, loc, tilt, scale, uoff, strength, out_lo, out_hi) in enumerate(cards):
@@ -2749,18 +2765,18 @@ def add_cloud_cards():
         edge.inputs['To Max'].default_value = 0.0
         edge.clamp = True
         links.new(rad.outputs['Value'], edge.inputs['Value'])
-        if index == 1:
+        if tilt == 90:
             edge.inputs['From Min'].default_value = 0.24
             edge.inputs['From Max'].default_value = 0.46
         cover = edge.outputs['Result']
-        if index == 1:
+        if tilt == 90:
             # World height, not UV: the sheet fades out before it can meet the floor.
             geo = nodes.new('ShaderNodeNewGeometry')
             sepz = nodes.new('ShaderNodeSeparateXYZ')
             links.new(geo.outputs['Position'], sepz.inputs['Vector'])
             bottom = nodes.new('ShaderNodeMapRange')
-            bottom.inputs['From Min'].default_value = 0.35
-            bottom.inputs['From Max'].default_value = 1.35
+            bottom.inputs['From Min'].default_value = 0.45
+            bottom.inputs['From Max'].default_value = 1.6
             bottom.inputs['To Min'].default_value = 0.0
             bottom.inputs['To Max'].default_value = 1.0
             bottom.clamp = True

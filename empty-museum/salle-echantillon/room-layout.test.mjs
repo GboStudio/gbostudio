@@ -6,7 +6,7 @@ import {ROOM, buildLayout, findArchitectureConflicts} from './room-layout.mjs';
 const layout = buildLayout();
 
 test('the sample room is one open marble gallery with no back wall', () => {
-  assert.equal(ROOM.width, 9.6);
+  assert.equal(ROOM.width, 12.8);
   assert.equal(ROOM.openSky, true);
   assert.equal(ROOM.wallColor, '#E4E0DA');
   assert.ok(ROOM.hallLength > 10 && ROOM.hallLength < ROOM.length);

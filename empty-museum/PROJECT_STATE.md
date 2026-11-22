@@ -270,6 +270,18 @@ Dernier passage de la nuit. Les toiles réelles, l’absence de marchepied et le
 - Sonde 360 : 10,1 s entre l’échantillon 0 et le 8 en 1024×512, donc **1,26 s par échantillon**, environ **45 s par échantillon** en 6144×3072. 256 ≈ **3 h 15**. 512 ≈ **6 h 30**. 4K 64 échantillons ≈ **16 min 30**, déduit des 1,72 s/échantillon en 1280×720. Rien de lourd n’est lancé.
 - **Pas déployé. Pas fusionné. Pas une PR.** Le sol est clair et miroir, la nef s’arrête sur une ouverture lumineuse, les toiles restent les vraies images. La banque du fond est encore plus douce que la feuille du plafond.
 
+## Salle blanche grandiose, seizième passage — 22 novembre 2026
+
+Le sol du quinzième est inchangé (rugosité 0,06, speculaire 0,68, vernis 0,45). La nef passe de 9,6 m à **12,8 m** (`ROOM.width`, test strict mis à jour, pas affaibli). Les pilastres entrent de **1,6 m**. La caméra est à y = −3,2 m, champ 68°.
+
+- Les murs s’arrêtent à 23,2 m, après la quatrième travée. Le sol continue loin, hors cadre. Six feuilles de cumulus : deux au-dessus de l’ouverture, quatre en profondeur dans le fond, qui s’effacent sous 1,6 m pour ne pas couper le marbre.
+- Seize rochers CC0, à des hauteurs et des profondeurs différentes, dont quelques-uns bas vers le fond.
+- Toiles assombries (gain 0,42, saturation 0,55), toujours les images réelles sur le bon UV. Or un peu plus patiné.
+- Aperçu 1280×720, **128 échantillons**, 2 min 49. Luma **0,596** (dans 0,55–0,60). Murs L* **77,1** (les faces d’ombre des pilastres tirent la fenêtre officielle sous 80). Ciel L* **93,5** (écart-type 1,2). Fond L* **92,5** (écart-type 8,5), dans 92–96.
+- Images : `review/grandiose16-preview.jpg`, `review/compare-axis-grandiose16.jpg`, `review/pano-test-grandiose16.jpg`.
+- Sonde 360 : 4,75 s entre l’échantillon 0 et le 8 en 1024×512, donc **0,59 s par échantillon**, environ **21 s par échantillon** en 6144×3072. 256 ≈ **1 h 30**. 512 ≈ **3 h**. 4K 64 échantillons ≈ **13 min**, déduit des 1,31 s/échantillon en 1280×720. Rien de lourd n’est lancé.
+- **Pas déployé. Pas fusionné. Pas une PR.** La nef a des piliers et des retraits, les nuages sont revenus au plafond, le sol miroir est gardé. Le fond est encore un champ clair : les feuilles y sont douces, pas un volume de cumulus, et les toiles sont trop petites et trop sombres pour se lire comme les huiles de la cible.
+
 ## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
 
 Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon d’origine (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. La branche grandiose allonge seulement l’échantillon (36 m, sans mur du fond) pour la photo ; elle ne construit pas la salle de 100 m et n’écrit pas ses cotes dans le contrat.

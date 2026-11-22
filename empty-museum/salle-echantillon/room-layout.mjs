@@ -7,7 +7,7 @@
  * dog-leg, repeated modules) is decided and not built. See PROJECT_STATE.md.
  */
 export const ROOM = {
-  width: 9.6,
+  width: 12.8,
   backZ: -0.45,
   hallLength: 21.2,
   endDepth: 5.0,
