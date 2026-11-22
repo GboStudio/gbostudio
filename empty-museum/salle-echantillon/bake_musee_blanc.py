@@ -282,6 +282,8 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
             links.new(high.outputs['Value'], bsdf.inputs['Roughness'])
         else:
             bsdf.inputs['Roughness'].default_value = base
+    elif soft_floor:
+        bsdf.inputs['Roughness'].default_value = float(os.environ.get('BLANC_FLOOR_ROUGH', '0.34'))
     elif rough_scale and MARBLE_ROUGH.exists():
         rough = nodes.new('ShaderNodeTexImage')
         rough.image = load_image(MARBLE_ROUGH, 'Non-Color')
@@ -482,9 +484,33 @@ def painting_material(index, frame):
     if not path.exists():
         print('missing painting', path)
         return material
-    tex = material.node_tree.nodes.new('ShaderNodeTexImage')
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    tex = nodes.new('ShaderNodeTexImage')
     tex.image = load_image(path, 'sRGB')
-    material.node_tree.links.new(tex.outputs['Color'], material.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
+    separate = nodes.new('ShaderNodeSeparateColor')
+    combine = nodes.new('ShaderNodeCombineColor')
+    separate.mode = 'HSV'
+    combine.mode = 'HSV'
+    sat = nodes.new('ShaderNodeMath')
+    sat.operation = 'MULTIPLY'
+    sat.inputs[1].default_value = float(os.environ.get('BLANC_PAINT_SAT', '0.22'))
+    links.new(tex.outputs['Color'], separate.inputs['Color'])
+    links.new(separate.outputs['Red'], combine.inputs['Red'])
+    links.new(separate.outputs['Green'], sat.inputs[0])
+    links.new(sat.outputs['Value'], combine.inputs['Green'])
+    links.new(separate.outputs['Blue'], combine.inputs['Blue'])
+    grade = nodes.new('ShaderNodeBrightContrast')
+    grade.inputs['Contrast'].default_value = 16.0
+    grade.inputs['Bright'].default_value = -0.1
+    links.new(combine.outputs['Color'], grade.inputs['Color'])
+    gain = float(os.environ.get('BLANC_PAINT_GAIN', '0.22'))
+    dark = nodes.new('ShaderNodeMixRGB')
+    dark.blend_type = 'MULTIPLY'
+    dark.inputs['Fac'].default_value = 1.0
+    dark.inputs['Color2'].default_value = (gain, gain * 0.68, gain * 0.38, 1)
+    links.new(grade.outputs['Color'], dark.inputs['Color1'])
+    links.new(dark.outputs['Color'], nodes['Principled BSDF'].inputs['Base Color'])
     return material
 
 
@@ -871,14 +897,19 @@ def build():
         view_shader = view_bg.outputs['Background']
     bg.inputs['Strength'].default_value = light_strength
     view_bg.inputs['Strength'].default_value = view_strength
+    # Camera sees the sky. Glossy rays see a warm white, so the floor
+    # mirrors marble and frames instead of the blue photograph.
     path = nodes.new('ShaderNodeLightPath')
-    viewed = nodes.new('ShaderNodeMath')
-    viewed.operation = 'MAXIMUM'
-    links.new(path.outputs['Is Camera Ray'], viewed.inputs[0])
-    links.new(path.outputs['Is Glossy Ray'], viewed.inputs[1])
+    gloss_bg = nodes.new('ShaderNodeBackground')
+    gloss_bg.inputs['Color'].default_value = (1.0, 0.985, 0.955, 1)
+    gloss_bg.inputs['Strength'].default_value = float(os.environ.get('BLANC_GLOSS_SKY', '5'))
+    gloss_mix = nodes.new('ShaderNodeMixShader')
+    links.new(path.outputs['Is Glossy Ray'], gloss_mix.inputs['Fac'])
+    links.new(bg.outputs['Background'], gloss_mix.inputs[1])
+    links.new(gloss_bg.outputs['Background'], gloss_mix.inputs[2])
     mix = nodes.new('ShaderNodeMixShader')
-    links.new(viewed.outputs['Value'], mix.inputs['Fac'])
-    links.new(bg.outputs['Background'], mix.inputs[1])
+    links.new(path.outputs['Is Camera Ray'], mix.inputs['Fac'])
+    links.new(gloss_mix.outputs['Shader'], mix.inputs[1])
     links.new(view_shader, mix.inputs[2])
     links.new(mix.outputs['Shader'], nodes['World Output'].inputs['Surface'])
 
@@ -917,11 +948,12 @@ def build():
     floor_tile = float(os.environ.get('BLANC_FLOOR_TILE', '7.2'))
 
     # Floor, open at the far end. No back wall.
-    floor = [(-half, back, 0), (half, back, 0), (half, end + 4, 0), (-half, end + 4, 0)]
+    floor_far = end + float(os.environ.get('BLANC_FLOOR_EXTRA', '18'))
+    floor = [(-half, back, 0), (half, back, 0), (half, floor_far, 0), (-half, floor_far, 0)]
     meshes['floor'].quad(
         floor,
         [(c[0] / floor_tile, c[1] / floor_tile) for c in floor],
-        [rect_uv('floor', (c[1] - back) / (end + 4 - back), (c[0] + half) / ROOM['width']) for c in floor],
+        [rect_uv('floor', (c[1] - back) / (floor_far - back), (c[0] + half) / ROOM['width']) for c in floor],
         (0, 0, 1),
     )
 
@@ -960,9 +992,9 @@ def build():
             vein_m = float(os.environ.get('BLANC_VEIN_METRES', '8.0'))
             for corner in coords:
                 # Large veins, one scan across several metres, not a repeat per slab.
+                # One continuous run of the scan down the nave. A bookmatch flip
+                # was cutting the veins at every slab.
                 u = (corner[1] - back) / vein_m
-                if mirrored:
-                    u = -u
                 v = corner[2] / vein_m
                 uvs.append((u, v))
             meshes['marble'].quad(coords, uvs, luvs, (-sign, 0, 0))
@@ -1023,7 +1055,24 @@ def build():
     heroes = []
     nonhero = 0
     profile = []
-    for frame in LAYOUT['frames']:
+    frames = [dict(item) for item in LAYOUT['frames']]
+    if os.environ.get('BLANC_FAR_BAY', '1') == '1':
+        # Two smaller bays past the layout, so the hall keeps going into the light.
+        for z, width, height_f in ((23.0, 0.96, 1.12), (26.2, 0.72, 0.86)):
+            for wall, x in (('left', -4.8), ('right', 4.8)):
+                frames.append({
+                    'id': f'{wall}-far-{z:.0f}',
+                    'wall': wall,
+                    'x': x,
+                    'y': 1.55,
+                    'z': z,
+                    'width': width,
+                    'height': height_f,
+                    'painting': 'pd/painting-5.webp',
+                })
+    for frame in frames:
+        if frame.get('id') == 'left-front':
+            frame['painting'] = os.environ.get('BLANC_FRONT_PAINT', 'pd/painting-5.webp')
         if frame['wall'] not in ('left', 'right'):
             continue
         mould = float(os.environ.get('BLANC_MOULD', '0.09'))
@@ -1085,7 +1134,7 @@ def build():
     for sign in (-1, 1):
         x = sign * (half - 0.28)
         box(meshes['iron'], pack, x - 0.015, x + 0.015, back + 0.5, end - 0.4, height - 0.42, height - 0.38)
-    for frame in LAYOUT['frames']:
+    for frame in frames:
         if frame['wall'] not in ('left', 'right'):
             continue
         sign = 1 if frame['x'] < 0 else -1
@@ -2546,12 +2595,12 @@ def add_cloud_cards():
     if os.environ.get('BLANC_SKY_CARDS') != '1':
         return
     sources = [CC0 / 'cumulus-plate.jpg', CC0 / 'cumulus-band.jpg']
-    # Face-on only. The first sheet is the opening we look up into.
-    # The second is the cloud bank across the far end, graded brighter.
-    # Tuple: photo, location, tilt, scale, u offset, emission, shadow out, highlight out.
+    # Horizontal sheets only, wider than the opening, so no vertical backdrop
+    # and no card edge in the picture. Tuple: photo, location, tilt, scale,
+    # u offset, emission, shadow out, highlight out.
     cards = (
-        (0, (0.0, 10.5, 8.0), 180, (22.0, 16.0), 0.0, 50.0, 0.62, 1.0),
-        (0, (0.0, 18.6, 3.7), 90, (14.0, 6.4), 0.05, 40.0, 0.5, 1.0),
+        (0, (0.0, 9.0, 8.8), 180, (32.0, 22.0), 0.0, 42.0, 0.84, 1.0),
+        (0, (0.0, 20.0, 9.6), 180, (28.0, 20.0), 0.42, 44.0, 0.88, 1.0),
     )
     made = 0
     for index, (which, loc, tilt, scale, uoff, strength, out_lo, out_hi) in enumerate(cards):
@@ -2612,8 +2661,8 @@ def add_cloud_cards():
         links.new(u2.outputs['Value'], rad.inputs[0])
         links.new(v2.outputs['Value'], rad.inputs[1])
         edge = nodes.new('ShaderNodeMapRange')
-        edge.inputs['From Min'].default_value = 0.16
-        edge.inputs['From Max'].default_value = 0.32
+        edge.inputs['From Min'].default_value = 0.28
+        edge.inputs['From Max'].default_value = 0.46
         edge.inputs['To Min'].default_value = 1.0
         edge.inputs['To Max'].default_value = 0.0
         edge.clamp = True
@@ -2727,24 +2776,46 @@ def apply_bloom():
     scene = bpy.context.scene
     bloom = os.environ.get('BLANC_BLOOM') == '1'
     mist = os.environ.get('BLANC_MIST') == '1'
+    far = os.environ.get('BLANC_FAR_HAZE') == '1'
     shaft = os.environ.get('BLANC_SHAFT') == '1'
     glow = os.environ.get('BLANC_SKY_GLOW', '1') == '1'
-    if not bloom and not mist and not shaft and not glow:
+    if not bloom and not mist and not shaft and not glow and not far:
         scene.use_nodes = False
         return
-    if mist:
+    if mist or far:
         scene.view_layers[0].use_pass_mist = True
         scene.world.mist_settings.use_mist = True
         scene.world.mist_settings.falloff = 'QUADRATIC'
-        scene.world.mist_settings.start = float(os.environ.get('BLANC_MIST_START', '8'))
-        scene.world.mist_settings.depth = float(os.environ.get('BLANC_MIST_DEPTH', '22'))
+        if far:
+            scene.world.mist_settings.start = float(os.environ.get('BLANC_HAZE_START', '14'))
+            scene.world.mist_settings.depth = float(os.environ.get('BLANC_HAZE_DEPTH', '16'))
+        else:
+            scene.world.mist_settings.start = float(os.environ.get('BLANC_MIST_START', '8'))
+            scene.world.mist_settings.depth = float(os.environ.get('BLANC_MIST_DEPTH', '22'))
     scene.use_nodes = True
     scene.render.use_compositing = True
     tree = scene.node_tree
     tree.nodes.clear()
     layers = tree.nodes.new('CompositorNodeRLayers')
     current = layers.outputs['Image']
-    if mist and 'Mist' in layers.outputs:
+    if far and 'Mist' in layers.outputs:
+        # Only the far end goes white. The near room stays at full contrast.
+        span = tree.nodes.new('CompositorNodeMapRange')
+        span.inputs['From Min'].default_value = float(os.environ.get('BLANC_HAZE_FROM', '0.08'))
+        span.inputs['From Max'].default_value = float(os.environ.get('BLANC_HAZE_TO', '0.7'))
+        span.inputs['To Min'].default_value = 0.0
+        span.inputs['To Max'].default_value = float(os.environ.get('BLANC_HAZE_AMT', '0.82'))
+        span.use_clamp = True
+        tree.links.new(layers.outputs['Mist'], span.inputs['Value'])
+        wash = tree.nodes.new('CompositorNodeMixRGB')
+        wash.blend_type = 'MIX'
+        # Scene-linear white. 1.0 is only mid-grey after the exposure, so a
+        # display white has to be several times brighter or the haze goes dull.
+        wash.inputs[2].default_value = (5.5, 5.4, 5.2, 1)
+        tree.links.new(span.outputs['Value'], wash.inputs[0])
+        tree.links.new(current, wash.inputs[1])
+        current = wash.outputs[0]
+    elif mist and 'Mist' in layers.outputs:
         span = tree.nodes.new('CompositorNodeMapRange')
         span.inputs['From Min'].default_value = 0.12
         span.inputs['From Max'].default_value = 0.62
