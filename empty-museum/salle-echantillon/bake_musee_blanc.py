@@ -581,22 +581,20 @@ def place_rocks(material):
         # Twenty-five stones. The big ones are close, in the opening above the camera.
         # Big stones in the upper third of a level view, then a trail into the end.
         placements = [
-            (0.2, 6.4, 3.8, 2.05),
-            (-0.95, 7.6, 4.3, 1.65),
-            (1.05, 8.4, 3.6, 1.5),
-            (0.15, 9.6, 4.7, 1.8),
-            (-1.05, 10.8, 3.9, 1.3),
-            (0.85, 12.0, 4.5, 1.45),
-            (-0.25, 13.4, 5.0, 1.1),
-            (0.55, 14.8, 5.4, 0.95),
+            (-2.3, 6.6, 4.0, 1.55),
+            (2.2, 8.4, 4.6, 1.4),
+            (-0.5, 10.4, 5.2, 1.65),
+            (2.5, 12.2, 3.9, 1.25),
+            (-2.4, 13.8, 4.8, 1.35),
+            (1.0, 15.6, 5.5, 1.1),
+            (-1.7, 17.2, 4.2, 1.0),
+            (2.1, 18.6, 5.0, 0.9),
+            (-2.5, 16.4, 4.5, 0.5),
+            (2.6, 17.6, 5.1, 0.45),
+            (0.3, 18.9, 4.4, 0.4),
+            (-1.5, 19.5, 5.3, 0.38),
+            (1.5, 19.7, 4.0, 0.36),
         ]
-        for i in range(17):
-            side = -1.0 if i % 2 == 0 else 1.0
-            along = 15.4 + i * 0.26
-            x = side * (0.3 + (i % 4) * 0.35)
-            z = 4.6 + (i % 4) * 0.4
-            radius = 0.38 + (i % 4) * 0.1
-            placements.append((round(x, 3), round(along, 3), round(z, 3), round(radius, 3)))
     elif os.environ.get('BLANC_MORE_ROCKS') == '1':
         # More blocks in the light, further down the nave. Same CC0 meshes.
         placements += [
@@ -1124,6 +1122,7 @@ def build():
         dome.hide_render = False
         dome.visible_shadow = False
         dome.visible_diffuse = False
+        dome.visible_glossy = False
         shell = bpy.data.materials.new('sky-shell')
         shell.use_nodes = True
         sn = shell.node_tree.nodes
@@ -1662,13 +1661,28 @@ def place_fancy_frames():
             bsdf.inputs['Emission Strength'].default_value = 0.0
         tex = material.node_tree.nodes.new('ShaderNodeTexImage')
         tex.image = load_image(image_path, 'sRGB')
-        # Held down so the oil stays darker than the marble.
-        gain = float(os.environ.get('BLANC_PAINT_GAIN', '0.32'))
+        separate = material.node_tree.nodes.new('ShaderNodeSeparateColor')
+        combine = material.node_tree.nodes.new('ShaderNodeCombineColor')
+        separate.mode = 'HSV'
+        combine.mode = 'HSV'
+        sat = material.node_tree.nodes.new('ShaderNodeMath')
+        sat.operation = 'MULTIPLY'
+        sat.inputs[1].default_value = float(os.environ.get('BLANC_PAINT_SAT', '0.38'))
+        material.node_tree.links.new(tex.outputs['Color'], separate.inputs['Color'])
+        material.node_tree.links.new(separate.outputs['Red'], combine.inputs['Red'])
+        material.node_tree.links.new(separate.outputs['Green'], sat.inputs[0])
+        material.node_tree.links.new(sat.outputs['Value'], combine.inputs['Green'])
+        material.node_tree.links.new(separate.outputs['Blue'], combine.inputs['Blue'])
+        grade = material.node_tree.nodes.new('ShaderNodeBrightContrast')
+        grade.inputs['Contrast'].default_value = 22.0
+        grade.inputs['Bright'].default_value = -0.08
+        material.node_tree.links.new(combine.outputs['Color'], grade.inputs['Color'])
+        gain = float(os.environ.get('BLANC_PAINT_GAIN', '0.2'))
         dark = material.node_tree.nodes.new('ShaderNodeMixRGB')
         dark.blend_type = 'MULTIPLY'
         dark.inputs['Fac'].default_value = 1.0
-        dark.inputs['Color2'].default_value = (gain, gain * 0.92, gain * 0.82, 1)
-        material.node_tree.links.new(tex.outputs['Color'], dark.inputs['Color1'])
+        dark.inputs['Color2'].default_value = (gain, gain * 0.72, gain * 0.42, 1)
+        material.node_tree.links.new(grade.outputs['Color'], dark.inputs['Color1'])
         material.node_tree.links.new(dark.outputs['Color'], bsdf.inputs['Base Color'])
         painted.data.materials[0] = material
 
@@ -2531,11 +2545,12 @@ def add_cloud_cards():
     """Alpha-masked cloud photos at several depths. Camera and mirror only."""
     if os.environ.get('BLANC_SKY_CARDS') != '1':
         return
-    sources = [CC0 / 'cumulus-band.jpg', CC0 / 'cumulus-plate.jpg']
-    strength = float(os.environ.get('BLANC_CARD', '2.4'))
-    # One cloud bank facing the camera at the far end. Tilted cards read as vertical streaks.
+    sources = [CC0 / 'cumulus-plate.jpg', CC0 / 'cumulus-band.jpg']
+    strength = float(os.environ.get('BLANC_CARD', '3.2'))
+    # Face-on only: a sheet we look up at, and one bank across the far end.
     cards = (
-        (0, (0.0, 19.0, 4.4), 90, (16.0, 8.5), 0.08),
+        (0, (0.0, 11.5, 7.4), 180, (20.0, 14.0), 0.0),
+        (0, (0.0, 18.7, 4.6), 90, (14.0, 7.5), 0.2),
     )
     made = 0
     for index, (which, loc, tilt, scale, uoff) in enumerate(cards):
@@ -2596,7 +2611,7 @@ def add_cloud_cards():
         links.new(v2.outputs['Value'], rad.inputs[1])
         edge = nodes.new('ShaderNodeMapRange')
         edge.inputs['From Min'].default_value = 0.02
-        edge.inputs['From Max'].default_value = 0.22
+        edge.inputs['From Max'].default_value = 0.48
         edge.inputs['To Min'].default_value = 1.0
         edge.inputs['To Max'].default_value = 0.0
         edge.clamp = True
@@ -2611,7 +2626,7 @@ def add_cloud_cards():
         combine.mode = 'HSV'
         sat = nodes.new('ShaderNodeMath')
         sat.operation = 'MULTIPLY'
-        sat.inputs[1].default_value = 0.0
+        sat.inputs[1].default_value = float(os.environ.get('BLANC_CARD_SAT', '0.18'))
         links.new(tex.outputs['Color'], separate.inputs['Color'])
         links.new(separate.outputs['Red'], combine.inputs['Red'])
         links.new(separate.outputs['Green'], sat.inputs[0])
@@ -2634,7 +2649,7 @@ def add_cloud_cards():
         seen = nodes.new('ShaderNodeMath')
         seen.operation = 'MAXIMUM'
         links.new(ray.outputs['Is Camera Ray'], seen.inputs[0])
-        links.new(ray.outputs['Is Glossy Ray'], seen.inputs[1])
+        seen.inputs[1].default_value = 0.0
         hold = nodes.new('ShaderNodeMixShader')
         links.new(seen.outputs['Value'], hold.inputs['Fac'])
         links.new(transparent.outputs['BSDF'], hold.inputs[1])
@@ -2643,7 +2658,7 @@ def add_cloud_cards():
         bpy.ops.mesh.primitive_plane_add(size=1, location=loc)
         card = bpy.context.active_object
         card.name = f'cloud-card-{index}'
-        card.rotation_euler = (math.radians(tilt), 0.0, math.radians((index - 1.5) * 7))
+        card.rotation_euler = (math.radians(tilt), 0.0, 0.0)
         card.scale = (scale[0], scale[1], 1)
         card.data.materials.append(material)
         card.visible_shadow = False
