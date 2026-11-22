@@ -293,6 +293,15 @@ La géométrie du seizième est gardée : nef 12,8 m, pilastres de 1,6 m, seize 
 - Sonde 360 : 5,31 s entre l’échantillon 0 et le 8 en 1024×512, donc **0,66 s par échantillon**, environ **24 s par échantillon** en 6144×3072. 256 ≈ **1 h 40**. 512 ≈ **3 h 25**. 4K 64 échantillons ≈ **18 min**. Rien de lourd n’est lancé.
 - **Pas déployé. Pas fusionné. Pas une PR.** Les cadres du premier plan montrent des scènes lisibles, sombres et chaudes, et les murs ne sont plus un gris craquelé. Une ligne claire reste où le sol rencontre l’ouverture, et le fond n’a pas encore le volume de cumulus de la cible.
 
+## Salle blanche grandiose, dix-huitième passage — 22 novembre 2026
+
+Matières, toiles, rochers, nuages et shader du sol du dix-septième gardés. La nef est allongée à cinq travées (murs jusqu’à 36,6 m) et fermée par un portail. Pilastres plus bas et plus minces (0,82 m). Caméra à y = −3 m, champ 62°.
+
+- Aperçu **960×540, 64 échantillons**, OIDN, 1 min 15. Luma **0,610**. Murs L* **80,8**. Ciel L* **91,1**. Fond L* **93,1**.
+- Les deux grands cadres du premier plan sont dans l’image. On voit plusieurs cadres de chaque côté, en perspective. Les toiles du crop sont des scènes sombres lisibles.
+- Images : `review/grandiose18-preview.jpg`, `review/compare-axis-grandiose18.jpg`, `review/paintings-crop18.jpg`. Pas de sonde 360° (budget).
+- **Pas déployé. Pas fusionné. Pas une PR.** 1,15 s/échantillon en 960×540. 4K 64 échantillons ≈ **20 min** (×16 pixels). 360° 6144×3072 ≈ **42 s/échantillon**, non lancé.
+
 ## Galerie blanche — architecture décidée, pas encore construite — 14 novembre 2026
 
 Décision de Guillaume, enregistrée seulement. **Aucun code, aucun mesh, aucune entrée dans `project-contract.json`.** L’échantillon d’origine (environ 18 m, ouvert sur le ciel, sans mur du fond) n’est pas cette salle. La branche grandiose allonge seulement l’échantillon (36 m, sans mur du fond) pour la photo ; elle ne construit pas la salle de 100 m et n’écrit pas ses cotes dans le contrat.

@@ -9,9 +9,9 @@
 export const ROOM = {
   width: 12.8,
   backZ: -0.45,
-  hallLength: 21.2,
+  hallLength: 38.0,
   endDepth: 5.0,
-  length: 36.0,
+  length: 48.0,
   eye: 1.5,
   exposure: 1.2,
   openSky: true,
@@ -76,20 +76,25 @@ function sideFrames(wall) {
   // Three bays, ending in the cloud opening near 20 m. Two large frames
   // in the first, three in the second, two smaller in the third.
   // The scan is portrait, so the hung width is about 0.86 × the height.
-  const posts = [5.2, 11.0, 16.2, 20.4];
+  const posts = [4.6, 11.0, 17.4, 23.8, 30.2, 36.4];
   const bays = [
     [
-      {artW: 1.22, artH: 1.48, mould: 0.14},
-      {artW: 1.02, artH: 1.24, mould: 0.12},
+      {artW: 1.18, artH: 1.42, mould: 0.13},
+      {artW: 1.0, artH: 1.2, mould: 0.11},
     ],
     [
-      {artW: 0.86, artH: 1.02, mould: 0.1},
-      {artW: 0.7, artH: 0.84, mould: 0.08},
-      {artW: 0.76, artH: 0.9, mould: 0.09},
+      {artW: 0.9, artH: 1.08, mould: 0.1},
+      {artW: 0.8, artH: 0.96, mould: 0.09},
     ],
     [
-      {artW: 0.68, artH: 0.8, mould: 0.08},
-      {artW: 0.58, artH: 0.7, mould: 0.07},
+      {artW: 0.74, artH: 0.88, mould: 0.08},
+      {artW: 0.66, artH: 0.8, mould: 0.08},
+    ],
+    [
+      {artW: 0.6, artH: 0.72, mould: 0.07},
+    ],
+    [
+      {artW: 0.52, artH: 0.64, mould: 0.06},
     ],
   ];
   const frames = [];
@@ -137,7 +142,7 @@ export function buildLayout() {
     {wall: 'right', x: ROOM.width / 2 - 0.32, z0: 6.6, z1: 10.2, height: 0.48, depth: 0.42},
   ];
   const pilasters = [];
-  for (const z of [5.2, 11.0, 16.2, 20.4]) {
+  for (const z of [4.6, 11.0, 17.4, 23.8, 30.2, 36.4]) {
     pilasters.push({z, width: 0.55, depth: 0.5});
   }
   const obstacles = benches.map(bench => ({

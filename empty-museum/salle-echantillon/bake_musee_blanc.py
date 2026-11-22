@@ -328,7 +328,7 @@ def marble_material(name, roughness, normal_strength, rough_scale=None, metallic
         glow.inputs['From Min'].default_value = 14.0
         glow.inputs['From Max'].default_value = 36.0
         glow.inputs['To Min'].default_value = 0.0
-        glow.inputs['To Max'].default_value = float(os.environ.get('BLANC_FLOOR_GLOW', '14'))
+        glow.inputs['To Max'].default_value = float(os.environ.get('BLANC_FLOOR_GLOW', '18'))
         glow.clamp = True
         links.new(sep.outputs['Y'], glow.inputs['Value'])
         links.new(glow.outputs['Result'], bsdf.inputs['Emission Strength'])
@@ -1064,16 +1064,17 @@ def build():
     for item in pilasters:
         width = item['width']
         # A few shallow partitions, about half a metre into the nave. Not a corridor of fins.
-        depth = float(os.environ.get('BLANC_PIER', '1.6'))
+        depth = float(os.environ.get('BLANC_PIER', '0.82'))
         y0 = item['z'] - width / 2
         y1 = item['z'] + width / 2
+        pier_top = height * float(os.environ.get('BLANC_PIER_TOP', '0.68'))
         for sign in (-1, 1):
             x0 = sign * half
             x1 = sign * (half - depth) if sign > 0 else sign * half + depth
             xa, xb = (x0, x1) if x0 < x1 else (x1, x0)
-            box(meshes['marble'], pack, xa, xb, y0 - 0.03, y1 + 0.03, 0.0, 0.22)
-            box(meshes['marble'], pack, xa + 0.015 * sign, xb, y0 + 0.02, y1 - 0.02, 0.22, height - 0.42)
-            box(meshes['marble'], pack, xa - 0.02 * sign, xb + 0.015 * sign, y0 - 0.05, y1 + 0.05, height - 0.42, height - 0.16)
+            box(meshes['marble'], pack, xa, xb, y0 - 0.03, y1 + 0.03, 0.0, 0.18)
+            box(meshes['marble'], pack, xa + 0.02 * sign, xb, y0 + 0.03, y1 - 0.03, 0.18, pier_top - 0.22)
+            box(meshes['marble'], pack, xa - 0.02 * sign, xb + 0.02 * sign, y0 - 0.04, y1 + 0.04, pier_top - 0.22, pier_top)
 
     # Skirting in the same marble, slightly proud.
     for sign in (-1, 1):
@@ -1195,7 +1196,7 @@ def build():
     add_volume_clouds(end, height)
     add_godrays(end, height)
     add_cloud_cards()
-    add_nave_fill(end, height)
+    add_portal(end, half, height, pack, meshes)
     add_rock_sun()
 
     # Sky dome, emissive in the viewer, hidden from the bake.
@@ -2687,7 +2688,20 @@ def add_floor_haze(end, half):
     print('floor haze', round(y0, 2), round(y1, 2))
 
 
-def add_nave_fill(end, height):
+def add_portal(end, half, height, pack, meshes):
+    """A bright doorway at the end of the walls. The threshold sits in the glow."""
+    if os.environ.get('BLANC_PORTAL', '1') != '1':
+        return
+    opening = half * 0.62
+    y = end - 0.12
+    head = height * 0.78
+    for sign in (-1, 1):
+        x_out = sign * (half + 0.04)
+        x_in = sign * opening
+        xa, xb = (min(x_out, x_in), max(x_out, x_in))
+        box(meshes['marble'], pack, xa, xb, y - 0.18, y + 0.18, 0.0, head)
+    box(meshes['marble'], pack, -opening - 0.08, opening + 0.08, y - 0.16, y + 0.16, head - 0.08, height)
+    print('portal', round(y, 2), 'opening', round(opening * 2, 2))
     """Warm diffuse fill so the pier faces read white, not grey."""
     energy = float(os.environ.get('BLANC_FILL', '70'))
     if energy <= 0:
@@ -2703,13 +2717,14 @@ def add_nave_fill(end, height):
         bpy.context.scene.collection.objects.link(obj)
     print('nave fill', energy)
     # Down-lights, stronger toward the opening, so the floor brightens with no hard edge.
-    for index, (y, power) in enumerate(((12.0, 40.0), (17.5, 180.0), (21.5, 420.0))):
+    # Even wash down the aisle, so the centre of the floor is not a grey stripe.
+    for index, y in enumerate((8.0, 16.0, 24.0, 32.0)):
         light = bpy.data.lights.new(f'floor-wash-{index}', 'AREA')
-        light.energy = power * float(os.environ.get('BLANC_WASH_SCALE', '1'))
-        light.size = 16.0
-        light.color = (1.0, 0.97, 0.90)
+        light.energy = 80.0 * float(os.environ.get('BLANC_WASH_SCALE', '1'))
+        light.size = 14.0
+        light.color = (1.0, 0.97, 0.91)
         obj = bpy.data.objects.new(light.name, light)
-        obj.location = (0.0, y, 6.5)
+        obj.location = (0.0, y, 6.2)
         obj.rotation_euler = (0.0, 0.0, 0.0)
         bpy.context.scene.collection.objects.link(obj)
     # Near the camera, so the foreground marble is not left in shadow.
@@ -2768,12 +2783,11 @@ def add_cloud_cards():
     # Overhead sheets in the opening we actually see, plus a bank of
     # several face-on layers in the far opening. Not one wall.
     cards = (
-        (0, (0.0, 8.5, 6.4), 180, (28.0, 18.0), 0.05, 26.0, 0.5, 1.0),
-        (0, (1.5, 13.5, 7.6), 180, (22.0, 14.0), 0.45, 24.0, 0.52, 0.98),
-        (0, (-1.6, 18.2, 5.4), 90, (12.0, 5.6), 0.08, 32.0, 0.48, 0.96),
-        (0, (2.0, 20.4, 4.2), 90, (11.0, 5.0), 0.45, 30.0, 0.5, 0.94),
-        (0, (0.2, 23.0, 5.8), 90, (14.0, 6.2), 0.22, 28.0, 0.46, 0.92),
-        (0, (-2.2, 25.5, 3.4), 90, (13.0, 4.4), 0.6, 26.0, 0.52, 0.9),
+        (0, (0.0, 9.0, 6.6), 180, (28.0, 18.0), 0.05, 28.0, 0.55, 1.0),
+        (0, (1.2, 16.0, 7.8), 180, (22.0, 14.0), 0.4, 26.0, 0.58, 0.98),
+        (0, (-1.4, 33.5, 4.6), 90, (10.0, 5.2), 0.1, 30.0, 0.5, 0.96),
+        (0, (1.8, 36.0, 5.4), 90, (11.0, 5.6), 0.35, 28.0, 0.48, 0.94),
+        (0, (0.0, 38.5, 3.8), 90, (12.0, 4.8), 0.55, 26.0, 0.52, 0.92),
     )
     made = 0
     for index, (which, loc, tilt, scale, uoff, strength, out_lo, out_hi) in enumerate(cards):
@@ -3104,6 +3118,31 @@ def apply_bloom():
         tree.links.new(current, added.inputs[1])
         tree.links.new(shaped.outputs[0], added.inputs[2])
         current = added.outputs[0]
+    if os.environ.get('BLANC_VEIL', '0') == '1':
+        # Feather only the doorway horizon, so the floor and the opening share one brightness.
+        veil = tree.nodes.new('CompositorNodeEllipseMask')
+        veil.width = float(os.environ.get('BLANC_VEIL_W', '0.22'))
+        veil.height = float(os.environ.get('BLANC_VEIL_H', '0.08'))
+        veil.x = 0.5
+        veil.y = float(os.environ.get('BLANC_VEIL_Y', '0.57'))
+        vblur = tree.nodes.new('CompositorNodeBlur')
+        vblur.filter_type = 'GAUSS'
+        vblur.size_x = 70
+        vblur.size_y = 36
+        tree.links.new(veil.outputs['Mask'], vblur.inputs['Image'])
+        vwhite = tree.nodes.new('CompositorNodeRGB')
+        vwhite.outputs[0].default_value = (10.0, 9.6, 9.0, 1)
+        vmixed = tree.nodes.new('CompositorNodeMixRGB')
+        vmixed.blend_type = 'MIX'
+        tree.links.new(vblur.outputs['Image'], vmixed.inputs[0])
+        tree.links.new(current, vmixed.inputs[1])
+        tree.links.new(vwhite.outputs[0], vmixed.inputs[2])
+        vscale = tree.nodes.new('CompositorNodeMath')
+        vscale.operation = 'MULTIPLY'
+        vscale.inputs[1].default_value = float(os.environ.get('BLANC_VEIL_AMT', '0.7'))
+        tree.links.new(vblur.outputs['Image'], vscale.inputs[0])
+        tree.links.new(vscale.outputs['Value'], vmixed.inputs[0])
+        current = vmixed.outputs[0]
     if os.environ.get('BLANC_SHARPEN', '1') == '1':
         # A light unsharp mask. It does not touch the sky glow, which is already applied.
         soft_pic = tree.nodes.new('CompositorNodeBlur')
