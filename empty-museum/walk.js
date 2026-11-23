@@ -221,7 +221,7 @@
         ctx.fillStyle='#53694f';ctx.font='500 '+Math.max(9,Math.min(15,w*.064))+'px Arial';
         ctx.fillText((slot.format?.name||'Photo').toUpperCase(),cx,y+h*.72,w*.86);
         ctx.font='700 '+Math.max(9,Math.min(16,w*.08))+'px Arial';
-        ctx.fillText(slot.price.toLocaleString('fr-FR',{maximumFractionDigits:2})+' € / 12 MOIS',cx,y+h*.83,w*.88);
+        ctx.fillText(window.TEM.priceLabel?.(slot)||'TARIF À DÉFINIR',cx,y+h*.83,w*.88);
       }
     }
     ctx.restore();
@@ -251,8 +251,6 @@
       if(w>65&&h>38){
         ctx.fillStyle='#647364';ctx.font='600 '+Math.max(8,Math.min(14,w*.065))+'px Arial';
         ctx.fillText(slot.format.name.toUpperCase(),mid,y+h*.52,w*.85);
-        ctx.fillStyle='#273c2f';ctx.font='700 '+Math.max(9,Math.min(16,w*.077))+'px Arial';
-        ctx.fillText(slot.price.toLocaleString('fr-FR',{maximumFractionDigits:2})+' € / 12 MOIS',mid,y+h*.75,w*.9);
       }
     }
     ctx.restore();
@@ -279,12 +277,12 @@
       ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#21352a';
       if(h<48){
         ctx.font='800 '+Math.max(10,Math.min(15,w*.065))+'px Arial';
-        ctx.fillText(slot.piece?'INSTALLATION':'SOL · 499 € / MOIS',x+w*.5,y+h*.54,w*.9);
+        ctx.fillText(slot.piece?'INSTALLATION':'SOL · TARIF SELON DURÉE',x+w*.5,y+h*.54,w*.9);
       }else{
         ctx.font='800 '+Math.max(11,Math.min(18,w*.095))+'px Arial';
         ctx.fillText(slot.piece?'INSTALLATION':'ESPACE AU SOL',x+w*.5,y+h*.40,w*.88);
         ctx.font='700 '+Math.max(11,Math.min(20,w*.10))+'px Arial';
-        ctx.fillText(slot.piece?String(slot.piece.title).slice(0,25):'499 € / 1 MOIS',x+w*.5,y+h*.69,w*.9);
+        ctx.fillText(slot.piece?String(slot.piece.title).slice(0,25):'TARIF SELON DURÉE',x+w*.5,y+h*.69,w*.9);
       }
     }
     ctx.restore();

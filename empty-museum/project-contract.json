@@ -29,7 +29,10 @@
   ],
   "aisleDistanceMetres": [
     15,
+    25,
     35,
+    45,
+    55,
     75
   ],
   "updated": "2026-11-09",

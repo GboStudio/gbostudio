@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import mix from '../gallery-mix.js';
+import {readFileSync} from 'node:fs';
+import {DEFAULT_COMMERCE_CONFIG} from '../commerce-model.mjs';
 
 test('34 modules sur 38, avec quatre partenaires réservés',()=>{
   assert.equal(mix.MODULE_COUNT,38);
@@ -46,4 +48,16 @@ test('Tarifs muraux divisés par deux pour les cinq formats',()=>{
     very_large:{monthly:59.5,annual:595},large:{monthly:34.5,annual:345},
     normal:{monthly:19.5,annual:195},medium:{monthly:9.5,annual:95},small:{monthly:4.5,annual:45}
   });
+});
+
+test('Source unique des tarifs : le miroir mural de gallery-mix.js est identique à commerce-model.mjs',()=>{
+  assert.deepEqual(JSON.parse(JSON.stringify(mix.PRICES)),JSON.parse(JSON.stringify(DEFAULT_COMMERCE_CONFIG.wall.pricing)));
+});
+test('Aucun ancien prix écrit en dur dans l’accueil et les moteurs 3D',()=>{
+  for(const name of ['app.js','walk.js','engine3d.js']){
+    const code=readFileSync(new URL('../'+name,import.meta.url),'utf8');
+    assert.doesNotMatch(code,/\bprice\s*:\s*\d/,name+' : tarif numérique en dur');
+    assert.doesNotMatch(code,/openExhibit\([^)]*,\s*\d/,name+' : tarif passé en dur à openExhibit');
+    assert.doesNotMatch(code,/\d\s*€/,name+' : montant en euros écrit en dur');
+  }
 });

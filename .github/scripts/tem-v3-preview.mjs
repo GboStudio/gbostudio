@@ -49,7 +49,7 @@ for(const device of setups){
     // The visitor must be able to understand how to submit an artwork
     // and compare truthful simulator prices before trying to exhibit.
     await page.waitForFunction(()=>document.querySelectorAll('#exhibit-wall-prices tr').length===5
-      &&document.querySelectorAll('#exhibit-aisle-prices tr').length===3,null,{timeout:15000});
+      &&document.querySelectorAll('#exhibit-aisle-prices tr').length===6,null,{timeout:15000});
     const catalog=await page.evaluate(()=>{
       const text=document.querySelector('#how')?.textContent||'';
       const wall=[...document.querySelectorAll('#exhibit-wall-prices tr')].map(x=>x.textContent);
@@ -66,11 +66,13 @@ for(const device of setups){
     assert.equal(catalog.steps,4);
     assert.equal(catalog.kinds,4);
     assert.equal(catalog.wall.length,5);
-    assert.equal(catalog.aisle.length,3);
+    assert.equal(catalog.aisle.length,6);
     assert.match(catalog.wall[0],/Petit/);
     assert.match(catalog.wall[4],/Très grand/);
-    assert.match(catalog.aisle[0],/Proximité/);
-    assert.match(catalog.aisle[2],/Monumental/);
+    assert.match(catalog.aisle[0],/15 m/);
+    assert.match(catalog.aisle[0],/145/);
+    assert.match(catalog.aisle[5],/75 m/);
+    assert.match(catalog.aisle[5],/495/);
     assert.ok(catalog.wall.every(x=>x.includes('€'))&&catalog.aisle.every(x=>x.includes('€')),
       'Every public demonstration tariff must render from the commercial model');
     console.log('PASS visitor exhibit guide and transparent tariff catalog',device.name,

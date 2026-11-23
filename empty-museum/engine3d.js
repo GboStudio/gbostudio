@@ -337,7 +337,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       fitLines(g,title,W/2,212,W*.84,58,2);
       g.fillStyle="#718070";g.font="500 21px Arial";
       g.fillText(subtitle,W/2,H-112,W*.86);
-      g.fillStyle="#313c32";g.font="700 25px Arial";g.fillText(price,W/2,H-56);
+      if(price){g.fillStyle="#313c32";g.font="700 25px Arial";g.fillText(price,W/2,H-56);}
     },900,580);
   }
   // An empty wall is a blank museum canvas, not a giant product listing.
@@ -459,7 +459,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       g.font="700 22px Arial";g.fillStyle="#3f3325";
       g.fillText(piece?"COLLECTION PERMANENTE · DÉMO":
         slot?.reservedForAds?"ESPACE PARTENAIRE":
-        String(slot?.price??"").replace(".",",")+" € / 12 MOIS",59,h-65,w-118);
+        (window.TEM.priceLabel?.(slot)||"TARIF À DÉFINIR"),59,h-65,w-118);
     },640,950);
   }
   function sculptureScrew(group,x,y,z){
@@ -577,7 +577,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       cylinder(interactive,.012,.012,HEIGHT-(y+h/2)-.13,brass,x+dx,(HEIGHT+y+h/2)/2,z,8);
     }
     const mat=slot.piece?pictureMaterial(slot.piece):
-      new THREE.MeshStandardMaterial({map:canvasPanel("CEILING / "+slot.id,"AVAILABLE",slot.format.name,String(slot.price).replace(".",",")+" € / 12 MOIS","ceiling"),roughness:.75,side:THREE.DoubleSide,emissive:isMedium?new THREE.Color(0x23392d):new THREE.Color(0),emissiveIntensity:isMedium?.18:0});
+      new THREE.MeshStandardMaterial({map:canvasPanel("CEILING / "+slot.id,"AVAILABLE",slot.format.name,"","ceiling"),roughness:.75,side:THREE.DoubleSide,emissive:isMedium?new THREE.Color(0x23392d):new THREE.Color(0),emissiveIntensity:isMedium?.18:0});
     const front=surface(interactive,w,h,mat,x,y,z-.073,Math.PI);
     markInteractive(front,slot);
     const back=surface(interactive,w,h,mat,x,y,z+.073,0);

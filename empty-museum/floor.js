@@ -38,7 +38,7 @@ const stopModelPreview=()=>{if(modelToolsPromise)modelToolsPromise.then(m=>m.sto
     $('#floorModelFile').value='';
     $('#floorModelCanvas').hidden=true;
     $('#floorPreviewCanvas').hidden=false;
-    $('#floorSlotLabel').textContent='SOL '+id+' · 1,80 × 1,50 M · H MAX. 2,50 M';
+    $('#floorSlotLabel').textContent='SOL '+id;
     $('#floorVisibilityTier').value='near';
     $('#floorDurationDays').value='1';
     updateFloorQuote();
