@@ -109,3 +109,11 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 ## On ne parle pas de taille — 22 novembre 2026 (PR brouillon #52)
 - Guillaume : « On ne parle pas de taille ». La statistique « 7,5 M / Longueur simulée de la galerie » devient « 2 / Visites, libre et guidée ». La visite guidée et le mode libre sont bien les deux modes du dock (`museum-v5.js`, non modifié).
 - Les distances 15 à 75 m de la grille 3D et les cinq formats de cadres restent. Les mentions de longueur du lieu ont été retirées des textes d’accueil.
+
+## Pièce d’origine, essai marbre en temps réel — 23 novembre 2026 (brouillon, non fusionné, non déployé)
+- Demande de Guillaume : améliorer la pièce d’origine avec le look de la direction 4K, en version de test, fonctionnelle et soignée. Pas de panorama 360° (la PR #53 reste abandonnée). Pas de Blender ni de rendu hors ligne.
+- La salle procédurale de `engine3d.js` garde la même longueur, le même pas de 3,50 m, les mêmes baies et les mêmes positions d’œuvres le long des murs. Visite libre, visite guidée, cadres, places d’allée, deux joysticks, zoom, secours `walk.js` et commerce en démonstration restent.
+- Le rendu d’essai est derrière `enabled` dans `empty-museum/origin-room-look.js`. `false` rend le calcaire et les cadres précédents. Le marbre est un shader procédural (veines en coordonnées monde, sans image répétée). L’or est un PBR métallique (metalness 1, rugosité 0,32) éclairé par l’environnement déjà présent. Le sol miroir est un `Reflector` basse résolution (512 bureau, 256 mobile, un passage sur deux au mobile) fondu avec la distance. Le plafond central s’ouvre sur un ciel procédural. Aucune texture tierce n’est téléchargée.
+- Les cadres sont plaqués à 1,5 cm du mur structurel, orientés vers l’allée. Le test `empty-museum/tests/flush-frames.test.mjs` vérifie les 4 baies partenaires et les 116 cadres, ainsi que le dégagement des pilastres.
+- La barre de progression ne montre plus la longueur en mètres (`engine3d.js` et `walk.js`). Le curseur de position reste. Exemple attendu avec le stock de démo : « 6 CRÉATIONS · 114 PLACES LIBRES ».
+- État : **proposé** dans une PR brouillon. Ni fusionné, ni déployé. La validation visuelle de Guillaume et une mesure sur téléphone réel restent ouvertes. Les prix restent des prix de démonstration.

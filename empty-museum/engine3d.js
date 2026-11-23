@@ -10,6 +10,17 @@ import {addBakedEntranceV4} from "./baked-architecture-v4.js?v=20261106a";
 import {createMuseumV5Navigation} from "./museum-v5.js?v=20261109dualstick2";
 import {museumCameraMotion} from "./movement3d.js?v=20261105motion1";
 import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261105nearest1";
+import {
+  enabled as ORIGIN_ROOM_LOOK_ENABLED,
+  createOriginMaterials,
+  mouldedFrameGeometry,
+  installOriginRoomLook,
+  frameAnchorX,
+  frameRotationY,
+  commercialFrameZ,
+  FRAME,
+  LEGACY_FRAME_SIZE_M
+} from "./origin-room-look.js?v=20261123look1";
 
 (() => {
   "use strict";
@@ -47,6 +58,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   // Warm museum white needs plausible daylight detail, not crushed grey midtones.
   renderer.toneMappingExposure = .91;
+  if(ORIGIN_ROOM_LOOK_ENABLED) renderer.toneMappingExposure = .82;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0xf7f6f3,1);
@@ -86,6 +98,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   enhanceScannedPBR(luxury,{mobile,length:LENGTH})
     .then(()=>physicalGallery?.refreshFloor(luxury.floor))
     .catch(e=>console.warn("[TEM] Scanned PBR unavailable, retaining originals",e));
+  const originMats=ORIGIN_ROOM_LOOK_ENABLED?createOriginMaterials({mobile}):null;
+  let originSync=()=>{};
   const stone=luxury.wall,stoneAlt=luxury.wallAlt;
   const floorMat=luxury.floor,grout=material(0xd4d1cb,.96);
   const plinthMat=luxury.whiteStone,inlay=material(0xc5bfb1,.67,.19);
@@ -120,7 +134,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   }
 
   // Mineral PBR floor, subtly veined slabs, hairline joints and micro-relief.
-  box(architecture,HALF*2,.28,LENGTH,floorMat,0,-.16,LENGTH/2,false,true);
+  const floorMesh=box(architecture,HALF*2,.28,LENGTH,floorMat,0,-.16,LENGTH/2,false,true);
+  floorMesh.userData.temRole="structural-floor";
   // Premium architecture has its own instanced, bevelled stone slabs and
   // stationary indirect-occlusion atlas; never modify exhibition inventory.
   try{
@@ -137,14 +152,19 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   const ceilingRelief=material(0xf7f5ef,.91);
   const ceilingShadow=material(0xe1e1db,.96);
   const ceilingLED=new THREE.MeshBasicMaterial({color:0xf4f5f0,side:THREE.DoubleSide});
-  box(architecture,HALF*2,.34,LENGTH,ceilingPlaster,0,HEIGHT+.19,LENGTH/2);
+  const ceilingCap=box(architecture,HALF*2,.34,LENGTH,ceilingPlaster,0,HEIGHT+.19,LENGTH/2);
+  ceilingCap.userData.temRole="ceiling-cap";
   // Recessed white skylight: no dark glass, colored fixtures or hanging frames.
-  box(architecture,2.90,.10,LENGTH,ceilingRelief,0,HEIGHT-.012,LENGTH/2);
-  box(architecture,2.67,.029,LENGTH,ceilingRelief,0,HEIGHT-.077,LENGTH/2);
+  const ceilingSkyA=box(architecture,2.90,.10,LENGTH,ceilingRelief,0,HEIGHT-.012,LENGTH/2);
+  ceilingSkyA.userData.temRole="ceiling-cap";
+  const ceilingSkyB=box(architecture,2.67,.029,LENGTH,ceilingRelief,0,HEIGHT-.077,LENGTH/2);
+  ceilingSkyB.userData.temRole="ceiling-cap";
   for(const side of [-1,1]){
     // A quiet plaster reveal gives depth to the apparently seamless white ceiling.
-    box(architecture,.070,.09,LENGTH,ceilingShadow,side*1.48,HEIGHT-.105,LENGTH/2);
-    box(architecture,.044,.031,LENGTH,ceilingLED,side*1.39,HEIGHT-.148,LENGTH/2);
+    const reveal=box(architecture,.070,.09,LENGTH,ceilingShadow,side*1.48,HEIGHT-.105,LENGTH/2);
+    reveal.userData.temRole="ceiling-cap";
+    const cove=box(architecture,.044,.031,LENGTH,ceilingLED,side*1.39,HEIGHT-.148,LENGTH/2);
+    cove.userData.temRole="ceiling-cap";
   }
   for(const side of [-1,1]){
     box(architecture,.22,HEIGHT,LENGTH,side<0?stone:stoneAlt,side*(HALF+.03),HEIGHT/2,LENGTH/2);
@@ -168,6 +188,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   for(const [index,z] of ceilingOculi.entries()){
     const gallery=new THREE.Group();
     gallery.position.set(0,HEIGHT-.25,z);
+    gallery.userData.temRole="ceiling-oculus";
     architecture.add(gallery);
     oculusGroups.push(gallery);
     const backplate=new THREE.Mesh(
@@ -486,16 +507,26 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   function addFrame(group,w,h,x,y,z,rot,frontMat,slot){
     const unit=new THREE.Group();
     unit.position.set(x,y,z);unit.rotation.y=rot;group.add(unit);
-    // Wall bays have a shallow relief. Put the shadow on its physical surface,
-    // rather than hiding it behind the wall (which made the frames look pasted on).
-    const shadow=surface(unit,w+.47,h+.50,frameContactMaterial,0,-.015,-.090);
-    shadow.renderOrder=0;
-    // Thin rounded metal lips catch real grazing highlights instead of producing
-    // perfectly sharp computer-generated boxes.
-    const outer=mesh(unit,new RoundedBoxGeometry(w+.126,h+.126,.084,2,.010),darkBronze,0,0,-.018,true);
-    const gilded=mesh(unit,new RoundedBoxGeometry(w+.084,h+.084,.092,2,.009),agedGold,0,0,.026,true);
-    box(unit,w+.053,h+.053,.094,pictureMat,0,0,.062,true);
-    const art=surface(unit,w,h,frontMat,0,0,.114);
+    let art;
+    if(ORIGIN_ROOM_LOOK_ENABLED){
+      // Moulding back is FRAME.clearanceM off the structural wall. The pool
+      // sits in that gap so it reads on the marble, not inside the wall.
+      const shadow=surface(unit,w+.62,h+.7,frameContactMaterial,0,-.02,FRAME.backLocalZ-.004);
+      shadow.renderOrder=0;
+      mesh(unit,mouldedFrameGeometry(w,h),originMats.gold,0,0,0,!mobile);
+      art=surface(unit,Math.max(.08,w-.036),Math.max(.08,h-.036),frontMat,0,0,FRAME.artLocalZ);
+    }else{
+      // Wall bays have a shallow relief. Put the shadow on its physical surface,
+      // rather than hiding it behind the wall (which made the frames look pasted on).
+      const shadow=surface(unit,w+.47,h+.50,frameContactMaterial,0,-.015,-.090);
+      shadow.renderOrder=0;
+      // Thin rounded metal lips catch real grazing highlights instead of producing
+      // perfectly sharp computer-generated boxes.
+      mesh(unit,new RoundedBoxGeometry(w+.126,h+.126,.084,2,.010),darkBronze,0,0,-.018,true);
+      mesh(unit,new RoundedBoxGeometry(w+.084,h+.084,.092,2,.009),agedGold,0,0,.026,true);
+      box(unit,w+.053,h+.053,.094,pictureMat,0,0,.062,true);
+      art=surface(unit,w,h,frontMat,0,0,.114);
+    }
     art.material.side=THREE.DoubleSide;
     if(slot&&!slot.reservedForAds)markInteractive(art,slot);
     // Brushed brass label, mounted beside rather than over the piece.
@@ -514,14 +545,10 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     return art;
   }
   function drawWallSlot(slot){
-    const i=slot.id,z=5.7+i*STEP,side=i%2?1:-1,x=side*(HALF-.39);
-    const dims={
-      mini:[1.35,1.83],portrait:[1.42,2.15],landscape:[2.36,1.6],
-      tall:[1.48,2.67],wide:[2.78,1.95],panorama:[2.8,1.18],
-      standard:[2.36,1.6],large:[2.78,1.95],xl:[2.8,1.18]
-    };
-    const [w,h]=dims[slot.size]||dims.landscape;
-    const y=2.10,rot=side<0?Math.PI/2:-Math.PI/2;
+    const i=slot.id,z=5.7+i*STEP,side=i%2?1:-1;
+    const x=ORIGIN_ROOM_LOOK_ENABLED ? frameAnchorX(side) : side*(HALF-.39);
+    const [w,h]=LEGACY_FRAME_SIZE_M[slot.size]||LEGACY_FRAME_SIZE_M.landscape;
+    const y=2.10,rot=frameRotationY(side);
     let mat;
     if(slot.piece)mat=pictureMaterial(slot.piece);
     else if(slot.reservedForAds)mat=new THREE.MeshStandardMaterial({
@@ -546,18 +573,25 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   });
   function drawCommercialFrame(slot){
     const side=slot.side;
-    const x=side*(HALF-.39),z=slot.z+side*(slot.xM+slot.widthM/2-1.5);
+    const x=ORIGIN_ROOM_LOOK_ENABLED ? frameAnchorX(side) : side*(HALF-.39);
+    const z=commercialFrameZ(slot);
     const y=slot.y,w=slot.widthM,h=slot.heightM;
-    const rot=side<0?Math.PI/2:-Math.PI/2;
+    const rot=frameRotationY(side);
     const unit=new THREE.Group();
     unit.position.set(x,y,z);unit.rotation.y=rot;
     interactive.add(unit);
-    // A shadow-line frame and shallow museum float-mount keep the gallery
-    // quiet even with a high density of small pieces.
-    box(unit,w+.035,h+.035,.05,modularFrameMat,0,0,-.025);
-    box(unit,w+.012,h+.012,.055,modularMountMat,0,0,.012);
     const imageMaterial=slot.piece?pictureMaterial(slot.piece):modularBareMat;
-    const art=surface(unit,w-.015,h-.015,imageMaterial,0,0,.047);
+    let art;
+    if(ORIGIN_ROOM_LOOK_ENABLED){
+      mesh(unit,mouldedFrameGeometry(w,h),originMats.gold,0,0,0,!mobile);
+      art=surface(unit,Math.max(.06,w-.03),Math.max(.06,h-.03),imageMaterial,0,0,FRAME.artLocalZ);
+    }else{
+      // A shadow-line frame and shallow museum float-mount keep the gallery
+      // quiet even with a high density of small pieces.
+      box(unit,w+.035,h+.035,.05,modularFrameMat,0,0,-.025);
+      box(unit,w+.012,h+.012,.055,modularMountMat,0,0,.012);
+      art=surface(unit,w-.015,h-.015,imageMaterial,0,0,.047);
+    }
     markInteractive(art,slot);
     if(slot.piece){
       // Label below the frame, not beside it, so the small subdivisions cannot
@@ -737,6 +771,20 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     });
   }
   drawInventory();
+  if(ORIGIN_ROOM_LOOK_ENABLED&&originMats){
+    try{
+      const look=installOriginRoomLook({
+        scene,architecture,floorMesh,physicalGallery,mobile,
+        half:HALF,height:HEIGHT,length:LENGTH,museumArtDirection,
+        wallMaterial:originMats.wall,floorMaterial:originMats.floor
+      });
+      originSync=look.sync;
+      overlay.dataset.originRoomLook="marble";
+    }catch(error){
+      console.warn("[TEM] Origin room look failed; frames stay, classic surfaces remain where the pass stopped",error);
+      overlay.dataset.originRoomLook="error";
+    }
+  }else overlay.dataset.originRoomLook="classic";
 
   let active=false,frame=0,last=0,yaw=0,pitch=0,yawTarget=0,pitchTarget=0,walkTo=null,down=null,focusBefore=null;
   let velX=0,velZ=0,rayTime=0;
@@ -897,7 +945,9 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   let lastSpotPosition=-Infinity, lastShadowPosition=-Infinity;
   const progress=$("#walkProgress"),meter=$("#walkMeter");
   const guide=$("#walkGuide");
-  if(guide)guide.textContent="ENTREZ DANS LES GALERIES · ADMIREZ LES ŒUVRES ET LEURS CARTELS DORÉS. LES SPOTS SE CONCENTRENT SUR LES EXPOSITIONS. LE PLAFOND RESTE BLANC.";
+  if(guide)guide.textContent=ORIGIN_ROOM_LOOK_ENABLED
+    ?"ENTREZ DANS LES GALERIES · ADMIREZ LES ŒUVRES ET LEURS CARTELS DORÉS. LES SPOTS SE CONCENTRENT SUR LES EXPOSITIONS."
+    :"ENTREZ DANS LES GALERIES · ADMIREZ LES ŒUVRES ET LEURS CARTELS DORÉS. LES SPOTS SE CONCENTRENT SUR LES EXPOSITIONS. LE PLAFOND RESTE BLANC.";
   $(".walk-identity small").textContent="GALERIES MONUMENTALES · MUSÉE 3D";
   const panel=document.createElement("div");panel.className="engine-status";
   panel.innerHTML='<span class="engine-chip">● RENDERED IN 3D</span><span class="engine-chip engine-location">ORIGINAL GALLERY · 2026</span>';
@@ -967,6 +1017,17 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     camera.rotation.order="YXZ";
     camera.rotation.set(pitch,Math.PI+yaw,0);
   }
+  window.addEventListener("tem-capture-pose",event=>{
+    const pose=event.detail||{};
+    if(Number.isFinite(pose.x))view.x=pose.x;
+    if(Number.isFinite(pose.y))view.y=pose.y;
+    if(Number.isFinite(pose.z))view.z=pose.z;
+    if(Number.isFinite(pose.yaw)){yaw=pose.yaw;yawTarget=pose.yaw;}
+    if(Number.isFinite(pose.pitch)){pitch=pose.pitch;pitchTarget=pose.pitch;}
+    velX=0;velZ=0;walkTo=null;
+    orient();
+  });
+  let fpsStamp=0,fpsFrames=0;
   function interactions(nx,ny){
     mouse.set(nx,ny);
     raycaster.setFromCamera(mouse,camera);
@@ -1122,11 +1183,18 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       item.container.visible=Boolean(stillActive&&distance<=(piece.maxVisibleDistanceM||0));
       // Standard depth testing still provides real architectural occlusion.
     }
+    originSync(view.x,view.z);
     renderer.render(scene,camera);
+    fpsFrames++;
+    if(time-fpsStamp>1000){
+      overlay.dataset.museumFps=((fpsFrames*1000)/Math.max(1,time-fpsStamp)).toFixed(1);
+      overlay.dataset.museumDrawCalls=String(renderer.info.render.calls);
+      fpsFrames=0;fpsStamp=time;
+    }
     const frees=(window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots().filter(s=>!s.reservedForAds)).filter(s=>!s.piece).length+
       window.TEM.getCeilingSlots().filter(s=>s.unlocked&&!s.piece).length+
       window.TEM.getFloorSlots().filter(s=>!s.piece).length;
-    if(progress)progress.textContent=Math.floor(view.z)+" / "+Math.floor(LENGTH)+" M · "+window.TEM.getPieces().length+" CRÉATIONS · "+frees+" PLACES LIBRES";
+    if(progress)progress.textContent=window.TEM.getPieces().length+" CRÉATIONS · "+frees+" PLACES LIBRES";
     if(meter)meter.style.width=(100*view.z/LENGTH)+"%";
     const loc=panel.querySelector(".engine-location");
     if(loc)loc.textContent=view.z<46?"ORIGINAL GALLERY · 2026":view.z<95?"THE EXPANSION · 02":"THE LONG HALL · 03";
