@@ -10,6 +10,7 @@ import {addBakedEntranceV4} from "./baked-architecture-v4.js?v=20261106a";
 import {createMuseumV5Navigation} from "./museum-v5.js?v=20261109dualstick2";
 import {museumCameraMotion} from "./movement3d.js?v=20261105motion1";
 import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261105nearest1";
+import {mountPano360V2} from "./pano-360-v2.js?v=20261123pano2";
 
 (() => {
   "use strict";
@@ -256,8 +257,22 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   // Loading stays asynchronous; the visitor can already explore the V3
   // gallery while the verified Blender light-bake arrives. Software WebGL
   // and slower desktop devices need more than the old hard 15s cutoff.
-  addBakedEntranceV4({scene,overlay,timeoutMs:mobile?25000:90000}).catch(error=>
+  // Panorama v2 is a camera-locked photo. The procedural shell hides only
+  // after the texture loads; a failed load leaves the built gallery in place.
+  // Set PANO_360_V2.enabled to false to restore that shell in one step.
+  const shellRoots=[architecture];
+  const panoMount=mountPano360V2({THREE,scene,renderer,mobile,shellRoots});
+  addBakedEntranceV4({scene,overlay,timeoutMs:mobile?25000:90000}).then(result=>{
+    panoMount.then(state=>state.conceal(result?.model)).catch(()=>{});
+  }).catch(error=>
     console.warn("[TEM] Nonblocking V4 architectural enhancement",error));
+  panoMount.then(state=>{
+    if(!state.applied)return;
+    overlay.dataset.museumPano="360-v2";
+    overlay.dataset.museumPanoEdge=String(state.edge||"");
+    const guideEl=$("#walkGuide");
+    if(guideEl)guideEl.textContent="ENTREZ DANS LES GALERIES · ADMIREZ LES ŒUVRES ET LEURS CARTELS DORÉS. LE PANORAMA 360 HABILLE LA SALLE ; LES CADRES ET LA VISITE RESTENT EN 3D.";
+  }).catch(error=>console.warn("[TEM] Panorama 360 v2 unavailable, keeping the built gallery",error));
   // No gold stripes or decorative circles cutting through the real stone floor.
   // The actual large-format stone joints provide the entire floor rhythm.
   function canvasTexture(painter,w=768,h=512){
@@ -1126,7 +1141,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     const frees=(window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots().filter(s=>!s.reservedForAds)).filter(s=>!s.piece).length+
       window.TEM.getCeilingSlots().filter(s=>s.unlocked&&!s.piece).length+
       window.TEM.getFloorSlots().filter(s=>!s.piece).length;
-    if(progress)progress.textContent=Math.floor(view.z)+" / "+Math.floor(LENGTH)+" M · "+window.TEM.getPieces().length+" CRÉATIONS · "+frees+" PLACES LIBRES";
+    if(progress)progress.textContent=window.TEM.getPieces().length+" CRÉATIONS · "+frees+" PLACES LIBRES";
     if(meter)meter.style.width=(100*view.z/LENGTH)+"%";
     const loc=panel.querySelector(".engine-location");
     if(loc)loc.textContent=view.z<46?"ORIGINAL GALLERY · 2026":view.z<95?"THE EXPANSION · 02":"THE LONG HALL · 03";

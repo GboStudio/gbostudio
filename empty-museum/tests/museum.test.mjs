@@ -40,7 +40,7 @@ test('a partial module never creates a whole-wall offer',()=>{
   assert.equal(availableWholeWalls(5,[],[]).length,0);
 });
 test('active WebGL engine, navigation and cloud adapter parse and route to the single immersive museum',()=>{
-  for(const path of ['engine-loader.js','visual-viewport-v1.js','engine3d.js','luxury-v8.js','pbr-scanned.js','baked-architecture-v4.js','physical-gallery-v3.js','gallery-layout-v3.js','museum-v5.js','movement3d.js','museum-cloud.js','museum-inventory.mjs']){
+  for(const path of ['engine-loader.js','visual-viewport-v1.js','engine3d.js','pano-360-v2.js','luxury-v8.js','pbr-scanned.js','baked-architecture-v4.js','physical-gallery-v3.js','gallery-layout-v3.js','museum-v5.js','movement3d.js','museum-cloud.js','museum-inventory.mjs']){
     const src=file(path);
     const parsed=spawnSync(process.execPath,['--input-type=module','--check'],{input:src,encoding:'utf8'});
     assert.equal(parsed.status,0,path+': '+parsed.stderr);
