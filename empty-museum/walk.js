@@ -525,7 +525,7 @@
     ctx.fillRect(W / 2, H / 2 - 9, 1, 18);
     drawPerson(performance.now()/1000);
     document.getElementById("walkProgress").textContent =
-      Math.floor(view.z) + " / " + Math.floor(length) + " M  ·  " + all.length + " CRÉATIONS  ·  " + (allSlots.filter(s=>!s.piece&&!s.reservedForAds).length+ceilings.filter(s=>s.unlocked&&!s.piece).length+floors.filter(s=>!s.piece).length) + " PLACES LIBRES";
+      all.length + " CRÉATIONS  ·  " + (allSlots.filter(s=>!s.piece&&!s.reservedForAds).length+ceilings.filter(s=>s.unlocked&&!s.piece).length+floors.filter(s=>!s.piece).length) + " PLACES LIBRES";
     document.getElementById("walkMeter").style.width = (100 * view.z / length) + "%";
   }
   function tick(time) {

@@ -109,3 +109,12 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 ## On ne parle pas de taille — 22 novembre 2026 (PR brouillon #52)
 - Guillaume : « On ne parle pas de taille ». La statistique « 7,5 M / Longueur simulée de la galerie » devient « 2 / Visites, libre et guidée ». La visite guidée et le mode libre sont bien les deux modes du dock (`museum-v5.js`, non modifié).
 - Les distances 15 à 75 m de la grille 3D et les cinq formats de cadres restent. Les mentions de longueur du lieu ont été retirées des textes d’accueil.
+
+## Panorama 360 v2 — 23 novembre 2026 (PR brouillon, non fusionnée, non déployée)
+- Branche proposée à partir de `main` `7377b613` (fusion de la PR #52 déjà dans `main` ; les sections plus haut qui décrivent encore #52 comme non fusionnée sont antérieures à cette fusion et ne sont pas réécrites ici). Les PR ouvertes #45 et #51 touchent aussi le chargeur ou le moteur ; elles ne sont pas reprises.
+- Guillaume : intégrer `pano-360-ia-v2.jpg` (6144×3072) tel quel dans la visite 3D. « Met tel quel. Et si pas bien on reviendra en arrière. »
+- Interrupteur unique : `empty-museum/pano-360-v2.js`, `enabled`. `false` laisse la salle procédurale, les cadres, les visites, les places et le secours 2D exactement comme avant. Le secours `walk.js` ne dessine pas la sphère.
+- Le fichier maître est servi tel quel sur un GPU desktop d’au moins 6144. Le mobile, et tout GPU plus petit, reçoit le dérivé statique 4096×2048 (WebP, JPEG de repli). Pas de chaîne de build : GitHub Pages sert les fichiers.
+- Compromis assumé : la photo est un seul point de vue, collée à la caméra. Les murs, le sol et le plafond procéduraux se masquent pour laisser voir la photo. Les cadres, les œuvres, l’allée et la marche restent en 3D, donc ils se déplacent sur l’image peinte (pas de parallaxe de la salle peinte ; cadres 3D devant les cadres peints).
+- La barre de progression ne répète plus la longueur en mètres (`0 / 142 M`). Le curseur de position reste. Les portées 15 à 75 m et les formats de cadres ne changent pas.
+- État : **brouillon de PR**, non fusionné, non déployé.
