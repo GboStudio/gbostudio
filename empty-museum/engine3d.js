@@ -20,7 +20,7 @@ import {
   commercialFrameZ,
   FRAME,
   LEGACY_FRAME_SIZE_M
-} from "./origin-room-look.js?v=20261127j3";
+} from "./origin-room-look.js?v=20261127j4";
 import {
   slideVisitor,
   separateVisitor,
@@ -283,7 +283,9 @@ import {
   const portalFront=surface(portalSign,3.95,.61,inscription,0,0,-.067,Math.PI);
   portalFront.renderOrder=3;
   // The HUD already carries the name. On a phone the engraved line sits behind it.
-  if(mobile) portalFront.userData.originHideOnMobile=true;
+  if(mobile){
+    portalFront.userData.originHideOnMobile=true;
+  }
   // Optional real Cycles light-baked architectural entrance: V3 remains usable
   // until the generated GLB has been verified and downloaded.
   // Loading stays asynchronous; the visitor can already explore the V3
@@ -323,6 +325,7 @@ import {
     new THREE.MeshBasicMaterial({map:stamp,transparent:true,side:THREE.DoubleSide,depthWrite:false}),
     0,mobile?1.22:4.80,mobile?8.6:7.9,Math.PI);
   welcome.renderOrder=4;
+  if(mobile) welcome.userData.originHideOnMobile=true;
 
   // Materials for artworks are produced at runtime; uploaded images remain visible.
   function artworkTexture(piece,w=768,h=550){
@@ -529,7 +532,8 @@ import {
       // sits in that gap so it reads on the marble, not inside the wall.
       const shadow=surface(unit,w+.62,h+.7,frameContactMaterial,0,-.02,FRAME.backLocalZ-.004);
       shadow.renderOrder=0;
-      mesh(unit,mouldedFrameGeometry(w,h),originMats.gold,0,0,0,!mobile);
+      const partnerLip=mesh(unit,mouldedFrameGeometry(w,h),originMats.gold,0,0,0,!mobile);
+      partnerLip.userData.ornateStandIn=true;
       art=surface(unit,Math.max(.08,w-.036),Math.max(.08,h-.036),frontMat,0,0,FRAME.artLocalZ);
     }else{
       // Wall bays have a shallow relief. Put the shadow on its physical surface,
@@ -604,7 +608,8 @@ import {
     const imageMaterial=slot.piece?pictureMaterial(slot.piece):modularBareMat;
     let art;
     if(ORIGIN_ROOM_LOOK_ENABLED){
-      mesh(unit,mouldedFrameGeometry(w,h),originMats.gold,0,0,0,!mobile);
+      const commercialLip=mesh(unit,mouldedFrameGeometry(w,h),originMats.gold,0,0,0,!mobile);
+      commercialLip.userData.ornateStandIn=true;
       art=surface(unit,Math.max(.06,w-.03),Math.max(.06,h-.03),imageMaterial,0,0,FRAME.artLocalZ);
     }else{
       // A shadow-line frame and shallow museum float-mount keep the gallery

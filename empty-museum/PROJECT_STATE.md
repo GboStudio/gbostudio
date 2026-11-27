@@ -153,4 +153,9 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Guillaume : « Oui, lance l'étape 3 : reflet net au sol, zone blanche supprimée et titre mobile corrigé ». Le jalon 4 n’est pas commencé.
 - Au bureau, le miroir planaire est fort près des murs et s’efface avec la distance. L’ouverture du plafond et le ciel en sont exclus. Le marbre du centre d’allée est un peu plus sombre pour ne plus brûler. Sur mobile, un reflet faux instancié remplace le second passage.
 - L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
+- État : proposé, non fusionné, non déployé. Le jalon 4 suit dans la même PR.
+
+## Chantier 3D, jalon 4 — cadres, ciel et bande d’allée — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Oui, lance l'étape 4 : cadres ornementés, ciel nuageux avec rayon de lumière, bande centrale lissée et titre mobile corrigé ». Dernier jalon de cet essai. Rien n’est fusionné ni déployé.
+- `empty-museum/tools/build_frames.py` produit une baguette sculptée et un coin à feuilles, instanciés sur les cadres existants. Le clic sur l’œuvre reste. Le ciel est un cumulus procédural (voir `assets/sky/CREDITS.md`) avec un rayon additif. La jonction entre l’allée mate et le miroir est un dégradé. Sur mobile, le second titre flottant est caché.
 - État : proposé, non fusionné, non déployé.

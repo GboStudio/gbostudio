@@ -489,6 +489,93 @@ export function buildStoneShell({
   return {shell};
 }
 
+const FRAME_KIT_URL = "./assets/kit/origin-frames.glb";
+let frameKitPromise = null;
+
+function loadFrameKit(THREE) {
+  if (frameKitPromise) return frameKitPromise;
+  frameKitPromise = new Promise((resolve, reject) => {
+    const loader = new GLTFLoader();
+    loader.setMeshoptDecoder(MeshoptDecoder);
+    loader.load(FRAME_KIT_URL, gltf => {
+      resolve({
+        moulding: kitGeometry(THREE, gltf.scene, "moulding"),
+        corner: kitGeometry(THREE, gltf.scene, "corner")
+      });
+    }, undefined, reject);
+  });
+  return frameKitPromise;
+}
+
+function frameNodes(interactive) {
+  const nodes = [];
+  for (const child of interactive.children) {
+    if (!child.userData?.wallFrame || !child.userData.w) continue;
+    nodes.push(child);
+  }
+  return nodes;
+}
+
+function putFramePiece(THREE, mesh, node, index, lx, ly, lz, rz, sx) {
+  const local = new THREE.Object3D();
+  local.position.set(lx, ly, lz);
+  local.rotation.set(0, 0, rz);
+  local.scale.set(sx, 1, 1);
+  local.updateMatrix();
+  node.updateWorldMatrix(true, false);
+  const world = new THREE.Matrix4().multiplyMatrices(node.matrixWorld, local.matrix);
+  mesh.setMatrixAt(index, world);
+}
+
+export function mountOrnateFrames({THREE, interactive, gold}) {
+  const nodes = frameNodes(interactive);
+  if (!nodes.length || !gold) return Promise.resolve(null);
+  return loadFrameKit(THREE).then(kit => {
+    const previous = interactive.getObjectByName("origin-ornate-frames");
+    if (previous) interactive.remove(previous);
+    interactive.traverse(obj => {
+      if (obj.userData?.ornateStandIn) obj.visible = false;
+    });
+    const plain = interactive.getObjectByName("origin-frame-instances");
+    if (plain) {
+      for (const child of [...plain.children]) {
+        if (!child.userData?.slotAt) plain.remove(child);
+      }
+    }
+    const root = new THREE.Group();
+    root.name = "origin-ornate-frames";
+    const bars = new THREE.InstancedMesh(kit.moulding, gold, nodes.length * 4);
+    const corners = new THREE.InstancedMesh(kit.corner, gold, nodes.length * 4);
+    for (const mesh of [bars, corners]) {
+      mesh.frustumCulled = false;
+      mesh.castShadow = false;
+      mesh.receiveShadow = true;
+      root.add(mesh);
+    }
+    nodes.forEach((node, index) => {
+      const w = node.userData.w;
+      const h = node.userData.h;
+      const z = FRAME.backLocalZ;
+      const base = index * 4;
+      putFramePiece(THREE, bars, node, base, 0, h / 2, z, 0, w + 0.1);
+      putFramePiece(THREE, bars, node, base + 1, 0, -h / 2, z, Math.PI, w + 0.1);
+      putFramePiece(THREE, bars, node, base + 2, -w / 2, 0, z, Math.PI / 2, h + 0.1);
+      putFramePiece(THREE, bars, node, base + 3, w / 2, 0, z, -Math.PI / 2, h + 0.1);
+      putFramePiece(THREE, corners, node, base, w / 2, h / 2, z, 0, 1);
+      putFramePiece(THREE, corners, node, base + 1, -w / 2, h / 2, z, Math.PI / 2, 1);
+      putFramePiece(THREE, corners, node, base + 2, w / 2, -h / 2, z, -Math.PI / 2, 1);
+      putFramePiece(THREE, corners, node, base + 3, -w / 2, -h / 2, z, Math.PI, 1);
+    });
+    bars.instanceMatrix.needsUpdate = true;
+    corners.instanceMatrix.needsUpdate = true;
+    interactive.add(root);
+    return root;
+  }).catch(error => {
+    console.warn("[TEM] Ornate frames stayed on the simple moulding", error);
+    return null;
+  });
+}
+
 export function compactWallFrames({THREE, interactive, gold, bare}) {
   const previous = interactive.getObjectByName("origin-frame-instances");
   if (previous) {
@@ -523,5 +610,6 @@ export function compactWallFrames({THREE, interactive, gold, bare}) {
     root.add(art);
   }
   interactive.add(root);
+  mountOrnateFrames({THREE, interactive, gold});
   return root;
 }

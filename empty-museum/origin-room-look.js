@@ -18,7 +18,7 @@ import {
   commercialFrameZ,
   wallInnerFaceX
 } from "./origin-room-geometry.mjs";
-import {buildStoneShell, compactWallFrames, mountArchitectureKit, placeWarmHalos, placeFrameReflections} from "./origin-room-build.js?v=20261127j3";
+import {buildStoneShell, compactWallFrames, mountArchitectureKit, mountOrnateFrames, placeWarmHalos, placeFrameReflections} from "./origin-room-build.js?v=20261127j4";
 
 export const enabled = true;
 
@@ -177,8 +177,8 @@ ${MARBLE_GLSL}`)
 		diffuseColor.rgb *= mix(0.58, 1.0, clamp(baked, 0.0, 1.0));
 	#endif
 	if (uFloorEdge > 0.5) {
-		float slot = 1.0 - smoothstep(0.25, 2.4, abs(vMarbleWp.x));
-		diffuseColor.rgb *= mix(1.0, 0.62, slot);
+		float slot = 1.0 - smoothstep(0.2, 3.4, abs(vMarbleWp.x));
+		diffuseColor.rgb *= mix(1.0, 0.70, slot * slot);
 	}`
     )
     .replace(
@@ -303,14 +303,15 @@ function skyMaterial() {
       }
       void main() {
         vec3 d = normalize(vDir);
-        vec3 zenith = vec3(0.62, 0.70, 0.78);
-        vec3 horizon = vec3(0.86, 0.84, 0.80);
-        vec3 col = mix(horizon, zenith, smoothstep(-0.02, 0.55, d.y));
-        float up = max(d.y, 0.08);
+        vec3 zenith = vec3(0.55, 0.68, 0.82);
+        vec3 horizon = vec3(0.93, 0.86, 0.74);
+        vec3 col = mix(horizon, zenith, smoothstep(0.0, 0.62, d.y));
+        float up = max(d.y, 0.12);
         vec2 uv = d.xz / up;
-        float clouds = n2(uv * 2.4) + 0.55 * n2(uv * 5.1);
-        float puff = smoothstep(0.55, 0.92, clouds) * smoothstep(0.02, 0.28, d.y);
-        col = mix(col, vec3(0.90, 0.89, 0.87), puff * 0.7);
+        float clouds = n2(uv * 1.6) * 0.65 + n2(uv * 3.4) * 0.35;
+        float puff = smoothstep(0.42, 0.78, clouds) * smoothstep(0.04, 0.35, d.y);
+        col = mix(col, vec3(0.98, 0.94, 0.86), puff * 0.82);
+        col = min(col, vec3(0.93));
         gl_FragColor = vec4(col, 1.0);
       }
     `
@@ -328,14 +329,12 @@ const reflectorShader = {
     uniform mat4 textureMatrix;
     varying vec4 vUv;
     varying float vDist;
-    varying float vWall;
-    varying float vOpening;
+    varying float vAbsX;
     #include <common>
     #include <logdepthbuf_pars_vertex>
     void main() {
       vUv = textureMatrix * vec4(position, 1.0);
-      vWall = smoothstep(0.85, 2.6, abs(position.x));
-      vOpening = smoothstep(1.65, 0.7, abs(position.x));
+      vAbsX = abs(position.x);
       vec4 mv = modelViewMatrix * vec4(position, 1.0);
       vDist = length(mv.xyz);
       gl_Position = projectionMatrix * mv;
@@ -346,8 +345,7 @@ const reflectorShader = {
     uniform sampler2D tDiffuse;
     varying vec4 vUv;
     varying float vDist;
-    varying float vWall;
-    varying float vOpening;
+    varying float vAbsX;
     #include <logdepthbuf_pars_fragment>
     float blendOverlay(float base, float blend) {
       return (base < 0.5 ? (2.0 * base * blend) : (1.0 - 2.0 * (1.0 - base) * (1.0 - blend)));
@@ -359,9 +357,9 @@ const reflectorShader = {
       #include <logdepthbuf_fragment>
       vec4 base = texture2DProj(tDiffuse, vUv);
       float fade = smoothstep(22.0, 0.6, vDist);
-      float mirror = mix(0.4, 0.92, vWall) * fade;
-      if (vOpening > 0.55) mirror = 0.0;
-      gl_FragColor = vec4(base.rgb, clamp(mirror, 0.0, 0.92));
+      float t = smoothstep(0.2, 3.4, vAbsX);
+      float mirror = mix(0.05, 0.9, t * t) * fade;
+      gl_FragColor = vec4(base.rgb, clamp(mirror, 0.0, 0.9));
     }`
 };
 
@@ -441,7 +439,39 @@ export function installOriginRoomLook({
   sky.frustumCulled = false;
   sky.renderOrder = -1;
   sky.position.y = 2.2;
+  sky.name = "origin-cumulus";
   scene.add(sky);
+  const shaft = new THREE.Mesh(
+    new THREE.BoxGeometry(2.4, 5.2, Math.min(length, 48)),
+    new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false,
+      fog: false,
+      vertexShader: `
+        varying vec3 vLocal;
+        void main() {
+          vLocal = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vLocal;
+        void main() {
+          float across = 1.0 - smoothstep(0.15, 1.15, abs(vLocal.x));
+          float down = smoothstep(-2.6, 1.6, vLocal.y);
+          float alpha = across * down * 0.28;
+          gl_FragColor = vec4(1.0, 0.93, 0.78, alpha);
+        }
+      `
+    })
+  );
+  shaft.position.set(0, 3.5, Math.min(length, 48) / 2 + 1.2);
+  shaft.frustumCulled = false;
+  shaft.renderOrder = 1;
+  shaft.name = "origin-light-shaft";
+  scene.add(shaft);
 
   let reflector = null;
   if (!mobile && floorMesh) {
@@ -463,9 +493,12 @@ export function installOriginRoomLook({
     const reflect = mirror.onBeforeRender;
     mirror.onBeforeRender = function(renderer, scene, camera) {
       const skyWas = sky.visible;
+      const shaftWas = shaft.visible;
       sky.visible = false;
+      shaft.visible = false;
       reflect.call(this, renderer, scene, camera);
       sky.visible = skyWas;
+      shaft.visible = shaftWas;
     };
     scene.add(mirror);
     reflector = mirror;
