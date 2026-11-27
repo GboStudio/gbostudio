@@ -30,7 +30,8 @@ try{
     const url=page.url();
     assert.match(url,/visit=immersive/,'#'+anchor+' must rewrite to ?visit=immersive');
     assert.match(url,new RegExp('#'+anchor+'$'),'the anchor must stay in the URL');
-    await page.screenshot({path:shots+'/visit-anchor-'+anchor+'.png'});
+    // The immersive canvas can take longer than Playwright's 30s default to capture.
+    await page.screenshot({path:shots+'/visit-anchor-'+anchor+'.png',timeout:90000,animations:'disabled'});
     console.log('PASS anchor opens visit',anchor,url);
     await page.close();
   }
