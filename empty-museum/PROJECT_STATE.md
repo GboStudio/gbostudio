@@ -153,7 +153,12 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Guillaume : « Oui, lance l'étape 3 : reflet net au sol, zone blanche supprimée et titre mobile corrigé ». Le jalon 4 n’est pas commencé.
 - Au bureau, le miroir planaire est fort près des murs et s’efface avec la distance. L’ouverture du plafond et le ciel en sont exclus. Le marbre du centre d’allée est un peu plus sombre pour ne plus brûler. Sur mobile, un reflet faux instancié remplace le second passage.
 - L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
-- État : proposé, non fusionné, non déployé. Le jalon 4 suit dans la même PR.
+- État : proposé, non fusionné, non déployé.
+
+## Ciel CC0 dans l’ouverture — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Avant la mise en ligne, fais le vrai ciel nuageux dans l'ouverture ». Seul le ciel change.
+- L’ouverture lit Kloofendal 48d Partly Cloudy (Pure Sky) de Poly Haven, CC0, 2K au bureau et 1K au mobile. Crédit : `empty-museum/assets/sky/CREDITS.md`. Le rayon est quelques cartes additives sous la fente, exclues du miroir du sol avec le dôme.
+- État : proposé, non fusionné, non déployé.
 
 ## Chantier 3D, jalon 4 — cadres, ciel et bande d’allée — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
 - Guillaume : « Oui, lance l'étape 4 : cadres ornementés, ciel nuageux avec rayon de lumière, bande centrale lissée et titre mobile corrigé ». Dernier jalon de cet essai. Rien n’est fusionné ni déployé.

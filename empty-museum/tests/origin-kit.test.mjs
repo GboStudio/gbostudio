@@ -97,3 +97,19 @@ test('the kit replaces stand-ins without moving the colliders, behind the rollba
   assert.match(build, /placeWarmHalos/);
   assert.match(read('tools/bake_kit_light.py'), /cycles\.samples/);
 });
+
+test('the ceiling opening uses the CC0 Kloofendal sky, kept out of the floor mirror', () => {
+  const look = read('origin-room-look.js');
+  assert.match(look, /assets\/sky\/kloofendal-48d-/);
+  assert.match(look, /mobile \? "1k" : "2k"/);
+  assert.match(look, /origin-light-shaft/);
+  assert.match(look, /sky\.visible = false/);
+  assert.match(look, /shaft\.visible = false/);
+  const credits = read('assets/sky/CREDITS.md');
+  assert.match(credits, /kloofendal_48d_partly_cloudy_puresky/);
+  assert.match(credits, /CC0/);
+  assert.match(credits, /polyhaven\.com/);
+  for (const size of ['1k', '2k']) {
+    assert.ok(existsSync(new URL(`assets/sky/kloofendal-48d-${size}.jpg`, root)));
+  }
+});

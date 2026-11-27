@@ -7,7 +7,7 @@
  * Kit : pilastre, plinthe, corniche, panneau et banquette (glTF meshopt), mêmes positions.
  * Or : MeshStandardMaterial metalness 1, environnement RoomEnvironment.
  * Sol : miroir planaire 1024 sur ordinateur, environnement seul sur mobile.
- * Ciel : dôme dégradé avec nuages procéduraux, ouverture du plafond central.
+ * Ciel : photo CC0 Poly Haven (Kloofendal 48d) sur le dôme, 2K bureau / 1K mobile.
  */
 import * as THREE from "three";
 import {Reflector} from "three/addons/objects/Reflector.js";
@@ -277,45 +277,32 @@ export function createOriginMaterials({mobile}) {
   };
 }
 
-function skyMaterial() {
-  return new THREE.ShaderMaterial({
+function skyMaterial(mobile) {
+  const material = new THREE.MeshBasicMaterial({
+    color: 0xb7cbe4,
     side: THREE.BackSide,
     depthWrite: false,
     fog: false,
-    toneMapped: true,
-    vertexShader: `
-      varying vec3 vDir;
-      void main() {
-        vDir = position;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      varying vec3 vDir;
-      float hsh(vec2 p){return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);}
-      float n2(vec2 p){
-        vec2 i = floor(p);
-        vec2 f = fract(p);
-        f = f * f * (3.0 - 2.0 * f);
-        float a = hsh(i), b = hsh(i + vec2(1.0, 0.0));
-        float c = hsh(i + vec2(0.0, 1.0)), d = hsh(i + vec2(1.0, 1.0));
-        return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-      }
-      void main() {
-        vec3 d = normalize(vDir);
-        vec3 zenith = vec3(0.55, 0.68, 0.82);
-        vec3 horizon = vec3(0.93, 0.86, 0.74);
-        vec3 col = mix(horizon, zenith, smoothstep(0.0, 0.62, d.y));
-        float up = max(d.y, 0.12);
-        vec2 uv = d.xz / up;
-        float clouds = n2(uv * 1.6) * 0.65 + n2(uv * 3.4) * 0.35;
-        float puff = smoothstep(0.42, 0.78, clouds) * smoothstep(0.04, 0.35, d.y);
-        col = mix(col, vec3(0.98, 0.94, 0.86), puff * 0.82);
-        col = min(col, vec3(0.93));
-        gl_FragColor = vec4(col, 1.0);
-      }
-    `
+    toneMapped: true
   });
+  const size = mobile ? "1k" : "2k";
+  const loader = new THREE.TextureLoader();
+  loader.load("./assets/sky/kloofendal-48d-" + size + ".jpg", tex => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    // Shift the sun out of the ceiling slot so the opening shows cumulus.
+    tex.offset.x = 0.18;
+    tex.needsUpdate = true;
+    material.map = tex;
+    material.needsUpdate = true;
+    const overlay = document.getElementById("walkOverlay");
+    if (overlay) overlay.dataset.originSky = "ready";
+  }, undefined, () => {
+    const overlay = document.getElementById("walkOverlay");
+    if (overlay) overlay.dataset.originSky = "fallback";
+  });
+  return material;
 }
 
 const reflectorShader = {
@@ -435,39 +422,60 @@ export function installOriginRoomLook({
     }
   });
 
-  const sky = new THREE.Mesh(new THREE.SphereGeometry(86, mobile ? 20 : 28, mobile ? 12 : 16), skyMaterial());
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(86, mobile ? 32 : 48, mobile ? 16 : 24), skyMaterial(mobile));
   sky.frustumCulled = false;
   sky.renderOrder = -1;
   sky.position.y = 2.2;
   sky.name = "origin-cumulus";
   scene.add(sky);
-  const shaft = new THREE.Mesh(
-    new THREE.BoxGeometry(2.4, 5.2, Math.min(length, 48)),
-    new THREE.ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      toneMapped: false,
-      fog: false,
-      vertexShader: `
-        varying vec3 vLocal;
-        void main() {
-          vLocal = position;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        varying vec3 vLocal;
-        void main() {
-          float across = 1.0 - smoothstep(0.15, 1.15, abs(vLocal.x));
-          float down = smoothstep(-2.6, 1.6, vLocal.y);
-          float alpha = across * down * 0.28;
-          gl_FragColor = vec4(1.0, 0.93, 0.78, alpha);
-        }
-      `
-    })
-  );
-  shaft.position.set(0, 3.5, Math.min(length, 48) / 2 + 1.2);
+  // Crossed cards: faces down the hall, and sheets under the slot for the look-up.
+  // A hollow box was invisible from inside the opening (front faces culled).
+  const shaft = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false,
+    fog: false,
+    vertexShader: `
+      varying vec2 vUv;
+      varying float vHeight;
+      void main() {
+        vUv = uv;
+        vec4 world = modelMatrix * instanceMatrix * vec4(position, 1.0);
+        vHeight = world.y;
+        gl_Position = projectionMatrix * viewMatrix * world;
+      }
+    `,
+    fragmentShader: `
+      varying vec2 vUv;
+      varying float vHeight;
+      void main() {
+        float across = 1.0 - smoothstep(0.02, 0.46, abs(vUv.x - 0.5));
+        float along = 1.0 - smoothstep(0.08, 0.5, abs(vUv.y - 0.5));
+        float down = smoothstep(1.85, 3.8, vHeight);
+        float alpha = across * along * down * 0.55;
+        if (alpha < 0.012) discard;
+        gl_FragColor = vec4(1.0, 0.97, 0.88, alpha);
+      }
+    `
+  }), 9);
+  const card = new THREE.Object3D();
+  [3.4, 8.5, 15, 24, 36].forEach((z, index) => {
+    card.position.set(0, 4.2, z);
+    card.rotation.set(0, 0, 0);
+    card.scale.set(1.65, 4.4, 1);
+    card.updateMatrix();
+    shaft.setMatrixAt(index, card.matrix);
+  });
+  [[7, 5.45], [16, 4.85], [27, 4.2], [38, 3.55]].forEach(([z, y], index) => {
+    card.position.set(0, y, z);
+    card.rotation.set(-Math.PI / 2, 0, 0);
+    card.scale.set(1.5, 8, 1);
+    card.updateMatrix();
+    shaft.setMatrixAt(5 + index, card.matrix);
+  });
+  shaft.instanceMatrix.needsUpdate = true;
   shaft.frustumCulled = false;
   shaft.renderOrder = 1;
   shaft.name = "origin-light-shaft";
