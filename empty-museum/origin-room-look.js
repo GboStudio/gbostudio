@@ -3,12 +3,10 @@
  * Pour retrouver l'ancien rendu calcaire : mettre `enabled` à false.
  * Le reste du musée (parcours, cadres, allée, joysticks, secours 2D) ne change pas.
  *
- * Marbre : shader procédural en coordonnées monde, sans image répétée.
- * Or : MeshStandardMaterial metalness 1, rugosité ~0.34, environnement RoomEnvironment.
- * Sol : miroir planaire basse résolution sur ordinateur (fondu avec la distance),
- *       environnement + marbre poli sur mobile (pas de second passage de rendu).
+ * Marbre : Marble012 d'ambientCG (CC0), albédo + normale + rugosité, 2K bureau / 1K mobile.
+ * Or : MeshStandardMaterial metalness 1, environnement RoomEnvironment.
+ * Sol : miroir planaire 1024 sur ordinateur, environnement seul sur mobile.
  * Ciel : dôme dégradé avec nuages procéduraux, ouverture du plafond central.
- * Aucune texture tierce n'est téléchargée. Rien au-dessus de 2K.
  */
 import * as THREE from "three";
 import {Reflector} from "three/addons/objects/Reflector.js";
@@ -69,20 +67,33 @@ export function mouldedFrameGeometry(w, h) {
   return template.clone();
 }
 
-function marbleShader(shader, lift) {
-  shader.uniforms.uMarbleLift = {value: lift};
-  shader.vertexShader = shader.vertexShader
-    .replace("#include <common>", "#include <common>\nvarying vec3 vMarbleWp;")
-    .replace("#include <begin_vertex>", `#include <begin_vertex>
-	vec4 marbleWp = vec4(transformed, 1.0);
-	#ifdef USE_INSTANCING
-		marbleWp = instanceMatrix * marbleWp;
-	#endif
-	vMarbleWp = (modelMatrix * marbleWp).xyz;`);
-  shader.fragmentShader = shader.fragmentShader
-    .replace("#include <common>", `#include <common>
-varying vec3 vMarbleWp;
-uniform float uMarbleLift;
+function canvasPixel(r, g, b) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 2;
+  canvas.height = 2;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = `rgb(${r},${g},${b})`;
+  ctx.fillRect(0, 0, 2, 2);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.NoColorSpace;
+  return tex;
+}
+
+function loadMarbleMap(url, color) {
+  const loader = new THREE.TextureLoader();
+  return new Promise(resolve => {
+    loader.load(url, tex => {
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+      tex.anisotropy = 8;
+      tex.needsUpdate = true;
+      resolve(tex);
+    }, undefined, () => resolve(null));
+  });
+}
+
+const MARBLE_GLSL = `
 float mHash(vec3 p){
   p = fract(p * 0.1031);
   p += dot(p, p.zyx + 31.32);
@@ -100,64 +111,146 @@ float mNoise(vec3 p){
   float n101 = mHash(i + vec3(1.0, 0.0, 1.0));
   float n011 = mHash(i + vec3(0.0, 1.0, 1.0));
   float n111 = mHash(i + vec3(1.0, 1.0, 1.0));
-  float nx00 = mix(n000, n100, f.x);
-  float nx10 = mix(n010, n110, f.x);
-  float nx01 = mix(n001, n101, f.x);
-  float nx11 = mix(n011, n111, f.x);
-  return mix(mix(nx00, nx10, f.y), mix(nx01, nx11, f.y), f.z);
+  return mix(mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
+             mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y), f.z);
 }
-vec3 marbleAlbedo(vec3 p){
-  float bend = mNoise(p * vec3(0.04, 0.055, 0.035));
-  float a = abs(sin(p.y * 0.46 + p.z * 0.29 + bend * 3.4));
-  float b = abs(sin(p.y * 0.19 - p.z * 0.51 + bend * 1.8));
-  float vein = smoothstep(0.09, 0.0, a);
-  float vein2 = smoothstep(0.055, 0.0, b);
-  float cloud = mNoise(p * vec3(0.03, 0.04, 0.025));
-  vec3 base = vec3(0.90, 0.885, 0.86);
-  base += (cloud - 0.5) * 0.025;
-  vec3 grey = vec3(0.50, 0.49, 0.47);
-  return mix(base, grey, clamp(vein * 0.8 + vein2 * 0.45, 0.0, 0.85));
-}`)
+vec2 marbleRot(vec2 uv, float a){
+  float c = cos(a), s = sin(a);
+  return vec2(c * uv.x - s * uv.y, s * uv.x + c * uv.y);
+}
+vec3 marbleTri(sampler2D tex, vec3 p, vec3 n){
+  vec3 b = pow(abs(normalize(n)), vec3(4.0));
+  b /= max(b.x + b.y + b.z, 0.0001);
+  float ang = (mNoise(p * 0.028) - 0.5) * 0.7;
+  vec2 bend = vec2(mNoise(p * 0.05), mNoise(p.zxy * 0.046)) * 0.32;
+  vec2 uX = marbleRot(p.zy * uMarbleScale + bend, ang);
+  vec2 uY = marbleRot(p.xz * uMarbleScale + bend.yx, ang * 0.6);
+  vec2 uZ = marbleRot(p.xy * uMarbleScale - bend, -ang * 0.45);
+  return texture2D(tex, uX).rgb * b.x + texture2D(tex, uY).rgb * b.y + texture2D(tex, uZ).rgb * b.z;
+}
+`;
+
+function marbleShader(shader, maps, lift, roughMix) {
+  shader.uniforms.uMarbleLift = {value: lift};
+  shader.uniforms.uMarbleScale = {value: 0.46};
+  shader.uniforms.uMarbleMap = {value: maps.color};
+  shader.uniforms.uMarbleNor = {value: maps.normal};
+  shader.uniforms.uMarbleRough = {value: maps.rough};
+  shader.uniforms.uRoughMix = {value: roughMix};
+  shader.vertexShader = shader.vertexShader
+    .replace("#include <common>", "#include <common>\nvarying vec3 vMarbleWp;\nvarying vec3 vMarbleN;")
+    .replace("#include <begin_vertex>", `#include <begin_vertex>
+	vec4 marbleWp = vec4(transformed, 1.0);
+	mat3 marbleN = mat3(1.0);
+	#ifdef USE_INSTANCING
+		marbleWp = instanceMatrix * marbleWp;
+		marbleN = mat3(instanceMatrix);
+	#endif
+	vMarbleWp = (modelMatrix * marbleWp).xyz;
+	vMarbleN = normalize(mat3(modelMatrix) * marbleN * objectNormal);`);
+  shader.fragmentShader = shader.fragmentShader
+    .replace("#include <common>", `#include <common>
+varying vec3 vMarbleWp;
+varying vec3 vMarbleN;
+uniform float uMarbleLift;
+uniform float uMarbleScale;
+uniform float uRoughMix;
+uniform sampler2D uMarbleMap;
+uniform sampler2D uMarbleNor;
+uniform sampler2D uMarbleRough;
+${MARBLE_GLSL}`)
     .replace(
       "#include <color_fragment>",
-      "#include <color_fragment>\n\tdiffuseColor.rgb = marbleAlbedo(vMarbleWp) * uMarbleLift;"
+      `#include <color_fragment>
+	vec3 alb = marbleTri(uMarbleMap, vMarbleWp, vMarbleN);
+	float lum = dot(alb, vec3(0.2126, 0.7152, 0.0722));
+	float t = smoothstep(0.42, 0.78, lum);
+	alb = mix(vec3(0.50, 0.49, 0.47), vec3(0.90, 0.88, 0.85), t);
+	diffuseColor.rgb = alb * uMarbleLift;`
+    )
+    .replace(
+      "#include <roughnessmap_fragment>",
+      `#include <roughnessmap_fragment>
+	float scannedRough = dot(marbleTri(uMarbleRough, vMarbleWp, vMarbleN), vec3(0.333));
+	roughnessFactor = mix(roughnessFactor, clamp(roughnessFactor * (0.55 + scannedRough * 1.4), 0.045, 0.92), uRoughMix);`
+    )
+    .replace(
+      "#include <normal_fragment_begin>",
+      `#include <normal_fragment_begin>
+	vec3 scannedN = marbleTri(uMarbleNor, vMarbleWp, vMarbleN) * 2.0 - 1.0;
+	normal = normalize(normal + vec3(scannedN.x, scannedN.y, 0.0) * 0.28);`
     );
+  return shader;
 }
 
-function marbleMaterial({roughness, metalness, lift, envMapIntensity}) {
+function marbleMaterial(maps, {roughness, metalness, lift, roughMix, envMapIntensity}) {
   const material = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     roughness,
     metalness,
     envMapIntensity
   });
-  material.onBeforeCompile = shader => marbleShader(shader, lift);
-  material.customProgramCacheKey = () => "origin-marble-v1-" + lift;
+  material.onBeforeCompile = shader => {
+    material.userData.shader = marbleShader(shader, maps, lift, roughMix);
+  };
+  material.customProgramCacheKey = () => "origin-marble-pbr-" + lift + "-" + roughMix;
   return material;
 }
 
+function pushMarble(materials, maps) {
+  const names = {color: "uMarbleMap", normal: "uMarbleNor", rough: "uMarbleRough"};
+  for (const mat of materials) {
+    const shader = mat.userData.shader;
+    if (!shader) continue;
+    for (const key of Object.keys(names)) {
+      if (maps[key]) shader.uniforms[names[key]].value = maps[key];
+    }
+  }
+}
+
 export function createOriginMaterials({mobile}) {
+  const maps = {
+    color: canvasPixel(214, 210, 204),
+    normal: canvasPixel(128, 128, 255),
+    rough: canvasPixel(40, 40, 40)
+  };
   const gold = new THREE.MeshStandardMaterial({
     color: 0xd4b15a,
     metalness: 1,
     roughness: 0.28,
     envMapIntensity: mobile ? 1.2 : 1.85
   });
-  const wall = marbleMaterial({
-    roughness: 0.62,
+  const wall = marbleMaterial(maps, {
+    roughness: 0.58,
     metalness: 0,
-    lift: 1,
-    envMapIntensity: 0.22
+    lift: 1.05,
+    roughMix: 0.85,
+    envMapIntensity: 0.16
   });
-  const floor = marbleMaterial({
-    roughness: mobile ? 0.34 : 0.16,
-    metalness: 0.04,
-    lift: 0.98,
-    envMapIntensity: mobile ? 0.85 : 0.2
+  const floor = marbleMaterial(maps, {
+    roughness: mobile ? 0.3 : 0.08,
+    metalness: 0.02,
+    lift: 0.96,
+    roughMix: mobile ? 0.45 : 0.25,
+    envMapIntensity: mobile ? 0.7 : 0.16
   });
   floor.polygonOffset = true;
   floor.polygonOffsetFactor = 1;
   floor.polygonOffsetUnits = 1;
+  const size = mobile ? "1k" : "2k";
+  const stem = "./assets/marble/marble012-";
+  Promise.all([
+    loadMarbleMap(stem + "color-" + size + ".jpg", true),
+    loadMarbleMap(stem + "normal-" + size + ".jpg", false),
+    loadMarbleMap(stem + "rough-" + size + ".jpg", false)
+  ]).then(([color, normal, rough]) => {
+    if (color) maps.color = color;
+    if (normal) maps.normal = normal;
+    if (rough) maps.rough = rough;
+    pushMarble([wall, floor], maps);
+    const overlay = document.getElementById("walkOverlay");
+    if (overlay) overlay.dataset.originMarble = color && normal && rough ? "ready" : "fallback";
+  });
   return {gold, wall, floor};
 }
 
@@ -187,14 +280,14 @@ function skyMaterial() {
       }
       void main() {
         vec3 d = normalize(vDir);
-        vec3 zenith = vec3(0.74, 0.81, 0.88);
-        vec3 horizon = vec3(0.97, 0.95, 0.91);
+        vec3 zenith = vec3(0.62, 0.70, 0.78);
+        vec3 horizon = vec3(0.86, 0.84, 0.80);
         vec3 col = mix(horizon, zenith, smoothstep(-0.02, 0.55, d.y));
         float up = max(d.y, 0.08);
         vec2 uv = d.xz / up;
         float clouds = n2(uv * 2.4) + 0.55 * n2(uv * 5.1);
         float puff = smoothstep(0.55, 0.92, clouds) * smoothstep(0.02, 0.28, d.y);
-        col = mix(col, vec3(0.99, 0.985, 0.975), puff * 0.82);
+        col = mix(col, vec3(0.90, 0.89, 0.87), puff * 0.7);
         gl_FragColor = vec4(col, 1.0);
       }
     `
@@ -236,10 +329,8 @@ const reflectorShader = {
     void main() {
       #include <logdepthbuf_fragment>
       vec4 base = texture2DProj(tDiffuse, vUv);
-      float fade = smoothstep(10.0, 1.1, vDist);
-      float fres = clamp(0.55 + 0.45 * fade, 0.0, 1.0);
-      vec3 refl = mix(base.rgb, blendOverlay(base.rgb, color), 0.2);
-      gl_FragColor = vec4(refl, 0.36 * fres * fade);
+      float fade = smoothstep(7.5, 0.45, vDist);
+      gl_FragColor = vec4(base.rgb, 0.5 * fade);
     }`
 };
 
@@ -282,16 +373,16 @@ export function installOriginRoomLook({
     scene.fog.color.set(0xf3f0ea);
     scene.fog.density = 0.00048;
   }
-  scene.environmentIntensity = mobile ? 0.62 : 0.88;
+  scene.environmentIntensity = mobile ? 0.42 : 0.55;
 
   scene.traverse(obj => {
     if (obj.isHemisphereLight) {
-      obj.color.set(0xfff4e6);
-      obj.groundColor.set(0xc4bdb2);
-      obj.intensity = 0.48;
+      obj.color.set(0xfff1e4);
+      obj.groundColor.set(0xb7b0a6);
+      obj.intensity = 0.28;
     } else if (obj.isDirectionalLight) {
-      obj.color.set(0xfff1e2);
-      obj.intensity = 0.36;
+      obj.color.set(0xffefdc);
+      obj.intensity = 0.2;
       if (mobile) obj.castShadow = false;
     } else if (obj.isAmbientLight) {
       obj.intensity = 0.06;
@@ -337,7 +428,7 @@ export function installOriginRoomLook({
         if (!light.visible) continue;
         const occupied = light.intensity >= 14;
         light.color.set(0xffe2c0);
-        light.intensity = occupied ? (mobile ? 6.2 : 8.2) : (mobile ? 3.1 : 4.0);
+        light.intensity = occupied ? (mobile ? 8.5 : 12) : (mobile ? 3.4 : 4.5);
         light.angle = 0.6;
         light.penumbra = 0.94;
         light.decay = 1.35;

@@ -124,3 +124,9 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - La coque (murs, plinthes, corniche, rails), les pilastres à base et chapiteau, les banquettes et les cadres vides sont fusionnés ou instanciés. Le miroir planaire (1024 px, environ 36 %) n’est calculé que sur ordinateur. Le mobile utilise l’environnement, ratio de pixels ≤ 1,25.
 - Le marbre reste un shader procédural (veines diagonales). Pas de texture payante. Les veines ne sont pas encore un marbre de Carrare ramifié, et le reflet du sol ne renvoie pas les cadres avec la netteté de la référence.
 - État : proposé dans la PR brouillon #54. Ni fusionné, ni déployé.
+
+## Marbre CC0, exposition baissée, reflet — 27 novembre 2026 (même PR #54, non fusionné)
+- Guillaume : « Go pour la passe visuelle : vrai marbre, moins d'exposition, reflet au sol ». Rien d’autre ne change : déplacement, collisions, joysticks, visite guidée, clic, instanciation.
+- Le marbre procédural est remplacé par Marble012 d’ambientCG (CC0), albédo, normale et rugosité, 2K au bureau et 1K au mobile. Crédit : `empty-museum/assets/marble/CREDITS.md`.
+- L’exposition ACES de l’essai passe à 0,72. Le miroir du bureau reste un `Reflector` 1024, plus lisible, et s’efface avec la distance. Le mobile garde l’environnement, sans second passage.
+- État : proposé, non fusionné, non déployé.

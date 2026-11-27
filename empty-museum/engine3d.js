@@ -67,7 +67,7 @@ import {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   // Warm museum white needs plausible daylight detail, not crushed grey midtones.
   renderer.toneMappingExposure = .91;
-  if(ORIGIN_ROOM_LOOK_ENABLED) renderer.toneMappingExposure = .9;
+  if(ORIGIN_ROOM_LOOK_ENABLED) renderer.toneMappingExposure = .72;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0xf7f6f3,1);
