@@ -14,13 +14,12 @@ import * as THREE from "three";
 import {Reflector} from "three/addons/objects/Reflector.js";
 import {
   FRAME,
-  PILASTER,
   frameAnchorX,
   frameRotationY,
   commercialFrameZ,
-  pilasterLayout,
   wallInnerFaceX
 } from "./origin-room-geometry.mjs";
+import {buildStoneShell, compactWallFrames} from "./origin-room-build.js";
 
 export const enabled = true;
 
@@ -108,16 +107,16 @@ float mNoise(vec3 p){
   return mix(mix(nx00, nx10, f.y), mix(nx01, nx11, f.y), f.z);
 }
 vec3 marbleAlbedo(vec3 p){
-  float n1 = mNoise(p * vec3(0.21, 0.52, 0.065));
-  float n2 = mNoise(p * vec3(0.08, 1.05, 0.12) + n1 * 1.35);
-  float warp = n1 * 2.1 + n2;
-  float vein = smoothstep(0.42, 0.86, abs(sin(p.y * 0.92 + p.z * 0.055 + warp)));
-  float vein2 = smoothstep(0.62, 0.94, abs(sin(p.y * 1.85 + p.x * 0.22 + n2 * 2.4)));
-  float cloud = mNoise(p * vec3(0.04, 0.06, 0.03));
-  vec3 base = vec3(0.84, 0.825, 0.79);
-  base += (cloud - 0.5) * 0.05;
-  vec3 grey = vec3(0.46, 0.455, 0.44);
-  return mix(base, grey, clamp(vein * 0.95 + vein2 * 0.55, 0.0, 0.72));
+  float bend = mNoise(p * vec3(0.04, 0.055, 0.035));
+  float a = abs(sin(p.y * 0.46 + p.z * 0.29 + bend * 3.4));
+  float b = abs(sin(p.y * 0.19 - p.z * 0.51 + bend * 1.8));
+  float vein = smoothstep(0.09, 0.0, a);
+  float vein2 = smoothstep(0.055, 0.0, b);
+  float cloud = mNoise(p * vec3(0.03, 0.04, 0.025));
+  vec3 base = vec3(0.90, 0.885, 0.86);
+  base += (cloud - 0.5) * 0.025;
+  vec3 grey = vec3(0.50, 0.49, 0.47);
+  return mix(base, grey, clamp(vein * 0.8 + vein2 * 0.45, 0.0, 0.85));
 }`)
     .replace(
       "#include <color_fragment>",
@@ -139,22 +138,22 @@ function marbleMaterial({roughness, metalness, lift, envMapIntensity}) {
 
 export function createOriginMaterials({mobile}) {
   const gold = new THREE.MeshStandardMaterial({
-    color: 0xb8893c,
+    color: 0xd4b15a,
     metalness: 1,
-    roughness: 0.32,
-    envMapIntensity: mobile ? 1.15 : 1.55
+    roughness: 0.28,
+    envMapIntensity: mobile ? 1.2 : 1.85
   });
   const wall = marbleMaterial({
-    roughness: 0.78,
+    roughness: 0.62,
     metalness: 0,
     lift: 1,
-    envMapIntensity: 0.18
+    envMapIntensity: 0.22
   });
   const floor = marbleMaterial({
-    roughness: mobile ? 0.42 : 0.55,
-    metalness: 0.02,
-    lift: 0.96,
-    envMapIntensity: mobile ? 0.28 : 0.1
+    roughness: mobile ? 0.34 : 0.16,
+    metalness: 0.04,
+    lift: 0.98,
+    envMapIntensity: mobile ? 0.85 : 0.2
   });
   floor.polygonOffset = true;
   floor.polygonOffsetFactor = 1;
@@ -237,9 +236,10 @@ const reflectorShader = {
     void main() {
       #include <logdepthbuf_fragment>
       vec4 base = texture2DProj(tDiffuse, vUv);
-      float fade = smoothstep(7.5, 0.8, vDist);
-      vec3 refl = mix(base.rgb, blendOverlay(base.rgb, color), 0.25);
-      gl_FragColor = vec4(refl, 0.34 * fade);
+      float fade = smoothstep(10.0, 1.1, vDist);
+      float fres = clamp(0.55 + 0.45 * fade, 0.0, 1.0);
+      vec3 refl = mix(base.rgb, blendOverlay(base.rgb, color), 0.2);
+      gl_FragColor = vec4(refl, 0.36 * fres * fade);
     }`
 };
 
@@ -252,30 +252,28 @@ function isFlutedBay(mesh) {
 
 export function installOriginRoomLook({
   scene, architecture, floorMesh, physicalGallery, mobile,
-  half, height, length, museumArtDirection, wallMaterial, floorMaterial
+  half, height, length, museumArtDirection, wallMaterial, floorMaterial,
+  interactive, gold, bare
 }) {
   if (physicalGallery?.tiles) physicalGallery.tiles.visible = false;
   if (physicalGallery?.mortar) physicalGallery.mortar.visible = false;
   if (physicalGallery?.bayShade) physicalGallery.bayShade.visible = false;
 
+  const kept = [];
   architecture.traverse(obj => {
-    if (obj.userData?.temRole === "ceiling-cap" || obj.userData?.temRole === "ceiling-oculus") obj.visible = false;
-    if (!obj.isMesh) return;
-    if (isFlutedBay(obj)) obj.visible = false;
+    if (!obj.isMesh && !obj.isInstancedMesh) return;
+    const material = Array.isArray(obj.material) ? obj.material[0] : obj.material;
+    const sign = material?.isMeshBasicMaterial && material.map;
+    if (sign) kept.push(obj);
+    else obj.visible = false;
   });
+  for (const sign of kept) sign.visible = true;
 
-  architecture.traverse(obj => {
-    if (!obj.isMesh || obj.userData?.temRole === "structural-floor") return;
-    const material = obj.material;
-    if (!material || Array.isArray(material) || !material.isMeshStandardMaterial) return;
-    if (material.metalness > 0.2 || material.transparent) return;
-    if (material.roughness < 0.55) return;
-    obj.material = wallMaterial;
-  });
-
+  buildStoneShell({THREE, architecture, wallMaterial, length, half, height});
   if (floorMesh) {
+    floorMesh.visible = true;
     floorMesh.material = floorMaterial;
-    floorMesh.position.y = -0.135;
+    floorMesh.position.y = -0.02;
     floorMesh.receiveShadow = true;
   }
 
@@ -307,51 +305,23 @@ export function installOriginRoomLook({
   scene.add(sky);
 
   let reflector = null;
-  if (floorMesh) {
-    const mirror = new Reflector(new THREE.PlaneGeometry(half * 2 - 0.36, length - 0.4), {
+  if (!mobile && floorMesh) {
+    const mirror = new Reflector(new THREE.PlaneGeometry(half * 2 - 0.5, length - 0.4), {
       clipBias: 0.003,
-      textureWidth: mobile ? 256 : 512,
-      textureHeight: mobile ? 256 : 512,
-      color: 0xf6f1ea,
+      textureWidth: 1024,
+      textureHeight: 1024,
+      color: 0xf3eee6,
       multisample: 0,
       shader: reflectorShader
     });
     mirror.rotateX(-Math.PI / 2);
-    mirror.position.set(0, 0.012, length / 2);
+    mirror.position.set(0, 0.02, length / 2);
     mirror.renderOrder = 2;
     mirror.material.transparent = true;
     mirror.material.depthWrite = false;
     mirror.name = "origin-floor-mirror";
-    if (mobile) {
-      const renderReflection = mirror.onBeforeRender;
-      let frame = 0;
-      mirror.onBeforeRender = function(renderer, scene, camera) {
-        frame += 1;
-        if (frame % 2 === 0 && mirror.userData.warm) return;
-        renderReflection.call(this, renderer, scene, camera);
-        mirror.userData.warm = true;
-      };
-    }
     scene.add(mirror);
     reflector = mirror;
-  }
-
-  const posts = pilasterLayout({half, length, bays: 38});
-  if (posts.length) {
-    const postHeight = height - 0.42;
-    const geom = new THREE.BoxGeometry(PILASTER.into, postHeight, PILASTER.along);
-    const mesh = new THREE.InstancedMesh(geom, wallMaterial, posts.length);
-    mesh.castShadow = false;
-    mesh.receiveShadow = true;
-    mesh.frustumCulled = false;
-    const dummy = new THREE.Object3D();
-    posts.forEach((post, i) => {
-      dummy.position.set(post.x, 0.16 + postHeight / 2, post.z);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
-    });
-    mesh.instanceMatrix.needsUpdate = true;
-    architecture.add(mesh);
   }
 
   const spots = [];
@@ -376,8 +346,14 @@ export function installOriginRoomLook({
     };
   }
 
+  function compactFrames() {
+    if (!interactive || !gold || !bare) return null;
+    return compactWallFrames({THREE, interactive, gold, bare});
+  }
+
   return {
     reflector,
+    compactFrames,
     sync(x, z) { sky.position.x = x; sky.position.z = z; }
   };
 }

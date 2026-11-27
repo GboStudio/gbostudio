@@ -117,3 +117,10 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Les cadres sont plaqués à 1,5 cm du mur structurel, orientés vers l’allée. Le test `empty-museum/tests/flush-frames.test.mjs` vérifie les 4 baies partenaires et les 116 cadres, ainsi que le dégagement des pilastres.
 - La barre de progression ne montre plus la longueur en mètres (`engine3d.js` et `walk.js`). Le curseur de position reste. Exemple attendu avec le stock de démo : « 6 CRÉATIONS · 114 PLACES LIBRES ».
 - État : **proposé** dans une PR brouillon. Ni fusionné, ni déployé. La validation visuelle de Guillaume et une mesure sur téléphone réel restent ouvertes. Les prix restent des prix de démonstration.
+
+## Second essai, salle plus construite — 27 novembre 2026 (même PR brouillon #54, non fusionné, non déployé)
+- Guillaume : « je veux quelque chose de bien. Une vraie salle » et « que ça fonctionne », y compris le déplacement libre. Toujours un essai, pas une mise en ligne.
+- Le déplacement libre (clavier, souris, deux joysticks) glisse contre les murs, les pilastres, les banquettes, les socles d’allée et les cadres. On ne traverse pas ces volumes et on peut revenir dans l’allée. La visite guidée s’arrête à la position courante.
+- La coque (murs, plinthes, corniche, rails), les pilastres à base et chapiteau, les banquettes et les cadres vides sont fusionnés ou instanciés. Le miroir planaire (1024 px, environ 36 %) n’est calculé que sur ordinateur. Le mobile utilise l’environnement, ratio de pixels ≤ 1,25.
+- Le marbre reste un shader procédural (veines diagonales). Pas de texture payante. Les veines ne sont pas encore un marbre de Carrare ramifié, et le reflet du sol ne renvoie pas les cadres avec la netteté de la référence.
+- État : proposé dans la PR brouillon #54. Ni fusionné, ni déployé.

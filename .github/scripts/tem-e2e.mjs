@@ -231,6 +231,33 @@ for(const mode of browsers){
           beforeYaw,{timeout:26000});
         console.log('PASS MOBILE GUIDED CAMERA INTERRUPT + FREE TURN');
       }
+      if(/\d+\s*\/\s*\d+\s*M/.test(state.progress||''))
+        throw Error('Progress bar still prints a length: '+state.progress);
+      const tourPressed=await page.locator('#museumTour').getAttribute('aria-pressed');
+      if(tourPressed==='true')await tapTour();
+      const zBeforeTour=Number(await page.locator('#walkOverlay').getAttribute('data-tour-camera-z'));
+      await tapTour();
+      await page.waitForFunction(start=>
+        Number(document.querySelector('#walkOverlay')?.dataset.tourCameraZ)>start+.2,
+        zBeforeTour,{timeout:20000});
+      await tapTour();
+      await page.waitForFunction(()=>
+        document.querySelector('#museumTour')?.getAttribute('aria-pressed')==='false',
+        null,{timeout:15000});
+      const zStopped=Number(await page.locator('#walkOverlay').getAttribute('data-tour-camera-z'));
+      await page.waitForTimeout(450);
+      const zLater=Number(await page.locator('#walkOverlay').getAttribute('data-tour-camera-z'));
+      if(Math.abs(zLater-zStopped)>.35)
+        throw Error('After the guided tour stopped, the camera kept moving from '+zStopped+' to '+zLater);
+      console.log('PASS FREE/GUIDED NO JUMP',mode.name,zStopped.toFixed(2),'→',zLater.toFixed(2));
+      await page.waitForFunction(()=>Number(document.querySelector('#walkOverlay')?.dataset.museumDrawCalls)>0,null,{timeout:20000});
+      const perf=await page.evaluate(()=>{
+        const room=document.querySelector('#walkOverlay');
+        return {calls:Number(room?.dataset.museumDrawCalls||0),frameMs:Number(room?.dataset.museumFrameMs||0)};
+      });
+      console.log('DRAW CALLS',mode.name,JSON.stringify(perf));
+      if(mode.mobile && perf.calls>=200)
+        throw Error('Mobile draw calls '+perf.calls+' exceed 199');
       console.log('PASS',mode.name,'PBR gallery, default free roam, movement, guided mode');
     }else{
       console.log('WebGL not available in this environment; accessible fallback shown:',mode.name);

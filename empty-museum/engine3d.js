@@ -20,7 +20,16 @@ import {
   commercialFrameZ,
   FRAME,
   LEGACY_FRAME_SIZE_M
-} from "./origin-room-look.js?v=20261123look1";
+} from "./origin-room-look.js?v=20261127room2";
+import {
+  slideVisitor,
+  separateVisitor,
+  staticObstacles,
+  visitorBounds,
+  frameObstacle,
+  frameOuterHalfWidth,
+  VISITOR
+} from "./origin-room-geometry.mjs";
 
 (() => {
   "use strict";
@@ -53,12 +62,12 @@ import {
   scene.fog = new THREE.FogExp2(0xeceae5,0.0011);
   const camera = new THREE.PerspectiveCamera(mobile?64:59,1,.07,240);
   const renderer = new THREE.WebGLRenderer({canvas,antialias:!mobile,alpha:false,powerPreference:mobile?"low-power":"high-performance"});
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.45:1.8));
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?(ORIGIN_ROOM_LOOK_ENABLED?1.25:1.45):1.8));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   // Warm museum white needs plausible daylight detail, not crushed grey midtones.
   renderer.toneMappingExposure = .91;
-  if(ORIGIN_ROOM_LOOK_ENABLED) renderer.toneMappingExposure = .82;
+  if(ORIGIN_ROOM_LOOK_ENABLED) renderer.toneMappingExposure = .9;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0xf7f6f3,1);
@@ -100,6 +109,9 @@ import {
     .catch(e=>console.warn("[TEM] Scanned PBR unavailable, retaining originals",e));
   const originMats=ORIGIN_ROOM_LOOK_ENABLED?createOriginMaterials({mobile}):null;
   let originSync=()=>{};
+  let originCompact=null;
+  let originObstacles=[];
+  let originBounds=null;
   const stone=luxury.wall,stoneAlt=luxury.wallAlt;
   const floorMat=luxury.floor,grout=material(0xd4d1cb,.96);
   const plinthMat=luxury.whiteStone,inlay=material(0xc5bfb1,.67,.19);
@@ -507,6 +519,10 @@ import {
   function addFrame(group,w,h,x,y,z,rot,frontMat,slot){
     const unit=new THREE.Group();
     unit.position.set(x,y,z);unit.rotation.y=rot;group.add(unit);
+    unit.userData.wallFrame="partner";
+    unit.userData.w=w;
+    unit.userData.h=h;
+    unit.userData.slot=slot;
     let art;
     if(ORIGIN_ROOM_LOOK_ENABLED){
       // Moulding back is FRAME.clearanceM off the structural wall. The pool
@@ -579,6 +595,11 @@ import {
     const rot=frameRotationY(side);
     const unit=new THREE.Group();
     unit.position.set(x,y,z);unit.rotation.y=rot;
+    unit.userData.wallFrame="commercial";
+    unit.userData.hasPiece=Boolean(slot.piece);
+    unit.userData.w=w;
+    unit.userData.h=h;
+    unit.userData.slot=slot;
     interactive.add(unit);
     const imageMaterial=slot.piece?pictureMaterial(slot.piece):modularBareMat;
     let art;
@@ -769,6 +790,20 @@ import {
         premiumExhibits.push({container,slot});
       }
     });
+    if(originCompact)originCompact();
+    if(ORIGIN_ROOM_LOOK_ENABLED)refreshVisitorObstacles();
+  }
+  function refreshVisitorObstacles(){
+    originBounds=visitorBounds(LENGTH,VISITOR.radius);
+    originObstacles=staticObstacles(LENGTH);
+    for(const child of interactive.children){
+      if(!child.userData?.wallFrame)continue;
+      originObstacles.push(frameObstacle({
+        side:child.position.x>=0?1:-1,
+        z:child.position.z,
+        outerHalf:frameOuterHalfWidth(child.userData.w||1,{plaque:child.userData.wallFrame==="partner"})
+      }));
+    }
   }
   drawInventory();
   if(ORIGIN_ROOM_LOOK_ENABLED&&originMats){
@@ -776,9 +811,19 @@ import {
       const look=installOriginRoomLook({
         scene,architecture,floorMesh,physicalGallery,mobile,
         half:HALF,height:HEIGHT,length:LENGTH,museumArtDirection,
-        wallMaterial:originMats.wall,floorMaterial:originMats.floor
+        wallMaterial:originMats.wall,floorMaterial:originMats.floor,
+        interactive,gold:originMats.gold,bare:modularBareMat
       });
       originSync=look.sync;
+      originCompact=()=>{
+        look.compactFrames();
+        const root=interactive.getObjectByName("origin-frame-instances");
+        root?.traverse(obj=>{
+          if(obj.userData?.slotAt && !clickable.includes(obj))clickable.push(obj);
+        });
+      };
+      originCompact();
+      refreshVisitorObstacles();
       overlay.dataset.originRoomLook="marble";
     }catch(error){
       console.warn("[TEM] Origin room look failed; frames stay, classic surfaces remain where the pass stopped",error);
@@ -1039,9 +1084,12 @@ import {
       for(let node=hit.object;node;node=node.parent){
         if(node.visible===false){renderable=false;break;}
       }
-      if(renderable&&hit.object.userData.target){
-        return hit.object.userData.target;
+      if(!renderable)continue;
+      if(hit.instanceId!=null && hit.object.userData.slotAt){
+        const slot=hit.object.userData.slotAt(hit.instanceId);
+        if(slot)return slot;
       }
+      if(hit.object.userData.target)return hit.object.userData.target;
     }
     return null;
   }
@@ -1053,8 +1101,10 @@ import {
   }
   function tick(time){
     if(!active)return;
-    const dt=clamp((time-last)/1000 || .016,0,.045);
+    const rawDt=(time-last)/1000 || .016;
+    const dt=clamp(rawDt,0,.045);
     last=time;
+    if(overlay)overlay.dataset.museumFrameMs=(rawDt*1000).toFixed(1);
     const blocked=[...document.querySelectorAll("dialog")].some(d=>d.open);
     const pressed=(...names)=>names.some(n=>keys.has(n)||held.has(n));
     const input=v5.update(dt);
@@ -1124,12 +1174,26 @@ import {
     const damping=Math.min(1,dt*(input.auto?5.7:8));
     velX+=(wantX-velX)*damping;
     velZ+=(wantZ-velZ)*damping;
-    view.x=clamp(view.x+velX*dt,-HALF+1.4,HALF-1.4);
-    if(assisted && (Math.abs(fwd)>.01||Math.abs(strafe)>.01))view.x+=(0-view.x)*Math.min(1,dt*3.6);
-    view.z=clamp(view.z+velZ*dt,.80,LENGTH-2.8);
+    if(!input.auto && tourState.wasAuto){
+      tourState.motion=null;
+      walkTo=null;
+      velX=0;velZ=0;
+    }
+    tourState.wasAuto=input.auto;
+    if(!input.auto && tourState.motion)tourState.motion=null;
+    const touring=Boolean(input.auto && tourState.motion && !tourState.motion.pausedAt);
+    if(ORIGIN_ROOM_LOOK_ENABLED && originBounds && !touring){
+      const stepped=slideVisitor(view.x,view.z,view.x+velX*dt,view.z+velZ*dt,VISITOR.radius,originObstacles,originBounds);
+      const free=separateVisitor(stepped.x,stepped.z,VISITOR.radius,originObstacles,originBounds);
+      view.x=free.x;view.z=free.z;
+    }else if(!touring){
+      view.x=clamp(view.x+velX*dt,-HALF+1.4,HALF-1.4);
+      if(assisted && (Math.abs(fwd)>.01||Math.abs(strafe)>.01))view.x+=(0-view.x)*Math.min(1,dt*3.6);
+      view.z=clamp(view.z+velZ*dt,.80,LENGTH-2.8);
+    }
     // Cinematic approach: shift toward the actual piece, then turn to face it.
     // This overrides empty-corridor cruise while preserving keyboard free roam.
-    if(tourState.motion && !tourState.motion.pausedAt && !blocked){
+    if(input.auto && tourState.motion && !tourState.motion.pausedAt && !blocked){
       const m=tourState.motion;
       // Use real elapsed time: software WebGL and lower-end phones may render slowly.
       m.elapsed=Math.max(0,(time-m.startedAt)/1000);
