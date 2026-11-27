@@ -3,7 +3,8 @@
  * Pour retrouver l'ancien rendu calcaire : mettre `enabled` à false.
  * Le reste du musée (parcours, cadres, allée, joysticks, secours 2D) ne change pas.
  *
- * Marbre : Marble012 d'ambientCG (CC0), albédo + normale + rugosité, 2K bureau / 1K mobile.
+ * Marbre : Marble019 d'ambientCG (CC0), albédo + normale + rugosité, 2K bureau / 1K mobile.
+ * Kit : pilastre, plinthe, corniche, panneau et banquette (glTF meshopt), mêmes positions.
  * Or : MeshStandardMaterial metalness 1, environnement RoomEnvironment.
  * Sol : miroir planaire 1024 sur ordinateur, environnement seul sur mobile.
  * Ciel : dôme dégradé avec nuages procéduraux, ouverture du plafond central.
@@ -17,7 +18,7 @@ import {
   commercialFrameZ,
   wallInnerFaceX
 } from "./origin-room-geometry.mjs";
-import {buildStoneShell, compactWallFrames} from "./origin-room-build.js";
+import {buildStoneShell, compactWallFrames, mountArchitectureKit} from "./origin-room-build.js?v=20261127j1";
 
 export const enabled = true;
 
@@ -132,7 +133,7 @@ vec3 marbleTri(sampler2D tex, vec3 p, vec3 n){
 
 function marbleShader(shader, maps, lift, roughMix) {
   shader.uniforms.uMarbleLift = {value: lift};
-  shader.uniforms.uMarbleScale = {value: 0.46};
+  shader.uniforms.uMarbleScale = {value: 0.22};
   shader.uniforms.uMarbleMap = {value: maps.color};
   shader.uniforms.uMarbleNor = {value: maps.normal};
   shader.uniforms.uMarbleRough = {value: maps.rough};
@@ -164,10 +165,10 @@ ${MARBLE_GLSL}`)
       `#include <color_fragment>
 	vec3 alb = marbleTri(uMarbleMap, vMarbleWp, vMarbleN);
 	float lum = dot(alb, vec3(0.2126, 0.7152, 0.0722));
-	vec3 ivory = vec3(0.953, 0.933, 0.902);
-	float vein = smoothstep(0.62, 0.40, lum);
-	alb = mix(alb, ivory, 0.80);
-	alb = mix(alb, vec3(0.72, 0.70, 0.66), vein * 0.28);
+	vec3 warm = vec3(0.965, 0.945, 0.915);
+	float vein = smoothstep(0.80, 0.52, lum);
+	alb = mix(alb, warm, 0.12);
+	alb = mix(alb, alb * vec3(0.62, 0.64, 0.66), vein * 0.55);
 	diffuseColor.rgb = alb * uMarbleLift;`
     )
     .replace(
@@ -180,7 +181,7 @@ ${MARBLE_GLSL}`)
       "#include <normal_fragment_begin>",
       `#include <normal_fragment_begin>
 	vec3 scannedN = marbleTri(uMarbleNor, vMarbleWp, vMarbleN) * 2.0 - 1.0;
-	normal = normalize(normal + vec3(scannedN.x, scannedN.y, 0.0) * 0.28);`
+	normal = normalize(normal + vec3(scannedN.x, scannedN.y, 0.0) * 0.42);`
     );
   return shader;
 }
@@ -195,7 +196,7 @@ function marbleMaterial(maps, {roughness, metalness, lift, roughMix, envMapInten
   material.onBeforeCompile = shader => {
     material.userData.shader = marbleShader(shader, maps, lift, roughMix);
   };
-  material.customProgramCacheKey = () => "origin-marble-pbr-" + lift + "-" + roughMix;
+  material.customProgramCacheKey = () => "origin-marble-j1-" + lift + "-" + roughMix;
   return material;
 }
 
@@ -223,24 +224,24 @@ export function createOriginMaterials({mobile}) {
     envMapIntensity: mobile ? 1.2 : 1.85
   });
   const wall = marbleMaterial(maps, {
-    roughness: 0.58,
+    roughness: 0.46,
     metalness: 0,
-    lift: 1.05,
-    roughMix: 0.85,
+    lift: 1,
+    roughMix: 0.4,
     envMapIntensity: 0.16
   });
   const floor = marbleMaterial(maps, {
-    roughness: mobile ? 0.32 : 0.16,
+    roughness: mobile ? 0.28 : 0.14,
     metalness: 0.02,
-    lift: 0.84,
-    roughMix: mobile ? 0.45 : 0.25,
+    lift: 0.9,
+    roughMix: mobile ? 0.35 : 0.2,
     envMapIntensity: mobile ? 0.7 : 0.16
   });
   floor.polygonOffset = true;
   floor.polygonOffsetFactor = 1;
   floor.polygonOffsetUnits = 1;
   const size = mobile ? "1k" : "2k";
-  const stem = "./assets/marble/marble012-";
+  const stem = "./assets/marble/marble019-";
   Promise.all([
     loadMarbleMap(stem + "color-" + size + ".jpg", true),
     loadMarbleMap(stem + "normal-" + size + ".jpg", false),
@@ -308,11 +309,13 @@ const reflectorShader = {
     varying vec4 vUv;
     varying float vDist;
     varying float vWall;
+    varying float vOpening;
     #include <common>
     #include <logdepthbuf_pars_vertex>
     void main() {
       vUv = textureMatrix * vec4(position, 1.0);
       vWall = smoothstep(1.1, 3.5, abs(position.x));
+      vOpening = smoothstep(1.7, 0.45, abs(position.x));
       vec4 mv = modelViewMatrix * vec4(position, 1.0);
       vDist = length(mv.xyz);
       gl_Position = projectionMatrix * mv;
@@ -324,6 +327,7 @@ const reflectorShader = {
     varying vec4 vUv;
     varying float vDist;
     varying float vWall;
+    varying float vOpening;
     #include <logdepthbuf_pars_fragment>
     float blendOverlay(float base, float blend) {
       return (base < 0.5 ? (2.0 * base * blend) : (1.0 - 2.0 * (1.0 - base) * (1.0 - blend)));
@@ -335,9 +339,10 @@ const reflectorShader = {
       #include <logdepthbuf_fragment>
       vec4 base = texture2DProj(tDiffuse, vUv);
       float luma = dot(base.rgb, vec3(0.2126, 0.7152, 0.0722));
-      float sky = smoothstep(0.58, 0.86, luma);
+      float sky = smoothstep(0.52, 0.74, luma);
+      float hot = max(sky, vOpening * smoothstep(0.48, 0.70, luma));
       float fade = smoothstep(8.0, 0.5, vDist);
-      float mirror = mix(0.16, 0.58, vWall) * fade * mix(1.0, 0.08, sky);
+      float mirror = mix(0.10, 0.58, vWall) * fade * mix(1.0, 0.0, hot);
       gl_FragColor = vec4(base.rgb, mirror);
     }`
 };
@@ -369,6 +374,14 @@ export function installOriginRoomLook({
   for (const sign of kept) sign.visible = true;
 
   buildStoneShell({THREE, architecture, wallMaterial, length, half, height});
+  const overlay = document.getElementById("walkOverlay");
+  if (overlay) overlay.dataset.originKit = "loading";
+  mountArchitectureKit({THREE, architecture, wallMaterial, length, half, height}).then(info => {
+    if (overlay) overlay.dataset.originKit = info.ready ? "ready" : "fallback";
+  }).catch(error => {
+    console.warn("[TEM] Architecture kit failed; box stand-ins remain", error);
+    if (overlay) overlay.dataset.originKit = "fallback";
+  });
   if (floorMesh) {
     floorMesh.visible = true;
     floorMesh.material = floorMaterial;

@@ -134,3 +134,11 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 ## Ivoire et reflet latéral — 27 novembre 2026 (même PR #54, non fusionné)
 - Guillaume : « Oui il faut être plus proche de la cible ». Passe visuelle seulement. Marble012 (CC0) est conservé, ramené vers l’ivoire `#f3eee6`, veines fines. L’exposition de l’essai est 0,86. Le miroir du bureau atténue le ciel et renforce le reflet près des murs. Le mobile ne prend pas de second passage.
 - État : proposé, non fusionné, non déployé.
+
+## Chantier 3D, jalon 1 — kit modelé et marbre blanc — 27 novembre 2026 (nouvelle PR brouillon, non fusionnée, non déployée)
+- Guillaume : « Lance le chantier 3D avec de vrais éléments pour coller à la 4K ». Seulement le jalon 1 dans cette branche. Les jalons lumière, sol miroir net et ciel restent en attente d’un feu vert.
+- Branche partie de `dbd7479` (`cursor/origin-room-marble-look-be39`). Le drapeau `enabled` de `origin-room-look.js` reste le retour arrière : `false` rend le calcaire précédent. Déplacement libre, collisions, joysticks, zoom, visite guidée, clic, commerce démo et `walk.js` ne sont pas retirés. Les boîtes de collision gardent leurs dimensions.
+- `empty-museum/tools/build_kit.py` produit un glTF meshopt : pilastre (base et chapiteau), plinthe moulurée, corniche, panneau de mur en creux (deux largeurs réelles, 4,08 m et 0,92 m), banquette. UV0 pour le marbre, UV2 réservé au bake. Le moteur les instance aux positions actuelles.
+- Marble012 est remplacé par Marble019 (ambientCG, CC0), le blanc veiné de gris le plus clair du comparatif. 2K bureau, 1K mobile. Crédit : `empty-museum/assets/marble/CREDITS.md`.
+- Le shader du miroir atténue le ciel au centre. La tache blanche à l’entrée reste visible sur les captures : le reflet net des cadres et cette tache restent le jalon 3.
+- État : proposé, non fusionné, non déployé. La validation visuelle de Guillaume reste ouverte.

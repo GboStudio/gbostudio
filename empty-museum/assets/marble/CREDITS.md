@@ -1,11 +1,12 @@
-# Marbre Marble012
+# Marbre Marble019
 
 Texture PBR utilisée par l’essai visuel de la pièce d’origine (`origin-room-look.js`).
 
-- Identifiant : Marble012
-- Source : https://ambientcg.com/view?id=Marble012
+- Identifiant : Marble019
+- Source : https://ambientcg.com/view?id=Marble019
 - Auteur : ambientCG (Lennart Demes)
 - Licence : CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
-- Fichiers : albédo, normale OpenGL et rugosité, JPEG 2048 (bureau) et 1024 (mobile)
+- Fichiers : albédo, normale OpenGL et rugosité, JPEG 2048 (bureau) et 1024 (mobile, réduit depuis le 2K)
+- Choix : parmi les marbres CC0 d’ambientCG, c’est le blanc le plus clair qui garde des veines grises fines visibles (mesure du carré couleur : luminance moyenne ≈ 234). Marble012, plus gris, n’est plus chargé.
 
-Aucune texture payante. Le shader procédural de veines diagonales n’est plus utilisé.
+Le kit d’architecture (`empty-museum/assets/kit/origin-kit.glb`) n’est pas une ressource tierce : il est produit par `empty-museum/tools/build_kit.py`. Aucune texture payante.
