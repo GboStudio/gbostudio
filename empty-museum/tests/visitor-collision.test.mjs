@@ -32,21 +32,48 @@ function walk(x, z, dx, dz, steps) {
   return {x, z};
 }
 
+function steer(x, z, targetX, dz, steps) {
+  let pos = {x, z};
+  for (let i = 0; i < steps; i++) {
+    const dx = Math.max(-0.35, Math.min(0.35, targetX - pos.x));
+    pos = walk(pos.x, pos.z, dx, dz, 1);
+  }
+  return pos;
+}
+
+function traverse(zStart, dz) {
+  let pos = {x: 0, z: zStart};
+  for (let i = 0; i < 500; i++) {
+    const nearDoor = pos.z > 14.2 && pos.z < 19.5;
+    const targetX = nearDoor ? 2.6 : 0;
+    const dx = Math.max(-0.35, Math.min(0.35, targetX - pos.x));
+    const next = walk(pos.x, pos.z, dx, dz, 1);
+    if (next.z === pos.z && next.x === pos.x) break;
+    pos = next;
+    if (dz > 0 && pos.z > length - 7) break;
+    if (dz < 0 && pos.z < 1.5) break;
+  }
+  return pos;
+}
+
 test('the aisle can be walked end to end and back without getting stuck', () => {
-  let pos = walk(0, 1, 0, 0.4, 400);
-  assert.ok(pos.z > length - 8, 'did not reach the far end, z=' + pos.z);
-  pos = walk(pos.x, pos.z, 0, -0.4, 400);
-  assert.ok(pos.z < 2, 'did not return to the entrance, z=' + pos.z);
+  const far = traverse(1, 0.4);
+  assert.ok(far.z > length - 8, 'did not reach the far end, z=' + far.z);
+  const home = traverse(far.z, -0.4);
+  assert.ok(home.z < 2, 'did not return to the entrance, z=' + home.z);
 });
 
 test('each room ends in a wall whose doorway still lets the aisle through', () => {
-  assert.ok(ENFILADE.zs[0] < 12, 'the first room has no end wall');
-  assert.ok(ENFILADE.opening > radius * 2 + 0.4);
-  for (const z of ENFILADE.zs) {
+  assert.ok(ENFILADE.zs[0] > 16 && ENFILADE.zs[0] < 17, 'the entrance hall has no end wall');
+  assert.ok(ENFILADE.firstDoor.x1 - ENFILADE.firstDoor.x0 > radius * 2 + 0.4);
+  assert.equal(hitsObstacle(0, ENFILADE.zs[0], radius, obstacles), true, 'the centered end wall is open');
+  assert.equal(hitsObstacle(2.6, ENFILADE.zs[0], radius, obstacles), false, 'the side door is blocked');
+  for (const z of ENFILADE.zs.slice(1)) {
     assert.equal(hitsObstacle(0, z, radius, obstacles), false, 'doorway blocked at z=' + z);
     assert.equal(hitsObstacle(3.2, z, radius, obstacles), true, 'end wall missing at z=' + z);
   }
-  const through = walk(0, 1, 0, 0.4, 80);
+  let through = steer(0, 1, 2.6, 0.4, 50);
+  through = steer(through.x, through.z, 0, 0.4, 40);
   assert.ok(through.z > ENFILADE.zs[1], 'could not walk into the second room, z=' + through.z);
 });
 

@@ -20,7 +20,7 @@ import {
   commercialFrameZ,
   FRAME,
   LEGACY_FRAME_SIZE_M
-} from "./origin-room-look.js?v=20261127j10";
+} from "./origin-room-look.js?v=20261127j11";
 import {
   slideVisitor,
   separateVisitor,
@@ -30,6 +30,7 @@ import {
   frameOuterHalfWidth,
   VISITOR
 } from "./origin-room-geometry.mjs";
+import {originPose, bindOriginPoses} from "./origin-hall-layout.mjs";
 
 (() => {
   "use strict";
@@ -566,10 +567,13 @@ import {
     return art;
   }
   function drawWallSlot(slot){
-    const i=slot.id,z=5.7+i*STEP,side=i%2?1:-1;
+    const i=slot.id;
+    const pose=ORIGIN_ROOM_LOOK_ENABLED ? originPose(slot) : null;
+    const z=pose ? pose.z : 5.7+i*STEP;
+    const side=pose ? pose.side : i%2?1:-1;
     const x=ORIGIN_ROOM_LOOK_ENABLED ? frameAnchorX(side) : side*(HALF-.39);
     const [w,h]=LEGACY_FRAME_SIZE_M[slot.size]||LEGACY_FRAME_SIZE_M.landscape;
-    const y=2.10,rot=frameRotationY(side);
+    const y=pose ? pose.y : 2.10,rot=frameRotationY(side);
     let mat;
     if(slot.piece)mat=pictureMaterial(slot.piece);
     else if(slot.reservedForAds)mat=new THREE.MeshStandardMaterial({
@@ -593,10 +597,11 @@ import {
     color:0x655c50,roughness:.48,metalness:.34
   });
   function drawCommercialFrame(slot){
-    const side=slot.side;
+    const pose=ORIGIN_ROOM_LOOK_ENABLED ? originPose(slot) : null;
+    const side=pose ? pose.side : slot.side;
     const x=ORIGIN_ROOM_LOOK_ENABLED ? frameAnchorX(side) : side*(HALF-.39);
-    const z=commercialFrameZ(slot);
-    const y=slot.y,w=slot.widthM,h=slot.heightM;
+    const z=pose ? pose.z : commercialFrameZ(slot);
+    const y=pose ? pose.y : slot.y,w=slot.widthM,h=slot.heightM;
     const rot=frameRotationY(side);
     const unit=new THREE.Group();
     unit.position.set(x,y,z);unit.rotation.y=rot;
@@ -774,8 +779,9 @@ import {
       child.traverse(o=>{if(o.geometry)o.geometry.dispose();});
     }
     clickable.length=0;
+    if(ORIGIN_ROOM_LOOK_ENABLED)bindOriginPoses(window.TEM.getWallDisplaySlots?.()||[]);
     // Four partner bays retain their historical reserved plaques.
-    window.TEM.getSlots().filter(slot=>slot.reservedForAds).forEach(drawWallSlot);
+    window.TEM.getSlots().filter(slot=>slot.reservedForAds||(ORIGIN_ROOM_LOOK_ENABLED&&Number.isInteger(slot.id)&&slot.id<4)).forEach(drawWallSlot);
     // The commercial distribution is now 116 independent frames.
     (window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots().filter(slot=>!slot.reservedForAds))
       .forEach(slot=>slot.isCommercial?drawCommercialFrame(slot):drawWallSlot(slot));
@@ -857,7 +863,12 @@ import {
     }catch{return null;}
   }
   function plannedStops(){
-    return planExhibitionStops(window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots(),{
+    const tourSlots=(window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots()).map(slot=>{
+      if(!ORIGIN_ROOM_LOOK_ENABLED)return slot;
+      const pose=originPose(slot);
+      return pose?{...slot,side:pose.side,z:pose.z,y:pose.y,originPlaced:true}:slot;
+    });
+    return planExhibitionStops(tourSlots,{
       step:STEP,half:HALF,start:5.7,
       floorSlots:window.TEM.getFloorSlots(),ceilingSlots:window.TEM.getCeilingSlots()
     });

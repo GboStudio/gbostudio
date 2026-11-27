@@ -155,6 +155,10 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
 - État : proposé, non fusionné, non déployé.
 
+## Grand hall d'entrée — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Oui, réorganise les emplacements dans les salles suivantes et fais le grand hall d'entrée comme la 4K ». Le hall d'entrée tient trois travées, avec un mur de fond éclairé, une porte sur le côté et un tableau au centre. Douze cadres d'origine y sont répartis (deux ou trois par travée et par côté, plus les deux grands de la première travée). Les autres gardent leur identifiant et continuent dans les salles derrière. Les 120 emplacements et les 12 tableaux ajoutés restent. Le socle S01 passe à gauche du hall pour laisser la porte libre.
+- État : proposé, non fusionné, non déployé.
+
 ## Marbre réel et tableaux sur les murs du fond — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
 - Guillaume : « On pousse encore ». Les dalles du fond prennent le même Marble019 que les murs latéraux, en coordonnées monde, avec des joints clairs. Les douze cadres ajoutés montrent des tableaux du domaine public (crédit `assets/paintings/CREDITS.md`). Les 120 emplacements d’origine ne bougent pas.
 - État : proposé, non fusionné, non déployé.

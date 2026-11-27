@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync, existsSync} from 'node:fs';
 import mix from '../gallery-mix.js';
+import {originPose, hallPoses, bindOriginPoses} from '../origin-hall-layout.mjs';
 import {
   FRAME,
   enfiladeFrameLayout,
@@ -11,7 +12,7 @@ import {
   frameLocalToWorldX,
   commercialFrameZ,
   frameOuterHalfWidth,
-  pilasterLayout,
+  originPilasters,
   sameWallOverlap,
   LEGACY_FRAME_SIZE_M,
   wallInnerFaceX
@@ -37,38 +38,34 @@ test('every hanging frame sits 1–2 cm off its wall and faces the room', () => 
   const app = read('app.js');
   const sizes = app.match(/SLOT_SIZES=\[([^\]]+)\]/)[1]
     .split(',').map(s => s.replace(/['"\s]/g, ''));
+  bindOriginPoses(mix.allWallSlots());
   const frames = [];
   for (const id of [0, 1, 2, 3]) {
-    const side = id % 2 ? 1 : -1;
     const [w, h] = LEGACY_FRAME_SIZE_M[sizes[id % sizes.length]];
+    const pose = originPose({id});
     frames.push({
       id: 'partner-' + id,
-      side, w, h,
-      z: 5.7 + id * 3.5,
-      anchorX: frameAnchorX(side),
+      side: pose.side, w, h,
+      z: pose.z,
+      anchorX: frameAnchorX(pose.side),
       outerHalf: frameOuterHalfWidth(w, {plaque: true})
     });
   }
   for (const panel of mix.allWallSlots()) {
-    const side = panel.parentBayId % 2 ? 1 : -1;
-    const slot = {
-      side,
-      z: 5.7 + panel.parentBayId * 3.5,
-      xM: panel.xM,
-      widthM: panel.widthM
-    };
+    const pose = originPose(panel);
     frames.push({
       id: panel.id,
-      side,
+      side: pose.side,
       w: panel.widthM,
       h: panel.heightM,
-      z: commercialFrameZ(slot),
-      anchorX: frameAnchorX(side),
+      z: pose.z,
+      anchorX: frameAnchorX(pose.side),
       outerHalf: frameOuterHalfWidth(panel.widthM, {plaque: false})
     });
   }
   assert.equal(frames.length, 120);
-  const posts = pilasterLayout({length: 142, bays: 38});
+  assert.equal(hallPoses().length, 12);
+  const posts = originPilasters({length: 142});
   assert.ok(posts.length > 40);
   for (const frame of frames) {
     checkFlush(frame);
@@ -86,7 +83,10 @@ test('each enfilade back wall keeps one extra painting 1–2 cm off the wall', (
   for (const frame of frames) {
     const gap = frame.wallFaceZ - frame.z;
     assert.ok(gap >= 0.01 - 1e-6 && gap <= 0.02 + 1e-6, frame.id + ' gap ' + gap);
-    assert.ok(Math.abs(frame.x) - frame.w / 2 > 1.1, frame.id + ' blocks the doorway');
+    const clearOfDoor = frame.id === 'enfilade-0'
+      ? frame.x + frame.w / 2 < 1.55
+      : Math.abs(frame.x) - frame.w / 2 > 1.1;
+    assert.ok(clearOfDoor, frame.id + ' blocks the doorway');
   }
   const look = read('origin-room-look.js');
   assert.match(look, /assets\/paintings\//);

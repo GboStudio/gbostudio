@@ -370,7 +370,6 @@ function cloudVolume({THREE, mobile}) {
 function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile}) {
   const face = wallInnerFaceX(1, half);
   const open = ENFILADE.opening / 2;
-  const sideW = face - open;
   const zs = mobile ? ENFILADE.zs.slice(0, 1) : ENFILADE.zs;
   const joint = new THREE.MeshStandardMaterial({color: 0xe6e2da, roughness: 0.72, metalness: 0});
   const backing = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), joint, zs.length * 3);
@@ -393,22 +392,25 @@ function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile}) {
     }
   };
   for (const z of zs) {
-    dummy.position.set(-(face + open) / 2, height / 2, z);
-    dummy.scale.set(sideW, height, ENFILADE.thickness);
+    const door = z === ENFILADE.zs[0] ? ENFILADE.firstDoor : {x0: -open, x1: open};
+    const leftW = door.x0 + face;
+    const rightW = face - door.x1;
+    dummy.position.set((-face + door.x0) / 2, height / 2, z);
+    dummy.scale.set(leftW, height, ENFILADE.thickness);
     dummy.updateMatrix();
     backing.setMatrixAt(index++, dummy.matrix);
-    fill(-face, -open, 0.02, height, z);
-    dummy.position.set((face + open) / 2, height / 2, z);
-    dummy.scale.set(sideW, height, ENFILADE.thickness);
+    fill(-face, door.x0, 0.02, height, z);
+    dummy.position.set((door.x1 + face) / 2, height / 2, z);
+    dummy.scale.set(rightW, height, ENFILADE.thickness);
     dummy.updateMatrix();
     backing.setMatrixAt(index++, dummy.matrix);
-    fill(open, face, 0.02, height, z);
+    fill(door.x1, face, 0.02, height, z);
     const lintelH = Math.max(0.4, height - ENFILADE.lintelY);
-    dummy.position.set(0, ENFILADE.lintelY + lintelH / 2, z);
-    dummy.scale.set(open * 2, lintelH, ENFILADE.thickness);
+    dummy.position.set((door.x0 + door.x1) / 2, ENFILADE.lintelY + lintelH / 2, z);
+    dummy.scale.set(door.x1 - door.x0, lintelH, ENFILADE.thickness);
     dummy.updateMatrix();
     backing.setMatrixAt(index++, dummy.matrix);
-    fill(-open, open, ENFILADE.lintelY, height, z);
+    fill(door.x0, door.x1, ENFILADE.lintelY, height, z);
   }
   backing.instanceMatrix.needsUpdate = true;
   backing.name = "origin-enfilade";

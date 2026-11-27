@@ -139,6 +139,21 @@ export function pilasterLayout({
   return posts;
 }
 
+/** Pilasters for the origin look: deep piers in the entrance hall, then the rear bays. */
+export function originPilasters({half = ROOM.half, length = 142} = {}) {
+  const posts = [];
+  const add = (side, z, along, into) => {
+    if (z < 3 || z > length - 1) return;
+    const face = wallInnerFaceX(side, half);
+    posts.push({side, z, x: face - side * (into / 2), along, into});
+  };
+  for (const side of [-1, 1]) {
+    for (const z of [3.55, 8.15, 12.2, 15.9]) add(side, z, 0.42, 0.55);
+    for (let i = 0; i < 32; i++) add(side, 26.35 + i * 3.5, 0.3, 0.46);
+  }
+  return posts;
+}
+
 export function benchLayout(length = 142) {
   const benches = [];
   const aisleZ = [15, 47, 85, 112];
@@ -193,7 +208,9 @@ export const ENFILADE = Object.freeze({
   thickness: 0.16,
   opening: 2.2,
   lintelY: 3.05,
-  zs: Object.freeze([10.85, 24.95, 35.45, 45.85, 56.45, 66.95, 77.45, 87.95, 98.45, 108.95, 119.45, 129.95])
+  zs: Object.freeze([16.55, 24.95, 35.45, 45.85, 56.45, 66.95, 77.45, 87.95, 98.45, 108.95, 119.45, 129.95]),
+  /** First doorway sits on the right so the end-wall painting can stay centered. */
+  firstDoor: Object.freeze({ x0: 1.55, x1: 3.65 })
 });
 
 export function enfiladeFrameLayout() {
@@ -204,7 +221,7 @@ export function enfiladeFrameLayout() {
     const side = index % 2 ? 1 : -1;
     return {
       id: "enfilade-" + index,
-      x: side * 2.4,
+      x: index === 0 ? 0 : side * 2.4,
       y: 1.78,
       z: wallFaceZ - 0.016,
       w: 1.12,
@@ -214,15 +231,23 @@ export function enfiladeFrameLayout() {
   });
 }
 
-export function enfiladeObstacles(half = ROOM.half) {
+function doorwayBoxes(z, x0, x1, half) {
   const face = wallInnerFaceX(1, half);
+  const leftW = x0 + face;
+  const rightW = face - x1;
+  return [
+    aabbAt((-face + x0) / 2, z, leftW, ENFILADE.thickness),
+    aabbAt((x1 + face) / 2, z, rightW, ENFILADE.thickness)
+  ];
+}
+
+export function enfiladeObstacles(half = ROOM.half) {
   const open = ENFILADE.opening / 2;
-  const sideW = face - open;
   const boxes = [];
-  for (const z of ENFILADE.zs) {
-    boxes.push(aabbAt(-(face + open) / 2, z, sideW, ENFILADE.thickness));
-    boxes.push(aabbAt((face + open) / 2, z, sideW, ENFILADE.thickness));
-  }
+  ENFILADE.zs.forEach((z, index) => {
+    if (index === 0) boxes.push(...doorwayBoxes(z, ENFILADE.firstDoor.x0, ENFILADE.firstDoor.x1, half));
+    else boxes.push(...doorwayBoxes(z, -open, open, half));
+  });
   for (const frame of enfiladeFrameLayout()) {
     boxes.push(aabbAt(frame.x, frame.z, frame.w, 0.08));
   }
@@ -231,7 +256,7 @@ export function enfiladeObstacles(half = ROOM.half) {
 
 export function staticObstacles(length = 142) {
   const boxes = [];
-  for (const post of pilasterLayout({length})) {
+  for (const post of originPilasters({length})) {
     boxes.push(aabbAt(post.x, post.z, post.into, post.along));
   }
   if (length > 20) boxes.push(...enfiladeObstacles());
@@ -239,7 +264,7 @@ export function staticObstacles(length = 142) {
     boxes.push(aabbAt(bench.x, bench.z, bench.into, bench.along));
   }
   for (const spot of [
-    {x: 2.25, z: 15}, {x: -2.25, z: 47}, {x: 2.25, z: 85}, {x: -2.25, z: 112}
+    {x: -2.25, z: 8}, {x: -2.25, z: 47}, {x: 2.25, z: 85}, {x: -2.25, z: 112}
   ]) {
     boxes.push(aabbAt(spot.x, spot.z, 1.5, 1.8));
   }

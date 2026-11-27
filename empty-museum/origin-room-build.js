@@ -13,7 +13,7 @@ import {
   FRAME,
   PILASTER,
   wallInnerFaceX,
-  pilasterLayout,
+  originPilasters,
   benchLayout
 } from "./origin-room-geometry.mjs";
 
@@ -382,7 +382,7 @@ export function mountArchitectureKit({
     loader.load(KIT_URL, gltf => {
       lightMap.then(baked => {
         try {
-        const posts = pilasterLayout({half, length, bays: 38});
+        const posts = originPilasters({half, length});
         const benches = benchLayout(length);
         const spans = panelSpans(posts);
         const wide = spans.filter(span => span.wide);
@@ -465,7 +465,7 @@ export function buildStoneShell({
   shell.receiveShadow = true;
   architecture.add(shell);
 
-  const posts = pilasterLayout({half, length, bays: 38});
+  const posts = originPilasters({half, length});
   const black = new THREE.MeshStandardMaterial({color: 0x1c1b19, roughness: 0.45, metalness: 0.65});
   addBoxStandIns({THREE, architecture, wallMaterial, posts, length, half, height});
 
