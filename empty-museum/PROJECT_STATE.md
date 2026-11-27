@@ -130,3 +130,7 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Le marbre procédural est remplacé par Marble012 d’ambientCG (CC0), albédo, normale et rugosité, 2K au bureau et 1K au mobile. Crédit : `empty-museum/assets/marble/CREDITS.md`.
 - L’exposition ACES de l’essai passe à 0,72. Le miroir du bureau reste un `Reflector` 1024, plus lisible, et s’efface avec la distance. Le mobile garde l’environnement, sans second passage.
 - État : proposé, non fusionné, non déployé.
+
+## Ivoire et reflet latéral — 27 novembre 2026 (même PR #54, non fusionné)
+- Guillaume : « Oui il faut être plus proche de la cible ». Passe visuelle seulement. Marble012 (CC0) est conservé, ramené vers l’ivoire `#f3eee6`, veines fines. L’exposition de l’essai est 0,86. Le miroir du bureau atténue le ciel et renforce le reflet près des murs. Le mobile ne prend pas de second passage.
+- État : proposé, non fusionné, non déployé.

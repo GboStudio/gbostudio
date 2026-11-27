@@ -164,8 +164,10 @@ ${MARBLE_GLSL}`)
       `#include <color_fragment>
 	vec3 alb = marbleTri(uMarbleMap, vMarbleWp, vMarbleN);
 	float lum = dot(alb, vec3(0.2126, 0.7152, 0.0722));
-	float t = smoothstep(0.42, 0.78, lum);
-	alb = mix(vec3(0.50, 0.49, 0.47), vec3(0.90, 0.88, 0.85), t);
+	vec3 ivory = vec3(0.953, 0.933, 0.902);
+	float vein = smoothstep(0.62, 0.40, lum);
+	alb = mix(alb, ivory, 0.80);
+	alb = mix(alb, vec3(0.72, 0.70, 0.66), vein * 0.28);
 	diffuseColor.rgb = alb * uMarbleLift;`
     )
     .replace(
@@ -228,9 +230,9 @@ export function createOriginMaterials({mobile}) {
     envMapIntensity: 0.16
   });
   const floor = marbleMaterial(maps, {
-    roughness: mobile ? 0.3 : 0.08,
+    roughness: mobile ? 0.32 : 0.16,
     metalness: 0.02,
-    lift: 0.96,
+    lift: 0.84,
     roughMix: mobile ? 0.45 : 0.25,
     envMapIntensity: mobile ? 0.7 : 0.16
   });
@@ -305,10 +307,12 @@ const reflectorShader = {
     uniform mat4 textureMatrix;
     varying vec4 vUv;
     varying float vDist;
+    varying float vWall;
     #include <common>
     #include <logdepthbuf_pars_vertex>
     void main() {
       vUv = textureMatrix * vec4(position, 1.0);
+      vWall = smoothstep(1.1, 3.5, abs(position.x));
       vec4 mv = modelViewMatrix * vec4(position, 1.0);
       vDist = length(mv.xyz);
       gl_Position = projectionMatrix * mv;
@@ -319,6 +323,7 @@ const reflectorShader = {
     uniform sampler2D tDiffuse;
     varying vec4 vUv;
     varying float vDist;
+    varying float vWall;
     #include <logdepthbuf_pars_fragment>
     float blendOverlay(float base, float blend) {
       return (base < 0.5 ? (2.0 * base * blend) : (1.0 - 2.0 * (1.0 - base) * (1.0 - blend)));
@@ -329,8 +334,11 @@ const reflectorShader = {
     void main() {
       #include <logdepthbuf_fragment>
       vec4 base = texture2DProj(tDiffuse, vUv);
-      float fade = smoothstep(7.5, 0.45, vDist);
-      gl_FragColor = vec4(base.rgb, 0.5 * fade);
+      float luma = dot(base.rgb, vec3(0.2126, 0.7152, 0.0722));
+      float sky = smoothstep(0.58, 0.86, luma);
+      float fade = smoothstep(8.0, 0.5, vDist);
+      float mirror = mix(0.16, 0.58, vWall) * fade * mix(1.0, 0.08, sky);
+      gl_FragColor = vec4(base.rgb, mirror);
     }`
 };
 
@@ -379,10 +387,10 @@ export function installOriginRoomLook({
     if (obj.isHemisphereLight) {
       obj.color.set(0xfff1e4);
       obj.groundColor.set(0xb7b0a6);
-      obj.intensity = 0.28;
+      obj.intensity = 0.36;
     } else if (obj.isDirectionalLight) {
       obj.color.set(0xffefdc);
-      obj.intensity = 0.2;
+      obj.intensity = 0.24;
       if (mobile) obj.castShadow = false;
     } else if (obj.isAmbientLight) {
       obj.intensity = 0.06;
