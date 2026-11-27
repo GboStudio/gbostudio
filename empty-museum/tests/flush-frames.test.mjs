@@ -5,6 +5,7 @@ import {readFileSync} from 'node:fs';
 import mix from '../gallery-mix.js';
 import {
   FRAME,
+  enfiladeFrameLayout,
   frameAnchorX,
   frameWallGap,
   frameLocalToWorldX,
@@ -76,6 +77,16 @@ test('every hanging frame sits 1–2 cm off its wall and faces the room', () => 
       assert.ok(overlap <= 0.001,
         frame.id + ' intersects a pilaster by ' + overlap.toFixed(3) + ' m at z ' + post.z.toFixed(2));
     }
+  }
+});
+
+test('each enfilade back wall keeps one extra painting 1–2 cm off the wall', () => {
+  const frames = enfiladeFrameLayout();
+  assert.ok(frames.length >= 1);
+  for (const frame of frames) {
+    const gap = frame.wallFaceZ - frame.z;
+    assert.ok(gap >= 0.01 - 1e-6 && gap <= 0.02 + 1e-6, frame.id + ' gap ' + gap);
+    assert.ok(Math.abs(frame.x) - frame.w / 2 > 1.1, frame.id + ' blocks the doorway');
   }
 });
 

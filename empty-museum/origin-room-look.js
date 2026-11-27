@@ -14,6 +14,7 @@ import {Reflector} from "three/addons/objects/Reflector.js";
 import {
   FRAME,
   ENFILADE,
+  enfiladeFrameLayout,
   frameAnchorX,
   frameRotationY,
   commercialFrameZ,
@@ -134,7 +135,7 @@ vec3 marbleTri(sampler2D tex, vec3 p, vec3 n){
 
 function marbleShader(shader, maps, lift, roughMix, floorEdge) {
   shader.uniforms.uMarbleLift = {value: lift};
-  shader.uniforms.uMarbleScale = {value: 0.10};
+  shader.uniforms.uMarbleScale = {value: 0.16};
   shader.uniforms.uMarbleMap = {value: maps.color};
   shader.uniforms.uMarbleNor = {value: maps.normal};
   shader.uniforms.uMarbleRough = {value: maps.rough};
@@ -171,7 +172,7 @@ ${MARBLE_GLSL}`)
 	vec3 warm = vec3(0.965, 0.945, 0.915);
 	float vein = smoothstep(0.86, 0.62, lum);
 	alb = mix(alb, warm, 0.06);
-	alb = mix(alb, alb * vec3(0.78, 0.79, 0.80), vein * 0.18);
+	alb = mix(alb, alb * vec3(0.72, 0.74, 0.76), vein * 0.36);
 	float along = abs(vMarbleN.x) > abs(vMarbleN.z) ? vMarbleWp.z : vMarbleWp.x;
 	float dy = abs(fract(vMarbleWp.y / 1.5) - 0.5) * 1.5;
 	float da = abs(fract(along / 3.0) - 0.5) * 3.0;
@@ -181,7 +182,10 @@ ${MARBLE_GLSL}`)
 	#ifdef USE_LIGHTMAP
 		float baked = dot(texture2D(lightMap, vLightMapUv).rgb, vec3(0.333));
 		diffuseColor.rgb *= mix(0.78, 1.0, clamp(baked, 0.0, 1.0));
-	#endif`
+	#endif
+	if (vMarbleN.y < -0.4) {
+		diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.97, 0.96, 0.93), 0.62);
+	}`
     )
     .replace(
       "#include <roughnessmap_fragment>",
@@ -283,7 +287,7 @@ function cloudVolume({THREE, mobile}) {
   // Camera-facing puffs at several depths. Parallax comes from the spacing.
   // Four noise octaves on one instanced draw; mobile uses fewer puffs.
   const puffs = mobile
-    ? [[0, 5.7, 5.2, 3.6], [-0.35, 5.95, 8, 3.2], [0.4, 5.5, 11, 3.8], [0, 5.85, 15, 3.4], [-0.25, 5.6, 20, 3.5], [0.2, 5.9, 26, 3.2]]
+    ? [[0, 5.85, 4.6, 3.4], [-0.2, 5.55, 7.2, 3.2], [0.25, 5.7, 9.2, 2.8]]
     : [[-0.15, 5.85, 3.6, 4.2], [0.35, 5.5, 5.2, 3.8], [-0.45, 6.0, 6.8, 3.6], [0.1, 5.4, 8.4, 4.4],
       [0.5, 5.8, 10.2, 3.4], [-0.3, 6.05, 11.6, 3.8], [0.15, 5.45, 13.4, 4.2], [-0.5, 5.75, 15.2, 3.6],
       [0.4, 5.95, 17, 3.5], [-0.1, 5.5, 19.2, 4.3], [0.3, 6.0, 22, 3.4], [-0.4, 5.7, 25, 3.8],
@@ -344,8 +348,8 @@ function cloudVolume({THREE, mobile}) {
         alpha *= slot * slot;
         if (alpha < 0.02) discard;
         float light = clamp(uv.y * 1.6 + 0.62, 0.0, 1.0);
-        vec3 col = mix(vec3(0.68, 0.71, 0.74), vec3(1.0, 0.99, 0.97), light);
-        gl_FragColor = vec4(col, alpha * 0.82);
+        vec3 col = mix(vec3(0.78, 0.80, 0.82), vec3(1.0, 0.99, 0.97), light);
+        gl_FragColor = vec4(col, alpha * 0.9);
       }
     `
   }), puffs.length);
@@ -363,39 +367,110 @@ function cloudVolume({THREE, mobile}) {
   return mesh;
 }
 
-function placeEnfilade({THREE, scene, half, height, wallMaterial}) {
+function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile}) {
   const face = wallInnerFaceX(1, half);
   const open = ENFILADE.opening / 2;
   const sideW = face - open;
-  const lit = wallMaterial.clone();
-  lit.emissive = new THREE.Color(0xfff3e2);
-  lit.emissiveIntensity = 0.28;
-  lit.customProgramCacheKey = () => wallMaterial.customProgramCacheKey() + "-end";
-  const mesh = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    lit,
-    ENFILADE.zs.length * 3
-  );
+  const zs = mobile ? ENFILADE.zs.slice(0, 1) : ENFILADE.zs;
+  const joint = new THREE.MeshStandardMaterial({color: 0xb5aea2, roughness: 0.9, metalness: 0});
+  const backing = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), joint, zs.length * 3);
+  const slabs = [];
   const dummy = new THREE.Object3D();
   let index = 0;
-  for (const z of ENFILADE.zs) {
+  const pushSlab = (x, y, z, w, h) => {
+    const gap = 0.02;
+    slabs.push({x, y, z: z - ENFILADE.thickness / 2 - 0.018, w: Math.max(0.2, w - gap), h: Math.max(0.2, h - gap)});
+  };
+  const fill = (x0, x1, y0, y1, z) => {
+    const cols = Math.max(1, Math.round((x1 - x0) / 1.6));
+    const rows = Math.max(1, Math.round((y1 - y0) / 1.5));
+    const cw = (x1 - x0) / cols;
+    const ch = (y1 - y0) / rows;
+    for (let col = 0; col < cols; col++) {
+      for (let row = 0; row < rows; row++) {
+        pushSlab(x0 + cw * (col + 0.5), y0 + ch * (row + 0.5), z, cw, ch);
+      }
+    }
+  };
+  for (const z of zs) {
     dummy.position.set(-(face + open) / 2, height / 2, z);
     dummy.scale.set(sideW, height, ENFILADE.thickness);
     dummy.updateMatrix();
-    mesh.setMatrixAt(index++, dummy.matrix);
+    backing.setMatrixAt(index++, dummy.matrix);
+    fill(-face, -open, 0.02, height, z);
     dummy.position.set((face + open) / 2, height / 2, z);
+    dummy.scale.set(sideW, height, ENFILADE.thickness);
     dummy.updateMatrix();
-    mesh.setMatrixAt(index++, dummy.matrix);
+    backing.setMatrixAt(index++, dummy.matrix);
+    fill(open, face, 0.02, height, z);
     const lintelH = Math.max(0.4, height - ENFILADE.lintelY);
     dummy.position.set(0, ENFILADE.lintelY + lintelH / 2, z);
     dummy.scale.set(open * 2, lintelH, ENFILADE.thickness);
     dummy.updateMatrix();
-    mesh.setMatrixAt(index++, dummy.matrix);
-    dummy.scale.set(sideW, height, ENFILADE.thickness);
+    backing.setMatrixAt(index++, dummy.matrix);
+    fill(-open, open, ENFILADE.lintelY, height, z);
   }
-  mesh.instanceMatrix.needsUpdate = true;
-  mesh.name = "origin-enfilade";
-  scene.add(mesh);
+  backing.instanceMatrix.needsUpdate = true;
+  backing.name = "origin-enfilade";
+  scene.add(backing);
+  const veinCanvas = document.createElement("canvas");
+  veinCanvas.width = 256;
+  veinCanvas.height = 256;
+  const vein = veinCanvas.getContext("2d");
+  vein.fillStyle = "#f6f3ee";
+  vein.fillRect(0, 0, 256, 256);
+  vein.strokeStyle = "rgba(120, 118, 112, 0.45)";
+  vein.lineWidth = 4;
+  vein.beginPath();
+  vein.moveTo(12, 36);
+  vein.bezierCurveTo(70, 110, 150, 20, 244, 130);
+  vein.moveTo(8, 190);
+  vein.bezierCurveTo(90, 150, 170, 230, 248, 168);
+  vein.stroke();
+  const veinMap = new THREE.CanvasTexture(veinCanvas);
+  veinMap.colorSpace = THREE.SRGBColorSpace;
+  veinMap.wrapS = veinMap.wrapT = THREE.RepeatWrapping;
+  const slabMat = new THREE.MeshStandardMaterial({
+    map: veinMap,
+    color: 0xf7f4ee,
+    roughness: 0.46,
+    metalness: 0,
+    emissive: 0xfff6ea,
+    emissiveIntensity: mobile ? 0.04 : 0.1
+  });
+  const faces = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), slabMat, slabs.length);
+  slabs.forEach((slab, slabIndex) => {
+    dummy.position.set(slab.x, slab.y, slab.z);
+    dummy.scale.set(slab.w, slab.h, 0.045);
+    dummy.rotation.set(0, 0, 0);
+    dummy.updateMatrix();
+    faces.setMatrixAt(slabIndex, dummy.matrix);
+  });
+  faces.instanceMatrix.needsUpdate = true;
+  faces.name = "origin-enfilade-slabs";
+  scene.add(faces);
+  const frames = (mobile ? enfiladeFrameLayout().slice(0, 1) : enfiladeFrameLayout());
+  const gold = new THREE.MeshStandardMaterial({color: 0xe2b34a, metalness: 1, roughness: 0.28});
+  const paint = new THREE.MeshStandardMaterial({color: 0x2c2822, roughness: 0.72});
+  const lips = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), gold, frames.length);
+  const canvases = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), paint, frames.length);
+  frames.forEach((frame, frameIndex) => {
+    dummy.position.set(frame.x, frame.y, frame.z + 0.004);
+    dummy.scale.set(frame.w + 0.12, frame.h + 0.12, 1);
+    dummy.rotation.set(0, Math.PI, 0);
+    dummy.updateMatrix();
+    lips.setMatrixAt(frameIndex, dummy.matrix);
+    dummy.position.set(frame.x, frame.y, frame.z);
+    dummy.scale.set(frame.w, frame.h, 1);
+    dummy.updateMatrix();
+    canvases.setMatrixAt(frameIndex, dummy.matrix);
+  });
+  lips.instanceMatrix.needsUpdate = true;
+  canvases.instanceMatrix.needsUpdate = true;
+  lips.name = "origin-enfilade-frame";
+  canvases.name = "origin-enfilade-art";
+  scene.add(lips);
+  scene.add(canvases);
 }
 
 function skyMaterial(mobile) {
@@ -526,18 +601,18 @@ export function installOriginRoomLook({
   scene.background = new THREE.Color(0xe4edf2);
   if (scene.fog) {
     scene.fog.color.set(0xf3f0ea);
-    scene.fog.density = 0.00048;
+    scene.fog.density = mobile ? 0.0011 : 0.00042;
   }
-  scene.environmentIntensity = mobile ? 0.42 : 0.55;
+  scene.environmentIntensity = mobile ? 0.2 : 0.55;
 
   scene.traverse(obj => {
     if (obj.isHemisphereLight) {
       obj.color.set(0xfff1e4);
       obj.groundColor.set(0xb7b0a6);
-      obj.intensity = 0.36;
+      obj.intensity = mobile ? 0.16 : 0.36;
     } else if (obj.isDirectionalLight) {
       obj.color.set(0xffefdc);
-      obj.intensity = 0.24;
+      obj.intensity = mobile ? 0.1 : 0.24;
       if (mobile) obj.castShadow = false;
     } else if (obj.isAmbientLight) {
       obj.intensity = 0.06;
@@ -550,7 +625,7 @@ export function installOriginRoomLook({
   sky.position.y = 2.2;
   sky.name = "origin-cumulus";
   scene.add(sky);
-  placeEnfilade({THREE, scene, half, height, wallMaterial});
+  placeEnfilade({THREE, scene, half, height, wallMaterial, mobile});
   const clouds = cloudVolume({THREE, mobile});
   scene.add(clouds);
   // Wide overlapping cards. Alpha falls off to the edge, so the shaft has no hard rim.

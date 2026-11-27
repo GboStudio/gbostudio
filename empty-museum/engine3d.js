@@ -20,7 +20,7 @@ import {
   commercialFrameZ,
   FRAME,
   LEGACY_FRAME_SIZE_M
-} from "./origin-room-look.js?v=20261127j8";
+} from "./origin-room-look.js?v=20261127j9";
 import {
   slideVisitor,
   separateVisitor,
@@ -62,13 +62,13 @@ import {
   scene.fog = new THREE.FogExp2(0xeceae5,0.0011);
   const camera = new THREE.PerspectiveCamera(mobile?64:59,1,.07,240);
   const renderer = new THREE.WebGLRenderer({canvas,antialias:!mobile,alpha:false,powerPreference:mobile?"low-power":"high-performance"});
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?(ORIGIN_ROOM_LOOK_ENABLED?1.25:1.45):1.8));
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?(ORIGIN_ROOM_LOOK_ENABLED?1:1.45):1.8));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   // Warm museum white needs plausible daylight detail, not crushed grey midtones.
   renderer.toneMappingExposure = .91;
-  if(ORIGIN_ROOM_LOOK_ENABLED) renderer.toneMappingExposure = .86;
-  renderer.shadowMap.enabled = true;
+  if(ORIGIN_ROOM_LOOK_ENABLED) renderer.toneMappingExposure = mobile ? .70 : .86;
+  renderer.shadowMap.enabled = !(mobile && ORIGIN_ROOM_LOOK_ENABLED);
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0xf7f6f3,1);
   // A neutral, physically-based indoor reflection environment: brushed metals
@@ -88,7 +88,7 @@ import {
   sun.position.set(-8,18,15);
   // V9: true contact and frame shadows on iPhone too; constrained shadow
   // volume follows the visitor so the 140m gallery needs only one light map.
-  sun.castShadow=true;
+  sun.castShadow=!(mobile && ORIGIN_ROOM_LOOK_ENABLED);
   sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);
   sun.shadow.camera.left=-12;sun.shadow.camera.right=12;
   sun.shadow.camera.top=20;sun.shadow.camera.bottom=-20;
@@ -953,7 +953,7 @@ import {
     const mapped=prevId?stops.findIndex(st=>st.id===prevId):-1;
     const next=fromCurrent?routeResumeIndex(stops,view.z,{currentX:view.x}):routeNextIndex(stops,mapped,view.z);
     if(!fromCurrent&&mapped===stops.length-1&&next===0){
-      view.x=0;view.z=.85;view.y=1.72;velX=0;velZ=0;
+      view.x=mobile&&ORIGIN_ROOM_LOOK_ENABLED?-.35:0;view.z=.85;view.y=1.72;velX=0;velZ=0;
       yaw=0;yawTarget=0;pitch=0;pitchTarget=0;
     }
     return goToArtworkIndex(next,stops);
@@ -1041,7 +1041,7 @@ import {
   const v5=createMuseumV5Navigation({
     overlay,canvas,mobile,
     home:()=>{
-      resetTourState(true);view.x=0;view.z=.85;view.y=1.72;
+      resetTourState(true);view.x=mobile&&ORIGIN_ROOM_LOOK_ENABLED?-.35:0;view.z=.85;view.y=1.72;
       yaw=0;pitch=0;yawTarget=0;pitchTarget=0;walkTo=null;velX=0;velZ=0;
     },
     setZoom:(fov)=>{camera.fov=fov;camera.updateProjectionMatrix();},
@@ -1274,7 +1274,7 @@ import {
   function open(){
     if(active)return;
     focusBefore=document.activeElement;
-    active=true;last=performance.now();view.x=0;view.z=.85;yaw=0;pitch=0;yawTarget=0;pitchTarget=0;velX=0;velZ=0;walkTo=null;resetTourState();
+    active=true;last=performance.now();view.x=mobile&&ORIGIN_ROOM_LOOK_ENABLED?-.35:0;view.z=.85;yaw=0;pitch=mobile&&ORIGIN_ROOM_LOOK_ENABLED?0.06:0;yawTarget=0;pitchTarget=pitch;velX=0;velZ=0;walkTo=null;resetTourState();
     v5.enter();
     // Fresh entry: start from the entrance; guided mode will seek the nearest
     // real exhibit from the live camera position, never an old saved stop.

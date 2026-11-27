@@ -155,6 +155,10 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
 - État : proposé, non fusionné, non déployé.
 
+## Mobile, dalles du fond et plafond — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Go : mobile réparé, murs du fond avec dalles et œuvre, plafond lumineux ». L’exposition mobile de l’essai baisse, les ombres mobiles de cet essai sont coupées, et le téléphone ne dessine que le premier mur de l’enfilade. Les 120 cadres du commerce restent. Chaque mur du fond gagne des dalles en relief et un cadre en plus, testé à part. Le dessous du plafond est éclairci.
+- État : proposé, non fusionné, non déployé.
+
 ## Salles fermées, dalles et sol uniforme — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
 - Guillaume : « Go : vraie salle avec mur du fond, murs en grandes dalles de marbre blanc, sol uniforme et nuages corrigés ». Les 120 cadres restent à leur place. La salle est une enfilade : un mur éclairé avec une porte tous les trois travées environ, le premier à 10,85 m (seul intervalle libre avant la sculpture d’allée). Le marbre Marble019 (CC0) est éclairci, veines plus larges, joints de dalles d’environ 1,5 × 3 m. Le sol n’a plus de bande grise ; le reflet est basse résolution. Les nuages sont coupés aux bords de l’ouverture.
 - État : proposé, non fusionné, non déployé.

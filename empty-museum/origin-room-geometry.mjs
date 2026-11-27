@@ -196,6 +196,24 @@ export const ENFILADE = Object.freeze({
   zs: Object.freeze([10.85, 24.95, 35.45, 45.85, 56.45, 66.95, 77.45, 87.95, 98.45, 108.95, 119.45, 129.95])
 });
 
+export function enfiladeFrameLayout() {
+  const faceZ = z => z - ENFILADE.thickness / 2;
+  return ENFILADE.zs.map((z, index) => {
+    const structuralZ = faceZ(z);
+    const wallFaceZ = structuralZ - 0.04;
+    const side = index % 2 ? 1 : -1;
+    return {
+      id: "enfilade-" + index,
+      x: side * 2.4,
+      y: 1.78,
+      z: wallFaceZ - 0.016,
+      w: 1.12,
+      h: 1.28,
+      wallFaceZ
+    };
+  });
+}
+
 export function enfiladeObstacles(half = ROOM.half) {
   const face = wallInnerFaceX(1, half);
   const open = ENFILADE.opening / 2;
@@ -204,6 +222,9 @@ export function enfiladeObstacles(half = ROOM.half) {
   for (const z of ENFILADE.zs) {
     boxes.push(aabbAt(-(face + open) / 2, z, sideW, ENFILADE.thickness));
     boxes.push(aabbAt((face + open) / 2, z, sideW, ENFILADE.thickness));
+  }
+  for (const frame of enfiladeFrameLayout()) {
+    boxes.push(aabbAt(frame.x, frame.z, frame.w, 0.08));
   }
   return boxes;
 }
