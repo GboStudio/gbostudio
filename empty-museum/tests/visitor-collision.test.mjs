@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   VISITOR,
+  ENFILADE,
   slideVisitor,
   separateVisitor,
   hitsObstacle,
@@ -36,6 +37,17 @@ test('the aisle can be walked end to end and back without getting stuck', () => 
   assert.ok(pos.z > length - 8, 'did not reach the far end, z=' + pos.z);
   pos = walk(pos.x, pos.z, 0, -0.4, 400);
   assert.ok(pos.z < 2, 'did not return to the entrance, z=' + pos.z);
+});
+
+test('each room ends in a wall whose doorway still lets the aisle through', () => {
+  assert.ok(ENFILADE.zs[0] < 12, 'the first room has no end wall');
+  assert.ok(ENFILADE.opening > radius * 2 + 0.4);
+  for (const z of ENFILADE.zs) {
+    assert.equal(hitsObstacle(0, z, radius, obstacles), false, 'doorway blocked at z=' + z);
+    assert.equal(hitsObstacle(3.2, z, radius, obstacles), true, 'end wall missing at z=' + z);
+  }
+  const through = walk(0, 1, 0, 0.4, 80);
+  assert.ok(through.z > ENFILADE.zs[1], 'could not walk into the second room, z=' + through.z);
 });
 
 test('corners and obstacles push the visitor back to a free spot', () => {

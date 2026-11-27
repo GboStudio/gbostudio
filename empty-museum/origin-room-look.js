@@ -13,6 +13,7 @@ import * as THREE from "three";
 import {Reflector} from "three/addons/objects/Reflector.js";
 import {
   FRAME,
+  ENFILADE,
   frameAnchorX,
   frameRotationY,
   commercialFrameZ,
@@ -133,7 +134,7 @@ vec3 marbleTri(sampler2D tex, vec3 p, vec3 n){
 
 function marbleShader(shader, maps, lift, roughMix, floorEdge) {
   shader.uniforms.uMarbleLift = {value: lift};
-  shader.uniforms.uMarbleScale = {value: 0.22};
+  shader.uniforms.uMarbleScale = {value: 0.10};
   shader.uniforms.uMarbleMap = {value: maps.color};
   shader.uniforms.uMarbleNor = {value: maps.normal};
   shader.uniforms.uMarbleRough = {value: maps.rough};
@@ -168,18 +169,19 @@ ${MARBLE_GLSL}`)
 	vec3 alb = marbleTri(uMarbleMap, vMarbleWp, vMarbleN);
 	float lum = dot(alb, vec3(0.2126, 0.7152, 0.0722));
 	vec3 warm = vec3(0.965, 0.945, 0.915);
-	float vein = smoothstep(0.80, 0.52, lum);
-	alb = mix(alb, warm, 0.12);
-	alb = mix(alb, alb * vec3(0.62, 0.64, 0.66), vein * 0.55);
+	float vein = smoothstep(0.86, 0.62, lum);
+	alb = mix(alb, warm, 0.06);
+	alb = mix(alb, alb * vec3(0.78, 0.79, 0.80), vein * 0.18);
+	float along = abs(vMarbleN.x) > abs(vMarbleN.z) ? vMarbleWp.z : vMarbleWp.x;
+	float dy = abs(fract(vMarbleWp.y / 1.5) - 0.5) * 1.5;
+	float da = abs(fract(along / 3.0) - 0.5) * 3.0;
+	float seam = 1.0 - smoothstep(0.003, 0.016, min(dy, da));
+	alb = mix(alb, alb * vec3(0.80, 0.80, 0.78), seam * (1.0 - uFloorEdge));
 	diffuseColor.rgb = alb * uMarbleLift;
 	#ifdef USE_LIGHTMAP
 		float baked = dot(texture2D(lightMap, vLightMapUv).rgb, vec3(0.333));
-		diffuseColor.rgb *= mix(0.58, 1.0, clamp(baked, 0.0, 1.0));
-	#endif
-	if (uFloorEdge > 0.5) {
-		float slot = 1.0 - smoothstep(0.2, 3.4, abs(vMarbleWp.x));
-		diffuseColor.rgb *= mix(1.0, 0.70, slot * slot);
-	}`
+		diffuseColor.rgb *= mix(0.78, 1.0, clamp(baked, 0.0, 1.0));
+	#endif`
     )
     .replace(
       "#include <roughnessmap_fragment>",
@@ -206,7 +208,7 @@ function marbleMaterial(maps, {roughness, metalness, lift, roughMix, envMapInten
   material.onBeforeCompile = shader => {
     material.userData.shader = marbleShader(shader, maps, lift, roughMix, floorEdge ? 1 : 0);
   };
-  material.customProgramCacheKey = () => "origin-marble-j2-" + lift + "-" + roughMix + "-" + (floorEdge ? 1 : 0);
+  material.customProgramCacheKey = () => "origin-marble-j8-" + lift + "-" + roughMix + "-" + (floorEdge ? 1 : 0);
   return material;
 }
 
@@ -236,14 +238,14 @@ export function createOriginMaterials({mobile}) {
   const wall = marbleMaterial(maps, {
     roughness: 0.46,
     metalness: 0,
-    lift: 1,
+    lift: 1.08,
     roughMix: 0.4,
     envMapIntensity: 0.16
   });
   const floor = marbleMaterial(maps, {
     roughness: mobile ? 0.55 : 0.72,
     metalness: 0,
-    lift: 0.7,
+    lift: 0.84,
     roughMix: 0.04,
     envMapIntensity: mobile ? 0.12 : 0.03,
     floorEdge: true
@@ -295,6 +297,7 @@ function cloudVolume({THREE, mobile}) {
     vertexShader: `
       varying vec2 vUv;
       varying float vSeed;
+      varying vec3 vWorld;
       void main() {
         vec3 center = (modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
         float size = length((instanceMatrix * vec4(1.0, 0.0, 0.0, 0.0)).xyz);
@@ -302,6 +305,7 @@ function cloudVolume({THREE, mobile}) {
         vec3 up = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
         vec3 world = center + right * position.x * size + up * position.y * size;
         vUv = uv;
+        vWorld = world;
         vSeed = center.z * 0.37 + center.x * 1.7;
         gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
       }
@@ -309,6 +313,7 @@ function cloudVolume({THREE, mobile}) {
     fragmentShader: `
       varying vec2 vUv;
       varying float vSeed;
+      varying vec3 vWorld;
       float hash(vec2 p) {
         return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
       }
@@ -333,8 +338,10 @@ function cloudVolume({THREE, mobile}) {
           amp *= 0.5;
         }
         float warp = noise(uv * 2.2 + vSeed) * 0.16;
-        float body = 1.0 - smoothstep(0.12, 0.50, length(uv) - warp);
+        float body = 1.0 - smoothstep(0.08, 0.42, length(uv) - warp);
         float alpha = body * smoothstep(0.32, 0.68, n);
+        float slot = smoothstep(1.52, 1.05, abs(vWorld.x));
+        alpha *= slot * slot;
         if (alpha < 0.02) discard;
         float light = clamp(uv.y * 1.6 + 0.62, 0.0, 1.0);
         vec3 col = mix(vec3(0.68, 0.71, 0.74), vec3(1.0, 0.99, 0.97), light);
@@ -354,6 +361,41 @@ function cloudVolume({THREE, mobile}) {
   mesh.renderOrder = 0;
   mesh.name = "origin-cloud-volume";
   return mesh;
+}
+
+function placeEnfilade({THREE, scene, half, height, wallMaterial}) {
+  const face = wallInnerFaceX(1, half);
+  const open = ENFILADE.opening / 2;
+  const sideW = face - open;
+  const lit = wallMaterial.clone();
+  lit.emissive = new THREE.Color(0xfff3e2);
+  lit.emissiveIntensity = 0.28;
+  lit.customProgramCacheKey = () => wallMaterial.customProgramCacheKey() + "-end";
+  const mesh = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    lit,
+    ENFILADE.zs.length * 3
+  );
+  const dummy = new THREE.Object3D();
+  let index = 0;
+  for (const z of ENFILADE.zs) {
+    dummy.position.set(-(face + open) / 2, height / 2, z);
+    dummy.scale.set(sideW, height, ENFILADE.thickness);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(index++, dummy.matrix);
+    dummy.position.set((face + open) / 2, height / 2, z);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(index++, dummy.matrix);
+    const lintelH = Math.max(0.4, height - ENFILADE.lintelY);
+    dummy.position.set(0, ENFILADE.lintelY + lintelH / 2, z);
+    dummy.scale.set(open * 2, lintelH, ENFILADE.thickness);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(index++, dummy.matrix);
+    dummy.scale.set(sideW, height, ENFILADE.thickness);
+  }
+  mesh.instanceMatrix.needsUpdate = true;
+  mesh.name = "origin-enfilade";
+  scene.add(mesh);
 }
 
 function skyMaterial(mobile) {
@@ -422,10 +464,9 @@ const reflectorShader = {
     void main() {
       #include <logdepthbuf_fragment>
       vec4 base = texture2DProj(tDiffuse, vUv);
-      float fade = smoothstep(22.0, 0.6, vDist);
-      float t = smoothstep(0.2, 3.4, vAbsX);
-      float mirror = mix(0.05, 0.9, t * t) * fade;
-      gl_FragColor = vec4(base.rgb, clamp(mirror, 0.0, 0.9));
+      float fade = smoothstep(26.0, 1.4, vDist);
+      float mirror = 0.22 * fade;
+      gl_FragColor = vec4(base.rgb, mirror);
     }`
 };
 
@@ -509,6 +550,7 @@ export function installOriginRoomLook({
   sky.position.y = 2.2;
   sky.name = "origin-cumulus";
   scene.add(sky);
+  placeEnfilade({THREE, scene, half, height, wallMaterial});
   const clouds = cloudVolume({THREE, mobile});
   scene.add(clouds);
   // Wide overlapping cards. Alpha falls off to the edge, so the shaft has no hard rim.
@@ -566,8 +608,8 @@ export function installOriginRoomLook({
   if (!mobile && floorMesh) {
     const mirror = new Reflector(new THREE.PlaneGeometry(half * 2 + 0.3, length - 0.2), {
       clipBias: 0.003,
-      textureWidth: 2048,
-      textureHeight: 1024,
+      textureWidth: 512,
+      textureHeight: 256,
       color: 0xf3eee6,
       multisample: 0,
       shader: reflectorShader
