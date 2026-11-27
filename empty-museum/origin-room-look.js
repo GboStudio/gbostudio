@@ -18,7 +18,7 @@ import {
   commercialFrameZ,
   wallInnerFaceX
 } from "./origin-room-geometry.mjs";
-import {buildStoneShell, compactWallFrames, mountArchitectureKit, placeWarmHalos} from "./origin-room-build.js?v=20261127j2";
+import {buildStoneShell, compactWallFrames, mountArchitectureKit, placeWarmHalos, placeFrameReflections} from "./origin-room-build.js?v=20261127j3";
 
 export const enabled = true;
 
@@ -177,8 +177,8 @@ ${MARBLE_GLSL}`)
 		diffuseColor.rgb *= mix(0.58, 1.0, clamp(baked, 0.0, 1.0));
 	#endif
 	if (uFloorEdge > 0.5) {
-		float edge = smoothstep(1.1, 3.5, abs(vMarbleWp.x));
-		diffuseColor.rgb *= mix(1.0, 0.78, edge);
+		float slot = 1.0 - smoothstep(0.25, 2.4, abs(vMarbleWp.x));
+		diffuseColor.rgb *= mix(1.0, 0.62, slot);
 	}`
     )
     .replace(
@@ -228,10 +228,10 @@ export function createOriginMaterials({mobile}) {
     rough: canvasPixel(40, 40, 40)
   };
   const gold = new THREE.MeshStandardMaterial({
-    color: 0xd4b15a,
+    color: 0xe2b34a,
     metalness: 1,
-    roughness: 0.28,
-    envMapIntensity: mobile ? 1.2 : 1.85
+    roughness: 0.16,
+    envMapIntensity: mobile ? 1.45 : 2.35
   });
   const wall = marbleMaterial(maps, {
     roughness: 0.46,
@@ -241,11 +241,11 @@ export function createOriginMaterials({mobile}) {
     envMapIntensity: 0.16
   });
   const floor = marbleMaterial(maps, {
-    roughness: mobile ? 0.28 : 0.14,
-    metalness: 0.02,
-    lift: 0.9,
-    roughMix: mobile ? 0.35 : 0.2,
-    envMapIntensity: mobile ? 0.7 : 0.16,
+    roughness: mobile ? 0.55 : 0.72,
+    metalness: 0,
+    lift: 0.7,
+    roughMix: 0.04,
+    envMapIntensity: mobile ? 0.12 : 0.03,
     floorEdge: true
   });
   floor.polygonOffset = true;
@@ -334,8 +334,8 @@ const reflectorShader = {
     #include <logdepthbuf_pars_vertex>
     void main() {
       vUv = textureMatrix * vec4(position, 1.0);
-      vWall = smoothstep(1.1, 3.5, abs(position.x));
-      vOpening = smoothstep(1.7, 0.45, abs(position.x));
+      vWall = smoothstep(0.85, 2.6, abs(position.x));
+      vOpening = smoothstep(1.65, 0.7, abs(position.x));
       vec4 mv = modelViewMatrix * vec4(position, 1.0);
       vDist = length(mv.xyz);
       gl_Position = projectionMatrix * mv;
@@ -358,12 +358,10 @@ const reflectorShader = {
     void main() {
       #include <logdepthbuf_fragment>
       vec4 base = texture2DProj(tDiffuse, vUv);
-      float luma = dot(base.rgb, vec3(0.2126, 0.7152, 0.0722));
-      float sky = smoothstep(0.52, 0.74, luma);
-      float hot = max(sky, vOpening * smoothstep(0.48, 0.70, luma));
-      float fade = smoothstep(8.0, 0.5, vDist);
-      float mirror = mix(0.10, 0.58, vWall) * fade * mix(1.0, 0.0, hot);
-      gl_FragColor = vec4(base.rgb, mirror);
+      float fade = smoothstep(22.0, 0.6, vDist);
+      float mirror = mix(0.4, 0.92, vWall) * fade;
+      if (vOpening > 0.55) mirror = 0.0;
+      gl_FragColor = vec4(base.rgb, clamp(mirror, 0.0, 0.92));
     }`
 };
 
@@ -388,6 +386,10 @@ export function installOriginRoomLook({
     if (!obj.isMesh && !obj.isInstancedMesh) return;
     const material = Array.isArray(obj.material) ? obj.material[0] : obj.material;
     const sign = material?.isMeshBasicMaterial && material.map;
+    if (mobile && obj.userData?.originHideOnMobile) {
+      obj.visible = false;
+      return;
+    }
     if (sign) kept.push(obj);
     else obj.visible = false;
   });
@@ -395,6 +397,7 @@ export function installOriginRoomLook({
 
   buildStoneShell({THREE, architecture, wallMaterial, length, half, height});
   placeWarmHalos({THREE, interactive});
+  if (mobile) placeFrameReflections({THREE, interactive});
   const overlay = document.getElementById("walkOverlay");
   if (overlay) overlay.dataset.originKit = "loading";
   mountArchitectureKit({
@@ -442,20 +445,28 @@ export function installOriginRoomLook({
 
   let reflector = null;
   if (!mobile && floorMesh) {
-    const mirror = new Reflector(new THREE.PlaneGeometry(half * 2 - 0.5, length - 0.4), {
+    const mirror = new Reflector(new THREE.PlaneGeometry(half * 2 + 0.3, length - 0.2), {
       clipBias: 0.003,
-      textureWidth: 1024,
+      textureWidth: 2048,
       textureHeight: 1024,
       color: 0xf3eee6,
       multisample: 0,
       shader: reflectorShader
     });
     mirror.rotateX(-Math.PI / 2);
-    mirror.position.set(0, 0.02, length / 2);
+    // The visible floor slab tops out near y=0.12. The mirror has to sit on that surface.
+    mirror.position.set(0, 0.135, length / 2);
     mirror.renderOrder = 2;
     mirror.material.transparent = true;
     mirror.material.depthWrite = false;
     mirror.name = "origin-floor-mirror";
+    const reflect = mirror.onBeforeRender;
+    mirror.onBeforeRender = function(renderer, scene, camera) {
+      const skyWas = sky.visible;
+      sky.visible = false;
+      reflect.call(this, renderer, scene, camera);
+      sky.visible = skyWas;
+    };
     scene.add(mirror);
     reflector = mirror;
   }

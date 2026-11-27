@@ -147,4 +147,10 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Guillaume : « Oui, lance l'étape 2 : éclairage précalculé et lumière chaude sur les œuvres ». Le jalon 3 (reflet net, cadres ouvragés) n’est pas commencé.
 - `empty-museum/tools/bake_kit_light.py` refait les pièces du kit et cuit, en quelques échantillons Cycles, une atlas WebP sur UV2 : occlusion de contact au pied des volumes et lumière douce venant du dessus. 1024 au bureau, 512 au mobile. Le drapeau `enabled` reste le retour arrière.
 - Un halo chaud instancié éclaire le marbre au-dessus de chaque cadre. Sur mobile, le titre 3D et la ligne d’aide ne se superposent plus au bandeau.
+- État : proposé, non fusionné, non déployé. Le jalon 3 suit dans la même PR.
+
+## Chantier 3D, jalon 3 — reflet net et tache d’entrée — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Oui, lance l'étape 3 : reflet net au sol, zone blanche supprimée et titre mobile corrigé ». Le jalon 4 n’est pas commencé.
+- Au bureau, le miroir planaire est fort près des murs et s’efface avec la distance. L’ouverture du plafond et le ciel en sont exclus. Le marbre du centre d’allée est un peu plus sombre pour ne plus brûler. Sur mobile, un reflet faux instancié remplace le second passage.
+- L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
 - État : proposé, non fusionné, non déployé.

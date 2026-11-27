@@ -307,6 +307,61 @@ export function placeWarmHalos({THREE, interactive}) {
   return mesh;
 }
 
+export function placeFrameReflections({THREE, interactive}) {
+  const previous = interactive.getObjectByName("origin-frame-reflections");
+  if (previous) {
+    interactive.remove(previous);
+    previous.geometry?.dispose();
+  }
+  const nodes = [];
+  for (const child of interactive.children) {
+    if (!child.userData?.wallFrame || !child.userData.w) continue;
+    nodes.push(child);
+  }
+  if (!nodes.length) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = 64;
+  canvas.height = 128;
+  const ctx = canvas.getContext("2d");
+  const fade = ctx.createLinearGradient(0, 0, 0, 128);
+  fade.addColorStop(0, "rgba(226, 179, 74, 0.0)");
+  fade.addColorStop(0.42, "rgba(210, 164, 68, 0.55)");
+  fade.addColorStop(1, "rgba(186, 140, 52, 0.0)");
+  ctx.fillStyle = fade;
+  ctx.fillRect(0, 0, 64, 128);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.MeshBasicMaterial({
+    map: tex,
+    transparent: true,
+    depthWrite: false,
+    toneMapped: true,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2
+  });
+  const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), material, nodes.length);
+  mesh.name = "origin-frame-reflections";
+  mesh.frustumCulled = false;
+  mesh.renderOrder = 2;
+  const pos = new THREE.Vector3();
+  const dummy = new THREE.Object3D();
+  nodes.forEach((node, index) => {
+    node.updateWorldMatrix(true, false);
+    node.getWorldPosition(pos);
+    const side = pos.x < 0 ? -1 : 1;
+    const w = node.userData.w;
+    dummy.position.set(pos.x - side * 0.72, 0.045, pos.z);
+    dummy.rotation.set(-Math.PI / 2, 0, 0);
+    dummy.scale.set(1.15, Math.max(0.55, w * 0.92), 1);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(index, dummy.matrix);
+  });
+  mesh.instanceMatrix.needsUpdate = true;
+  interactive.add(mesh);
+  return mesh;
+}
+
 export function mountArchitectureKit({
   THREE, architecture, wallMaterial, length, half, height, mobile, trackMarble
 }) {

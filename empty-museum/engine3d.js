@@ -20,7 +20,7 @@ import {
   commercialFrameZ,
   FRAME,
   LEGACY_FRAME_SIZE_M
-} from "./origin-room-look.js?v=20261127j2";
+} from "./origin-room-look.js?v=20261127j3";
 import {
   slideVisitor,
   separateVisitor,
@@ -282,6 +282,8 @@ import {
   const inscription=new THREE.MeshBasicMaterial({map:portalInk,transparent:true,depthWrite:false,side:THREE.DoubleSide});
   const portalFront=surface(portalSign,3.95,.61,inscription,0,0,-.067,Math.PI);
   portalFront.renderOrder=3;
+  // The HUD already carries the name. On a phone the engraved line sits behind it.
+  if(mobile) portalFront.userData.originHideOnMobile=true;
   // Optional real Cycles light-baked architectural entrance: V3 remains usable
   // until the generated GLB has been verified and downloaded.
   // Loading stays asynchronous; the visitor can already explore the V3
