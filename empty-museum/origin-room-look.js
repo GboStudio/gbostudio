@@ -277,6 +277,85 @@ export function createOriginMaterials({mobile}) {
   };
 }
 
+function cloudVolume({THREE, mobile}) {
+  // Camera-facing puffs at several depths. Parallax comes from the spacing.
+  // Four noise octaves on one instanced draw; mobile uses fewer puffs.
+  const puffs = mobile
+    ? [[0, 5.7, 5.2, 3.6], [-0.35, 5.95, 8, 3.2], [0.4, 5.5, 11, 3.8], [0, 5.85, 15, 3.4], [-0.25, 5.6, 20, 3.5], [0.2, 5.9, 26, 3.2]]
+    : [[-0.15, 5.85, 3.6, 4.2], [0.35, 5.5, 5.2, 3.8], [-0.45, 6.0, 6.8, 3.6], [0.1, 5.4, 8.4, 4.4],
+      [0.5, 5.8, 10.2, 3.4], [-0.3, 6.05, 11.6, 3.8], [0.15, 5.45, 13.4, 4.2], [-0.5, 5.75, 15.2, 3.6],
+      [0.4, 5.95, 17, 3.5], [-0.1, 5.5, 19.2, 4.3], [0.3, 6.0, 22, 3.4], [-0.4, 5.7, 25, 3.8],
+      [0.05, 5.55, 28, 4.0], [0.45, 5.9, 32, 3.3], [-0.2, 5.65, 36, 3.7]];
+  const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    depthTest: true,
+    toneMapped: true,
+    fog: false,
+    vertexShader: `
+      varying vec2 vUv;
+      varying float vSeed;
+      void main() {
+        vec3 center = (modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+        float size = length((instanceMatrix * vec4(1.0, 0.0, 0.0, 0.0)).xyz);
+        vec3 right = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
+        vec3 up = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
+        vec3 world = center + right * position.x * size + up * position.y * size;
+        vUv = uv;
+        vSeed = center.z * 0.37 + center.x * 1.7;
+        gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec2 vUv;
+      varying float vSeed;
+      float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+      }
+      float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        float a = hash(i);
+        float b = hash(i + vec2(1.0, 0.0));
+        float c = hash(i + vec2(0.0, 1.0));
+        float d = hash(i + vec2(1.0, 1.0));
+        return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+      }
+      void main() {
+        vec2 uv = vUv - 0.5;
+        float n = 0.0;
+        float amp = 0.5;
+        vec2 p = uv * 3.1 + vSeed;
+        for (int i = 0; i < 4; i++) {
+          n += amp * noise(p);
+          p *= 2.05;
+          amp *= 0.5;
+        }
+        float warp = noise(uv * 2.2 + vSeed) * 0.16;
+        float body = 1.0 - smoothstep(0.12, 0.50, length(uv) - warp);
+        float alpha = body * smoothstep(0.32, 0.68, n);
+        if (alpha < 0.02) discard;
+        float light = clamp(uv.y * 1.6 + 0.62, 0.0, 1.0);
+        vec3 col = mix(vec3(0.68, 0.71, 0.74), vec3(1.0, 0.99, 0.97), light);
+        gl_FragColor = vec4(col, alpha * 0.82);
+      }
+    `
+  }), puffs.length);
+  const dummy = new THREE.Object3D();
+  puffs.forEach(([x, y, z, size], index) => {
+    dummy.position.set(x, y, z);
+    dummy.scale.set(size, size, 1);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(index, dummy.matrix);
+  });
+  mesh.instanceMatrix.needsUpdate = true;
+  mesh.frustumCulled = false;
+  mesh.renderOrder = 0;
+  mesh.name = "origin-cloud-volume";
+  return mesh;
+}
+
 function skyMaterial(mobile) {
   const material = new THREE.MeshBasicMaterial({
     color: 0xb7cbe4,
@@ -430,6 +509,8 @@ export function installOriginRoomLook({
   sky.position.y = 2.2;
   sky.name = "origin-cumulus";
   scene.add(sky);
+  const clouds = cloudVolume({THREE, mobile});
+  scene.add(clouds);
   // Wide overlapping cards. Alpha falls off to the edge, so the shaft has no hard rim.
   const shaft = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({
     transparent: true,
@@ -502,11 +583,14 @@ export function installOriginRoomLook({
     mirror.onBeforeRender = function(renderer, scene, camera) {
       const skyWas = sky.visible;
       const shaftWas = shaft.visible;
+      const cloudsWere = clouds.visible;
       sky.visible = false;
       shaft.visible = false;
+      clouds.visible = false;
       reflect.call(this, renderer, scene, camera);
       sky.visible = skyWas;
       shaft.visible = shaftWas;
+      clouds.visible = cloudsWere;
     };
     scene.add(mirror);
     reflector = mirror;

@@ -155,6 +155,10 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
 - État : proposé, non fusionné, non déployé.
 
+## Nuages en volume — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Pas encore, lance d'abord les nuages en volume 3D ». Devant la photo CC0, des sprites de cumulus (bruit, un seul appel instancié) occupent l’ouverture à plusieurs profondeurs. Le mobile en a moins. Ils sont exclus du miroir, comme le dôme et le rayon.
+- État : proposé, non fusionné, non déployé.
+
 ## Ciel plus clair et titre 3D retiré — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
 - Guillaume : « Oui encore mieux allez ». Même ciel CC0 Kloofendal, éclairci et désaturé pour que l’ouverture soit un cumulus blanc plutôt qu’une bande bleue. Le rayon est plus large et plus diffus. L’inscription 3D « THE UNREAL MUSEUM » (portail et panneau flottant) est cachée dans cet essai, y compris dans le miroir, parce qu’elle se lisait à l’envers. Le titre HTML reste.
 - État : proposé, non fusionné, non déployé.

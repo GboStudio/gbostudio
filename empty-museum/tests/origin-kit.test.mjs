@@ -105,8 +105,10 @@ test('the ceiling opening uses the CC0 Kloofendal sky, kept out of the floor mir
   assert.match(look, /originHideInscription/);
   assert.match(read('engine3d.js'), /originHideInscription/);
   assert.match(look, /origin-light-shaft/);
+  assert.match(look, /origin-cloud-volume/);
   assert.match(look, /sky\.visible = false/);
   assert.match(look, /shaft\.visible = false/);
+  assert.match(look, /clouds\.visible = false/);
   const credits = read('assets/sky/CREDITS.md');
   assert.match(credits, /kloofendal_48d_partly_cloudy_puresky/);
   assert.match(credits, /CC0/);
