@@ -287,12 +287,12 @@ function skyMaterial(mobile) {
   });
   const size = mobile ? "1k" : "2k";
   const loader = new THREE.TextureLoader();
-  loader.load("./assets/sky/kloofendal-48d-" + size + ".jpg", tex => {
+  loader.load("./assets/sky/kloofendal-48d-" + size + ".jpg?v=20261127j6", tex => {
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
-    // Shift the sun out of the ceiling slot so the opening shows cumulus.
-    tex.offset.x = 0.18;
+    // Face the cloudiest longitude (+Z is texture u 0.25 before this offset).
+    tex.offset.x = 0.27;
     tex.needsUpdate = true;
     material.map = tex;
     material.needsUpdate = true;
@@ -371,7 +371,9 @@ export function installOriginRoomLook({
     if (!obj.isMesh && !obj.isInstancedMesh) return;
     const material = Array.isArray(obj.material) ? obj.material[0] : obj.material;
     const sign = material?.isMeshBasicMaterial && material.map;
-    if (mobile && obj.userData?.originHideOnMobile) {
+    // Portal and welcome titles are double-sided. From above, or in the floor
+    // mirror, they read backwards. The HTML title stays.
+    if (obj.userData?.originHideInscription || (mobile && obj.userData?.originHideOnMobile)) {
       obj.visible = false;
       return;
     }
@@ -428,8 +430,7 @@ export function installOriginRoomLook({
   sky.position.y = 2.2;
   sky.name = "origin-cumulus";
   scene.add(sky);
-  // Crossed cards: faces down the hall, and sheets under the slot for the look-up.
-  // A hollow box was invisible from inside the opening (front faces culled).
+  // Wide overlapping cards. Alpha falls off to the edge, so the shaft has no hard rim.
   const shaft = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
@@ -451,27 +452,26 @@ export function installOriginRoomLook({
       varying vec2 vUv;
       varying float vHeight;
       void main() {
-        float across = 1.0 - smoothstep(0.02, 0.46, abs(vUv.x - 0.5));
-        float along = 1.0 - smoothstep(0.08, 0.5, abs(vUv.y - 0.5));
-        float down = smoothstep(1.85, 3.8, vHeight);
-        float alpha = across * along * down * 0.55;
-        if (alpha < 0.012) discard;
-        gl_FragColor = vec4(1.0, 0.97, 0.88, alpha);
+        float across = 1.0 - smoothstep(0.0, 0.5, abs(vUv.x - 0.5));
+        float along = 1.0 - smoothstep(0.0, 0.5, abs(vUv.y - 0.5));
+        float down = smoothstep(3.0, 5.6, vHeight);
+        float alpha = across * across * along * along * down * 0.22;
+        gl_FragColor = vec4(1.0, 0.99, 0.96, alpha);
       }
     `
-  }), 9);
+  }), 11);
   const card = new THREE.Object3D();
-  [3.4, 8.5, 15, 24, 36].forEach((z, index) => {
-    card.position.set(0, 4.2, z);
+  [4.2, 10, 18, 28, 40].forEach((z, index) => {
+    card.position.set(0, 4.55, z);
     card.rotation.set(0, 0, 0);
-    card.scale.set(1.65, 4.4, 1);
+    card.scale.set(2.9, 4.6, 1);
     card.updateMatrix();
     shaft.setMatrixAt(index, card.matrix);
   });
-  [[7, 5.45], [16, 4.85], [27, 4.2], [38, 3.55]].forEach(([z, y], index) => {
+  [[6, 5.75], [12, 5.35], [18, 4.95], [26, 4.5], [34, 4.05], [42, 3.6]].forEach(([z, y], index) => {
     card.position.set(0, y, z);
     card.rotation.set(-Math.PI / 2, 0, 0);
-    card.scale.set(1.5, 8, 1);
+    card.scale.set(2.8, 11, 1);
     card.updateMatrix();
     shaft.setMatrixAt(5 + index, card.matrix);
   });

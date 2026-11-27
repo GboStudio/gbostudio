@@ -102,6 +102,8 @@ test('the ceiling opening uses the CC0 Kloofendal sky, kept out of the floor mir
   const look = read('origin-room-look.js');
   assert.match(look, /assets\/sky\/kloofendal-48d-/);
   assert.match(look, /mobile \? "1k" : "2k"/);
+  assert.match(look, /originHideInscription/);
+  assert.match(read('engine3d.js'), /originHideInscription/);
   assert.match(look, /origin-light-shaft/);
   assert.match(look, /sky\.visible = false/);
   assert.match(look, /shaft\.visible = false/);

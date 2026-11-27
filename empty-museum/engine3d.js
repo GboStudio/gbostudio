@@ -20,7 +20,7 @@ import {
   commercialFrameZ,
   FRAME,
   LEGACY_FRAME_SIZE_M
-} from "./origin-room-look.js?v=20261127j5b";
+} from "./origin-room-look.js?v=20261127j6";
 import {
   slideVisitor,
   separateVisitor,
@@ -282,10 +282,10 @@ import {
   const inscription=new THREE.MeshBasicMaterial({map:portalInk,transparent:true,depthWrite:false,side:THREE.DoubleSide});
   const portalFront=surface(portalSign,3.95,.61,inscription,0,0,-.067,Math.PI);
   portalFront.renderOrder=3;
-  // The HUD already carries the name. On a phone the engraved line sits behind it.
-  if(mobile){
-    portalFront.userData.originHideOnMobile=true;
-  }
+  // The HUD already carries the name. The marble look hides this plane on every
+  // device: it is double-sided, so looking up or into the floor mirror shows it reversed.
+  portalFront.userData.originHideInscription=true;
+  if(mobile) portalFront.userData.originHideOnMobile=true;
   // Optional real Cycles light-baked architectural entrance: V3 remains usable
   // until the generated GLB has been verified and downloaded.
   // Loading stays asynchronous; the visitor can already explore the V3
@@ -325,6 +325,7 @@ import {
     new THREE.MeshBasicMaterial({map:stamp,transparent:true,side:THREE.DoubleSide,depthWrite:false}),
     0,mobile?1.22:4.80,mobile?8.6:7.9,Math.PI);
   welcome.renderOrder=4;
+  welcome.userData.originHideInscription=true;
   if(mobile) welcome.userData.originHideOnMobile=true;
 
   // Materials for artworks are produced at runtime; uploaded images remain visible.
