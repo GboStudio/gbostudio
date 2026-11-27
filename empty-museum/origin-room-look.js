@@ -18,7 +18,7 @@ import {
   commercialFrameZ,
   wallInnerFaceX
 } from "./origin-room-geometry.mjs";
-import {buildStoneShell, compactWallFrames, mountArchitectureKit} from "./origin-room-build.js?v=20261127j1";
+import {buildStoneShell, compactWallFrames, mountArchitectureKit, placeWarmHalos} from "./origin-room-build.js?v=20261127j2";
 
 export const enabled = true;
 
@@ -131,13 +131,14 @@ vec3 marbleTri(sampler2D tex, vec3 p, vec3 n){
 }
 `;
 
-function marbleShader(shader, maps, lift, roughMix) {
+function marbleShader(shader, maps, lift, roughMix, floorEdge) {
   shader.uniforms.uMarbleLift = {value: lift};
   shader.uniforms.uMarbleScale = {value: 0.22};
   shader.uniforms.uMarbleMap = {value: maps.color};
   shader.uniforms.uMarbleNor = {value: maps.normal};
   shader.uniforms.uMarbleRough = {value: maps.rough};
   shader.uniforms.uRoughMix = {value: roughMix};
+  shader.uniforms.uFloorEdge = {value: floorEdge};
   shader.vertexShader = shader.vertexShader
     .replace("#include <common>", "#include <common>\nvarying vec3 vMarbleWp;\nvarying vec3 vMarbleN;")
     .replace("#include <begin_vertex>", `#include <begin_vertex>
@@ -156,6 +157,7 @@ varying vec3 vMarbleN;
 uniform float uMarbleLift;
 uniform float uMarbleScale;
 uniform float uRoughMix;
+uniform float uFloorEdge;
 uniform sampler2D uMarbleMap;
 uniform sampler2D uMarbleNor;
 uniform sampler2D uMarbleRough;
@@ -169,7 +171,15 @@ ${MARBLE_GLSL}`)
 	float vein = smoothstep(0.80, 0.52, lum);
 	alb = mix(alb, warm, 0.12);
 	alb = mix(alb, alb * vec3(0.62, 0.64, 0.66), vein * 0.55);
-	diffuseColor.rgb = alb * uMarbleLift;`
+	diffuseColor.rgb = alb * uMarbleLift;
+	#ifdef USE_LIGHTMAP
+		float baked = dot(texture2D(lightMap, vLightMapUv).rgb, vec3(0.333));
+		diffuseColor.rgb *= mix(0.58, 1.0, clamp(baked, 0.0, 1.0));
+	#endif
+	if (uFloorEdge > 0.5) {
+		float edge = smoothstep(1.1, 3.5, abs(vMarbleWp.x));
+		diffuseColor.rgb *= mix(1.0, 0.78, edge);
+	}`
     )
     .replace(
       "#include <roughnessmap_fragment>",
@@ -186,7 +196,7 @@ ${MARBLE_GLSL}`)
   return shader;
 }
 
-function marbleMaterial(maps, {roughness, metalness, lift, roughMix, envMapIntensity}) {
+function marbleMaterial(maps, {roughness, metalness, lift, roughMix, envMapIntensity, floorEdge}) {
   const material = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     roughness,
@@ -194,9 +204,9 @@ function marbleMaterial(maps, {roughness, metalness, lift, roughMix, envMapInten
     envMapIntensity
   });
   material.onBeforeCompile = shader => {
-    material.userData.shader = marbleShader(shader, maps, lift, roughMix);
+    material.userData.shader = marbleShader(shader, maps, lift, roughMix, floorEdge ? 1 : 0);
   };
-  material.customProgramCacheKey = () => "origin-marble-j1-" + lift + "-" + roughMix;
+  material.customProgramCacheKey = () => "origin-marble-j2-" + lift + "-" + roughMix + "-" + (floorEdge ? 1 : 0);
   return material;
 }
 
@@ -235,11 +245,13 @@ export function createOriginMaterials({mobile}) {
     metalness: 0.02,
     lift: 0.9,
     roughMix: mobile ? 0.35 : 0.2,
-    envMapIntensity: mobile ? 0.7 : 0.16
+    envMapIntensity: mobile ? 0.7 : 0.16,
+    floorEdge: true
   });
   floor.polygonOffset = true;
   floor.polygonOffsetFactor = 1;
   floor.polygonOffsetUnits = 1;
+  const tracked = [wall, floor];
   const size = mobile ? "1k" : "2k";
   const stem = "./assets/marble/marble019-";
   Promise.all([
@@ -250,11 +262,19 @@ export function createOriginMaterials({mobile}) {
     if (color) maps.color = color;
     if (normal) maps.normal = normal;
     if (rough) maps.rough = rough;
-    pushMarble([wall, floor], maps);
+    pushMarble(tracked, maps);
     const overlay = document.getElementById("walkOverlay");
     if (overlay) overlay.dataset.originMarble = color && normal && rough ? "ready" : "fallback";
   });
-  return {gold, wall, floor};
+  return {
+    gold,
+    wall,
+    floor,
+    track(material) {
+      tracked.push(material);
+      if (material.userData.shader) pushMarble([material], maps);
+    }
+  };
 }
 
 function skyMaterial() {
@@ -357,7 +377,7 @@ function isFlutedBay(mesh) {
 export function installOriginRoomLook({
   scene, architecture, floorMesh, physicalGallery, mobile,
   half, height, length, museumArtDirection, wallMaterial, floorMaterial,
-  interactive, gold, bare
+  interactive, gold, bare, trackMarble
 }) {
   if (physicalGallery?.tiles) physicalGallery.tiles.visible = false;
   if (physicalGallery?.mortar) physicalGallery.mortar.visible = false;
@@ -374,9 +394,13 @@ export function installOriginRoomLook({
   for (const sign of kept) sign.visible = true;
 
   buildStoneShell({THREE, architecture, wallMaterial, length, half, height});
+  placeWarmHalos({THREE, interactive});
   const overlay = document.getElementById("walkOverlay");
   if (overlay) overlay.dataset.originKit = "loading";
-  mountArchitectureKit({THREE, architecture, wallMaterial, length, half, height}).then(info => {
+  mountArchitectureKit({
+    THREE, architecture, wallMaterial, length, half, height, mobile,
+    trackMarble
+  }).then(info => {
     if (overlay) overlay.dataset.originKit = info.ready ? "ready" : "fallback";
   }).catch(error => {
     console.warn("[TEM] Architecture kit failed; box stand-ins remain", error);

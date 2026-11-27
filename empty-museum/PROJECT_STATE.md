@@ -142,3 +142,9 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - Marble012 est remplacé par Marble019 (ambientCG, CC0), le blanc veiné de gris le plus clair du comparatif. 2K bureau, 1K mobile. Crédit : `empty-museum/assets/marble/CREDITS.md`.
 - Le shader du miroir atténue le ciel au centre. La tache blanche à l’entrée reste visible sur les captures : le reflet net des cadres et cette tache restent le jalon 3.
 - État : proposé, non fusionné, non déployé. La validation visuelle de Guillaume reste ouverte.
+
+## Chantier 3D, jalon 2 — lumière précalculée et halo chaud — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Oui, lance l'étape 2 : éclairage précalculé et lumière chaude sur les œuvres ». Le jalon 3 (reflet net, cadres ouvragés) n’est pas commencé.
+- `empty-museum/tools/bake_kit_light.py` refait les pièces du kit et cuit, en quelques échantillons Cycles, une atlas WebP sur UV2 : occlusion de contact au pied des volumes et lumière douce venant du dessus. 1024 au bureau, 512 au mobile. Le drapeau `enabled` reste le retour arrière.
+- Un halo chaud instancié éclaire le marbre au-dessus de chaque cadre. Sur mobile, le titre 3D et la ligne d’aide ne se superposent plus au bandeau.
+- État : proposé, non fusionné, non déployé.

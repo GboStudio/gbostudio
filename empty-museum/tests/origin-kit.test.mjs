@@ -89,4 +89,11 @@ test('the kit replaces stand-ins without moving the colliders, behind the rollba
     }
   }
   assert.equal(existsSync(new URL('assets/marble/marble012-color-2k.jpg', root)), false);
+  assert.ok(existsSync(new URL('assets/kit/origin-kit-light.webp', root)));
+  assert.ok(existsSync(new URL('assets/kit/origin-kit-light-512.webp', root)));
+  const light = JSON.parse(read('assets/kit/origin-kit-light.json'));
+  assert.equal(light.uv, 'UV2');
+  assert.deepEqual(light.cells.pilaster, [0.02, 0.52, 0.46, 0.46]);
+  assert.match(build, /placeWarmHalos/);
+  assert.match(read('tools/bake_kit_light.py'), /cycles\.samples/);
 });

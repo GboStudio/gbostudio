@@ -20,7 +20,7 @@ import {
   commercialFrameZ,
   FRAME,
   LEGACY_FRAME_SIZE_M
-} from "./origin-room-look.js?v=20261127j1";
+} from "./origin-room-look.js?v=20261127j2";
 import {
   slideVisitor,
   separateVisitor,
@@ -43,7 +43,7 @@ import {
   mobileStyle.rel="stylesheet";mobileStyle.href="./museum-mobile-v12.css?v=20261104c";
   document.head.appendChild(mobileStyle);
   const mobileCompactStyle=document.createElement("link");
-  mobileCompactStyle.rel="stylesheet";mobileCompactStyle.href="./museum-mobile-v13.css?v=20261106exit1";
+  mobileCompactStyle.rel="stylesheet";mobileCompactStyle.href="./museum-mobile-v13.css?v=20261127j2";
   document.head.appendChild(mobileCompactStyle);
   const dualStickStyle=document.createElement("link");
   dualStickStyle.rel="stylesheet";dualStickStyle.href="./dual-joystick-v1.css?v=20261109dualstick2";
@@ -264,7 +264,7 @@ import {
   // Signature architectural inscription: embedded into the very first portal,
   // not an on-screen graphic. White stone, hairline bronze and engraved text.
   const portalSign=new THREE.Group();
-  portalSign.position.set(0,5.00,4.18);
+  portalSign.position.set(0,mobile?2.25:5.00,mobile?7.2:4.18);
   architecture.add(portalSign);
   box(portalSign,4.12,.69,.105,plinthMat,0,0,0,true);
   box(portalSign,4.16,.018,.125,brass,0,.35,0);
@@ -273,13 +273,11 @@ import {
     g.clearRect(0,0,w,h);
     g.textAlign="center";
     g.fillStyle="#75654b";
-    g.font="56px Georgia, serif";
-    g.letterSpacing="3px";
-    g.fillText("THE UNREAL MUSEUM",w/2,104);
+    g.font="52px Georgia, serif";
+    g.fillText("THE UNREAL MUSEUM",w/2,96);
     g.fillStyle="#a69b88";
-    g.font="22px Arial, sans-serif";
-    g.letterSpacing="5px";
-    g.fillText("A PLACE FOR WHAT WE CREATE",w/2,156);
+    g.font="20px Arial, sans-serif";
+    g.fillText("A PLACE FOR WHAT WE CREATE",w/2,148);
   },1024,256);
   const inscription=new THREE.MeshBasicMaterial({map:portalInk,transparent:true,depthWrite:false,side:THREE.DoubleSide});
   const portalFront=surface(portalSign,3.95,.61,inscription,0,0,-.067,Math.PI);
@@ -313,15 +311,15 @@ import {
   }
   const stamp=canvasTexture((g,w,h)=>{
     g.clearRect(0,0,w,h);g.fillStyle="#252823";
-    g.font="400 83px Georgia";g.textAlign="center";g.fillText("THE UNREAL MUSEUM",w/2,176);
-    g.fillStyle="#88867f";g.font="600 24px Arial";g.letterSpacing="6px";g.fillText("A SPACE FOR WHAT WE CREATE",w/2,260);
-    g.fillStyle="#aa9d86";g.fillRect(w/2-35,300,70,2);
-  },1280,420);
-  // Physically scaled entrance signage: preserve its entire silhouette on
-  // a narrow portrait phone, instead of cropping enormous black letters.
-  const welcome=surface(architecture,mobile?3.05:5.2,mobile?1.00:1.70,
+    g.font="400 72px Georgia";g.textAlign="center";g.fillText("THE UNREAL MUSEUM",w/2,150);
+    g.fillStyle="#6f6d66";g.font="600 22px Arial";g.fillText("A SPACE FOR WHAT WE CREATE",w/2,214);
+    g.fillStyle="#aa9d86";g.fillRect(w/2-28,248,56,2);
+  },1280,360);
+  // On a phone the sign used to sit in the same band as the on-screen title
+  // and the control hint. Keep both lines, lower and smaller, clear of that band.
+  const welcome=surface(architecture,mobile?2.35:5.2,mobile?0.62:1.55,
     new THREE.MeshBasicMaterial({map:stamp,transparent:true,side:THREE.DoubleSide,depthWrite:false}),
-    0,4.80,7.9,Math.PI);
+    0,mobile?1.22:4.80,mobile?8.6:7.9,Math.PI);
   welcome.renderOrder=4;
 
   // Materials for artworks are produced at runtime; uploaded images remain visible.
@@ -812,7 +810,8 @@ import {
         scene,architecture,floorMesh,physicalGallery,mobile,
         half:HALF,height:HEIGHT,length:LENGTH,museumArtDirection,
         wallMaterial:originMats.wall,floorMaterial:originMats.floor,
-        interactive,gold:originMats.gold,bare:modularBareMat
+        interactive,gold:originMats.gold,bare:modularBareMat,
+        trackMarble:originMats.track
       });
       originSync=look.sync;
       originCompact=()=>{

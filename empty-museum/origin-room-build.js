@@ -228,14 +228,105 @@ function againstWall(dummy, side, face, y, z, scaleZ = 1) {
   dummy.scale.set(1, 1, scaleZ);
 }
 
+const LIGHT_CELLS = {
+  pilaster: [0.02, 0.52, 0.46, 0.46],
+  plinth: [0.52, 0.52, 0.46, 0.46],
+  cornice: [0.02, 0.27, 0.46, 0.22],
+  "panel-wide": [0.52, 0.27, 0.46, 0.22],
+  "panel-narrow": [0.02, 0.02, 0.46, 0.22],
+  bench: [0.52, 0.02, 0.46, 0.22]
+};
+
+function litMaterial(THREE, wallMaterial, lightMap, cell, trackMarble) {
+  const material = wallMaterial.clone();
+  const map = lightMap.clone();
+  map.channel = 2;
+  map.flipY = false;
+  map.wrapS = map.wrapT = THREE.ClampToEdgeWrapping;
+  map.offset.set(cell[0], cell[1]);
+  map.repeat.set(cell[2], cell[3]);
+  map.needsUpdate = true;
+  material.lightMap = map;
+  material.lightMapIntensity = 0;
+  if (trackMarble) trackMarble(material);
+  return material;
+}
+
+export function placeWarmHalos({THREE, interactive}) {
+  const previous = interactive.getObjectByName("origin-warm-halos");
+  if (previous) {
+    interactive.remove(previous);
+    previous.geometry?.dispose();
+  }
+  const nodes = [];
+  for (const child of interactive.children) {
+    if (!child.userData?.wallFrame || !child.userData.w) continue;
+    nodes.push(child);
+  }
+  if (!nodes.length) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext("2d");
+  const glow = ctx.createRadialGradient(64, 58, 6, 64, 64, 64);
+  glow.addColorStop(0, "rgba(255, 214, 156, 0.95)");
+  glow.addColorStop(0.42, "rgba(255, 186, 112, 0.42)");
+  glow.addColorStop(1, "rgba(255, 170, 96, 0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.MeshBasicMaterial({
+    map: tex,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false
+  });
+  const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), material, nodes.length);
+  mesh.name = "origin-warm-halos";
+  mesh.frustumCulled = false;
+  mesh.renderOrder = 3;
+  const dummy = new THREE.Object3D();
+  const local = new THREE.Object3D();
+  nodes.forEach((node, index) => {
+    node.updateWorldMatrix(true, false);
+    const w = node.userData.w;
+    const h = node.userData.h;
+    local.position.set(0, h * 0.62, 0.045);
+    local.rotation.set(0, 0, 0);
+    local.scale.set(Math.max(0.7, w * 1.5), Math.max(0.55, h * 1.15), 1);
+    local.updateMatrix();
+    dummy.matrix.copy(node.matrixWorld).multiply(local.matrix);
+    dummy.matrix.decompose(dummy.position, dummy.quaternion, dummy.scale);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(index, dummy.matrix);
+  });
+  mesh.instanceMatrix.needsUpdate = true;
+  interactive.add(mesh);
+  return mesh;
+}
+
 export function mountArchitectureKit({
-  THREE, architecture, wallMaterial, length, half, height
+  THREE, architecture, wallMaterial, length, half, height, mobile, trackMarble
 }) {
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
+  const lightName = mobile ? "origin-kit-light-512.webp" : "origin-kit-light.webp";
+  const lightMap = new Promise(resolve => {
+    new THREE.TextureLoader().load("./assets/kit/" + lightName, tex => {
+      tex.colorSpace = THREE.NoColorSpace;
+      tex.flipY = false;
+      tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+      tex.anisotropy = 4;
+      tex.needsUpdate = true;
+      resolve(tex);
+    }, undefined, () => resolve(null));
+  });
   return new Promise((resolve, reject) => {
     loader.load(KIT_URL, gltf => {
-      try {
+      lightMap.then(baked => {
+        try {
         const posts = pilasterLayout({half, length, bays: 38});
         const benches = benchLayout(length);
         const spans = panelSpans(posts);
@@ -243,9 +334,12 @@ export function mountArchitectureKit({
         const narrow = spans.filter(span => !span.wide);
         const modules = Math.max(1, Math.ceil(length / PLINTH_MODULE));
         const geom = name => kitGeometry(THREE, gltf.scene, name);
+        const materialFor = name => baked && LIGHT_CELLS[name]
+          ? litMaterial(THREE, wallMaterial, baked, LIGHT_CELLS[name], trackMarble)
+          : wallMaterial;
         const meshes = [];
         const run = (geometry, name) => {
-          const mesh = stampKit(THREE, geometry, wallMaterial, modules * 2, (dummy, index) => {
+          const mesh = stampKit(THREE, geometry, materialFor(name), modules * 2, (dummy, index) => {
             const side = index < modules ? -1 : 1;
             const slot = index % modules;
             const remain = slot === modules - 1 ? length - (modules - 1) * PLINTH_MODULE : PLINTH_MODULE;
@@ -258,7 +352,7 @@ export function mountArchitectureKit({
         run(geom("plinth"), "plinth");
         run(geom("cornice"), "cornice");
         if (posts.length) {
-          const mesh = stampKit(THREE, geom("pilaster"), wallMaterial, posts.length, (dummy, index) => {
+          const mesh = stampKit(THREE, geom("pilaster"), materialFor("pilaster"), posts.length, (dummy, index) => {
             const post = posts[index];
             againstWall(dummy, post.side, wallInnerFaceX(post.side, half), 0, post.z);
           });
@@ -267,7 +361,7 @@ export function mountArchitectureKit({
         }
         const placePanels = (list, geometry, name) => {
           if (!list.length) return;
-          const mesh = stampKit(THREE, geometry, wallMaterial, list.length, (dummy, index) => {
+          const mesh = stampKit(THREE, geometry, materialFor(name), list.length, (dummy, index) => {
             const span = list[index];
             againstWall(dummy, span.side, wallInnerFaceX(span.side, half), PANEL_Y, span.z);
           });
@@ -277,7 +371,7 @@ export function mountArchitectureKit({
         placePanels(wide, geom("panel-wide"), "panel-wide");
         placePanels(narrow, geom("panel-narrow"), "panel-narrow");
         if (benches.length) {
-          const mesh = stampKit(THREE, geom("bench"), wallMaterial, benches.length, (dummy, index) => {
+          const mesh = stampKit(THREE, geom("bench"), materialFor("bench"), benches.length, (dummy, index) => {
             const bench = benches[index];
             dummy.position.set(bench.x, 0, bench.z);
           });
@@ -286,10 +380,11 @@ export function mountArchitectureKit({
         }
         removeStandIns(architecture);
         for (const mesh of meshes) architecture.add(mesh);
-        resolve({ready: true, pieces: meshes.length});
-      } catch (error) {
-        reject(error);
-      }
+        resolve({ready: true, pieces: meshes.length, lightmap: Boolean(baked)});
+        } catch (error) {
+          reject(error);
+        }
+      }).catch(reject);
     }, undefined, reject);
   });
 }
