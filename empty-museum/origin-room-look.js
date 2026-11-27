@@ -20,7 +20,8 @@ import {
   commercialFrameZ,
   wallInnerFaceX
 } from "./origin-room-geometry.mjs";
-import {buildStoneShell, compactWallFrames, mountArchitectureKit, mountOrnateFrames, placeWarmHalos, placeFrameReflections} from "./origin-room-build.js?v=20261127j4";
+import { HALL_END_Z, canDecorateSlot } from "./origin-hall-layout.mjs";
+import {buildStoneShell, compactWallFrames, mountArchitectureKit, mountOrnateFrames, placeWarmHalos, placeFrameReflections} from "./origin-room-build.js?v=20261127j12";
 
 export const enabled = true;
 
@@ -344,7 +345,7 @@ function cloudVolume({THREE, mobile}) {
         float warp = noise(uv * 2.2 + vSeed) * 0.16;
         float body = 1.0 - smoothstep(0.08, 0.42, length(uv) - warp);
         float alpha = body * smoothstep(0.32, 0.68, n);
-        float slot = smoothstep(1.52, 1.05, abs(vWorld.x));
+        float slot = smoothstep(2.18, 1.45, abs(vWorld.x));
         alpha *= slot * slot;
         if (alpha < 0.02) discard;
         float light = clamp(uv.y * 1.6 + 0.62, 0.0, 1.0);
@@ -367,17 +368,29 @@ function cloudVolume({THREE, mobile}) {
   return mesh;
 }
 
-function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile}) {
+function adoptMarble(mat, source, trackMarble) {
+  mat.onBeforeCompile = shader => {
+    const previous = source.userData.shader;
+    source.onBeforeCompile(shader);
+    mat.userData.shader = source.userData.shader;
+    source.userData.shader = previous;
+    if (trackMarble) trackMarble(mat);
+  };
+}
+
+function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile, trackMarble}) {
   const face = wallInnerFaceX(1, half);
   const open = ENFILADE.opening / 2;
   const zs = mobile ? ENFILADE.zs.slice(0, 1) : ENFILADE.zs;
-  const joint = new THREE.MeshStandardMaterial({color: 0xe6e2da, roughness: 0.72, metalness: 0});
+  const joint = wallMaterial.clone();
+  joint.customProgramCacheKey = () => wallMaterial.customProgramCacheKey() + "-joint";
+  adoptMarble(joint, wallMaterial, trackMarble);
   const backing = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), joint, zs.length * 3);
   const slabs = [];
   const dummy = new THREE.Object3D();
   let index = 0;
   const pushSlab = (x, y, z, w, h) => {
-    const gap = 0.02;
+    const gap = 0.008;
     slabs.push({x, y, z: z - ENFILADE.thickness / 2 - 0.018, w: Math.max(0.2, w - gap), h: Math.max(0.2, h - gap)});
   };
   const fill = (x0, x1, y0, y1, z) => {
@@ -417,8 +430,9 @@ function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile}) {
   scene.add(backing);
   const slabMat = wallMaterial.clone();
   slabMat.emissive = new THREE.Color(0xfff7ef);
-  slabMat.emissiveIntensity = mobile ? 0.18 : 0.05;
+  slabMat.emissiveIntensity = mobile ? 0.08 : 0.03;
   slabMat.customProgramCacheKey = () => wallMaterial.customProgramCacheKey() + "-slab";
+  adoptMarble(slabMat, wallMaterial, trackMarble);
   const faces = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), slabMat, slabs.length);
   slabs.forEach((slab, slabIndex) => {
     dummy.position.set(slab.x, slab.y, slab.z);
@@ -528,7 +542,7 @@ const reflectorShader = {
       #include <logdepthbuf_fragment>
       vec4 base = texture2DProj(tDiffuse, vUv);
       float fade = smoothstep(26.0, 1.4, vDist);
-      float mirror = 0.22 * fade;
+      float mirror = 0.36 * fade;
       gl_FragColor = vec4(base.rgb, mirror);
     }`
 };
@@ -538,6 +552,56 @@ function isFlutedBay(mesh) {
   if (!p || p.depth === undefined || p.width === undefined) return false;
   const key = [p.width, p.height, p.depth].map(n => Math.round(n * 1000)).join(",");
   return key === "52,3280,3160" || key === "16,3270,14" || key === "45,45,3060";
+}
+
+const HALL_DISPLAYS = [
+  "pd-02.jpg", "pd-04.jpg", "pd-05.jpg", "pd-06.jpg", "pd-07.jpg",
+  "pd-08.jpg", "pd-09.jpg", "pd-10.jpg", "pd-02.jpg", "pd-05.jpg"
+];
+
+function placeHallDisplays({THREE, interactive}) {
+  let index = 0;
+  const loader = new THREE.TextureLoader();
+  interactive.traverse(obj => {
+    if (obj.userData?.wallFrame !== "commercial") return;
+    const slot = obj.userData.slot;
+    if (!canDecorateSlot(slot) || obj.position.z > HALL_END_Z) return;
+    const art = new THREE.Mesh(
+      new THREE.PlaneGeometry(Math.max(0.08, obj.userData.w - 0.05), Math.max(0.08, obj.userData.h - 0.05)),
+      new THREE.MeshBasicMaterial({color: 0xf7f4ee, toneMapped: true})
+    );
+    art.position.z = 0.03;
+    art.name = "origin-hall-display";
+    art.raycast = () => {};
+    obj.add(art);
+    const file = HALL_DISPLAYS[index % HALL_DISPLAYS.length];
+    index += 1;
+    loader.load("./assets/paintings/" + file + "?v=20261127j12", tex => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      art.material.map = tex;
+      art.material.needsUpdate = true;
+    });
+  });
+}
+
+function placeFloatRocks({THREE}) {
+  const mesh = new THREE.InstancedMesh(
+    new THREE.IcosahedronGeometry(1, 0),
+    new THREE.MeshStandardMaterial({color: 0xf4f1ea, roughness: 0.78, metalness: 0}),
+    5
+  );
+  const dummy = new THREE.Object3D();
+  [[0.15, 5.35, 5.4, 0.42], [-0.35, 5.55, 8.2, 0.28], [0.4, 5.15, 11.4, 0.34],
+    [-0.1, 5.4, 13.2, 0.22], [0.25, 5.25, 7.1, 0.18]].forEach((item, index) => {
+    dummy.position.set(item[0], item[1], item[2]);
+    dummy.rotation.set(item[3], item[0], item[1]);
+    dummy.scale.setScalar(item[3]);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(index, dummy.matrix);
+  });
+  mesh.instanceMatrix.needsUpdate = true;
+  mesh.name = "origin-float-rocks";
+  return mesh;
 }
 
 export function installOriginRoomLook({
@@ -613,7 +677,7 @@ export function installOriginRoomLook({
   sky.position.y = 2.2;
   sky.name = "origin-cumulus";
   scene.add(sky);
-  placeEnfilade({THREE, scene, half, height, wallMaterial, mobile});
+  placeEnfilade({THREE, scene, half, height, wallMaterial, mobile, trackMarble});
   const clouds = cloudVolume({THREE, mobile});
   scene.add(clouds);
   // Wide overlapping cards. Alpha falls off to the edge, so the shaft has no hard rim.
@@ -641,7 +705,7 @@ export function installOriginRoomLook({
         float across = 1.0 - smoothstep(0.0, 0.5, abs(vUv.x - 0.5));
         float along = 1.0 - smoothstep(0.0, 0.5, abs(vUv.y - 0.5));
         float down = smoothstep(3.0, 5.6, vHeight);
-        float alpha = across * across * along * along * down * 0.22;
+        float alpha = across * across * along * along * down * 0.3;
         gl_FragColor = vec4(1.0, 0.99, 0.96, alpha);
       }
     `
@@ -650,14 +714,14 @@ export function installOriginRoomLook({
   [4.2, 10, 18, 28, 40].forEach((z, index) => {
     card.position.set(0, 4.55, z);
     card.rotation.set(0, 0, 0);
-    card.scale.set(2.9, 4.6, 1);
+    card.scale.set(3.8, 4.6, 1);
     card.updateMatrix();
     shaft.setMatrixAt(index, card.matrix);
   });
   [[6, 5.75], [12, 5.35], [18, 4.95], [26, 4.5], [34, 4.05], [42, 3.6]].forEach(([z, y], index) => {
     card.position.set(0, y, z);
     card.rotation.set(-Math.PI / 2, 0, 0);
-    card.scale.set(2.8, 11, 1);
+    card.scale.set(3.6, 11, 1);
     card.updateMatrix();
     shaft.setMatrixAt(5 + index, card.matrix);
   });
@@ -666,6 +730,9 @@ export function installOriginRoomLook({
   shaft.renderOrder = 1;
   shaft.name = "origin-light-shaft";
   scene.add(shaft);
+  const rocks = mobile ? null : placeFloatRocks({THREE});
+  if (rocks) scene.add(rocks);
+  placeHallDisplays({THREE, interactive});
 
   let reflector = null;
   if (!mobile && floorMesh) {
@@ -689,13 +756,16 @@ export function installOriginRoomLook({
       const skyWas = sky.visible;
       const shaftWas = shaft.visible;
       const cloudsWere = clouds.visible;
+      const rocksWere = rocks ? rocks.visible : false;
       sky.visible = false;
       shaft.visible = false;
       clouds.visible = false;
+      if (rocks) rocks.visible = false;
       reflect.call(this, renderer, scene, camera);
       sky.visible = skyWas;
       shaft.visible = shaftWas;
       clouds.visible = cloudsWere;
+      if (rocks) rocks.visible = rocksWere;
     };
     scene.add(mirror);
     reflector = mirror;
@@ -714,7 +784,7 @@ export function installOriginRoomLook({
         if (!light.visible) continue;
         const occupied = light.intensity >= 14;
         light.color.set(0xffe2c0);
-        light.intensity = occupied ? (mobile ? 8.5 : 12) : (mobile ? 3.4 : 4.5);
+        light.intensity = occupied ? (mobile ? 5.5 : 7.2) : (mobile ? 2.2 : 2.8);
         light.angle = 0.6;
         light.penumbra = 0.94;
         light.decay = 1.35;

@@ -5,6 +5,10 @@
 import { commercialFrameZ } from "./origin-room-geometry.mjs";
 
 export const HALL_END_Z = 16.55;
+
+export function canDecorateSlot(slot) {
+  return Boolean(slot && slot.isCommercial && !slot.piece && !slot.reservedForAds);
+}
 export const HALL_DOOR = Object.freeze({ x0: 1.55, x1: 3.65 });
 
 const BAY = [6.05, 10.0, 14.05];

@@ -269,9 +269,9 @@ export function placeWarmHalos({THREE, interactive}) {
   canvas.height = 128;
   const ctx = canvas.getContext("2d");
   const glow = ctx.createRadialGradient(64, 58, 6, 64, 64, 64);
-  glow.addColorStop(0, "rgba(255, 214, 156, 0.95)");
-  glow.addColorStop(0.42, "rgba(255, 186, 112, 0.42)");
-  glow.addColorStop(1, "rgba(255, 170, 96, 0)");
+  glow.addColorStop(0, "rgba(255, 226, 190, 0.38)");
+  glow.addColorStop(0.45, "rgba(255, 200, 140, 0.12)");
+  glow.addColorStop(1, "rgba(255, 186, 120, 0)");
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, 128, 128);
   const tex = new THREE.CanvasTexture(canvas);
@@ -293,9 +293,9 @@ export function placeWarmHalos({THREE, interactive}) {
     node.updateWorldMatrix(true, false);
     const w = node.userData.w;
     const h = node.userData.h;
-    local.position.set(0, h * 0.62, 0.045);
+    local.position.set(0, h * 0.92, 0.03);
     local.rotation.set(0, 0, 0);
-    local.scale.set(Math.max(0.7, w * 1.5), Math.max(0.55, h * 1.15), 1);
+    local.scale.set(Math.max(0.45, w * 0.9), Math.max(0.22, h * 0.36), 1);
     local.updateMatrix();
     dummy.matrix.copy(node.matrixWorld).multiply(local.matrix);
     dummy.matrix.decompose(dummy.position, dummy.quaternion, dummy.scale);
@@ -452,8 +452,8 @@ export function buildStoneShell({
   for (const side of [-1, 1]) {
     geos.push(placedBox(THREE, 0.22, height, length, side * (half + 0.03), yMid, length / 2));
     geos.push(placedBox(THREE, 0.06, 0.05, length, side * (half - 0.95), height - 0.42, length / 2));
-    const soffitW = half - 1.55;
-    geos.push(placedBox(THREE, soffitW, 0.12, length, side * (1.55 + soffitW / 2), height - 0.06, length / 2));
+    const soffitW = half - 2.2;
+    geos.push(placedBox(THREE, soffitW, 0.12, length, side * (2.2 + soffitW / 2), height - 0.06, length / 2));
   }
   geos.push(placedBox(THREE, half * 2 + 0.4, height, 0.28, 0, yMid, -0.2));
   geos.push(placedBox(THREE, half * 2 + 0.4, height, 0.28, 0, yMid, length + 0.1));

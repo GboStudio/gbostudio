@@ -2,7 +2,7 @@
 
 Images du domaine public (Wikimedia Commons, photographies de tableaux dont l’artiste est mort depuis plus de 70 ans). Fichiers réduits pour le musée. Aucun fichier payant.
 
-Les emplacements commerciaux d’origine (120) ne sont pas ces fichiers.
+Les emplacements commerciaux d’origine (120) ne deviennent pas ces fichiers. Dans le hall, une image est posée devant un cadre libre, sans changer le compteur ni le clic « exposer ».
 
 | Fichier | Œuvre | Licence |
 | --- | --- | --- |

@@ -56,6 +56,28 @@ for(const mode of browsers){
     if(!state.visible)throw Error('Museum walkthrough overlay is hidden');
     if(state.webgl&&!state.premium)throw Error('Premium immersive engine failed despite WebGL support');
     if(state.premium){
+      if(!/PLACES LIBRES/.test(state.progress||''))throw Error('Free-slot counter missing: '+(state.progress||''));
+      if(!mode.mobile){
+        const canvas=page.locator('#walkCanvas');
+        const box=await canvas.boundingBox();
+        let opened=false;
+        for(const [fx,fy] of [[0.22,0.42],[0.26,0.46],[0.74,0.46],[0.24,0.50]]){
+          await page.mouse.click(box.x+box.width*fx, box.y+box.height*fy);
+          await page.waitForTimeout(300);
+          const which=await page.evaluate(()=>({
+            exhibit:document.querySelector('#exhibit')?.open===true,
+            piece:document.querySelector('#piece')?.open===true
+          }));
+          if(which.piece){await page.locator('#closePiece').click();continue;}
+          if(which.exhibit){opened=true;break;}
+        }
+        if(!opened)throw Error('A click on a decorated free slot did not open the expose flow');
+        const after=await page.locator('#walkProgress').innerText();
+        if(after!==state.progress)throw Error('Free-slot count changed: '+state.progress+' -> '+after);
+        await page.locator('#exhibit .x').click();
+        await page.waitForFunction(()=>document.querySelector('#exhibit')?.open!==true,null,{timeout:5000});
+        console.log('PASS FREE SLOT STAYS FREE',state.progress);
+      }
       if(state.free!=='true'||!state.isFree)throw Error('Museum did not start in free exploration');
       if(state.canvasWidth<=0||state.canvasHeight<=0)throw Error('3D canvas was not resized');
       const beforeZ=await page.locator('#walkOverlay').evaluate(el=>Number(el.dataset.tourCameraZ||0));
