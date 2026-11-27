@@ -1,7 +1,7 @@
 /* Run: node --test empty-museum/tests/flush-frames.test.mjs */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync, existsSync} from 'node:fs';
 import mix from '../gallery-mix.js';
 import {
   FRAME,
@@ -88,6 +88,14 @@ test('each enfilade back wall keeps one extra painting 1–2 cm off the wall', (
     assert.ok(gap >= 0.01 - 1e-6 && gap <= 0.02 + 1e-6, frame.id + ' gap ' + gap);
     assert.ok(Math.abs(frame.x) - frame.w / 2 > 1.1, frame.id + ' blocks the doorway');
   }
+  const look = read('origin-room-look.js');
+  assert.match(look, /assets\/paintings\//);
+  assert.match(look, /pd-01\.jpg/);
+  for (let i = 1; i <= frames.length; i++) {
+    const file = 'assets/paintings/pd-' + String(i).padStart(2, '0') + '.jpg';
+    assert.ok(existsSync(new URL(file, root)), file);
+  }
+  assert.match(read('assets/paintings/CREDITS.md'), /domaine public|Public domain|Wikimedia/i);
 });
 
 test('the marble look is wired, and the progress bar no longer prints a length', () => {

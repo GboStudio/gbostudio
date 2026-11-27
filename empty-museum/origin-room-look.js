@@ -372,7 +372,7 @@ function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile}) {
   const open = ENFILADE.opening / 2;
   const sideW = face - open;
   const zs = mobile ? ENFILADE.zs.slice(0, 1) : ENFILADE.zs;
-  const joint = new THREE.MeshStandardMaterial({color: 0xb5aea2, roughness: 0.9, metalness: 0});
+  const joint = new THREE.MeshStandardMaterial({color: 0xe6e2da, roughness: 0.72, metalness: 0});
   const backing = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), joint, zs.length * 3);
   const slabs = [];
   const dummy = new THREE.Object3D();
@@ -413,31 +413,10 @@ function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile}) {
   backing.instanceMatrix.needsUpdate = true;
   backing.name = "origin-enfilade";
   scene.add(backing);
-  const veinCanvas = document.createElement("canvas");
-  veinCanvas.width = 256;
-  veinCanvas.height = 256;
-  const vein = veinCanvas.getContext("2d");
-  vein.fillStyle = "#f6f3ee";
-  vein.fillRect(0, 0, 256, 256);
-  vein.strokeStyle = "rgba(120, 118, 112, 0.45)";
-  vein.lineWidth = 4;
-  vein.beginPath();
-  vein.moveTo(12, 36);
-  vein.bezierCurveTo(70, 110, 150, 20, 244, 130);
-  vein.moveTo(8, 190);
-  vein.bezierCurveTo(90, 150, 170, 230, 248, 168);
-  vein.stroke();
-  const veinMap = new THREE.CanvasTexture(veinCanvas);
-  veinMap.colorSpace = THREE.SRGBColorSpace;
-  veinMap.wrapS = veinMap.wrapT = THREE.RepeatWrapping;
-  const slabMat = new THREE.MeshStandardMaterial({
-    map: veinMap,
-    color: 0xf7f4ee,
-    roughness: 0.46,
-    metalness: 0,
-    emissive: 0xfff6ea,
-    emissiveIntensity: mobile ? 0.04 : 0.1
-  });
+  const slabMat = wallMaterial.clone();
+  slabMat.emissive = new THREE.Color(0xfff7ef);
+  slabMat.emissiveIntensity = mobile ? 0.18 : 0.05;
+  slabMat.customProgramCacheKey = () => wallMaterial.customProgramCacheKey() + "-slab";
   const faces = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), slabMat, slabs.length);
   slabs.forEach((slab, slabIndex) => {
     dummy.position.set(slab.x, slab.y, slab.z);
@@ -451,26 +430,33 @@ function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile}) {
   scene.add(faces);
   const frames = (mobile ? enfiladeFrameLayout().slice(0, 1) : enfiladeFrameLayout());
   const gold = new THREE.MeshStandardMaterial({color: 0xe2b34a, metalness: 1, roughness: 0.28});
-  const paint = new THREE.MeshStandardMaterial({color: 0x2c2822, roughness: 0.72});
   const lips = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), gold, frames.length);
-  const canvases = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), paint, frames.length);
+  const paintings = [
+    "pd-01.jpg", "pd-02.jpg", "pd-03.jpg", "pd-04.jpg", "pd-05.jpg", "pd-06.jpg",
+    "pd-07.jpg", "pd-08.jpg", "pd-09.jpg", "pd-10.jpg", "pd-11.jpg", "pd-12.jpg"
+  ];
+  const paintingLoader = new THREE.TextureLoader();
   frames.forEach((frame, frameIndex) => {
     dummy.position.set(frame.x, frame.y, frame.z + 0.004);
     dummy.scale.set(frame.w + 0.12, frame.h + 0.12, 1);
     dummy.rotation.set(0, Math.PI, 0);
     dummy.updateMatrix();
     lips.setMatrixAt(frameIndex, dummy.matrix);
-    dummy.position.set(frame.x, frame.y, frame.z);
-    dummy.scale.set(frame.w, frame.h, 1);
-    dummy.updateMatrix();
-    canvases.setMatrixAt(frameIndex, dummy.matrix);
+    const mat = new THREE.MeshBasicMaterial({color: 0xf4f0ea, toneMapped: true});
+    const art = new THREE.Mesh(new THREE.PlaneGeometry(frame.w, frame.h), mat);
+    art.position.set(frame.x, frame.y, frame.z);
+    art.rotation.y = Math.PI;
+    art.name = "origin-enfilade-art";
+    scene.add(art);
+    paintingLoader.load("./assets/paintings/" + paintings[frameIndex] + "?v=20261127j10", tex => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      mat.map = tex;
+      mat.needsUpdate = true;
+    });
   });
   lips.instanceMatrix.needsUpdate = true;
-  canvases.instanceMatrix.needsUpdate = true;
   lips.name = "origin-enfilade-frame";
-  canvases.name = "origin-enfilade-art";
   scene.add(lips);
-  scene.add(canvases);
 }
 
 function skyMaterial(mobile) {

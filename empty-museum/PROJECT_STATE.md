@@ -155,6 +155,10 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
 - État : proposé, non fusionné, non déployé.
 
+## Marbre réel et tableaux sur les murs du fond — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « On pousse encore ». Les dalles du fond prennent le même Marble019 que les murs latéraux, en coordonnées monde, avec des joints clairs. Les douze cadres ajoutés montrent des tableaux du domaine public (crédit `assets/paintings/CREDITS.md`). Les 120 emplacements d’origine ne bougent pas.
+- État : proposé, non fusionné, non déployé.
+
 ## Mobile, dalles du fond et plafond — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
 - Guillaume : « Go : mobile réparé, murs du fond avec dalles et œuvre, plafond lumineux ». L’exposition mobile de l’essai baisse, les ombres mobiles de cet essai sont coupées, et le téléphone ne dessine que le premier mur de l’enfilade. Les 120 cadres du commerce restent. Chaque mur du fond gagne des dalles en relief et un cadre en plus, testé à part. Le dessous du plafond est éclairci.
 - État : proposé, non fusionné, non déployé.
