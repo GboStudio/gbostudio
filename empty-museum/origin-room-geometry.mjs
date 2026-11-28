@@ -205,7 +205,7 @@ export function visitorBounds(length = 142, radius = VISITOR.radius) {
 
 /** Rooms of about three bays, closed by a wall with a walkable doorway. */
 export const ENFILADE = Object.freeze({
-  thickness: 0.16,
+  thickness: 0.5,
   opening: 2.2,
   lintelY: 3.05,
   zs: Object.freeze([16.55, 24.95, 35.45, 45.85, 56.45, 66.95, 77.45, 87.95, 98.45, 108.95, 119.45, 129.95]),
@@ -236,8 +236,8 @@ function doorwayBoxes(z, x0, x1, half) {
   const leftW = x0 + face;
   const rightW = face - x1;
   return [
-    aabbAt((-face + x0) / 2, z, leftW, ENFILADE.thickness),
-    aabbAt((x1 + face) / 2, z, rightW, ENFILADE.thickness)
+    aabbAt((-face + x0) / 2, z, leftW, ENFILADE.thickness + 0.36),
+    aabbAt((x1 + face) / 2, z, rightW, ENFILADE.thickness + 0.36)
   ];
 }
 

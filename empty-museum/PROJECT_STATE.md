@@ -155,6 +155,14 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
 - État : proposé, non fusionné, non déployé.
 
+## Bureau j20, téléphone j16 — 28 novembre 2026 (même PR brouillon #56, étape 1, non fusionnée, non déployée)
+- Étape 1 seulement. L’ordinateur garde le ciel Sunflowers, les panneaux partenaires discrets, les bandeaux fins, la lumière chaude et les cloisons de 0,50 m. Le téléphone reprend le rendu de `main` `6c6c18c` : Kloofendal 38d, exposition 0,76, cloisons de 0,16 m, lumière et panneaux de j16. La refonte du téléphone et des cloisons n’est pas commencée.
+- État : proposé, non fusionné, non déployé.
+
+## Cloisons, ciel et mobile — 28 novembre 2026 (nouvelle PR brouillon, non fusionnée, non déployée)
+- Partant de `main` `6c6c18c`. Les murs entre les travées font 0,50 m de marbre Marble019, avec plinthe, encadrement de porte, cordon et corniche en saillie, dans un seul maillage instancié. La collision reprend le débord de la plinthe. Le téléphone vise un blanc chaud (luminance autour de 185–210, R−B autour de 8–18) par la lumière et un léger décalage de l’albédo, sans teinte sable. Le ciel affiché est Sunflowers Pure Sky (CC0, Sergej Majboroda / Jarod Guest), longitude sur les gros cumulus. Les cartes de volume devant la photo sont coupées : elles faisaient une tache. Les bandes de plafond sont plus étroites. Les panneaux partenaires sont plus petits et plus clairs. Rien n’est fusionné ni déployé.
+- État : proposé, non fusionné, non déployé.
+
 ## Vrais cumulus et mobile plus lumineux — 28 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
 - Le ciel de l’ouverture est Kloofendal 38d (CC0), bleu avec des cumulus, plus des masses blanches à dessous gris-bleu. Le mobile est un peu plus clair et plus chaud (exposition 0,76). Pas de rochers. Le compteur ne change pas.
 - État : proposé, non fusionné, non déployé.

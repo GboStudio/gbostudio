@@ -20,7 +20,7 @@ import {
   commercialFrameZ,
   FRAME,
   LEGACY_FRAME_SIZE_M
-} from "./origin-room-look.js?v=20261128j16";
+} from "./origin-room-look.js?v=20261128j21";
 import {
   slideVisitor,
   separateVisitor,
@@ -398,15 +398,23 @@ import {originPose, bindOriginPoses} from "./origin-hall-layout.mjs";
   function reservedExhibitionTexture(slot){
     return canvasTexture((g,w,h)=>{
       const grad=g.createLinearGradient(0,0,w,h);
-      grad.addColorStop(0,"#55584f");grad.addColorStop(.55,"#282d2a");
-      grad.addColorStop(1,"#43453e");
+      if(mobile){
+        grad.addColorStop(0,"#55584f");grad.addColorStop(.55,"#282d2a");
+        grad.addColorStop(1,"#43453e");
+      }else{
+        grad.addColorStop(0,"#d9d3c6");grad.addColorStop(.55,"#c9c2b4");
+        grad.addColorStop(1,"#b7b0a2");
+      }
       g.fillStyle=grad;g.fillRect(0,0,w,h);
-      g.strokeStyle="rgba(233,220,188,.45)";g.lineWidth=5;
+      g.strokeStyle=mobile?"rgba(233,220,188,.45)":"rgba(90,78,58,.28)";
+      g.lineWidth=mobile?5:3;
       g.strokeRect(45,45,w-90,h-90);
-      g.fillStyle="#f0eadc";g.textAlign="center";g.textBaseline="middle";
-      g.font="400 53px Georgia";
+      g.fillStyle=mobile?"#f0eadc":"#3c3428";g.textAlign="center";g.textBaseline="middle";
+      g.font=mobile?"400 53px Georgia":"400 36px Georgia";
       g.fillText("The Partner Collection",w/2,h*.45,w*.86);
-      g.fillStyle="#d2bea0";g.font="600 17px Arial";g.letterSpacing="3px";
+      g.fillStyle=mobile?"#d2bea0":"#6a5e4c";
+      g.font=mobile?"600 17px Arial":"600 14px Arial";
+      g.letterSpacing=mobile?"3px":"2px";
       g.fillText("CURATED SPACE · THE UNREAL MUSEUM",w/2,h*.67,w*.86);
     },1024,690);
   }
@@ -575,7 +583,8 @@ import {originPose, bindOriginPoses} from "./origin-hall-layout.mjs";
     const z=pose ? pose.z : 5.7+i*STEP;
     const side=pose ? pose.side : i%2?1:-1;
     const x=ORIGIN_ROOM_LOOK_ENABLED ? frameAnchorX(side) : side*(HALF-.39);
-    const [w,h]=LEGACY_FRAME_SIZE_M[slot.size]||LEGACY_FRAME_SIZE_M.landscape;
+    let [w,h]=LEGACY_FRAME_SIZE_M[slot.size]||LEGACY_FRAME_SIZE_M.landscape;
+    if(ORIGIN_ROOM_LOOK_ENABLED && slot.reservedForAds && !mobile){w*=0.52;h*=0.52;}
     const y=pose ? pose.y : 2.10,rot=frameRotationY(side);
     let mat;
     if(slot.piece)mat=pictureMaterial(slot.piece);
