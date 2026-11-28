@@ -98,9 +98,9 @@ test('the kit replaces stand-ins without moving the colliders, behind the rollba
   assert.match(read('tools/bake_kit_light.py'), /cycles\.samples/);
 });
 
-test('the ceiling opening uses the CC0 Kloofendal sky, kept out of the floor mirror', () => {
+test('the ceiling opening uses the CC0 Sunflowers sky, kept out of the floor mirror', () => {
   const look = read('origin-room-look.js');
-  assert.match(look, /assets\/sky\/kloofendal-38d-/);
+  assert.match(look, /assets\/sky\/sunflowers-/);
   assert.match(look, /mobile \? "1k" : "2k"/);
   assert.match(look, /originHideInscription/);
   assert.match(read('engine3d.js'), /originHideInscription/);
@@ -116,10 +116,10 @@ test('the ceiling opening uses the CC0 Kloofendal sky, kept out of the floor mir
   assert.match(look, /generateMipmaps = true/);
   assert.match(look, /-m\.jpg/);
   const credits = read('assets/sky/CREDITS.md');
-  assert.match(credits, /kloofendal_38d_partly_cloudy_puresky/);
+  assert.match(credits, /sunflowers_puresky/);
   assert.match(credits, /CC0/);
   assert.match(credits, /polyhaven\.com/);
   for (const size of ['1k', '2k']) {
-    assert.ok(existsSync(new URL(`assets/sky/kloofendal-38d-${size}.jpg`, root)));
+    assert.ok(existsSync(new URL(`assets/sky/sunflowers-${size}.jpg`, root)));
   }
 });

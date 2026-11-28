@@ -7,7 +7,7 @@
  * Kit : pilastre, plinthe, corniche, panneau et banquette (glTF meshopt), mêmes positions.
  * Or : MeshStandardMaterial metalness 1, environnement RoomEnvironment.
  * Sol : miroir planaire 1024 sur ordinateur, environnement seul sur mobile.
- * Ciel : photo CC0 Poly Haven (Kloofendal 48d) sur le dôme, 2K bureau / 1K mobile.
+ * Ciel : photo CC0 Poly Haven (Sunflowers Pure Sky) sur le dôme, 2K bureau / 1K mobile.
  */
 import * as THREE from "three";
 import {Reflector} from "three/addons/objects/Reflector.js";
@@ -21,7 +21,7 @@ import {
   wallInnerFaceX
 } from "./origin-room-geometry.mjs";
 import { HALL_END_Z, canDecorateSlot } from "./origin-hall-layout.mjs";
-import {buildStoneShell, compactWallFrames, mountArchitectureKit, mountOrnateFrames, placeWarmHalos, placeFrameReflections} from "./origin-room-build.js?v=20261127j12";
+import {buildStoneShell, compactWallFrames, mountArchitectureKit, mountOrnateFrames, placeWarmHalos, placeFrameReflections} from "./origin-room-build.js?v=20261128j20e";
 
 export const enabled = true;
 
@@ -134,8 +134,9 @@ vec3 marbleTri(sampler2D tex, vec3 p, vec3 n){
 }
 `;
 
-function marbleShader(shader, maps, lift, roughMix, floorEdge) {
+function marbleShader(shader, maps, lift, roughMix, floorEdge, mobileWarm) {
   shader.uniforms.uMarbleLift = {value: lift};
+  shader.uniforms.uMobileWarm = {value: mobileWarm};
   shader.uniforms.uMarbleScale = {value: 0.16};
   shader.uniforms.uMarbleMap = {value: maps.color};
   shader.uniforms.uMarbleNor = {value: maps.normal};
@@ -161,6 +162,7 @@ uniform float uMarbleLift;
 uniform float uMarbleScale;
 uniform float uRoughMix;
 uniform float uFloorEdge;
+uniform float uMobileWarm;
 uniform sampler2D uMarbleMap;
 uniform sampler2D uMarbleNor;
 uniform sampler2D uMarbleRough;
@@ -173,6 +175,8 @@ ${MARBLE_GLSL}`)
 	vec3 warm = vec3(0.965, 0.945, 0.915);
 	float vein = smoothstep(0.86, 0.62, lum);
 	alb = mix(alb, warm, 0.06);
+	alb.r = min(1.0, alb.r + uMobileWarm * 0.032);
+	alb.b = max(0.0, alb.b - uMobileWarm * 0.020);
 	alb = mix(alb, alb * vec3(0.72, 0.74, 0.76), vein * 0.36);
 	float along = abs(vMarbleN.x) > abs(vMarbleN.z) ? vMarbleWp.z : vMarbleWp.x;
 	float dy = abs(fract(vMarbleWp.y / 1.5) - 0.5) * 1.5;
@@ -185,15 +189,15 @@ ${MARBLE_GLSL}`)
 		diffuseColor.rgb *= mix(0.78, 1.0, clamp(baked, 0.0, 1.0));
 	#endif
 	if (vMarbleN.y < -0.4) {
-		diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.98, 0.98, 0.96), 0.84);
+		diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.99, 0.97, 0.93), 0.5);
 	}`
     )
     .replace(
       "#include <emissivemap_fragment>",
       `#include <emissivemap_fragment>
 	if (vMarbleN.y < -0.45 && vMarbleWp.y > 5.4) {
-		float opening = 1.0 - smoothstep(2.05, 4.5, abs(vMarbleWp.x));
-		totalEmissiveRadiance += vec3(0.94, 0.97, 1.0) * (0.55 + 1.25 * opening);
+		float opening = 1.0 - smoothstep(3.05, 4.4, abs(vMarbleWp.x));
+		totalEmissiveRadiance += vec3(1.0, 0.96, 0.90) * (0.28 + 0.55 * opening);
 	}`
     )
     .replace(
@@ -211,7 +215,7 @@ ${MARBLE_GLSL}`)
   return shader;
 }
 
-function marbleMaterial(maps, {roughness, metalness, lift, roughMix, envMapIntensity, floorEdge}) {
+function marbleMaterial(maps, {roughness, metalness, lift, roughMix, envMapIntensity, floorEdge, mobileWarm = 0}) {
   const material = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     roughness,
@@ -219,9 +223,9 @@ function marbleMaterial(maps, {roughness, metalness, lift, roughMix, envMapInten
     envMapIntensity
   });
   material.onBeforeCompile = shader => {
-    material.userData.shader = marbleShader(shader, maps, lift, roughMix, floorEdge ? 1 : 0);
+    material.userData.shader = marbleShader(shader, maps, lift, roughMix, floorEdge ? 1 : 0, mobileWarm);
   };
-  material.customProgramCacheKey = () => "origin-marble-j8-" + lift + "-" + roughMix + "-" + (floorEdge ? 1 : 0);
+  material.customProgramCacheKey = () => "origin-marble-j20-" + lift + "-" + roughMix + "-" + (floorEdge ? 1 : 0) + "-" + mobileWarm;
   return material;
 }
 
@@ -253,7 +257,8 @@ export function createOriginMaterials({mobile}) {
     metalness: 0,
     lift: 1.08,
     roughMix: 0.4,
-    envMapIntensity: 0.16
+    envMapIntensity: 0.16,
+    mobileWarm: mobile ? 0.2 : 0
   });
   const floor = marbleMaterial(maps, {
     roughness: mobile ? 0.55 : 0.72,
@@ -261,7 +266,8 @@ export function createOriginMaterials({mobile}) {
     lift: 0.84,
     roughMix: 0.04,
     envMapIntensity: mobile ? 0.12 : 0.03,
-    floorEdge: true
+    floorEdge: true,
+    mobileWarm: mobile ? 0.1 : 0
   });
   floor.polygonOffset = true;
   floor.polygonOffsetFactor = 1;
@@ -293,19 +299,17 @@ export function createOriginMaterials({mobile}) {
 }
 
 function cloudVolume({THREE, mobile}) {
-  // Solid cumulus in the slot, in front of the blue sky photo.
-  // One instanced draw. Mobile keeps fewer masses.
+  // The photo (Sunflowers) carries the cumulus. Extra cards read as a blotch,
+  // so this instanced draw stays in the scene and discards every fragment.
+  // One draw. Mobile would have used fewer masses.
   const puffs = mobile
-    ? [[-0.15, 5.7, 5.2, 3.2], [0.55, 5.45, 7.4, 2.6], [-0.45, 5.85, 9.6, 2.8],
-      [0.2, 5.55, 12.2, 3.0], [-0.25, 5.75, 15.0, 2.5]]
-    : [[-0.2, 5.75, 4.6, 3.4], [0.65, 5.4, 6.4, 2.6], [-0.55, 5.95, 8.2, 3.0],
-      [0.25, 5.5, 10.0, 2.8], [-0.4, 5.85, 12.2, 3.2], [0.5, 5.45, 14.4, 2.4],
-      [-0.15, 5.7, 16.6, 3.0], [0.35, 5.55, 19.2, 2.6]];
+    ? [[-0.7, 8.5, 8.2, 7.4], [1.2, 8.8, 14.0, 6.6]]
+    : [[-1.3, 8.6, 7.4, 8.2], [1.5, 8.3, 13.2, 7.4], [-0.2, 9.1, 21.0, 6.8]];
   const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
     depthTest: true,
-    toneMapped: false,
+    toneMapped: true,
     fog: false,
     vertexShader: `
       varying vec2 vUv;
@@ -341,26 +345,7 @@ function cloudVolume({THREE, mobile}) {
         return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
       }
       void main() {
-        vec2 uv = vUv - 0.5;
-        float n = 0.0;
-        float amp = 0.5;
-        vec2 p = uv * 3.1 + vSeed;
-        for (int i = 0; i < 4; i++) {
-          n += amp * noise(p);
-          p *= 2.05;
-          amp *= 0.5;
-        }
-        float warp = noise(uv * 1.6 + vSeed) * 0.22;
-        float mass = n * 1.35 - length(uv) * 1.55 + warp;
-        float alpha = smoothstep(0.18, 0.55, mass);
-        float slot = smoothstep(2.05, 1.35, abs(vWorld.x));
-        alpha *= slot;
-        if (alpha < 0.05) discard;
-        float shade = clamp(uv.y * 1.35 + 0.15 + (n - 0.5) * 0.55, 0.0, 1.0);
-        vec3 underside = vec3(0.46, 0.55, 0.66);
-        vec3 lit = vec3(0.96, 0.97, 0.98);
-        vec3 col = mix(underside, lit, shade * shade);
-        gl_FragColor = vec4(col, min(alpha, 0.92));
+        discard;
       }
     `
   }), puffs.length);
@@ -395,65 +380,43 @@ function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile, trackM
   const joint = wallMaterial.clone();
   joint.customProgramCacheKey = () => wallMaterial.customProgramCacheKey() + "-joint";
   adoptMarble(joint, wallMaterial, trackMarble);
-  const backing = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), joint, zs.length * 3);
-  const slabs = [];
+  const parts = [];
   const dummy = new THREE.Object3D();
-  let index = 0;
-  const pushSlab = (x, y, z, w, h) => {
-    const gap = 0.008;
-    slabs.push({x, y, z: z - ENFILADE.thickness / 2 - 0.018, w: Math.max(0.2, w - gap), h: Math.max(0.2, h - gap)});
-  };
-  const fill = (x0, x1, y0, y1, z) => {
-    const cols = Math.max(1, Math.round((x1 - x0) / 1.6));
-    const rows = Math.max(1, Math.round((y1 - y0) / 1.5));
-    const cw = (x1 - x0) / cols;
-    const ch = (y1 - y0) / rows;
-    for (let col = 0; col < cols; col++) {
-      for (let row = 0; row < rows; row++) {
-        pushSlab(x0 + cw * (col + 0.5), y0 + ch * (row + 0.5), z, cw, ch);
-      }
-    }
-  };
+  const add = (x, y, z, w, h, d) => parts.push({x, y, z, w, h, d});
   for (const z of zs) {
     const door = z === ENFILADE.zs[0] ? ENFILADE.firstDoor : {x0: -open, x1: open};
     const leftW = door.x0 + face;
     const rightW = face - door.x1;
-    dummy.position.set((-face + door.x0) / 2, height / 2, z);
-    dummy.scale.set(leftW, height, ENFILADE.thickness);
-    dummy.updateMatrix();
-    backing.setMatrixAt(index++, dummy.matrix);
-    fill(-face, door.x0, 0.02, height, z);
-    dummy.position.set((door.x1 + face) / 2, height / 2, z);
-    dummy.scale.set(rightW, height, ENFILADE.thickness);
-    dummy.updateMatrix();
-    backing.setMatrixAt(index++, dummy.matrix);
-    fill(door.x1, face, 0.02, height, z);
+    const depth = ENFILADE.thickness;
+    const trim = 0.28;
+    add((-face + door.x0) / 2, height / 2, z, leftW, height, depth);
+    add((door.x1 + face) / 2, height / 2, z, rightW, height, depth);
     const lintelH = Math.max(0.4, height - ENFILADE.lintelY);
-    dummy.position.set((door.x0 + door.x1) / 2, ENFILADE.lintelY + lintelH / 2, z);
-    dummy.scale.set(door.x1 - door.x0, lintelH, ENFILADE.thickness);
-    dummy.updateMatrix();
-    backing.setMatrixAt(index++, dummy.matrix);
-    fill(door.x0, door.x1, ENFILADE.lintelY, height, z);
+    add((door.x0 + door.x1) / 2, ENFILADE.lintelY + lintelH / 2, z, door.x1 - door.x0, lintelH, depth);
+    // Plinth, door casing and cornice, proud of the 0.5 m mass. One instanced draw.
+    add((-face + door.x0) / 2, 0.22, z, leftW, 0.44, depth + 0.36);
+    add((door.x1 + face) / 2, 0.22, z, rightW, 0.44, depth + 0.36);
+    add(door.x0 - trim / 2, ENFILADE.lintelY / 2, z, trim, ENFILADE.lintelY, depth + 0.28);
+    add(door.x1 + trim / 2, ENFILADE.lintelY / 2, z, trim, ENFILADE.lintelY, depth + 0.28);
+    add((door.x0 + door.x1) / 2, ENFILADE.lintelY + trim / 2, z, door.x1 - door.x0 + trim * 2, trim, depth + 0.28);
+    add((-face + door.x0) / 2, 2.55, z, leftW - trim, 0.12, depth + 0.2);
+    add((door.x1 + face) / 2, 2.55, z, rightW - trim, 0.12, depth + 0.2);
+    add(0, height - 0.24, z, face * 2, 0.3, depth + 0.46);
+    add(0, height - 0.06, z, face * 2, 0.14, depth + 0.24);
   }
+  joint.emissive = new THREE.Color(mobile ? 0xfff6ee : 0xfff6ee);
+  joint.emissiveIntensity = mobile ? 0.16 : 0.03;
+  const backing = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), joint, Math.max(1, parts.length));
+  parts.forEach((part, index) => {
+    dummy.position.set(part.x, part.y, part.z);
+    dummy.scale.set(part.w, part.h, part.d);
+    dummy.rotation.set(0, 0, 0);
+    dummy.updateMatrix();
+    backing.setMatrixAt(index, dummy.matrix);
+  });
   backing.instanceMatrix.needsUpdate = true;
   backing.name = "origin-enfilade";
   scene.add(backing);
-  const slabMat = wallMaterial.clone();
-  slabMat.emissive = new THREE.Color(0xffffff);
-  slabMat.emissiveIntensity = mobile ? 0.34 : 0.03;
-  slabMat.customProgramCacheKey = () => wallMaterial.customProgramCacheKey() + "-slab";
-  adoptMarble(slabMat, wallMaterial, trackMarble);
-  const faces = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), slabMat, slabs.length);
-  slabs.forEach((slab, slabIndex) => {
-    dummy.position.set(slab.x, slab.y, slab.z);
-    dummy.scale.set(slab.w, slab.h, 0.045);
-    dummy.rotation.set(0, 0, 0);
-    dummy.updateMatrix();
-    faces.setMatrixAt(slabIndex, dummy.matrix);
-  });
-  faces.instanceMatrix.needsUpdate = true;
-  faces.name = "origin-enfilade-slabs";
-  scene.add(faces);
   const frames = (mobile ? enfiladeFrameLayout().slice(0, 1) : enfiladeFrameLayout());
   const gold = new THREE.MeshStandardMaterial({color: 0xe2b34a, metalness: 1, roughness: 0.28});
   const lips = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), gold, frames.length);
@@ -495,15 +458,15 @@ function skyMaterial(mobile) {
   });
   const size = mobile ? "1k" : "2k";
   const loader = new THREE.TextureLoader();
-  loader.load("./assets/sky/kloofendal-38d-" + size + ".jpg?v=20261128j16", tex => {
+  loader.load("./assets/sky/sunflowers-" + size + ".jpg?v=20261128j20c", tex => {
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
     tex.generateMipmaps = true;
     tex.minFilter = THREE.LinearMipmapLinearFilter;
     tex.anisotropy = mobile ? 4 : 8;
-    // The cumulus field sits off the zenith. This longitude puts it in the slot.
-    tex.offset.x = 0.42;
+    // Longitude of the large cumulus bank, clear of the sun disk.
+    tex.offset.x = 0.10;
     tex.needsUpdate = true;
     material.map = tex;
     material.needsUpdate = true;
@@ -728,12 +691,12 @@ export function installOriginRoomLook({
 
   scene.traverse(obj => {
     if (obj.isHemisphereLight) {
-      obj.color.set(mobile ? 0xfff0dc : 0xfff1e4);
-      obj.groundColor.set(mobile ? 0xd8d0c4 : 0xb7b0a6);
-      obj.intensity = mobile ? 0.34 : 0.36;
+      obj.color.set(mobile ? 0xffe6c6 : 0xfff1e4);
+      obj.groundColor.set(mobile ? 0xead4b4 : 0xb7b0a6);
+      obj.intensity = mobile ? 0.62 : 0.36;
     } else if (obj.isDirectionalLight) {
-      obj.color.set(0xffefdc);
-      obj.intensity = mobile ? 0.18 : 0.24;
+      obj.color.set(mobile ? 0xffdcb0 : 0xffefdc);
+      obj.intensity = mobile ? 0.32 : 0.24;
       if (mobile) obj.castShadow = false;
     } else if (obj.isAmbientLight) {
       obj.intensity = 0.06;
@@ -774,7 +737,7 @@ export function installOriginRoomLook({
         float across = 1.0 - smoothstep(0.0, 0.5, abs(vUv.x - 0.5));
         float along = 1.0 - smoothstep(0.0, 0.5, abs(vUv.y - 0.5));
         float down = smoothstep(3.0, 5.6, vHeight);
-        float alpha = across * across * along * along * down * 0.07;
+        float alpha = across * across * along * along * down * 0.02;
         gl_FragColor = vec4(0.90, 0.93, 0.97, alpha);
       }
     `
@@ -851,8 +814,8 @@ export function installOriginRoomLook({
       for (const light of spots) {
         if (!light.visible) continue;
         const occupied = light.intensity >= 14;
-        light.color.set(0xffe2c0);
-        light.intensity = occupied ? (mobile ? 5.5 : 7.2) : (mobile ? 2.2 : 2.8);
+        light.color.set(0xffc98a);
+        light.intensity = occupied ? (mobile ? 7.2 : 11) : (mobile ? 2.2 : 3.4);
         light.angle = 0.6;
         light.penumbra = 0.94;
         light.decay = 1.35;
