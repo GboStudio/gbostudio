@@ -155,7 +155,12 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
 - État : proposé, non fusionné, non déployé.
 
-## Bureau j20, téléphone j16 — 28 novembre 2026 (même PR brouillon #56, étape 1, non fusionnée, non déployée)
+## Mobile allégé et cloisons modélisées — 28 novembre 2026 (nouvelle PR brouillon, non fusionnée, non déployée)
+- Partant de `main` `7cc300f` (j21 fusionnée). Le téléphone suit le même rendu que l’ordinateur : ciel Sunflowers, mêmes matériaux, textures 1K, une seule cloison, pas de miroir planaire. Les cloisons et le plafond à caissons viennent de `tools/build_partitions.py` (GLB), marbre Marble019, un seul appel instancié par pièce. Le plafond plat cuit de l’entrée est masqué. Le filet doré au sol n’est plus posé.
+- État : proposé, non fusionné, non déployé.
+
+## Bureau j20, téléphone j16 — 28 novembre 2026 (PR #56, fusionnée dans main `7cc300f`, non redéployée par cet agent)
+
 - Étape 1 seulement. L’ordinateur garde le ciel Sunflowers, les panneaux partenaires discrets, les bandeaux fins, la lumière chaude et les cloisons de 0,50 m. Le téléphone reprend le rendu de `main` `6c6c18c` : Kloofendal 38d, exposition 0,76, cloisons de 0,16 m, lumière et panneaux de j16. La refonte du téléphone et des cloisons n’est pas commencée.
 - État : proposé, non fusionné, non déployé.
 

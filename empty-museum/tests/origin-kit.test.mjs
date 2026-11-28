@@ -98,9 +98,10 @@ test('the kit replaces stand-ins without moving the colliders, behind the rollba
   assert.match(read('tools/bake_kit_light.py'), /cycles\.samples/);
 });
 
-test('the ceiling opening uses the CC0 Sunflowers sky, kept out of the floor mirror', () => {
+test('the ceiling opening uses the CC0 Sunflowers sky on desktop and mobile, kept out of the floor mirror', () => {
   const look = read('origin-room-look.js');
   assert.match(look, /assets\/sky\/sunflowers-/);
+  assert.doesNotMatch(look, /kloofendal-38d-/);
   assert.match(look, /mobile \? "1k" : "2k"/);
   assert.match(look, /originHideInscription/);
   assert.match(read('engine3d.js'), /originHideInscription/);
