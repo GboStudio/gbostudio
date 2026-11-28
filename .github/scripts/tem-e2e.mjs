@@ -56,6 +56,28 @@ for(const mode of browsers){
     if(!state.visible)throw Error('Museum walkthrough overlay is hidden');
     if(state.webgl&&!state.premium)throw Error('Premium immersive engine failed despite WebGL support');
     if(state.premium){
+      if(!/PLACES LIBRES/.test(state.progress||''))throw Error('Free-slot counter missing: '+(state.progress||''));
+      if(!mode.mobile){
+        const canvas=page.locator('#walkCanvas');
+        const box=await canvas.boundingBox();
+        let opened=false;
+        for(const [fx,fy] of [[0.22,0.42],[0.26,0.46],[0.74,0.46],[0.24,0.50]]){
+          await page.mouse.click(box.x+box.width*fx, box.y+box.height*fy);
+          await page.waitForTimeout(300);
+          const which=await page.evaluate(()=>({
+            exhibit:document.querySelector('#exhibit')?.open===true,
+            piece:document.querySelector('#piece')?.open===true
+          }));
+          if(which.piece){await page.locator('#closePiece').click();continue;}
+          if(which.exhibit){opened=true;break;}
+        }
+        if(!opened)throw Error('A click on a decorated free slot did not open the expose flow');
+        const after=await page.locator('#walkProgress').innerText();
+        if(after!==state.progress)throw Error('Free-slot count changed: '+state.progress+' -> '+after);
+        await page.locator('#exhibit .x').click();
+        await page.waitForFunction(()=>document.querySelector('#exhibit')?.open!==true,null,{timeout:5000});
+        console.log('PASS FREE SLOT STAYS FREE',state.progress);
+      }
       if(state.free!=='true'||!state.isFree)throw Error('Museum did not start in free exploration');
       if(state.canvasWidth<=0||state.canvasHeight<=0)throw Error('3D canvas was not resized');
       const beforeZ=await page.locator('#walkOverlay').evaluate(el=>Number(el.dataset.tourCameraZ||0));
@@ -231,6 +253,57 @@ for(const mode of browsers){
           beforeYaw,{timeout:26000});
         console.log('PASS MOBILE GUIDED CAMERA INTERRUPT + FREE TURN');
       }
+      if(/\d+\s*\/\s*\d+\s*M/.test(state.progress||''))
+        throw Error('Progress bar still prints a length: '+state.progress);
+      const tourPressed=await page.locator('#museumTour').getAttribute('aria-pressed');
+      if(tourPressed==='true')await tapTour();
+      // The movement window starts only once the scene is idle and the tour
+      // is actually playing. A missed tap is retried. The camera must still
+      // advance 0.2 m under its own guided motion.
+      await page.waitForFunction(()=>{
+        const room=document.querySelector('#walkOverlay');
+        if(!room || window.__TUM_PREMIUM_READY!==true) return false;
+        return Math.abs(Number(room.dataset.museumInputForward||0))<.01 &&
+          Math.abs(Number(room.dataset.museumInputStrafe||0))<.01 &&
+          Math.abs(Number(room.dataset.museumInputLookX||0))<.01 &&
+          Math.abs(Number(room.dataset.museumInputLookY||0))<.01;
+      },null,{timeout:20000});
+      const tourHit=await page.locator('#museumTour').evaluate(btn=>{
+        const r=btn.getBoundingClientRect();
+        const top=document.elementFromPoint(r.left+r.width/2, r.top+r.height/2);
+        return top?.id||'';
+      });
+      if(tourHit!=='museumTour')
+        throw Error('Guided tour button is covered before the forward check: '+tourHit);
+      const zBeforeTour=Number(await page.locator('#walkOverlay').getAttribute('data-tour-camera-z'));
+      await tapTour();
+      try{
+        await page.waitForFunction(()=>document.querySelector('#museumTour')?.getAttribute('aria-pressed')==='true',null,{timeout:8000});
+      }catch{
+        await tapTour();
+        await page.waitForFunction(()=>document.querySelector('#museumTour')?.getAttribute('aria-pressed')==='true',null,{timeout:8000});
+      }
+      await page.waitForFunction(start=>
+        Number(document.querySelector('#walkOverlay')?.dataset.tourCameraZ)>start+.2,
+        zBeforeTour,{timeout:20000});
+      await tapTour();
+      await page.waitForFunction(()=>
+        document.querySelector('#museumTour')?.getAttribute('aria-pressed')==='false',
+        null,{timeout:15000});
+      const zStopped=Number(await page.locator('#walkOverlay').getAttribute('data-tour-camera-z'));
+      await page.waitForTimeout(450);
+      const zLater=Number(await page.locator('#walkOverlay').getAttribute('data-tour-camera-z'));
+      if(Math.abs(zLater-zStopped)>.35)
+        throw Error('After the guided tour stopped, the camera kept moving from '+zStopped+' to '+zLater);
+      console.log('PASS FREE/GUIDED NO JUMP',mode.name,zStopped.toFixed(2),'→',zLater.toFixed(2));
+      await page.waitForFunction(()=>Number(document.querySelector('#walkOverlay')?.dataset.museumDrawCalls)>0,null,{timeout:20000});
+      const perf=await page.evaluate(()=>{
+        const room=document.querySelector('#walkOverlay');
+        return {calls:Number(room?.dataset.museumDrawCalls||0),frameMs:Number(room?.dataset.museumFrameMs||0)};
+      });
+      console.log('DRAW CALLS',mode.name,JSON.stringify(perf));
+      if(mode.mobile && perf.calls>=200)
+        throw Error('Mobile draw calls '+perf.calls+' exceed 199');
       console.log('PASS',mode.name,'PBR gallery, default free roam, movement, guided mode');
     }else{
       console.log('WebGL not available in this environment; accessible fallback shown:',mode.name);

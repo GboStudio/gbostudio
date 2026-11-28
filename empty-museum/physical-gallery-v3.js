@@ -159,5 +159,5 @@ export function addPhysicalGalleryV3({architecture,half,height,length,mobile,flo
     stone.dispose();
     cove.forEach(mesh=>mesh.geometry.dispose());
   }
-  return {stats,refreshFloor,dispose,tiles,bayShade};
+  return {stats,refreshFloor,dispose,tiles,bayShade,mortar};
 }

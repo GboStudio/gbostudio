@@ -41,7 +41,7 @@
   // Physical footprints, not billboard dimensions: one display per station.
   // Keep these stations in side alcoves so central traversal stays unobstructed.
   const AISLE_STATIONS=Object.freeze([
-    Object.freeze({id:'S01',x:2.25,z:15}),
+    Object.freeze({id:'S01',x:-2.25,z:8}),
     Object.freeze({id:'S02',x:-2.25,z:47}),
     Object.freeze({id:'S03',x:2.25,z:85}),
     Object.freeze({id:'S04',x:-2.25,z:112})

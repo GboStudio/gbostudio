@@ -71,10 +71,15 @@
   #walkOverlay .museum-v5-reticle {opacity:.22!important}
   #walkOverlay .museum-v5-help {
     position:absolute!important;
-    top:calc(72px + env(safe-area-inset-top))!important;
-    left:16px!important;right:16px!important;
-    font-size:8px!important;letter-spacing:.055em!important;
-    opacity:.9!important;
+    top:calc(54px + env(safe-area-inset-top))!important;
+    left:12px!important;right:auto!important;
+    max-width:calc(100vw - 78px)!important;
+    font-size:9px!important;letter-spacing:.03em!important;line-height:1.35!important;
+    opacity:1!important;
+    background:rgba(22,24,22,.62);
+    color:#f7f4ee!important;
+    padding:5px 8px!important;
+    border-radius:8px;
   }
   #walkOverlay .museum-v5-shell .museum-v5-dock {
     position:absolute!important;

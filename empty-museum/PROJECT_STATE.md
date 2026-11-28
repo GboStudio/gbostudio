@@ -109,3 +109,105 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 ## On ne parle pas de taille — 22 novembre 2026 (PR brouillon #52)
 - Guillaume : « On ne parle pas de taille ». La statistique « 7,5 M / Longueur simulée de la galerie » devient « 2 / Visites, libre et guidée ». La visite guidée et le mode libre sont bien les deux modes du dock (`museum-v5.js`, non modifié).
 - Les distances 15 à 75 m de la grille 3D et les cinq formats de cadres restent. Les mentions de longueur du lieu ont été retirées des textes d’accueil.
+
+## Pièce d’origine, essai marbre en temps réel — 23 novembre 2026 (brouillon, non fusionné, non déployé)
+- Demande de Guillaume : améliorer la pièce d’origine avec le look de la direction 4K, en version de test, fonctionnelle et soignée. Pas de panorama 360° (la PR #53 reste abandonnée). Pas de Blender ni de rendu hors ligne.
+- La salle procédurale de `engine3d.js` garde la même longueur, le même pas de 3,50 m, les mêmes baies et les mêmes positions d’œuvres le long des murs. Visite libre, visite guidée, cadres, places d’allée, deux joysticks, zoom, secours `walk.js` et commerce en démonstration restent.
+- Le rendu d’essai est derrière `enabled` dans `empty-museum/origin-room-look.js`. `false` rend le calcaire et les cadres précédents. Le marbre est un shader procédural (veines en coordonnées monde, sans image répétée). L’or est un PBR métallique (metalness 1, rugosité 0,32) éclairé par l’environnement déjà présent. Le sol miroir est un `Reflector` basse résolution (512 bureau, 256 mobile, un passage sur deux au mobile) fondu avec la distance. Le plafond central s’ouvre sur un ciel procédural. Aucune texture tierce n’est téléchargée.
+- Les cadres sont plaqués à 1,5 cm du mur structurel, orientés vers l’allée. Le test `empty-museum/tests/flush-frames.test.mjs` vérifie les 4 baies partenaires et les 116 cadres, ainsi que le dégagement des pilastres.
+- La barre de progression ne montre plus la longueur en mètres (`engine3d.js` et `walk.js`). Le curseur de position reste. Exemple attendu avec le stock de démo : « 6 CRÉATIONS · 114 PLACES LIBRES ».
+- État : **proposé** dans une PR brouillon. Ni fusionné, ni déployé. La validation visuelle de Guillaume et une mesure sur téléphone réel restent ouvertes. Les prix restent des prix de démonstration.
+
+## Second essai, salle plus construite — 27 novembre 2026 (même PR brouillon #54, non fusionné, non déployé)
+- Guillaume : « je veux quelque chose de bien. Une vraie salle » et « que ça fonctionne », y compris le déplacement libre. Toujours un essai, pas une mise en ligne.
+- Le déplacement libre (clavier, souris, deux joysticks) glisse contre les murs, les pilastres, les banquettes, les socles d’allée et les cadres. On ne traverse pas ces volumes et on peut revenir dans l’allée. La visite guidée s’arrête à la position courante.
+- La coque (murs, plinthes, corniche, rails), les pilastres à base et chapiteau, les banquettes et les cadres vides sont fusionnés ou instanciés. Le miroir planaire (1024 px, environ 36 %) n’est calculé que sur ordinateur. Le mobile utilise l’environnement, ratio de pixels ≤ 1,25.
+- Le marbre reste un shader procédural (veines diagonales). Pas de texture payante. Les veines ne sont pas encore un marbre de Carrare ramifié, et le reflet du sol ne renvoie pas les cadres avec la netteté de la référence.
+- État : proposé dans la PR brouillon #54. Ni fusionné, ni déployé.
+
+## Marbre CC0, exposition baissée, reflet — 27 novembre 2026 (même PR #54, non fusionné)
+- Guillaume : « Go pour la passe visuelle : vrai marbre, moins d'exposition, reflet au sol ». Rien d’autre ne change : déplacement, collisions, joysticks, visite guidée, clic, instanciation.
+- Le marbre procédural est remplacé par Marble012 d’ambientCG (CC0), albédo, normale et rugosité, 2K au bureau et 1K au mobile. Crédit : `empty-museum/assets/marble/CREDITS.md`.
+- L’exposition ACES de l’essai passe à 0,72. Le miroir du bureau reste un `Reflector` 1024, plus lisible, et s’efface avec la distance. Le mobile garde l’environnement, sans second passage.
+- État : proposé, non fusionné, non déployé.
+
+## Ivoire et reflet latéral — 27 novembre 2026 (même PR #54, non fusionné)
+- Guillaume : « Oui il faut être plus proche de la cible ». Passe visuelle seulement. Marble012 (CC0) est conservé, ramené vers l’ivoire `#f3eee6`, veines fines. L’exposition de l’essai est 0,86. Le miroir du bureau atténue le ciel et renforce le reflet près des murs. Le mobile ne prend pas de second passage.
+- État : proposé, non fusionné, non déployé.
+
+## Chantier 3D, jalon 1 — kit modelé et marbre blanc — 27 novembre 2026 (nouvelle PR brouillon, non fusionnée, non déployée)
+- Guillaume : « Lance le chantier 3D avec de vrais éléments pour coller à la 4K ». Seulement le jalon 1 dans cette branche. Les jalons lumière, sol miroir net et ciel restent en attente d’un feu vert.
+- Branche partie de `dbd7479` (`cursor/origin-room-marble-look-be39`). Le drapeau `enabled` de `origin-room-look.js` reste le retour arrière : `false` rend le calcaire précédent. Déplacement libre, collisions, joysticks, zoom, visite guidée, clic, commerce démo et `walk.js` ne sont pas retirés. Les boîtes de collision gardent leurs dimensions.
+- `empty-museum/tools/build_kit.py` produit un glTF meshopt : pilastre (base et chapiteau), plinthe moulurée, corniche, panneau de mur en creux (deux largeurs réelles, 4,08 m et 0,92 m), banquette. UV0 pour le marbre, UV2 réservé au bake. Le moteur les instance aux positions actuelles.
+- Marble012 est remplacé par Marble019 (ambientCG, CC0), le blanc veiné de gris le plus clair du comparatif. 2K bureau, 1K mobile. Crédit : `empty-museum/assets/marble/CREDITS.md`.
+- Le shader du miroir atténue le ciel au centre. La tache blanche à l’entrée reste visible sur les captures : le reflet net des cadres et cette tache restent le jalon 3.
+- État : proposé, non fusionné, non déployé. La validation visuelle de Guillaume reste ouverte.
+
+## Chantier 3D, jalon 2 — lumière précalculée et halo chaud — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Oui, lance l'étape 2 : éclairage précalculé et lumière chaude sur les œuvres ». Le jalon 3 (reflet net, cadres ouvragés) n’est pas commencé.
+- `empty-museum/tools/bake_kit_light.py` refait les pièces du kit et cuit, en quelques échantillons Cycles, une atlas WebP sur UV2 : occlusion de contact au pied des volumes et lumière douce venant du dessus. 1024 au bureau, 512 au mobile. Le drapeau `enabled` reste le retour arrière.
+- Un halo chaud instancié éclaire le marbre au-dessus de chaque cadre. Sur mobile, le titre 3D et la ligne d’aide ne se superposent plus au bandeau.
+- État : proposé, non fusionné, non déployé. Le jalon 3 suit dans la même PR.
+
+## Chantier 3D, jalon 3 — reflet net et tache d’entrée — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Oui, lance l'étape 3 : reflet net au sol, zone blanche supprimée et titre mobile corrigé ». Le jalon 4 n’est pas commencé.
+- Au bureau, le miroir planaire est fort près des murs et s’efface avec la distance. L’ouverture du plafond et le ciel en sont exclus. Le marbre du centre d’allée est un peu plus sombre pour ne plus brûler. Sur mobile, un reflet faux instancié remplace le second passage.
+- L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
+- État : proposé, non fusionné, non déployé.
+
+## Vrais cumulus et mobile plus lumineux — 28 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Le ciel de l’ouverture est Kloofendal 38d (CC0), bleu avec des cumulus, plus des masses blanches à dessous gris-bleu. Le mobile est un peu plus clair et plus chaud (exposition 0,76). Pas de rochers. Le compteur ne change pas.
+- État : proposé, non fusionné, non déployé.
+
+## Ouverture moins brûlée, sans rochers — 28 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Les sept instances de Boulder 01 sont retirées, ainsi que le fichier et son crédit. Le plafond cuit de l’entrée, qui formait une bande beige granuleuse en regardant en haut, est un plâtre blanc uni dans cet essai. Le rayon est plus faible pour que le ciel et les nuages restent lisibles. Le mobile est un peu moins exposé (0,72). Le compteur et les panneaux partenaires ne changent pas.
+- État : proposé, non fusionné, non déployé.
+
+## Plafond, nuages, tableaux nets, rocher CC0 — 28 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Dernière des trois passes. Le dessous des bandes de plafond, près de l’ouverture, reçoit une lumière d’ambiance venue du ciel : il ne reste pas gris. Les cumulus sont plus denses et plus blancs, et le rayon diffus est plus lisible. Nuages, rayon et rochers restent hors du miroir.
+- Les tableaux du domaine public passent à environ 1600 px au bureau et 768 px au mobile, avec mipmaps et filtrage anisotrope. Le compteur et le clic pour exposer ne changent pas. Les panneaux « The Partner Collection » non plus.
+- Sept instances d’un seul scan CC0 Poly Haven (`boulder_01`, Rico Cilliers), maillage réduit, au bureau seulement. Le mobile ne le charge pas. Crédit : `assets/rocks/CREDITS.md`.
+- Le test de visite guidée attend que la scène soit prête et que la visite soit vraiment lancée, puis exige toujours que la caméra avance de 0,2 m.
+- État : proposé, non fusionné, non déployé.
+
+## Huiles plus lisibles, sans rochers — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Deuxième passe. Les cadres libres du hall montrent des huiles plus sombres, sans mapping de tons. Les rochers flottants sont retirés : ils ne lisaient pas comme du marbre. Le téléphone est un peu plus clair. Le plafond autour de l’ouverture aussi. Le compteur et le clic pour exposer ne changent pas.
+- État : proposé, non fusionné, non déployé.
+
+## Affichage des cadres libres — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume autorise trois passes. Celle-ci pose une image du domaine public devant les cadres libres du hall, sans changer le compteur « 114 PLACES LIBRES » ni le clic pour exposer. Le mur du fond reprend Marble019. Le plafond est un peu plus large. Les spots chauds sont baissés. Cinq rochers blancs flottent au bureau seulement.
+- État : proposé, non fusionné, non déployé.
+
+## Grand hall d'entrée — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Oui, réorganise les emplacements dans les salles suivantes et fais le grand hall d'entrée comme la 4K ». Le hall d'entrée tient trois travées, avec un mur de fond éclairé, une porte sur le côté et un tableau au centre. Douze cadres d'origine y sont répartis (deux ou trois par travée et par côté, plus les deux grands de la première travée). Les autres gardent leur identifiant et continuent dans les salles derrière. Les 120 emplacements et les 12 tableaux ajoutés restent. Le socle S01 passe à gauche du hall pour laisser la porte libre.
+- État : proposé, non fusionné, non déployé.
+
+## Marbre réel et tableaux sur les murs du fond — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « On pousse encore ». Les dalles du fond prennent le même Marble019 que les murs latéraux, en coordonnées monde, avec des joints clairs. Les douze cadres ajoutés montrent des tableaux du domaine public (crédit `assets/paintings/CREDITS.md`). Les 120 emplacements d’origine ne bougent pas.
+- État : proposé, non fusionné, non déployé.
+
+## Mobile, dalles du fond et plafond — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Go : mobile réparé, murs du fond avec dalles et œuvre, plafond lumineux ». L’exposition mobile de l’essai baisse, les ombres mobiles de cet essai sont coupées, et le téléphone ne dessine que le premier mur de l’enfilade. Les 120 cadres du commerce restent. Chaque mur du fond gagne des dalles en relief et un cadre en plus, testé à part. Le dessous du plafond est éclairci.
+- État : proposé, non fusionné, non déployé.
+
+## Salles fermées, dalles et sol uniforme — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Go : vraie salle avec mur du fond, murs en grandes dalles de marbre blanc, sol uniforme et nuages corrigés ». Les 120 cadres restent à leur place. La salle est une enfilade : un mur éclairé avec une porte tous les trois travées environ, le premier à 10,85 m (seul intervalle libre avant la sculpture d’allée). Le marbre Marble019 (CC0) est éclairci, veines plus larges, joints de dalles d’environ 1,5 × 3 m. Le sol n’a plus de bande grise ; le reflet est basse résolution. Les nuages sont coupés aux bords de l’ouverture.
+- État : proposé, non fusionné, non déployé.
+
+## Nuages en volume — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Pas encore, lance d'abord les nuages en volume 3D ». Devant la photo CC0, des sprites de cumulus (bruit, un seul appel instancié) occupent l’ouverture à plusieurs profondeurs. Le mobile en a moins. Ils sont exclus du miroir, comme le dôme et le rayon.
+- État : proposé, non fusionné, non déployé.
+
+## Ciel plus clair et titre 3D retiré — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Oui encore mieux allez ». Même ciel CC0 Kloofendal, éclairci et désaturé pour que l’ouverture soit un cumulus blanc plutôt qu’une bande bleue. Le rayon est plus large et plus diffus. L’inscription 3D « THE UNREAL MUSEUM » (portail et panneau flottant) est cachée dans cet essai, y compris dans le miroir, parce qu’elle se lisait à l’envers. Le titre HTML reste.
+- État : proposé, non fusionné, non déployé.
+
+## Ciel CC0 dans l’ouverture — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Avant la mise en ligne, fais le vrai ciel nuageux dans l'ouverture ». Seul le ciel change.
+- L’ouverture lit Kloofendal 48d Partly Cloudy (Pure Sky) de Poly Haven, CC0, 2K au bureau et 1K au mobile. Crédit : `empty-museum/assets/sky/CREDITS.md`. Le rayon est quelques cartes additives sous la fente, exclues du miroir du sol avec le dôme.
+- État : proposé, non fusionné, non déployé.
+
+## Chantier 3D, jalon 4 — cadres, ciel et bande d’allée — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Guillaume : « Oui, lance l'étape 4 : cadres ornementés, ciel nuageux avec rayon de lumière, bande centrale lissée et titre mobile corrigé ». Dernier jalon de cet essai. Rien n’est fusionné ni déployé.
+- `empty-museum/tools/build_frames.py` produit une baguette sculptée et un coin à feuilles, instanciés sur les cadres existants. Le clic sur l’œuvre reste. Le ciel est un cumulus procédural (voir `assets/sky/CREDITS.md`) avec un rayon additif. La jonction entre l’allée mate et le miroir est un dégradé. Sur mobile, le second titre flottant est caché.
+- État : proposé, non fusionné, non déployé.

@@ -10,6 +10,27 @@ import {addBakedEntranceV4} from "./baked-architecture-v4.js?v=20261106a";
 import {createMuseumV5Navigation} from "./museum-v5.js?v=20261109dualstick2";
 import {museumCameraMotion} from "./movement3d.js?v=20261105motion1";
 import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smoothstep} from "./tour-journey.js?v=20261105nearest1";
+import {
+  enabled as ORIGIN_ROOM_LOOK_ENABLED,
+  createOriginMaterials,
+  mouldedFrameGeometry,
+  installOriginRoomLook,
+  frameAnchorX,
+  frameRotationY,
+  commercialFrameZ,
+  FRAME,
+  LEGACY_FRAME_SIZE_M
+} from "./origin-room-look.js?v=20261128j16";
+import {
+  slideVisitor,
+  separateVisitor,
+  staticObstacles,
+  visitorBounds,
+  frameObstacle,
+  frameOuterHalfWidth,
+  VISITOR
+} from "./origin-room-geometry.mjs";
+import {originPose, bindOriginPoses} from "./origin-hall-layout.mjs";
 
 (() => {
   "use strict";
@@ -23,7 +44,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   mobileStyle.rel="stylesheet";mobileStyle.href="./museum-mobile-v12.css?v=20261104c";
   document.head.appendChild(mobileStyle);
   const mobileCompactStyle=document.createElement("link");
-  mobileCompactStyle.rel="stylesheet";mobileCompactStyle.href="./museum-mobile-v13.css?v=20261106exit1";
+  mobileCompactStyle.rel="stylesheet";mobileCompactStyle.href="./museum-mobile-v13.css?v=20261127j2";
   document.head.appendChild(mobileCompactStyle);
   const dualStickStyle=document.createElement("link");
   dualStickStyle.rel="stylesheet";dualStickStyle.href="./dual-joystick-v1.css?v=20261109dualstick2";
@@ -42,12 +63,13 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   scene.fog = new THREE.FogExp2(0xeceae5,0.0011);
   const camera = new THREE.PerspectiveCamera(mobile?64:59,1,.07,240);
   const renderer = new THREE.WebGLRenderer({canvas,antialias:!mobile,alpha:false,powerPreference:mobile?"low-power":"high-performance"});
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.45:1.8));
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?(ORIGIN_ROOM_LOOK_ENABLED?1:1.45):1.8));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   // Warm museum white needs plausible daylight detail, not crushed grey midtones.
   renderer.toneMappingExposure = .91;
-  renderer.shadowMap.enabled = true;
+  if(ORIGIN_ROOM_LOOK_ENABLED) renderer.toneMappingExposure = mobile ? .76 : .86;
+  renderer.shadowMap.enabled = !(mobile && ORIGIN_ROOM_LOOK_ENABLED);
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0xf7f6f3,1);
   // A neutral, physically-based indoor reflection environment: brushed metals
@@ -67,7 +89,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   sun.position.set(-8,18,15);
   // V9: true contact and frame shadows on iPhone too; constrained shadow
   // volume follows the visitor so the 140m gallery needs only one light map.
-  sun.castShadow=true;
+  sun.castShadow=!(mobile && ORIGIN_ROOM_LOOK_ENABLED);
   sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);
   sun.shadow.camera.left=-12;sun.shadow.camera.right=12;
   sun.shadow.camera.top=20;sun.shadow.camera.bottom=-20;
@@ -86,6 +108,11 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   enhanceScannedPBR(luxury,{mobile,length:LENGTH})
     .then(()=>physicalGallery?.refreshFloor(luxury.floor))
     .catch(e=>console.warn("[TEM] Scanned PBR unavailable, retaining originals",e));
+  const originMats=ORIGIN_ROOM_LOOK_ENABLED?createOriginMaterials({mobile}):null;
+  let originSync=()=>{};
+  let originCompact=null;
+  let originObstacles=[];
+  let originBounds=null;
   const stone=luxury.wall,stoneAlt=luxury.wallAlt;
   const floorMat=luxury.floor,grout=material(0xd4d1cb,.96);
   const plinthMat=luxury.whiteStone,inlay=material(0xc5bfb1,.67,.19);
@@ -120,7 +147,8 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   }
 
   // Mineral PBR floor, subtly veined slabs, hairline joints and micro-relief.
-  box(architecture,HALF*2,.28,LENGTH,floorMat,0,-.16,LENGTH/2,false,true);
+  const floorMesh=box(architecture,HALF*2,.28,LENGTH,floorMat,0,-.16,LENGTH/2,false,true);
+  floorMesh.userData.temRole="structural-floor";
   // Premium architecture has its own instanced, bevelled stone slabs and
   // stationary indirect-occlusion atlas; never modify exhibition inventory.
   try{
@@ -137,14 +165,19 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   const ceilingRelief=material(0xf7f5ef,.91);
   const ceilingShadow=material(0xe1e1db,.96);
   const ceilingLED=new THREE.MeshBasicMaterial({color:0xf4f5f0,side:THREE.DoubleSide});
-  box(architecture,HALF*2,.34,LENGTH,ceilingPlaster,0,HEIGHT+.19,LENGTH/2);
+  const ceilingCap=box(architecture,HALF*2,.34,LENGTH,ceilingPlaster,0,HEIGHT+.19,LENGTH/2);
+  ceilingCap.userData.temRole="ceiling-cap";
   // Recessed white skylight: no dark glass, colored fixtures or hanging frames.
-  box(architecture,2.90,.10,LENGTH,ceilingRelief,0,HEIGHT-.012,LENGTH/2);
-  box(architecture,2.67,.029,LENGTH,ceilingRelief,0,HEIGHT-.077,LENGTH/2);
+  const ceilingSkyA=box(architecture,2.90,.10,LENGTH,ceilingRelief,0,HEIGHT-.012,LENGTH/2);
+  ceilingSkyA.userData.temRole="ceiling-cap";
+  const ceilingSkyB=box(architecture,2.67,.029,LENGTH,ceilingRelief,0,HEIGHT-.077,LENGTH/2);
+  ceilingSkyB.userData.temRole="ceiling-cap";
   for(const side of [-1,1]){
     // A quiet plaster reveal gives depth to the apparently seamless white ceiling.
-    box(architecture,.070,.09,LENGTH,ceilingShadow,side*1.48,HEIGHT-.105,LENGTH/2);
-    box(architecture,.044,.031,LENGTH,ceilingLED,side*1.39,HEIGHT-.148,LENGTH/2);
+    const reveal=box(architecture,.070,.09,LENGTH,ceilingShadow,side*1.48,HEIGHT-.105,LENGTH/2);
+    reveal.userData.temRole="ceiling-cap";
+    const cove=box(architecture,.044,.031,LENGTH,ceilingLED,side*1.39,HEIGHT-.148,LENGTH/2);
+    cove.userData.temRole="ceiling-cap";
   }
   for(const side of [-1,1]){
     box(architecture,.22,HEIGHT,LENGTH,side<0?stone:stoneAlt,side*(HALF+.03),HEIGHT/2,LENGTH/2);
@@ -168,6 +201,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   for(const [index,z] of ceilingOculi.entries()){
     const gallery=new THREE.Group();
     gallery.position.set(0,HEIGHT-.25,z);
+    gallery.userData.temRole="ceiling-oculus";
     architecture.add(gallery);
     oculusGroups.push(gallery);
     const backplate=new THREE.Mesh(
@@ -231,7 +265,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   // Signature architectural inscription: embedded into the very first portal,
   // not an on-screen graphic. White stone, hairline bronze and engraved text.
   const portalSign=new THREE.Group();
-  portalSign.position.set(0,5.00,4.18);
+  portalSign.position.set(0,mobile?2.25:5.00,mobile?7.2:4.18);
   architecture.add(portalSign);
   box(portalSign,4.12,.69,.105,plinthMat,0,0,0,true);
   box(portalSign,4.16,.018,.125,brass,0,.35,0);
@@ -240,23 +274,28 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     g.clearRect(0,0,w,h);
     g.textAlign="center";
     g.fillStyle="#75654b";
-    g.font="56px Georgia, serif";
-    g.letterSpacing="3px";
-    g.fillText("THE UNREAL MUSEUM",w/2,104);
+    g.font="52px Georgia, serif";
+    g.fillText("THE UNREAL MUSEUM",w/2,96);
     g.fillStyle="#a69b88";
-    g.font="22px Arial, sans-serif";
-    g.letterSpacing="5px";
-    g.fillText("A PLACE FOR WHAT WE CREATE",w/2,156);
+    g.font="20px Arial, sans-serif";
+    g.fillText("A PLACE FOR WHAT WE CREATE",w/2,148);
   },1024,256);
   const inscription=new THREE.MeshBasicMaterial({map:portalInk,transparent:true,depthWrite:false,side:THREE.DoubleSide});
   const portalFront=surface(portalSign,3.95,.61,inscription,0,0,-.067,Math.PI);
   portalFront.renderOrder=3;
+  // The HUD already carries the name. The marble look hides this plane on every
+  // device: it is double-sided, so looking up or into the floor mirror shows it reversed.
+  portalFront.userData.originHideInscription=true;
+  if(mobile) portalFront.userData.originHideOnMobile=true;
   // Optional real Cycles light-baked architectural entrance: V3 remains usable
   // until the generated GLB has been verified and downloaded.
   // Loading stays asynchronous; the visitor can already explore the V3
   // gallery while the verified Blender light-bake arrives. Software WebGL
   // and slower desktop devices need more than the old hard 15s cutoff.
-  addBakedEntranceV4({scene,overlay,timeoutMs:mobile?25000:90000}).catch(error=>
+  addBakedEntranceV4({
+    scene,overlay,timeoutMs:mobile?25000:90000,
+    plainPlaster:ORIGIN_ROOM_LOOK_ENABLED
+  }).catch(error=>
     console.warn("[TEM] Nonblocking V4 architectural enhancement",error));
   // No gold stripes or decorative circles cutting through the real stone floor.
   // The actual large-format stone joints provide the entire floor rhythm.
@@ -280,16 +319,18 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   }
   const stamp=canvasTexture((g,w,h)=>{
     g.clearRect(0,0,w,h);g.fillStyle="#252823";
-    g.font="400 83px Georgia";g.textAlign="center";g.fillText("THE UNREAL MUSEUM",w/2,176);
-    g.fillStyle="#88867f";g.font="600 24px Arial";g.letterSpacing="6px";g.fillText("A SPACE FOR WHAT WE CREATE",w/2,260);
-    g.fillStyle="#aa9d86";g.fillRect(w/2-35,300,70,2);
-  },1280,420);
-  // Physically scaled entrance signage: preserve its entire silhouette on
-  // a narrow portrait phone, instead of cropping enormous black letters.
-  const welcome=surface(architecture,mobile?3.05:5.2,mobile?1.00:1.70,
+    g.font="400 72px Georgia";g.textAlign="center";g.fillText("THE UNREAL MUSEUM",w/2,150);
+    g.fillStyle="#6f6d66";g.font="600 22px Arial";g.fillText("A SPACE FOR WHAT WE CREATE",w/2,214);
+    g.fillStyle="#aa9d86";g.fillRect(w/2-28,248,56,2);
+  },1280,360);
+  // On a phone the sign used to sit in the same band as the on-screen title
+  // and the control hint. Keep both lines, lower and smaller, clear of that band.
+  const welcome=surface(architecture,mobile?2.35:5.2,mobile?0.62:1.55,
     new THREE.MeshBasicMaterial({map:stamp,transparent:true,side:THREE.DoubleSide,depthWrite:false}),
-    0,4.80,7.9,Math.PI);
+    0,mobile?1.22:4.80,mobile?8.6:7.9,Math.PI);
   welcome.renderOrder=4;
+  welcome.userData.originHideInscription=true;
+  if(mobile) welcome.userData.originHideOnMobile=true;
 
   // Materials for artworks are produced at runtime; uploaded images remain visible.
   function artworkTexture(piece,w=768,h=550){
@@ -486,16 +527,31 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   function addFrame(group,w,h,x,y,z,rot,frontMat,slot){
     const unit=new THREE.Group();
     unit.position.set(x,y,z);unit.rotation.y=rot;group.add(unit);
-    // Wall bays have a shallow relief. Put the shadow on its physical surface,
-    // rather than hiding it behind the wall (which made the frames look pasted on).
-    const shadow=surface(unit,w+.47,h+.50,frameContactMaterial,0,-.015,-.090);
-    shadow.renderOrder=0;
-    // Thin rounded metal lips catch real grazing highlights instead of producing
-    // perfectly sharp computer-generated boxes.
-    const outer=mesh(unit,new RoundedBoxGeometry(w+.126,h+.126,.084,2,.010),darkBronze,0,0,-.018,true);
-    const gilded=mesh(unit,new RoundedBoxGeometry(w+.084,h+.084,.092,2,.009),agedGold,0,0,.026,true);
-    box(unit,w+.053,h+.053,.094,pictureMat,0,0,.062,true);
-    const art=surface(unit,w,h,frontMat,0,0,.114);
+    unit.userData.wallFrame="partner";
+    unit.userData.w=w;
+    unit.userData.h=h;
+    unit.userData.slot=slot;
+    let art;
+    if(ORIGIN_ROOM_LOOK_ENABLED){
+      // Moulding back is FRAME.clearanceM off the structural wall. The pool
+      // sits in that gap so it reads on the marble, not inside the wall.
+      const shadow=surface(unit,w+.62,h+.7,frameContactMaterial,0,-.02,FRAME.backLocalZ-.004);
+      shadow.renderOrder=0;
+      const partnerLip=mesh(unit,mouldedFrameGeometry(w,h),originMats.gold,0,0,0,!mobile);
+      partnerLip.userData.ornateStandIn=true;
+      art=surface(unit,Math.max(.08,w-.036),Math.max(.08,h-.036),frontMat,0,0,FRAME.artLocalZ);
+    }else{
+      // Wall bays have a shallow relief. Put the shadow on its physical surface,
+      // rather than hiding it behind the wall (which made the frames look pasted on).
+      const shadow=surface(unit,w+.47,h+.50,frameContactMaterial,0,-.015,-.090);
+      shadow.renderOrder=0;
+      // Thin rounded metal lips catch real grazing highlights instead of producing
+      // perfectly sharp computer-generated boxes.
+      mesh(unit,new RoundedBoxGeometry(w+.126,h+.126,.084,2,.010),darkBronze,0,0,-.018,true);
+      mesh(unit,new RoundedBoxGeometry(w+.084,h+.084,.092,2,.009),agedGold,0,0,.026,true);
+      box(unit,w+.053,h+.053,.094,pictureMat,0,0,.062,true);
+      art=surface(unit,w,h,frontMat,0,0,.114);
+    }
     art.material.side=THREE.DoubleSide;
     if(slot&&!slot.reservedForAds)markInteractive(art,slot);
     // Brushed brass label, mounted beside rather than over the piece.
@@ -514,14 +570,13 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     return art;
   }
   function drawWallSlot(slot){
-    const i=slot.id,z=5.7+i*STEP,side=i%2?1:-1,x=side*(HALF-.39);
-    const dims={
-      mini:[1.35,1.83],portrait:[1.42,2.15],landscape:[2.36,1.6],
-      tall:[1.48,2.67],wide:[2.78,1.95],panorama:[2.8,1.18],
-      standard:[2.36,1.6],large:[2.78,1.95],xl:[2.8,1.18]
-    };
-    const [w,h]=dims[slot.size]||dims.landscape;
-    const y=2.10,rot=side<0?Math.PI/2:-Math.PI/2;
+    const i=slot.id;
+    const pose=ORIGIN_ROOM_LOOK_ENABLED ? originPose(slot) : null;
+    const z=pose ? pose.z : 5.7+i*STEP;
+    const side=pose ? pose.side : i%2?1:-1;
+    const x=ORIGIN_ROOM_LOOK_ENABLED ? frameAnchorX(side) : side*(HALF-.39);
+    const [w,h]=LEGACY_FRAME_SIZE_M[slot.size]||LEGACY_FRAME_SIZE_M.landscape;
+    const y=pose ? pose.y : 2.10,rot=frameRotationY(side);
     let mat;
     if(slot.piece)mat=pictureMaterial(slot.piece);
     else if(slot.reservedForAds)mat=new THREE.MeshStandardMaterial({
@@ -545,19 +600,33 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     color:0x655c50,roughness:.48,metalness:.34
   });
   function drawCommercialFrame(slot){
-    const side=slot.side;
-    const x=side*(HALF-.39),z=slot.z+side*(slot.xM+slot.widthM/2-1.5);
-    const y=slot.y,w=slot.widthM,h=slot.heightM;
-    const rot=side<0?Math.PI/2:-Math.PI/2;
+    const pose=ORIGIN_ROOM_LOOK_ENABLED ? originPose(slot) : null;
+    const side=pose ? pose.side : slot.side;
+    const x=ORIGIN_ROOM_LOOK_ENABLED ? frameAnchorX(side) : side*(HALF-.39);
+    const z=pose ? pose.z : commercialFrameZ(slot);
+    const y=pose ? pose.y : slot.y,w=slot.widthM,h=slot.heightM;
+    const rot=frameRotationY(side);
     const unit=new THREE.Group();
     unit.position.set(x,y,z);unit.rotation.y=rot;
+    unit.userData.wallFrame="commercial";
+    unit.userData.hasPiece=Boolean(slot.piece);
+    unit.userData.w=w;
+    unit.userData.h=h;
+    unit.userData.slot=slot;
     interactive.add(unit);
-    // A shadow-line frame and shallow museum float-mount keep the gallery
-    // quiet even with a high density of small pieces.
-    box(unit,w+.035,h+.035,.05,modularFrameMat,0,0,-.025);
-    box(unit,w+.012,h+.012,.055,modularMountMat,0,0,.012);
     const imageMaterial=slot.piece?pictureMaterial(slot.piece):modularBareMat;
-    const art=surface(unit,w-.015,h-.015,imageMaterial,0,0,.047);
+    let art;
+    if(ORIGIN_ROOM_LOOK_ENABLED){
+      const commercialLip=mesh(unit,mouldedFrameGeometry(w,h),originMats.gold,0,0,0,!mobile);
+      commercialLip.userData.ornateStandIn=true;
+      art=surface(unit,Math.max(.06,w-.03),Math.max(.06,h-.03),imageMaterial,0,0,FRAME.artLocalZ);
+    }else{
+      // A shadow-line frame and shallow museum float-mount keep the gallery
+      // quiet even with a high density of small pieces.
+      box(unit,w+.035,h+.035,.05,modularFrameMat,0,0,-.025);
+      box(unit,w+.012,h+.012,.055,modularMountMat,0,0,.012);
+      art=surface(unit,w-.015,h-.015,imageMaterial,0,0,.047);
+    }
     markInteractive(art,slot);
     if(slot.piece){
       // Label below the frame, not beside it, so the small subdivisions cannot
@@ -713,8 +782,9 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       child.traverse(o=>{if(o.geometry)o.geometry.dispose();});
     }
     clickable.length=0;
+    if(ORIGIN_ROOM_LOOK_ENABLED)bindOriginPoses(window.TEM.getWallDisplaySlots?.()||[]);
     // Four partner bays retain their historical reserved plaques.
-    window.TEM.getSlots().filter(slot=>slot.reservedForAds).forEach(drawWallSlot);
+    window.TEM.getSlots().filter(slot=>slot.reservedForAds||(ORIGIN_ROOM_LOOK_ENABLED&&Number.isInteger(slot.id)&&slot.id<4)).forEach(drawWallSlot);
     // The commercial distribution is now 116 independent frames.
     (window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots().filter(slot=>!slot.reservedForAds))
       .forEach(slot=>slot.isCommercial?drawCommercialFrame(slot):drawWallSlot(slot));
@@ -735,8 +805,47 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
         premiumExhibits.push({container,slot});
       }
     });
+    if(originCompact)originCompact();
+    if(ORIGIN_ROOM_LOOK_ENABLED)refreshVisitorObstacles();
+  }
+  function refreshVisitorObstacles(){
+    originBounds=visitorBounds(LENGTH,VISITOR.radius);
+    originObstacles=staticObstacles(LENGTH);
+    for(const child of interactive.children){
+      if(!child.userData?.wallFrame)continue;
+      originObstacles.push(frameObstacle({
+        side:child.position.x>=0?1:-1,
+        z:child.position.z,
+        outerHalf:frameOuterHalfWidth(child.userData.w||1,{plaque:child.userData.wallFrame==="partner"})
+      }));
+    }
   }
   drawInventory();
+  if(ORIGIN_ROOM_LOOK_ENABLED&&originMats){
+    try{
+      const look=installOriginRoomLook({
+        scene,architecture,floorMesh,physicalGallery,mobile,
+        half:HALF,height:HEIGHT,length:LENGTH,museumArtDirection,
+        wallMaterial:originMats.wall,floorMaterial:originMats.floor,
+        interactive,gold:originMats.gold,bare:modularBareMat,
+        trackMarble:originMats.track
+      });
+      originSync=look.sync;
+      originCompact=()=>{
+        look.compactFrames();
+        const root=interactive.getObjectByName("origin-frame-instances");
+        root?.traverse(obj=>{
+          if(obj.userData?.slotAt && !clickable.includes(obj))clickable.push(obj);
+        });
+      };
+      originCompact();
+      refreshVisitorObstacles();
+      overlay.dataset.originRoomLook="marble";
+    }catch(error){
+      console.warn("[TEM] Origin room look failed; frames stay, classic surfaces remain where the pass stopped",error);
+      overlay.dataset.originRoomLook="error";
+    }
+  }else overlay.dataset.originRoomLook="classic";
 
   let active=false,frame=0,last=0,yaw=0,pitch=0,yawTarget=0,pitchTarget=0,walkTo=null,down=null,focusBefore=null;
   let velX=0,velZ=0,rayTime=0;
@@ -757,7 +866,12 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     }catch{return null;}
   }
   function plannedStops(){
-    return planExhibitionStops(window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots(),{
+    const tourSlots=(window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots()).map(slot=>{
+      if(!ORIGIN_ROOM_LOOK_ENABLED)return slot;
+      const pose=originPose(slot);
+      return pose?{...slot,side:pose.side,z:pose.z,y:pose.y,originPlaced:true}:slot;
+    });
+    return planExhibitionStops(tourSlots,{
       step:STEP,half:HALF,start:5.7,
       floorSlots:window.TEM.getFloorSlots(),ceilingSlots:window.TEM.getCeilingSlots()
     });
@@ -853,7 +967,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     const mapped=prevId?stops.findIndex(st=>st.id===prevId):-1;
     const next=fromCurrent?routeResumeIndex(stops,view.z,{currentX:view.x}):routeNextIndex(stops,mapped,view.z);
     if(!fromCurrent&&mapped===stops.length-1&&next===0){
-      view.x=0;view.z=.85;view.y=1.72;velX=0;velZ=0;
+      view.x=mobile&&ORIGIN_ROOM_LOOK_ENABLED?-.35:0;view.z=.85;view.y=1.72;velX=0;velZ=0;
       yaw=0;yawTarget=0;pitch=0;pitchTarget=0;
     }
     return goToArtworkIndex(next,stops);
@@ -897,7 +1011,9 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   let lastSpotPosition=-Infinity, lastShadowPosition=-Infinity;
   const progress=$("#walkProgress"),meter=$("#walkMeter");
   const guide=$("#walkGuide");
-  if(guide)guide.textContent="ENTREZ DANS LES GALERIES · ADMIREZ LES ŒUVRES ET LEURS CARTELS DORÉS. LES SPOTS SE CONCENTRENT SUR LES EXPOSITIONS. LE PLAFOND RESTE BLANC.";
+  if(guide)guide.textContent=ORIGIN_ROOM_LOOK_ENABLED
+    ?"ENTREZ DANS LES GALERIES · ADMIREZ LES ŒUVRES ET LEURS CARTELS DORÉS. LES SPOTS SE CONCENTRENT SUR LES EXPOSITIONS."
+    :"ENTREZ DANS LES GALERIES · ADMIREZ LES ŒUVRES ET LEURS CARTELS DORÉS. LES SPOTS SE CONCENTRENT SUR LES EXPOSITIONS. LE PLAFOND RESTE BLANC.";
   $(".walk-identity small").textContent="GALERIES MONUMENTALES · MUSÉE 3D";
   const panel=document.createElement("div");panel.className="engine-status";
   panel.innerHTML='<span class="engine-chip">● RENDERED IN 3D</span><span class="engine-chip engine-location">ORIGINAL GALLERY · 2026</span>';
@@ -939,7 +1055,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   const v5=createMuseumV5Navigation({
     overlay,canvas,mobile,
     home:()=>{
-      resetTourState(true);view.x=0;view.z=.85;view.y=1.72;
+      resetTourState(true);view.x=mobile&&ORIGIN_ROOM_LOOK_ENABLED?-.35:0;view.z=.85;view.y=1.72;
       yaw=0;pitch=0;yawTarget=0;pitchTarget=0;walkTo=null;velX=0;velZ=0;
     },
     setZoom:(fov)=>{camera.fov=fov;camera.updateProjectionMatrix();},
@@ -967,6 +1083,17 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     camera.rotation.order="YXZ";
     camera.rotation.set(pitch,Math.PI+yaw,0);
   }
+  window.addEventListener("tem-capture-pose",event=>{
+    const pose=event.detail||{};
+    if(Number.isFinite(pose.x))view.x=pose.x;
+    if(Number.isFinite(pose.y))view.y=pose.y;
+    if(Number.isFinite(pose.z))view.z=pose.z;
+    if(Number.isFinite(pose.yaw)){yaw=pose.yaw;yawTarget=pose.yaw;}
+    if(Number.isFinite(pose.pitch)){pitch=pose.pitch;pitchTarget=pose.pitch;}
+    velX=0;velZ=0;walkTo=null;
+    orient();
+  });
+  let fpsStamp=0,fpsFrames=0;
   function interactions(nx,ny){
     mouse.set(nx,ny);
     raycaster.setFromCamera(mouse,camera);
@@ -978,9 +1105,12 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       for(let node=hit.object;node;node=node.parent){
         if(node.visible===false){renderable=false;break;}
       }
-      if(renderable&&hit.object.userData.target){
-        return hit.object.userData.target;
+      if(!renderable)continue;
+      if(hit.instanceId!=null && hit.object.userData.slotAt){
+        const slot=hit.object.userData.slotAt(hit.instanceId);
+        if(slot)return slot;
       }
+      if(hit.object.userData.target)return hit.object.userData.target;
     }
     return null;
   }
@@ -992,8 +1122,10 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   }
   function tick(time){
     if(!active)return;
-    const dt=clamp((time-last)/1000 || .016,0,.045);
+    const rawDt=(time-last)/1000 || .016;
+    const dt=clamp(rawDt,0,.045);
     last=time;
+    if(overlay)overlay.dataset.museumFrameMs=(rawDt*1000).toFixed(1);
     const blocked=[...document.querySelectorAll("dialog")].some(d=>d.open);
     const pressed=(...names)=>names.some(n=>keys.has(n)||held.has(n));
     const input=v5.update(dt);
@@ -1063,12 +1195,26 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
     const damping=Math.min(1,dt*(input.auto?5.7:8));
     velX+=(wantX-velX)*damping;
     velZ+=(wantZ-velZ)*damping;
-    view.x=clamp(view.x+velX*dt,-HALF+1.4,HALF-1.4);
-    if(assisted && (Math.abs(fwd)>.01||Math.abs(strafe)>.01))view.x+=(0-view.x)*Math.min(1,dt*3.6);
-    view.z=clamp(view.z+velZ*dt,.80,LENGTH-2.8);
+    if(!input.auto && tourState.wasAuto){
+      tourState.motion=null;
+      walkTo=null;
+      velX=0;velZ=0;
+    }
+    tourState.wasAuto=input.auto;
+    if(!input.auto && tourState.motion)tourState.motion=null;
+    const touring=Boolean(input.auto && tourState.motion && !tourState.motion.pausedAt);
+    if(ORIGIN_ROOM_LOOK_ENABLED && originBounds && !touring){
+      const stepped=slideVisitor(view.x,view.z,view.x+velX*dt,view.z+velZ*dt,VISITOR.radius,originObstacles,originBounds);
+      const free=separateVisitor(stepped.x,stepped.z,VISITOR.radius,originObstacles,originBounds);
+      view.x=free.x;view.z=free.z;
+    }else if(!touring){
+      view.x=clamp(view.x+velX*dt,-HALF+1.4,HALF-1.4);
+      if(assisted && (Math.abs(fwd)>.01||Math.abs(strafe)>.01))view.x+=(0-view.x)*Math.min(1,dt*3.6);
+      view.z=clamp(view.z+velZ*dt,.80,LENGTH-2.8);
+    }
     // Cinematic approach: shift toward the actual piece, then turn to face it.
     // This overrides empty-corridor cruise while preserving keyboard free roam.
-    if(tourState.motion && !tourState.motion.pausedAt && !blocked){
+    if(input.auto && tourState.motion && !tourState.motion.pausedAt && !blocked){
       const m=tourState.motion;
       // Use real elapsed time: software WebGL and lower-end phones may render slowly.
       m.elapsed=Math.max(0,(time-m.startedAt)/1000);
@@ -1122,11 +1268,18 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
       item.container.visible=Boolean(stillActive&&distance<=(piece.maxVisibleDistanceM||0));
       // Standard depth testing still provides real architectural occlusion.
     }
+    originSync(view.x,view.z);
     renderer.render(scene,camera);
+    fpsFrames++;
+    if(time-fpsStamp>1000){
+      overlay.dataset.museumFps=((fpsFrames*1000)/Math.max(1,time-fpsStamp)).toFixed(1);
+      overlay.dataset.museumDrawCalls=String(renderer.info.render.calls);
+      fpsFrames=0;fpsStamp=time;
+    }
     const frees=(window.TEM.getWallDisplaySlots?.()||window.TEM.getSlots().filter(s=>!s.reservedForAds)).filter(s=>!s.piece).length+
       window.TEM.getCeilingSlots().filter(s=>s.unlocked&&!s.piece).length+
       window.TEM.getFloorSlots().filter(s=>!s.piece).length;
-    if(progress)progress.textContent=Math.floor(view.z)+" / "+Math.floor(LENGTH)+" M · "+window.TEM.getPieces().length+" CRÉATIONS · "+frees+" PLACES LIBRES";
+    if(progress)progress.textContent=window.TEM.getPieces().length+" CRÉATIONS · "+frees+" PLACES LIBRES";
     if(meter)meter.style.width=(100*view.z/LENGTH)+"%";
     const loc=panel.querySelector(".engine-location");
     if(loc)loc.textContent=view.z<46?"ORIGINAL GALLERY · 2026":view.z<95?"THE EXPANSION · 02":"THE LONG HALL · 03";
@@ -1135,7 +1288,7 @@ import {planExhibitionStops,routeNextIndex,routeResumeIndex,approachDuration,smo
   function open(){
     if(active)return;
     focusBefore=document.activeElement;
-    active=true;last=performance.now();view.x=0;view.z=.85;yaw=0;pitch=0;yawTarget=0;pitchTarget=0;velX=0;velZ=0;walkTo=null;resetTourState();
+    active=true;last=performance.now();view.x=mobile&&ORIGIN_ROOM_LOOK_ENABLED?-.35:0;view.z=.85;yaw=0;pitch=mobile&&ORIGIN_ROOM_LOOK_ENABLED?0.06:0;yawTarget=0;pitchTarget=pitch;velX=0;velZ=0;walkTo=null;resetTourState();
     v5.enter();
     // Fresh entry: start from the entrance; guided mode will seek the nearest
     // real exhibit from the live camera position, never an old saved stop.
