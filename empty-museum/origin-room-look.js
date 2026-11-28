@@ -185,7 +185,7 @@ ${MARBLE_GLSL}`)
 		diffuseColor.rgb *= mix(0.78, 1.0, clamp(baked, 0.0, 1.0));
 	#endif
 	if (vMarbleN.y < -0.4) {
-		diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.97, 0.96, 0.93), 0.62);
+		diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.98, 0.98, 0.96), 0.84);
 	}`
     )
     .replace(
@@ -343,14 +343,14 @@ function cloudVolume({THREE, mobile}) {
           amp *= 0.5;
         }
         float warp = noise(uv * 2.2 + vSeed) * 0.16;
-        float body = 1.0 - smoothstep(0.08, 0.42, length(uv) - warp);
-        float alpha = body * smoothstep(0.32, 0.68, n);
+        float body = 1.0 - smoothstep(0.02, 0.46, length(uv) - warp);
+        float alpha = body * smoothstep(0.28, 0.72, n);
         float slot = smoothstep(2.18, 1.45, abs(vWorld.x));
         alpha *= slot * slot;
         if (alpha < 0.02) discard;
-        float light = clamp(uv.y * 1.6 + 0.62, 0.0, 1.0);
-        vec3 col = mix(vec3(0.78, 0.80, 0.82), vec3(1.0, 0.99, 0.97), light);
-        gl_FragColor = vec4(col, alpha * 0.9);
+        float light = clamp(uv.y * 1.8 + 0.35, 0.0, 1.0);
+        vec3 col = mix(vec3(0.58, 0.62, 0.66), vec3(1.0, 0.99, 0.97), light);
+        gl_FragColor = vec4(col, alpha);
       }
     `
   }), puffs.length);
@@ -429,8 +429,8 @@ function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile, trackM
   backing.name = "origin-enfilade";
   scene.add(backing);
   const slabMat = wallMaterial.clone();
-  slabMat.emissive = new THREE.Color(0xfff7ef);
-  slabMat.emissiveIntensity = mobile ? 0.08 : 0.03;
+  slabMat.emissive = new THREE.Color(0xffffff);
+  slabMat.emissiveIntensity = mobile ? 0.34 : 0.03;
   slabMat.customProgramCacheKey = () => wallMaterial.customProgramCacheKey() + "-slab";
   adoptMarble(slabMat, wallMaterial, trackMarble);
   const faces = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), slabMat, slabs.length);
@@ -560,48 +560,83 @@ const HALL_DISPLAYS = [
 ];
 
 function placeHallDisplays({THREE, interactive}) {
-  let index = 0;
-  const loader = new THREE.TextureLoader();
+  const hosts = [];
   interactive.traverse(obj => {
     if (obj.userData?.wallFrame !== "commercial") return;
     const slot = obj.userData.slot;
     if (!canDecorateSlot(slot) || obj.position.z > HALL_END_Z) return;
-    const art = new THREE.Mesh(
-      new THREE.PlaneGeometry(Math.max(0.08, obj.userData.w - 0.05), Math.max(0.08, obj.userData.h - 0.05)),
-      new THREE.MeshBasicMaterial({color: 0xf7f4ee, toneMapped: true})
-    );
-    art.position.z = 0.03;
-    art.name = "origin-hall-display";
-    art.raycast = () => {};
-    obj.add(art);
-    const file = HALL_DISPLAYS[index % HALL_DISPLAYS.length];
-    index += 1;
-    loader.load("./assets/paintings/" + file + "?v=20261127j12", tex => {
-      tex.colorSpace = THREE.SRGBColorSpace;
-      art.material.map = tex;
-      art.material.needsUpdate = true;
+    hosts.push(obj);
+  });
+  if (!hosts.length) return;
+  const cols = 4;
+  const rows = 3;
+  const atlas = document.createElement("canvas");
+  atlas.width = 1024;
+  atlas.height = 768;
+  const ctx = atlas.getContext("2d");
+  ctx.fillStyle = "#1c1916";
+  ctx.fillRect(0, 0, atlas.width, atlas.height);
+  const map = new THREE.CanvasTexture(atlas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  const cellW = 1 / cols;
+  const cellH = 1 / rows;
+  const geo = new THREE.PlaneGeometry(1, 1);
+  const offsets = new Float32Array(hosts.length * 2);
+  hosts.forEach((_, index) => {
+    offsets[index * 2] = (index % cols) * cellW;
+    offsets[index * 2 + 1] = (rows - 1 - Math.floor(index / cols)) * cellH;
+  });
+  geo.setAttribute("uvOffset", new THREE.InstancedBufferAttribute(offsets, 2));
+  const material = new THREE.MeshBasicMaterial({map, color: 0xffffff, toneMapped: false});
+  material.onBeforeCompile = shader => {
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <uv_pars_vertex>", "#include <uv_pars_vertex>\nattribute vec2 uvOffset;\nvarying vec2 vOilUv;")
+      .replace("#include <uv_vertex>", "#include <uv_vertex>\nvOilUv = uv * vec2(" + cellW + ", " + cellH + ") + uvOffset;");
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <uv_pars_fragment>", "#include <uv_pars_fragment>\nvarying vec2 vOilUv;")
+      .replace(
+        "#include <map_fragment>",
+        "vec4 sampledDiffuseColor = texture2D(map, vOilUv);\ndiffuseColor *= sampledDiffuseColor;"
+      );
+  };
+  const art = new THREE.InstancedMesh(geo, material, hosts.length);
+  art.name = "origin-hall-display";
+  art.raycast = () => {};
+  art.frustumCulled = false;
+  const local = new THREE.Object3D();
+  const scratch = new THREE.Matrix4();
+  hosts.forEach((host, index) => {
+    host.updateWorldMatrix(true, false);
+    local.position.set(0, 0, 0.034);
+    local.scale.set(Math.max(0.08, host.userData.w - 0.06), Math.max(0.08, host.userData.h - 0.06), 1);
+    local.rotation.set(0, 0, 0);
+    local.updateMatrix();
+    scratch.multiplyMatrices(host.matrixWorld, local.matrix);
+    art.setMatrixAt(index, scratch);
+  });
+  art.instanceMatrix.needsUpdate = true;
+  interactive.add(art);
+  const loader = new THREE.TextureLoader();
+  HALL_DISPLAYS.slice(0, hosts.length).forEach((file, index) => {
+    loader.load("./assets/paintings/" + file + "?v=20261127j13", image => {
+      const pic = document.createElement("canvas");
+      pic.width = image.image.width;
+      pic.height = image.image.height;
+      // TextureLoader gives a texture; draw its image.
+      const source = image.image;
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      const dx = col * (atlas.width / cols);
+      const dy = row * (atlas.height / rows);
+      const dw = atlas.width / cols;
+      const dh = atlas.height / rows;
+      const scale = Math.min(dw / source.width, dh / source.height);
+      const w = source.width * scale;
+      const h = source.height * scale;
+      ctx.drawImage(source, dx + (dw - w) / 2, dy + (dh - h) / 2, w, h);
+      map.needsUpdate = true;
     });
   });
-}
-
-function placeFloatRocks({THREE}) {
-  const mesh = new THREE.InstancedMesh(
-    new THREE.IcosahedronGeometry(1, 0),
-    new THREE.MeshStandardMaterial({color: 0xf4f1ea, roughness: 0.78, metalness: 0}),
-    5
-  );
-  const dummy = new THREE.Object3D();
-  [[0.15, 5.35, 5.4, 0.42], [-0.35, 5.55, 8.2, 0.28], [0.4, 5.15, 11.4, 0.34],
-    [-0.1, 5.4, 13.2, 0.22], [0.25, 5.25, 7.1, 0.18]].forEach((item, index) => {
-    dummy.position.set(item[0], item[1], item[2]);
-    dummy.rotation.set(item[3], item[0], item[1]);
-    dummy.scale.setScalar(item[3]);
-    dummy.updateMatrix();
-    mesh.setMatrixAt(index, dummy.matrix);
-  });
-  mesh.instanceMatrix.needsUpdate = true;
-  mesh.name = "origin-float-rocks";
-  return mesh;
 }
 
 export function installOriginRoomLook({
@@ -652,16 +687,16 @@ export function installOriginRoomLook({
 
   scene.background = new THREE.Color(0xe4edf2);
   if (scene.fog) {
-    scene.fog.color.set(0xf3f0ea);
+    scene.fog.color.set(mobile ? 0xf6f6f4 : 0xf3f0ea);
     scene.fog.density = mobile ? 0.0011 : 0.00042;
   }
   scene.environmentIntensity = mobile ? 0.2 : 0.55;
 
   scene.traverse(obj => {
     if (obj.isHemisphereLight) {
-      obj.color.set(0xfff1e4);
-      obj.groundColor.set(0xb7b0a6);
-      obj.intensity = mobile ? 0.16 : 0.36;
+      obj.color.set(mobile ? 0xf7f7f5 : 0xfff1e4);
+      obj.groundColor.set(mobile ? 0xd5d3ce : 0xb7b0a6);
+      obj.intensity = mobile ? 0.22 : 0.36;
     } else if (obj.isDirectionalLight) {
       obj.color.set(0xffefdc);
       obj.intensity = mobile ? 0.1 : 0.24;
@@ -730,8 +765,7 @@ export function installOriginRoomLook({
   shaft.renderOrder = 1;
   shaft.name = "origin-light-shaft";
   scene.add(shaft);
-  const rocks = mobile ? null : placeFloatRocks({THREE});
-  if (rocks) scene.add(rocks);
+  const rocks = null;
   placeHallDisplays({THREE, interactive});
 
   let reflector = null;

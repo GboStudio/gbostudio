@@ -155,6 +155,10 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
 - État : proposé, non fusionné, non déployé.
 
+## Huiles plus lisibles, sans rochers — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Deuxième passe. Les cadres libres du hall montrent des huiles plus sombres, sans mapping de tons. Les rochers flottants sont retirés : ils ne lisaient pas comme du marbre. Le téléphone est un peu plus clair. Le plafond autour de l’ouverture aussi. Le compteur et le clic pour exposer ne changent pas.
+- État : proposé, non fusionné, non déployé.
+
 ## Affichage des cadres libres — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
 - Guillaume autorise trois passes. Celle-ci pose une image du domaine public devant les cadres libres du hall, sans changer le compteur « 114 PLACES LIBRES » ni le clic pour exposer. Le mur du fond reprend Marble019. Le plafond est un peu plus large. Les spots chauds sont baissés. Cinq rochers blancs flottent au bureau seulement.
 - État : proposé, non fusionné, non déployé.
