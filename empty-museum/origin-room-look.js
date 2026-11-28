@@ -296,8 +296,8 @@ function cloudVolume({THREE, mobile}) {
   // Solid cumulus in the slot, in front of the blue sky photo.
   // One instanced draw. Mobile keeps fewer masses.
   const puffs = mobile
-    ? [[-0.15, 5.7, 5.2, 3.2], [0.55, 5.45, 7.4, 2.6], [-0.45, 5.85, 9.6, 2.8],
-      [0.2, 5.55, 12.2, 3.0], [-0.25, 5.75, 15.0, 2.5]]
+    ? [[-0.15, 6.35, 6.2, 2.4], [0.45, 6.2, 9.0, 2.1], [-0.4, 6.4, 11.8, 2.2],
+      [0.15, 6.25, 14.4, 2.0]]
     : [[-0.2, 5.75, 4.6, 3.4], [0.65, 5.4, 6.4, 2.6], [-0.55, 5.95, 8.2, 3.0],
       [0.25, 5.5, 10.0, 2.8], [-0.4, 5.85, 12.2, 3.2], [0.5, 5.45, 14.4, 2.4],
       [-0.15, 5.7, 16.6, 3.0], [0.35, 5.55, 19.2, 2.6]];
@@ -355,6 +355,7 @@ function cloudVolume({THREE, mobile}) {
         float alpha = smoothstep(0.18, 0.55, mass);
         float slot = smoothstep(2.05, 1.35, abs(vWorld.x));
         alpha *= slot;
+        ${mobile ? "if (vWorld.y < 5.85) discard;" : ""}
         if (alpha < 0.05) discard;
         float shade = clamp(uv.y * 1.35 + 0.15 + (n - 0.5) * 0.55, 0.0, 1.0);
         vec3 underside = vec3(0.46, 0.55, 0.66);
@@ -485,11 +486,34 @@ function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile, trackM
   scene.add(lips);
 }
 
+function placeMobileBeams({THREE, scene, wallMaterial, trackMarble}) {
+  const mat = wallMaterial.clone();
+  mat.customProgramCacheKey = () => wallMaterial.customProgramCacheKey() + "-beam";
+  adoptMarble(mat, wallMaterial, trackMarble);
+  const zs = [7.4, 11.8, 15.6];
+  const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), mat, zs.length);
+  const dummy = new THREE.Object3D();
+  zs.forEach((z, index) => {
+    dummy.position.set(0, 5.72, z);
+    dummy.scale.set(4.55, 0.72, 0.55);
+    dummy.rotation.set(0, 0, 0);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(index, dummy.matrix);
+  });
+  mesh.instanceMatrix.needsUpdate = true;
+  mesh.frustumCulled = false;
+  mesh.castShadow = false;
+  mesh.receiveShadow = true;
+  mesh.name = "origin-mobile-beams";
+  scene.add(mesh);
+}
+
 function skyMaterial(mobile) {
   const material = new THREE.MeshBasicMaterial({
     color: 0xffffff,
     side: THREE.BackSide,
     depthWrite: false,
+    depthTest: true,
     fog: false,
     toneMapped: true
   });
@@ -504,6 +528,7 @@ function skyMaterial(mobile) {
     tex.anisotropy = mobile ? 4 : 8;
     // The cumulus field sits off the zenith. This longitude puts it in the slot.
     tex.offset.x = 0.42;
+    tex.wrapS = mobile ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
     tex.needsUpdate = true;
     material.map = tex;
     material.needsUpdate = true;
@@ -728,12 +753,12 @@ export function installOriginRoomLook({
 
   scene.traverse(obj => {
     if (obj.isHemisphereLight) {
-      obj.color.set(mobile ? 0xffead0 : 0xfff1e4);
-      obj.groundColor.set(mobile ? 0xe0d0b8 : 0xb7b0a6);
-      obj.intensity = mobile ? 0.4 : 0.36;
+      obj.color.set(mobile ? 0xfff3e6 : 0xfff1e4);
+      obj.groundColor.set(mobile ? 0xe4d8c6 : 0xb7b0a6);
+      obj.intensity = mobile ? 0.52 : 0.36;
     } else if (obj.isDirectionalLight) {
-      obj.color.set(mobile ? 0xffe4c2 : 0xffefdc);
-      obj.intensity = mobile ? 0.22 : 0.24;
+      obj.color.set(mobile ? 0xffefd8 : 0xffefdc);
+      obj.intensity = mobile ? 0.3 : 0.24;
       if (mobile) obj.castShadow = false;
     } else if (obj.isAmbientLight) {
       obj.intensity = 0.06;
@@ -747,6 +772,7 @@ export function installOriginRoomLook({
   sky.name = "origin-cumulus";
   scene.add(sky);
   placeEnfilade({THREE, scene, half, height, wallMaterial, mobile, trackMarble});
+  if (mobile) placeMobileBeams({THREE, scene, wallMaterial, trackMarble});
   const clouds = cloudVolume({THREE, mobile});
   scene.add(clouds);
   // Wide overlapping cards. Alpha falls off to the edge, so the shaft has no hard rim.
