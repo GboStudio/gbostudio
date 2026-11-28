@@ -155,10 +155,6 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
 - État : proposé, non fusionné, non déployé.
 
-## Mobile : marbre blanc, plafond cuit caché — 28 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
-- Sur téléphone, le plafond cuit plat qui bouchait le ciel est caché. La chaleur du marbre passe par la lumière, plus légère : les murs ne sont plus sable. Le bureau ne change pas.
-- État : proposé, non fusionné, non déployé.
-
 ## Mobile plus chaud — 28 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
 - Sur téléphone seulement, le marbre des murs et du sol est teinté crème, et la lumière est plus chaude. Le bureau ne change pas. Le ciel et les nuages restent.
 - État : proposé, non fusionné, non déployé.
