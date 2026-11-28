@@ -155,6 +155,13 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
 - État : proposé, non fusionné, non déployé.
 
+## Plafond, nuages, tableaux nets, rocher CC0 — 28 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Dernière des trois passes. Le dessous des bandes de plafond, près de l’ouverture, reçoit une lumière d’ambiance venue du ciel : il ne reste pas gris. Les cumulus sont plus denses et plus blancs, et le rayon diffus est plus lisible. Nuages, rayon et rochers restent hors du miroir.
+- Les tableaux du domaine public passent à environ 1600 px au bureau et 768 px au mobile, avec mipmaps et filtrage anisotrope. Le compteur et le clic pour exposer ne changent pas. Les panneaux « The Partner Collection » non plus.
+- Sept instances d’un seul scan CC0 Poly Haven (`boulder_01`, Rico Cilliers), maillage réduit, au bureau seulement. Le mobile ne le charge pas. Crédit : `assets/rocks/CREDITS.md`.
+- Le test de visite guidée attend que la scène soit prête et que la visite soit vraiment lancée, puis exige toujours que la caméra avance de 0,2 m.
+- État : proposé, non fusionné, non déployé.
+
 ## Huiles plus lisibles, sans rochers — 27 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
 - Deuxième passe. Les cadres libres du hall montrent des huiles plus sombres, sans mapping de tons. Les rochers flottants sont retirés : ils ne lisaient pas comme du marbre. Le téléphone est un peu plus clair. Le plafond autour de l’ouverture aussi. Le compteur et le clic pour exposer ne changent pas.
 - État : proposé, non fusionné, non déployé.

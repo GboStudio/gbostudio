@@ -21,4 +21,4 @@ Les emplacements commerciaux d’origine (120) ne deviennent pas ces fichiers. D
 
 `pd-11.jpg` et `pd-12.jpg` reprennent le boulevard de Pissarro, déjà crédité.
 
-Source des vignettes : Wikimedia Commons, largeur demandée 720 px.
+Source : Wikimedia Commons. Le bureau charge un JPEG d’environ 1600 px de côté (`pd-01.jpg` … `pd-12.jpg`), le mobile un JPEG d’environ 768 px (`pd-01-m.jpg` … `pd-12-m.jpg`). Les deux ont des mipmaps et un filtrage anisotrope. `pd-11` et `pd-12` reprennent le boulevard de Pissarro.

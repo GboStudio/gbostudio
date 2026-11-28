@@ -11,6 +11,7 @@
  */
 import * as THREE from "three";
 import {Reflector} from "three/addons/objects/Reflector.js";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 import {
   FRAME,
   ENFILADE,
@@ -189,6 +190,14 @@ ${MARBLE_GLSL}`)
 	}`
     )
     .replace(
+      "#include <emissivemap_fragment>",
+      `#include <emissivemap_fragment>
+	if (vMarbleN.y < -0.45 && vMarbleWp.y > 5.4) {
+		float opening = 1.0 - smoothstep(2.05, 4.5, abs(vMarbleWp.x));
+		totalEmissiveRadiance += vec3(0.94, 0.97, 1.0) * (0.55 + 1.25 * opening);
+	}`
+    )
+    .replace(
       "#include <roughnessmap_fragment>",
       `#include <roughnessmap_fragment>
 	float scannedRough = dot(marbleTri(uMarbleRough, vMarbleWp, vMarbleN), vec3(0.333));
@@ -288,16 +297,19 @@ function cloudVolume({THREE, mobile}) {
   // Camera-facing puffs at several depths. Parallax comes from the spacing.
   // Four noise octaves on one instanced draw; mobile uses fewer puffs.
   const puffs = mobile
-    ? [[0, 5.85, 4.6, 3.4], [-0.2, 5.55, 7.2, 3.2], [0.25, 5.7, 9.2, 2.8]]
-    : [[-0.15, 5.85, 3.6, 4.2], [0.35, 5.5, 5.2, 3.8], [-0.45, 6.0, 6.8, 3.6], [0.1, 5.4, 8.4, 4.4],
-      [0.5, 5.8, 10.2, 3.4], [-0.3, 6.05, 11.6, 3.8], [0.15, 5.45, 13.4, 4.2], [-0.5, 5.75, 15.2, 3.6],
-      [0.4, 5.95, 17, 3.5], [-0.1, 5.5, 19.2, 4.3], [0.3, 6.0, 22, 3.4], [-0.4, 5.7, 25, 3.8],
-      [0.05, 5.55, 28, 4.0], [0.45, 5.9, 32, 3.3], [-0.2, 5.65, 36, 3.7]];
+    ? [[0, 5.9, 4.4, 4.6], [-0.4, 5.55, 6.6, 4.0], [0.45, 5.8, 8.6, 4.2],
+      [-0.2, 5.5, 10.8, 4.4], [0.3, 6.0, 13.2, 3.8], [-0.35, 5.65, 15.6, 4.0]]
+    : [[-0.2, 5.9, 3.4, 4.8], [0.45, 5.45, 4.8, 4.2], [-0.55, 6.05, 6.2, 4.4],
+      [0.15, 5.4, 7.6, 5.0], [0.6, 5.85, 9.2, 3.8], [-0.4, 6.1, 10.6, 4.6],
+      [0.25, 5.5, 12.2, 4.8], [-0.65, 5.8, 13.8, 4.0], [0.5, 6.0, 15.4, 4.2],
+      [-0.15, 5.45, 17.2, 5.0], [0.35, 5.95, 19.4, 3.8], [-0.5, 5.6, 21.6, 4.4],
+      [0.1, 6.05, 24, 4.6], [0.55, 5.5, 27, 4.0], [-0.3, 5.75, 30, 4.4],
+      [0.2, 5.9, 33.5, 3.8], [-0.45, 5.55, 37, 4.2]];
   const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
     depthTest: true,
-    toneMapped: true,
+    toneMapped: false,
     fog: false,
     vertexShader: `
       varying vec2 vUv;
@@ -343,14 +355,14 @@ function cloudVolume({THREE, mobile}) {
           amp *= 0.5;
         }
         float warp = noise(uv * 2.2 + vSeed) * 0.16;
-        float body = 1.0 - smoothstep(0.02, 0.46, length(uv) - warp);
-        float alpha = body * smoothstep(0.28, 0.72, n);
+        float body = 1.0 - smoothstep(0.0, 0.52, length(uv) - warp);
+        float alpha = body * smoothstep(0.10, 0.42, n);
         float slot = smoothstep(2.18, 1.45, abs(vWorld.x));
         alpha *= slot * slot;
         if (alpha < 0.02) discard;
-        float light = clamp(uv.y * 1.8 + 0.35, 0.0, 1.0);
-        vec3 col = mix(vec3(0.58, 0.62, 0.66), vec3(1.0, 0.99, 0.97), light);
-        gl_FragColor = vec4(col, alpha);
+        float light = clamp(uv.y * 1.6 + 0.42, 0.0, 1.0);
+        vec3 col = mix(vec3(0.80, 0.84, 0.88), vec3(1.0, 0.995, 0.985), light);
+        gl_FragColor = vec4(col, min(alpha * 1.4, 0.95));
       }
     `
   }), puffs.length);
@@ -464,8 +476,8 @@ function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile, trackM
     art.rotation.y = Math.PI;
     art.name = "origin-enfilade-art";
     scene.add(art);
-    paintingLoader.load("./assets/paintings/" + paintings[frameIndex] + "?v=20261127j10", tex => {
-      tex.colorSpace = THREE.SRGBColorSpace;
+    paintingLoader.load(paintingUrl(paintings[frameIndex], mobile), tex => {
+      preparePainting(tex, mobile);
       mat.map = tex;
       mat.needsUpdate = true;
     });
@@ -559,7 +571,21 @@ const HALL_DISPLAYS = [
   "pd-08.jpg", "pd-09.jpg", "pd-10.jpg", "pd-02.jpg", "pd-05.jpg"
 ];
 
-function placeHallDisplays({THREE, interactive}) {
+function paintingUrl(name, mobile) {
+  const file = mobile ? name.replace(/\.jpg$/, "-m.jpg") : name;
+  return "./assets/paintings/" + file + "?v=20261128j14";
+}
+
+function preparePainting(tex, mobile) {
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.anisotropy = mobile ? 4 : 8;
+  tex.needsUpdate = true;
+}
+
+function placeHallDisplays({THREE, interactive, mobile}) {
   const hosts = [];
   interactive.traverse(obj => {
     if (obj.userData?.wallFrame !== "commercial") return;
@@ -571,13 +597,20 @@ function placeHallDisplays({THREE, interactive}) {
   const cols = 4;
   const rows = 3;
   const atlas = document.createElement("canvas");
-  atlas.width = 1024;
-  atlas.height = 768;
+  const atlasSize = mobile ? 1024 : 2048;
+  atlas.width = atlasSize;
+  atlas.height = atlasSize;
   const ctx = atlas.getContext("2d");
   ctx.fillStyle = "#1c1916";
   ctx.fillRect(0, 0, atlas.width, atlas.height);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   const map = new THREE.CanvasTexture(atlas);
   map.colorSpace = THREE.SRGBColorSpace;
+  map.generateMipmaps = true;
+  map.minFilter = THREE.LinearMipmapLinearFilter;
+  map.magFilter = THREE.LinearFilter;
+  map.anisotropy = mobile ? 4 : 8;
   const cellW = 1 / cols;
   const cellH = 1 / rows;
   const geo = new THREE.PlaneGeometry(1, 1);
@@ -618,7 +651,7 @@ function placeHallDisplays({THREE, interactive}) {
   interactive.add(art);
   const loader = new THREE.TextureLoader();
   HALL_DISPLAYS.slice(0, hosts.length).forEach((file, index) => {
-    loader.load("./assets/paintings/" + file + "?v=20261127j13", image => {
+    loader.load(paintingUrl(file, mobile), image => {
       const pic = document.createElement("canvas");
       pic.width = image.image.width;
       pic.height = image.image.height;
@@ -637,6 +670,63 @@ function placeHallDisplays({THREE, interactive}) {
       map.needsUpdate = true;
     });
   });
+}
+
+function placeScannedRocks({THREE, scene}) {
+  const holder = new THREE.Group();
+  holder.name = "origin-scanned-rocks";
+  scene.add(holder);
+  const loader = new GLTFLoader();
+  loader.load("./assets/rocks/boulder-01.glb?v=20261128j14", gltf => {
+    let source = null;
+    gltf.scene.traverse(obj => {
+      if (!source && obj.isMesh) source = obj;
+    });
+    if (!source) return;
+    const material = source.material;
+    for (const tex of [material.map, material.normalMap, material.roughnessMap, material.metalnessMap]) {
+      if (!tex) continue;
+      tex.generateMipmaps = true;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.anisotropy = 4;
+      tex.needsUpdate = true;
+    }
+    if (material.map) material.map.colorSpace = THREE.SRGBColorSpace;
+    material.roughness = 0.72;
+    material.metalness = 0.02;
+    material.emissive = new THREE.Color(0xfff6ee);
+    material.emissiveIntensity = 0.28;
+    const poses = [
+      [-0.7, 4.15, 5.4, 0.42, 0.4],
+      [0.85, 3.55, 7.2, 0.34, 1.2],
+      [-0.35, 4.75, 9.1, 0.5, 2.1],
+      [0.55, 3.85, 11.4, 0.38, 0.7],
+      [-0.9, 4.35, 13.2, 0.46, 2.8],
+      [0.2, 5.05, 15.0, 0.36, 1.6],
+      [1.05, 3.7, 6.0, 0.3, 3.4]
+    ];
+    const mesh = new THREE.InstancedMesh(source.geometry, material, poses.length);
+    const dummy = new THREE.Object3D();
+    poses.forEach(([x, y, z, scale, rot], index) => {
+      dummy.position.set(x, y, z);
+      dummy.rotation.set(rot * 0.35, rot, rot * 0.2);
+      dummy.scale.setScalar(scale);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(index, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.frustumCulled = false;
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    mesh.name = "origin-scanned-rocks";
+    holder.add(mesh);
+    const overlay = document.getElementById("walkOverlay");
+    if (overlay) overlay.dataset.originRocks = "ready";
+  }, undefined, () => {
+    const overlay = document.getElementById("walkOverlay");
+    if (overlay) overlay.dataset.originRocks = "fallback";
+  });
+  return holder;
 }
 
 export function installOriginRoomLook({
@@ -740,7 +830,7 @@ export function installOriginRoomLook({
         float across = 1.0 - smoothstep(0.0, 0.5, abs(vUv.x - 0.5));
         float along = 1.0 - smoothstep(0.0, 0.5, abs(vUv.y - 0.5));
         float down = smoothstep(3.0, 5.6, vHeight);
-        float alpha = across * across * along * along * down * 0.3;
+        float alpha = across * across * along * along * down * 0.4;
         gl_FragColor = vec4(1.0, 0.99, 0.96, alpha);
       }
     `
@@ -749,14 +839,14 @@ export function installOriginRoomLook({
   [4.2, 10, 18, 28, 40].forEach((z, index) => {
     card.position.set(0, 4.55, z);
     card.rotation.set(0, 0, 0);
-    card.scale.set(3.8, 4.6, 1);
+    card.scale.set(4.6, 5.4, 1);
     card.updateMatrix();
     shaft.setMatrixAt(index, card.matrix);
   });
   [[6, 5.75], [12, 5.35], [18, 4.95], [26, 4.5], [34, 4.05], [42, 3.6]].forEach(([z, y], index) => {
     card.position.set(0, y, z);
     card.rotation.set(-Math.PI / 2, 0, 0);
-    card.scale.set(3.6, 11, 1);
+    card.scale.set(4.4, 12, 1);
     card.updateMatrix();
     shaft.setMatrixAt(5 + index, card.matrix);
   });
@@ -765,8 +855,8 @@ export function installOriginRoomLook({
   shaft.renderOrder = 1;
   shaft.name = "origin-light-shaft";
   scene.add(shaft);
-  const rocks = null;
-  placeHallDisplays({THREE, interactive});
+  const rocks = mobile ? null : placeScannedRocks({THREE, scene});
+  placeHallDisplays({THREE, interactive, mobile});
 
   let reflector = null;
   if (!mobile && floorMesh) {

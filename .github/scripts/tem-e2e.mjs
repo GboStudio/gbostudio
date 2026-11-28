@@ -257,8 +257,32 @@ for(const mode of browsers){
         throw Error('Progress bar still prints a length: '+state.progress);
       const tourPressed=await page.locator('#museumTour').getAttribute('aria-pressed');
       if(tourPressed==='true')await tapTour();
+      // The movement window starts only once the scene is idle and the tour
+      // is actually playing. A missed tap is retried. The camera must still
+      // advance 0.2 m under its own guided motion.
+      await page.waitForFunction(()=>{
+        const room=document.querySelector('#walkOverlay');
+        if(!room || window.__TUM_PREMIUM_READY!==true) return false;
+        return Math.abs(Number(room.dataset.museumInputForward||0))<.01 &&
+          Math.abs(Number(room.dataset.museumInputStrafe||0))<.01 &&
+          Math.abs(Number(room.dataset.museumInputLookX||0))<.01 &&
+          Math.abs(Number(room.dataset.museumInputLookY||0))<.01;
+      },null,{timeout:20000});
+      const tourHit=await page.locator('#museumTour').evaluate(btn=>{
+        const r=btn.getBoundingClientRect();
+        const top=document.elementFromPoint(r.left+r.width/2, r.top+r.height/2);
+        return top?.id||'';
+      });
+      if(tourHit!=='museumTour')
+        throw Error('Guided tour button is covered before the forward check: '+tourHit);
       const zBeforeTour=Number(await page.locator('#walkOverlay').getAttribute('data-tour-camera-z'));
       await tapTour();
+      try{
+        await page.waitForFunction(()=>document.querySelector('#museumTour')?.getAttribute('aria-pressed')==='true',null,{timeout:8000});
+      }catch{
+        await tapTour();
+        await page.waitForFunction(()=>document.querySelector('#museumTour')?.getAttribute('aria-pressed')==='true',null,{timeout:8000});
+      }
       await page.waitForFunction(start=>
         Number(document.querySelector('#walkOverlay')?.dataset.tourCameraZ)>start+.2,
         zBeforeTour,{timeout:20000});
