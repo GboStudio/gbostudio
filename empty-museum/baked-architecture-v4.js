@@ -12,7 +12,8 @@ import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 export async function addBakedEntranceV4({
   scene,overlay,
   url="./assets/entrance-v4-baked.glb?v=20261106bake1",
-  timeoutMs=15000
+  timeoutMs=15000,
+  plainPlaster=false
 }={}){
   if(!scene || !overlay)throw Error("Missing museum scene or overlay");
   overlay.dataset.museumLighting="v3-fallback";
@@ -48,7 +49,23 @@ export async function addBakedEntranceV4({
       if(!obj.isMesh)return;
       const originals=Array.isArray(obj.material)?obj.material:[obj.material];
       obj.material=originals.map(m=>{
-        if(m.map)m.map.colorSpace=THREE.SRGBColorSpace;
+        if(m.map){
+          m.map.colorSpace=THREE.SRGBColorSpace;
+          m.map.generateMipmaps=true;
+          m.map.minFilter=THREE.LinearMipmapLinearFilter;
+          m.map.magFilter=THREE.LinearFilter;
+          m.map.anisotropy=8;
+          m.map.needsUpdate=true;
+        }
+        // The marble room replaces this bake's photographed ceiling. A flat
+        // plaster keeps the mesh (the preview still counts it) without the
+        // grainy beige band that covered the sky.
+        if(plainPlaster){
+          return new THREE.MeshBasicMaterial({
+            color:0xf7f5f1,side:THREE.DoubleSide,fog:false,
+            depthWrite:true,transparent:false,toneMapped:false
+          });
+        }
         return new THREE.MeshBasicMaterial({
           map:m.map,color:0xf7f6f2,side:THREE.DoubleSide,
           // ACES compresses the warm Cycles highlights to the same range as

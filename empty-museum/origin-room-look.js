@@ -11,7 +11,6 @@
  */
 import * as THREE from "three";
 import {Reflector} from "three/addons/objects/Reflector.js";
-import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 import {
   FRAME,
   ENFILADE,
@@ -309,7 +308,7 @@ function cloudVolume({THREE, mobile}) {
     transparent: true,
     depthWrite: false,
     depthTest: true,
-    toneMapped: false,
+    toneMapped: true,
     fog: false,
     vertexShader: `
       varying vec2 vUv;
@@ -360,9 +359,9 @@ function cloudVolume({THREE, mobile}) {
         float slot = smoothstep(2.18, 1.45, abs(vWorld.x));
         alpha *= slot * slot;
         if (alpha < 0.02) discard;
-        float light = clamp(uv.y * 1.6 + 0.42, 0.0, 1.0);
-        vec3 col = mix(vec3(0.80, 0.84, 0.88), vec3(1.0, 0.995, 0.985), light);
-        gl_FragColor = vec4(col, min(alpha * 1.4, 0.95));
+        float light = clamp(uv.y * 1.6 + 0.28, 0.0, 1.0);
+        vec3 col = mix(vec3(0.72, 0.78, 0.84), vec3(0.98, 0.985, 0.97), light);
+        gl_FragColor = vec4(col, min(alpha * 1.15, 0.78));
       }
     `
   }), puffs.length);
@@ -672,63 +671,6 @@ function placeHallDisplays({THREE, interactive, mobile}) {
   });
 }
 
-function placeScannedRocks({THREE, scene}) {
-  const holder = new THREE.Group();
-  holder.name = "origin-scanned-rocks";
-  scene.add(holder);
-  const loader = new GLTFLoader();
-  loader.load("./assets/rocks/boulder-01.glb?v=20261128j14", gltf => {
-    let source = null;
-    gltf.scene.traverse(obj => {
-      if (!source && obj.isMesh) source = obj;
-    });
-    if (!source) return;
-    const material = source.material;
-    for (const tex of [material.map, material.normalMap, material.roughnessMap, material.metalnessMap]) {
-      if (!tex) continue;
-      tex.generateMipmaps = true;
-      tex.minFilter = THREE.LinearMipmapLinearFilter;
-      tex.anisotropy = 4;
-      tex.needsUpdate = true;
-    }
-    if (material.map) material.map.colorSpace = THREE.SRGBColorSpace;
-    material.roughness = 0.72;
-    material.metalness = 0.02;
-    material.emissive = new THREE.Color(0xfff6ee);
-    material.emissiveIntensity = 0.28;
-    const poses = [
-      [-0.7, 4.15, 5.4, 0.42, 0.4],
-      [0.85, 3.55, 7.2, 0.34, 1.2],
-      [-0.35, 4.75, 9.1, 0.5, 2.1],
-      [0.55, 3.85, 11.4, 0.38, 0.7],
-      [-0.9, 4.35, 13.2, 0.46, 2.8],
-      [0.2, 5.05, 15.0, 0.36, 1.6],
-      [1.05, 3.7, 6.0, 0.3, 3.4]
-    ];
-    const mesh = new THREE.InstancedMesh(source.geometry, material, poses.length);
-    const dummy = new THREE.Object3D();
-    poses.forEach(([x, y, z, scale, rot], index) => {
-      dummy.position.set(x, y, z);
-      dummy.rotation.set(rot * 0.35, rot, rot * 0.2);
-      dummy.scale.setScalar(scale);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(index, dummy.matrix);
-    });
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.frustumCulled = false;
-    mesh.castShadow = false;
-    mesh.receiveShadow = false;
-    mesh.name = "origin-scanned-rocks";
-    holder.add(mesh);
-    const overlay = document.getElementById("walkOverlay");
-    if (overlay) overlay.dataset.originRocks = "ready";
-  }, undefined, () => {
-    const overlay = document.getElementById("walkOverlay");
-    if (overlay) overlay.dataset.originRocks = "fallback";
-  });
-  return holder;
-}
-
 export function installOriginRoomLook({
   scene, architecture, floorMesh, physicalGallery, mobile,
   half, height, length, museumArtDirection, wallMaterial, floorMaterial,
@@ -811,7 +753,7 @@ export function installOriginRoomLook({
     depthWrite: false,
     side: THREE.DoubleSide,
     blending: THREE.AdditiveBlending,
-    toneMapped: false,
+    toneMapped: true,
     fog: false,
     vertexShader: `
       varying vec2 vUv;
@@ -830,8 +772,8 @@ export function installOriginRoomLook({
         float across = 1.0 - smoothstep(0.0, 0.5, abs(vUv.x - 0.5));
         float along = 1.0 - smoothstep(0.0, 0.5, abs(vUv.y - 0.5));
         float down = smoothstep(3.0, 5.6, vHeight);
-        float alpha = across * across * along * along * down * 0.4;
-        gl_FragColor = vec4(1.0, 0.99, 0.96, alpha);
+        float alpha = across * across * along * along * down * 0.07;
+        gl_FragColor = vec4(0.90, 0.93, 0.97, alpha);
       }
     `
   }), 11);
@@ -855,7 +797,7 @@ export function installOriginRoomLook({
   shaft.renderOrder = 1;
   shaft.name = "origin-light-shaft";
   scene.add(shaft);
-  const rocks = mobile ? null : placeScannedRocks({THREE, scene});
+  const rocks = null;
   placeHallDisplays({THREE, interactive, mobile});
 
   let reflector = null;

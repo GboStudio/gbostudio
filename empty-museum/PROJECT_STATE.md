@@ -155,6 +155,10 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
 - État : proposé, non fusionné, non déployé.
 
+## Ouverture moins brûlée, sans rochers — 28 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Les sept instances de Boulder 01 sont retirées, ainsi que le fichier et son crédit. Le plafond cuit de l’entrée, qui formait une bande beige granuleuse en regardant en haut, est un plâtre blanc uni dans cet essai. Le rayon est plus faible pour que le ciel et les nuages restent lisibles. Le mobile est un peu moins exposé (0,72). Le compteur et les panneaux partenaires ne changent pas.
+- État : proposé, non fusionné, non déployé.
+
 ## Plafond, nuages, tableaux nets, rocher CC0 — 28 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
 - Dernière des trois passes. Le dessous des bandes de plafond, près de l’ouverture, reçoit une lumière d’ambiance venue du ciel : il ne reste pas gris. Les cumulus sont plus denses et plus blancs, et le rayon diffus est plus lisible. Nuages, rayon et rochers restent hors du miroir.
 - Les tableaux du domaine public passent à environ 1600 px au bureau et 768 px au mobile, avec mipmaps et filtrage anisotrope. Le compteur et le clic pour exposer ne changent pas. Les panneaux « The Partner Collection » non plus.

@@ -110,13 +110,11 @@ test('the ceiling opening uses the CC0 Kloofendal sky, kept out of the floor mir
   assert.match(look, /shaft\.visible = false/);
   assert.match(look, /clouds\.visible = false/);
   assert.match(look, /rocks\.visible = false/);
-  assert.match(look, /boulder-01\.glb/);
-  assert.match(look, /mobile \? null : placeScannedRocks/);
+  assert.doesNotMatch(look, /boulder-01/);
+  assert.doesNotMatch(look, /placeScannedRocks/);
+  assert.equal(existsSync(new URL('assets/rocks/boulder-01.glb', root)), false);
   assert.match(look, /generateMipmaps = true/);
   assert.match(look, /-m\.jpg/);
-  assert.match(read('assets/rocks/CREDITS.md'), /boulder_01/);
-  assert.match(read('assets/rocks/CREDITS.md'), /CC0/);
-  assert.match(read('assets/rocks/CREDITS.md'), /Rico Cilliers/);
   const credits = read('assets/sky/CREDITS.md');
   assert.match(credits, /kloofendal_48d_partly_cloudy_puresky/);
   assert.match(credits, /CC0/);

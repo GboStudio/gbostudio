@@ -20,7 +20,7 @@ import {
   commercialFrameZ,
   FRAME,
   LEGACY_FRAME_SIZE_M
-} from "./origin-room-look.js?v=20261128j14";
+} from "./origin-room-look.js?v=20261128j15";
 import {
   slideVisitor,
   separateVisitor,
@@ -68,7 +68,7 @@ import {originPose, bindOriginPoses} from "./origin-hall-layout.mjs";
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   // Warm museum white needs plausible daylight detail, not crushed grey midtones.
   renderer.toneMappingExposure = .91;
-  if(ORIGIN_ROOM_LOOK_ENABLED) renderer.toneMappingExposure = mobile ? .84 : .86;
+  if(ORIGIN_ROOM_LOOK_ENABLED) renderer.toneMappingExposure = mobile ? .66 : .86;
   renderer.shadowMap.enabled = !(mobile && ORIGIN_ROOM_LOOK_ENABLED);
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0xf7f6f3,1);
@@ -292,7 +292,10 @@ import {originPose, bindOriginPoses} from "./origin-hall-layout.mjs";
   // Loading stays asynchronous; the visitor can already explore the V3
   // gallery while the verified Blender light-bake arrives. Software WebGL
   // and slower desktop devices need more than the old hard 15s cutoff.
-  addBakedEntranceV4({scene,overlay,timeoutMs:mobile?25000:90000}).catch(error=>
+  addBakedEntranceV4({
+    scene,overlay,timeoutMs:mobile?25000:90000,
+    plainPlaster:ORIGIN_ROOM_LOOK_ENABLED
+  }).catch(error=>
     console.warn("[TEM] Nonblocking V4 architectural enhancement",error));
   // No gold stripes or decorative circles cutting through the real stone floor.
   // The actual large-format stone joints provide the entire floor rhythm.
