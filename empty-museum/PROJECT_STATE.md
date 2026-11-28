@@ -156,7 +156,7 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - État : proposé, non fusionné, non déployé.
 
 ## Mobile allégé et cloisons modélisées — 28 novembre 2026 (nouvelle PR brouillon, non fusionnée, non déployée)
-- Partant de `main` `7cc300f` (j21 fusionnée). Le téléphone suit le même rendu que l’ordinateur : ciel Sunflowers, mêmes matériaux, textures 1K, une seule cloison, pas de miroir planaire. Les cloisons et le plafond à caissons viennent de `tools/build_partitions.py` (GLB), marbre Marble019, un seul appel instancié par pièce. Le plafond plat cuit de l’entrée est masqué. Le filet doré au sol n’est plus posé.
+- Partant de `main` `7cc300f` (j21 fusionnée). Le téléphone suit le même rendu que l’ordinateur : ciel Sunflowers, mêmes matériaux, textures 1K, une seule cloison, pas de miroir planaire. Les cloisons et la corniche du plafond viennent de `tools/build_partitions.py` (GLB), marbre Marble019. L’ouverture du ciel est libre : plus de barre blanche en travers. Le plafond plat cuit de l’entrée est masqué. Le filet doré au sol n’est plus posé.
 - État : proposé, non fusionné, non déployé.
 
 ## Bureau j20, téléphone j16 — 28 novembre 2026 (PR #56, fusionnée dans main `7cc300f`, non redéployée par cet agent)

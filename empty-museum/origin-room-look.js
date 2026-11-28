@@ -22,7 +22,7 @@ import {
   wallInnerFaceX
 } from "./origin-room-geometry.mjs";
 import { HALL_END_Z, canDecorateSlot } from "./origin-hall-layout.mjs";
-import {buildStoneShell, compactWallFrames, mountArchitectureKit, mountOrnateFrames, placeWarmHalos, placeFrameReflections} from "./origin-room-build.js?v=20261128j22c";
+import {buildStoneShell, compactWallFrames, mountArchitectureKit, mountOrnateFrames, placeWarmHalos, placeFrameReflections} from "./origin-room-build.js?v=20261128j22d";
 
 export const enabled = true;
 
@@ -193,7 +193,7 @@ ${MARBLE_GLSL}`)
 	#endif
 	if (vMarbleN.y < -0.4) {
 		diffuseColor.rgb = uDesktopLook > 0.5
-			? mix(diffuseColor.rgb, vec3(0.99, 0.97, 0.93), 0.5)
+			? mix(diffuseColor.rgb, vec3(0.97, 0.95, 0.92), 0.16)
 			: mix(diffuseColor.rgb, vec3(0.98, 0.98, 0.96), 0.84);
 	}`
     )
@@ -205,7 +205,7 @@ ${MARBLE_GLSL}`)
 			? 1.0 - smoothstep(3.05, 4.4, abs(vMarbleWp.x))
 			: 1.0 - smoothstep(2.05, 4.5, abs(vMarbleWp.x));
 		vec3 bounce = uDesktopLook > 0.5 ? vec3(1.0, 0.96, 0.90) : vec3(0.94, 0.97, 1.0);
-		float gain = uDesktopLook > 0.5 ? (0.28 + 0.55 * opening) : (0.55 + 1.25 * opening);
+		float gain = uDesktopLook > 0.5 ? (0.04 + 0.06 * opening) : (0.55 + 1.25 * opening);
 		totalEmissiveRadiance += bounce * gain;
 	}`
     )
@@ -390,7 +390,7 @@ function adoptMarble(mat, source, trackMarble) {
 function mountModelledPartitions({THREE, scene, wallMaterial, trackMarble, mobile, length}) {
   const overlay = document.getElementById("walkOverlay");
   const loader = new GLTFLoader();
-  loader.load("./assets/kit/origin-partitions.glb?v=20261128j22", gltf => {
+  loader.load("./assets/kit/origin-partitions.glb?v=20261128j22d", gltf => {
     const named = {};
     gltf.scene.traverse(obj => {
       if (obj.isMesh) named[obj.name] = obj;

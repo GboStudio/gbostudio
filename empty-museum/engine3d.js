@@ -20,7 +20,7 @@ import {
   commercialFrameZ,
   FRAME,
   LEGACY_FRAME_SIZE_M
-} from "./origin-room-look.js?v=20261128j22c";
+} from "./origin-room-look.js?v=20261128j22d";
 import {
   slideVisitor,
   separateVisitor,

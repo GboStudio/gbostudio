@@ -104,19 +104,25 @@ def wall_boxes(x0, x1):
 
 
 def coffer_boxes():
+    """Cornice on the opening edge, coffers only toward the wall.
+
+    Nothing crosses the sky. The fascia is a tall marble face, not a flat bar.
+    """
     boxes = []
     y0, y1 = -1.75, 1.75
     for sign in (-1, 1):
+        lip = sign * 2.50
         outer = sign * HALF
-        mid = sign * 3.15
-        lip = sign * 2.55
-        span_out = tuple(sorted((outer, mid)))
-        span_lip = tuple(sorted((mid, lip)))
-        boxes.append((*span_out, y0, y1, 6.20, 6.40))
-        boxes.append((*span_lip, y0, y1, 5.88, 6.40))
-        for y in (-1.75, -0.06, 1.59):
-            boxes.append((*span_out, y, y + 0.14, 6.00, 6.40))
-            boxes.append((*span_lip, y, y + 0.12, 5.88, 6.40))
+        def span(a, b):
+            return tuple(sorted((a, b)))
+        # Vertical fascia against the sky, then two moulding steps.
+        boxes.append((*span(lip, lip + sign * 0.14), y0, y1, 5.92, 6.28))
+        boxes.append((*span(lip + sign * 0.08, lip + sign * 0.32), y0, y1, 6.16, 6.32))
+        boxes.append((*span(lip + sign * 0.24, lip + sign * 0.58), y0, y1, 6.26, 6.40))
+        field = span(lip + sign * 0.58, outer)
+        boxes.append((*field, y0, y1, 6.24, 6.40))
+        for y in (-1.62, 0.02, 1.58):
+            boxes.append((*field, y, y + 0.18, 6.08, 6.40))
     return boxes
 
 

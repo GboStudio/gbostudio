@@ -451,7 +451,6 @@ export function buildStoneShell({
   const yMid = height * 0.5;
   for (const side of [-1, 1]) {
     geos.push(placedBox(THREE, 0.22, height, length, side * (half + 0.03), yMid, length / 2));
-    geos.push(placedBox(THREE, 0.06, 0.05, length, side * (half - 0.95), height - 0.42, length / 2));
   }
   geos.push(placedBox(THREE, half * 2 + 0.4, height, 0.28, 0, yMid, -0.2));
   geos.push(placedBox(THREE, half * 2 + 0.4, height, 0.28, 0, yMid, length + 0.1));
