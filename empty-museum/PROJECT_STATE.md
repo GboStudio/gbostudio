@@ -155,10 +155,6 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
 - État : proposé, non fusionné, non déployé.
 
-## Mobile plus chaud — 28 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
-- Sur téléphone seulement, le marbre des murs et du sol est teinté crème, et la lumière est plus chaude. Le bureau ne change pas. Le ciel et les nuages restent.
-- État : proposé, non fusionné, non déployé.
-
 ## Vrais cumulus et mobile plus lumineux — 28 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
 - Le ciel de l’ouverture est Kloofendal 38d (CC0), bleu avec des cumulus, plus des masses blanches à dessous gris-bleu. Le mobile est un peu plus clair et plus chaud (exposition 0,76). Pas de rochers. Le compteur ne change pas.
 - État : proposé, non fusionné, non déployé.

@@ -20,7 +20,7 @@ import {
   commercialFrameZ,
   FRAME,
   LEGACY_FRAME_SIZE_M
-} from "./origin-room-look.js?v=20261128j17b";
+} from "./origin-room-look.js?v=20261128j16";
 import {
   slideVisitor,
   separateVisitor,
@@ -68,7 +68,7 @@ import {originPose, bindOriginPoses} from "./origin-hall-layout.mjs";
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   // Warm museum white needs plausible daylight detail, not crushed grey midtones.
   renderer.toneMappingExposure = .91;
-  if(ORIGIN_ROOM_LOOK_ENABLED) renderer.toneMappingExposure = mobile ? .82 : .86;
+  if(ORIGIN_ROOM_LOOK_ENABLED) renderer.toneMappingExposure = mobile ? .76 : .86;
   renderer.shadowMap.enabled = !(mobile && ORIGIN_ROOM_LOOK_ENABLED);
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0xf7f6f3,1);
