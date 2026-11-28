@@ -134,7 +134,7 @@ vec3 marbleTri(sampler2D tex, vec3 p, vec3 n){
 }
 `;
 
-function marbleShader(shader, maps, lift, roughMix, floorEdge, warm) {
+function marbleShader(shader, maps, lift, roughMix, floorEdge) {
   shader.uniforms.uMarbleLift = {value: lift};
   shader.uniforms.uMarbleScale = {value: 0.16};
   shader.uniforms.uMarbleMap = {value: maps.color};
@@ -208,17 +208,10 @@ ${MARBLE_GLSL}`)
 	vec3 scannedN = marbleTri(uMarbleNor, vMarbleWp, vMarbleN) * 2.0 - 1.0;
 	normal = normalize(normal + vec3(scannedN.x, scannedN.y, 0.0) * 0.42);`
     );
-  if (warm) {
-    const tint = warm === "floor" ? "vec3(1.24, 1.06, 0.78) * 1.08" : "vec3(1.16, 1.05, 0.86) * 1.05";
-    shader.fragmentShader = shader.fragmentShader.replace(
-      "diffuseColor.rgb = alb * uMarbleLift;",
-      "diffuseColor.rgb = alb * uMarbleLift * " + tint + ";"
-    );
-  }
   return shader;
 }
 
-function marbleMaterial(maps, {roughness, metalness, lift, roughMix, envMapIntensity, floorEdge, warm}) {
+function marbleMaterial(maps, {roughness, metalness, lift, roughMix, envMapIntensity, floorEdge}) {
   const material = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     roughness,
@@ -226,9 +219,9 @@ function marbleMaterial(maps, {roughness, metalness, lift, roughMix, envMapInten
     envMapIntensity
   });
   material.onBeforeCompile = shader => {
-    material.userData.shader = marbleShader(shader, maps, lift, roughMix, floorEdge ? 1 : 0, Boolean(warm));
+    material.userData.shader = marbleShader(shader, maps, lift, roughMix, floorEdge ? 1 : 0);
   };
-  material.customProgramCacheKey = () => "origin-marble-j8-" + lift + "-" + roughMix + "-" + (floorEdge ? 1 : 0) + (warm ? "-warm" : "");
+  material.customProgramCacheKey = () => "origin-marble-j8-" + lift + "-" + roughMix + "-" + (floorEdge ? 1 : 0);
   return material;
 }
 
@@ -260,8 +253,7 @@ export function createOriginMaterials({mobile}) {
     metalness: 0,
     lift: 1.08,
     roughMix: 0.4,
-    envMapIntensity: 0.16,
-    warm: mobile
+    envMapIntensity: 0.16
   });
   const floor = marbleMaterial(maps, {
     roughness: mobile ? 0.55 : 0.72,
@@ -269,8 +261,7 @@ export function createOriginMaterials({mobile}) {
     lift: 0.84,
     roughMix: 0.04,
     envMapIntensity: mobile ? 0.12 : 0.03,
-    floorEdge: true,
-    warm: mobile ? "floor" : false
+    floorEdge: true
   });
   floor.polygonOffset = true;
   floor.polygonOffsetFactor = 1;
@@ -449,7 +440,7 @@ function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile, trackM
   scene.add(backing);
   const slabMat = wallMaterial.clone();
   slabMat.emissive = new THREE.Color(mobile ? 0xffe4c4 : 0xffffff);
-  slabMat.emissiveIntensity = mobile ? 0.2 : 0.03;
+  slabMat.emissiveIntensity = mobile ? 0.12 : 0.03;
   slabMat.customProgramCacheKey = () => wallMaterial.customProgramCacheKey() + "-slab";
   adoptMarble(slabMat, wallMaterial, trackMarble);
   const faces = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), slabMat, slabs.length);
@@ -730,19 +721,19 @@ export function installOriginRoomLook({
 
   scene.background = new THREE.Color(mobile ? 0xf4eadc : 0xe4edf2);
   if (scene.fog) {
-    scene.fog.color.set(mobile ? 0xf6e4c8 : 0xf3f0ea);
+    scene.fog.color.set(mobile ? 0xf5e9d6 : 0xf3f0ea);
     scene.fog.density = mobile ? 0.0011 : 0.00042;
   }
   scene.environmentIntensity = mobile ? 0.2 : 0.55;
 
   scene.traverse(obj => {
     if (obj.isHemisphereLight) {
-      obj.color.set(mobile ? 0xffe2b4 : 0xfff1e4);
-      obj.groundColor.set(mobile ? 0xe6d2b4 : 0xb7b0a6);
-      obj.intensity = mobile ? 0.46 : 0.36;
+      obj.color.set(mobile ? 0xffead0 : 0xfff1e4);
+      obj.groundColor.set(mobile ? 0xe0d0b8 : 0xb7b0a6);
+      obj.intensity = mobile ? 0.4 : 0.36;
     } else if (obj.isDirectionalLight) {
-      obj.color.set(mobile ? 0xffd7a4 : 0xffefdc);
-      obj.intensity = mobile ? 0.28 : 0.24;
+      obj.color.set(mobile ? 0xffe4c2 : 0xffefdc);
+      obj.intensity = mobile ? 0.22 : 0.24;
       if (mobile) obj.castShadow = false;
     } else if (obj.isAmbientLight) {
       obj.intensity = 0.06;

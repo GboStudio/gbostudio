@@ -13,7 +13,8 @@ export async function addBakedEntranceV4({
   scene,overlay,
   url="./assets/entrance-v4-baked.glb?v=20261106bake1",
   timeoutMs=15000,
-  plainPlaster=false
+  plainPlaster=false,
+  conceal=false
 }={}){
   if(!scene || !overlay)throw Error("Missing museum scene or overlay");
   overlay.dataset.museumLighting="v3-fallback";
@@ -80,6 +81,7 @@ export async function addBakedEntranceV4({
       obj.frustumCulled=true;
     });
     scene.add(model);
+    if(conceal) model.visible=false;
     overlay.dataset.museumLighting="cycles-baked-v4";
     overlay.dataset.museumBakePrimitives=String(drawCalls);
     console.info("[TEM] Blender Cycles-baked entrance mounted",{
