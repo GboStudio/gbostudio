@@ -293,22 +293,19 @@ export function createOriginMaterials({mobile}) {
 }
 
 function cloudVolume({THREE, mobile}) {
-  // Camera-facing puffs at several depths. Parallax comes from the spacing.
-  // Four noise octaves on one instanced draw; mobile uses fewer puffs.
+  // Solid cumulus in the slot, in front of the blue sky photo.
+  // One instanced draw. Mobile keeps fewer masses.
   const puffs = mobile
-    ? [[0, 5.9, 4.4, 4.6], [-0.4, 5.55, 6.6, 4.0], [0.45, 5.8, 8.6, 4.2],
-      [-0.2, 5.5, 10.8, 4.4], [0.3, 6.0, 13.2, 3.8], [-0.35, 5.65, 15.6, 4.0]]
-    : [[-0.2, 5.9, 3.4, 4.8], [0.45, 5.45, 4.8, 4.2], [-0.55, 6.05, 6.2, 4.4],
-      [0.15, 5.4, 7.6, 5.0], [0.6, 5.85, 9.2, 3.8], [-0.4, 6.1, 10.6, 4.6],
-      [0.25, 5.5, 12.2, 4.8], [-0.65, 5.8, 13.8, 4.0], [0.5, 6.0, 15.4, 4.2],
-      [-0.15, 5.45, 17.2, 5.0], [0.35, 5.95, 19.4, 3.8], [-0.5, 5.6, 21.6, 4.4],
-      [0.1, 6.05, 24, 4.6], [0.55, 5.5, 27, 4.0], [-0.3, 5.75, 30, 4.4],
-      [0.2, 5.9, 33.5, 3.8], [-0.45, 5.55, 37, 4.2]];
+    ? [[-0.15, 5.7, 5.2, 3.2], [0.55, 5.45, 7.4, 2.6], [-0.45, 5.85, 9.6, 2.8],
+      [0.2, 5.55, 12.2, 3.0], [-0.25, 5.75, 15.0, 2.5]]
+    : [[-0.2, 5.75, 4.6, 3.4], [0.65, 5.4, 6.4, 2.6], [-0.55, 5.95, 8.2, 3.0],
+      [0.25, 5.5, 10.0, 2.8], [-0.4, 5.85, 12.2, 3.2], [0.5, 5.45, 14.4, 2.4],
+      [-0.15, 5.7, 16.6, 3.0], [0.35, 5.55, 19.2, 2.6]];
   const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
     depthTest: true,
-    toneMapped: true,
+    toneMapped: false,
     fog: false,
     vertexShader: `
       varying vec2 vUv;
@@ -353,15 +350,17 @@ function cloudVolume({THREE, mobile}) {
           p *= 2.05;
           amp *= 0.5;
         }
-        float warp = noise(uv * 2.2 + vSeed) * 0.16;
-        float body = 1.0 - smoothstep(0.0, 0.52, length(uv) - warp);
-        float alpha = body * smoothstep(0.10, 0.42, n);
-        float slot = smoothstep(2.18, 1.45, abs(vWorld.x));
-        alpha *= slot * slot;
-        if (alpha < 0.02) discard;
-        float light = clamp(uv.y * 1.6 + 0.28, 0.0, 1.0);
-        vec3 col = mix(vec3(0.72, 0.78, 0.84), vec3(0.98, 0.985, 0.97), light);
-        gl_FragColor = vec4(col, min(alpha * 1.15, 0.78));
+        float warp = noise(uv * 1.6 + vSeed) * 0.22;
+        float mass = n * 1.35 - length(uv) * 1.55 + warp;
+        float alpha = smoothstep(0.18, 0.55, mass);
+        float slot = smoothstep(2.05, 1.35, abs(vWorld.x));
+        alpha *= slot;
+        if (alpha < 0.05) discard;
+        float shade = clamp(uv.y * 1.35 + 0.15 + (n - 0.5) * 0.55, 0.0, 1.0);
+        vec3 underside = vec3(0.46, 0.55, 0.66);
+        vec3 lit = vec3(0.96, 0.97, 0.98);
+        vec3 col = mix(underside, lit, shade * shade);
+        gl_FragColor = vec4(col, min(alpha, 0.92));
       }
     `
   }), puffs.length);
@@ -488,7 +487,7 @@ function placeEnfilade({THREE, scene, half, height, wallMaterial, mobile, trackM
 
 function skyMaterial(mobile) {
   const material = new THREE.MeshBasicMaterial({
-    color: 0xb7cbe4,
+    color: 0xffffff,
     side: THREE.BackSide,
     depthWrite: false,
     fog: false,
@@ -496,12 +495,15 @@ function skyMaterial(mobile) {
   });
   const size = mobile ? "1k" : "2k";
   const loader = new THREE.TextureLoader();
-  loader.load("./assets/sky/kloofendal-48d-" + size + ".jpg?v=20261127j6", tex => {
+  loader.load("./assets/sky/kloofendal-38d-" + size + ".jpg?v=20261128j16", tex => {
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
-    // Face the cloudiest longitude (+Z is texture u 0.25 before this offset).
-    tex.offset.x = 0.27;
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.anisotropy = mobile ? 4 : 8;
+    // The cumulus field sits off the zenith. This longitude puts it in the slot.
+    tex.offset.x = 0.42;
     tex.needsUpdate = true;
     material.map = tex;
     material.needsUpdate = true;
@@ -719,19 +721,19 @@ export function installOriginRoomLook({
 
   scene.background = new THREE.Color(0xe4edf2);
   if (scene.fog) {
-    scene.fog.color.set(mobile ? 0xf6f6f4 : 0xf3f0ea);
+    scene.fog.color.set(mobile ? 0xf4efe6 : 0xf3f0ea);
     scene.fog.density = mobile ? 0.0011 : 0.00042;
   }
   scene.environmentIntensity = mobile ? 0.2 : 0.55;
 
   scene.traverse(obj => {
     if (obj.isHemisphereLight) {
-      obj.color.set(mobile ? 0xf7f7f5 : 0xfff1e4);
-      obj.groundColor.set(mobile ? 0xd5d3ce : 0xb7b0a6);
-      obj.intensity = mobile ? 0.22 : 0.36;
+      obj.color.set(mobile ? 0xfff0dc : 0xfff1e4);
+      obj.groundColor.set(mobile ? 0xd8d0c4 : 0xb7b0a6);
+      obj.intensity = mobile ? 0.34 : 0.36;
     } else if (obj.isDirectionalLight) {
       obj.color.set(0xffefdc);
-      obj.intensity = mobile ? 0.1 : 0.24;
+      obj.intensity = mobile ? 0.18 : 0.24;
       if (mobile) obj.castShadow = false;
     } else if (obj.isAmbientLight) {
       obj.intensity = 0.06;

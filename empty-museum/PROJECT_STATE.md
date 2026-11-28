@@ -155,6 +155,10 @@ Mis en place le **9 novembre 2026**. Ce document sert de référence commune ent
 - L’inscription 3D du portail est cachée sur mobile, le bandeau la porte déjà. L’or des cadres est un peu plus chaud, sans appel de dessin en plus.
 - État : proposé, non fusionné, non déployé.
 
+## Vrais cumulus et mobile plus lumineux — 28 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
+- Le ciel de l’ouverture est Kloofendal 38d (CC0), bleu avec des cumulus, plus des masses blanches à dessous gris-bleu. Le mobile est un peu plus clair et plus chaud (exposition 0,76). Pas de rochers. Le compteur ne change pas.
+- État : proposé, non fusionné, non déployé.
+
 ## Ouverture moins brûlée, sans rochers — 28 novembre 2026 (même PR brouillon #55, non fusionné, non déployé)
 - Les sept instances de Boulder 01 sont retirées, ainsi que le fichier et son crédit. Le plafond cuit de l’entrée, qui formait une bande beige granuleuse en regardant en haut, est un plâtre blanc uni dans cet essai. Le rayon est plus faible pour que le ciel et les nuages restent lisibles. Le mobile est un peu moins exposé (0,72). Le compteur et les panneaux partenaires ne changent pas.
 - État : proposé, non fusionné, non déployé.

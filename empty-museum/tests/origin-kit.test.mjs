@@ -100,7 +100,7 @@ test('the kit replaces stand-ins without moving the colliders, behind the rollba
 
 test('the ceiling opening uses the CC0 Kloofendal sky, kept out of the floor mirror', () => {
   const look = read('origin-room-look.js');
-  assert.match(look, /assets\/sky\/kloofendal-48d-/);
+  assert.match(look, /assets\/sky\/kloofendal-38d-/);
   assert.match(look, /mobile \? "1k" : "2k"/);
   assert.match(look, /originHideInscription/);
   assert.match(read('engine3d.js'), /originHideInscription/);
@@ -116,10 +116,10 @@ test('the ceiling opening uses the CC0 Kloofendal sky, kept out of the floor mir
   assert.match(look, /generateMipmaps = true/);
   assert.match(look, /-m\.jpg/);
   const credits = read('assets/sky/CREDITS.md');
-  assert.match(credits, /kloofendal_48d_partly_cloudy_puresky/);
+  assert.match(credits, /kloofendal_38d_partly_cloudy_puresky/);
   assert.match(credits, /CC0/);
   assert.match(credits, /polyhaven\.com/);
   for (const size of ['1k', '2k']) {
-    assert.ok(existsSync(new URL(`assets/sky/kloofendal-48d-${size}.jpg`, root)));
+    assert.ok(existsSync(new URL(`assets/sky/kloofendal-38d-${size}.jpg`, root)));
   }
 });
